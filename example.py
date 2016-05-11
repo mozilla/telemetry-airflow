@@ -19,5 +19,6 @@ dag = DAG('example', default_args=default_args, schedule_interval='0 1 * * *')
 t0 = EMRSparkOperator(task_id = "spark",
                       job_name = "airflow-test",
                       instance_count = 1,
+                      env = {"date": "{{ yesterday_ds_nodash }}"},
                       uri = "s3://telemetry-analysis-code-2/jobs/LongitudinalTutorial/Longitudinal Dataset Tutorial.ipynb",
                       dag = dag)

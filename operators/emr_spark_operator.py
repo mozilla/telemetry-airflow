@@ -22,7 +22,13 @@ class EMRSparkOperator(BaseOperator):
 
     :param instance_count: The number of workers the cluster should have.
     :type instance_count: int
+
+    :param env: If env is not None, it must be a mapping that defines the environment
+                variables for the new process (templated).
+    :type env: string
     """
+    template_fields = ('environment', )
+
     release_label = "emr-4.3.0"
     flow_role = "telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3"
     region = "us-west-2"
@@ -54,15 +60,18 @@ class EMRSparkOperator(BaseOperator):
 
 
     @apply_defaults
-    def __init__(self, job_name, email, uri, instance_count, *args, **kwargs):
+    def __init__(self, job_name, email, uri, instance_count, env={}, *args, **kwargs):
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
         self.user = ",".join(email)
         self.instance_count = instance_count
         self.job_name = job_name
         self.job_flow_id = None
-        print self.user
+        self.environment = " ".join(["{}={}".format(k, v) for k, v in env.iteritems()])
+        self.uri = uri
 
-        if uri.endswith(".ipynb"):
+
+    def execute(self, context):
+        if self.uri.endswith(".ipynb"):
             self.steps = Steps=[{
                 'Name': 'RunNotebookStep',
                 'ActionOnFailure': 'TERMINATE_JOB_FLOW',
@@ -70,19 +79,18 @@ class EMRSparkOperator(BaseOperator):
                     'Jar': 's3://{}.elasticmapreduce/libs/script-runner/script-runner.jar'.format(EMRSparkOperator.region),
                     'Args': [
                         "s3://{}/steps/batch.sh".format(EMRSparkOperator.spark_bucket),
-                        "--job-name", job_name,
-                        "--notebook", uri,
-                        "--data-bucket", EMRSparkOperator.data_bucket
+                        "--job-name", self.job_name,
+                        "--notebook", self.uri,
+                        "--data-bucket", EMRSparkOperator.data_bucket,
+                        "--environment", self.environment
                     ]
                 }
             }]
-        elif uri.ends_with(".jar"):
+        elif self.uri.ends_with(".jar"):
             raise AirflowException("Not implemented yet")
         else:
             raise AirflowException("Invalid job URI")
 
-
-    def execute(self, context):
         client = boto3.client('emr')
         response = client.run_job_flow(
             Name = "airflow-test",
