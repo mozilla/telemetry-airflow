@@ -36,7 +36,7 @@ class EMRSparkOperator(BaseOperator):
     service_role = "EMR_DefaultRole"
     instance_type = "c3.4xlarge"
     key_name = "mozilla_vitillo"
-    data_bucket = "telemetry-airflow"
+    airflow_bucket = "telemetry-airflow"
 
     def __del__(self):
         self.on_kill()
@@ -81,7 +81,7 @@ class EMRSparkOperator(BaseOperator):
                         "s3://{}/steps/batch.sh".format(EMRSparkOperator.spark_bucket),
                         "--job-name", self.job_name,
                         "--notebook", self.uri,
-                        "--data-bucket", EMRSparkOperator.data_bucket,
+                        "--data-bucket", EMRSparkOperator.airflow_bucket,
                         "--environment", self.environment
                     ]
                 }
@@ -99,6 +99,7 @@ class EMRSparkOperator(BaseOperator):
             ServiceRole = EMRSparkOperator.service_role,
             Applications = [{'Name': 'Spark'}, {'Name': 'Hive'}],
             Configurations = requests.get("https://s3-{}.amazonaws.com/{}/configuration/configuration.json".format(EMRSparkOperator.region, EMRSparkOperator.spark_bucket)).json(),
+            LogUri = "s3://{}/logs/{}/{}/".format("telemetry-airflow", self.user, self.job_name),
             Instances = {
                 'MasterInstanceType': EMRSparkOperator.instance_type,
                 'SlaveInstanceType': EMRSparkOperator.instance_type,
