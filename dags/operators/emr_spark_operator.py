@@ -4,7 +4,8 @@ import requests
 import time
 
 from airflow.models import BaseOperator
-from airflow.utils import apply_defaults
+from airflow.utils import apply_defaults, AirflowException
+from os import environ
 
 class EMRSparkOperator(BaseOperator):
     """
@@ -13,8 +14,8 @@ class EMRSparkOperator(BaseOperator):
     :param job_name: The name of the job.
     :type job_name: string
 
-    :param user: The e-mail address of the user owning the job.
-    :type user: string
+    :param owner: The e-mail address of the user owning the job.
+    :type owner: string
 
     :param uri: The URI of the job to run, which can be either a Jupyter notebook
                 or a JAR file.
@@ -29,14 +30,14 @@ class EMRSparkOperator(BaseOperator):
     """
     template_fields = ('environment', )
 
-    release_label = "emr-4.3.0"
-    flow_role = "telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3"
-    region = "us-west-2"
-    spark_bucket = "telemetry-spark-emr-2"
-    service_role = "EMR_DefaultRole"
-    instance_type = "c3.4xlarge"
-    key_name = "mozilla_vitillo"
-    airflow_bucket = "telemetry-airflow"
+    region = environ["REGION"]
+    key_name = environ["EMR_KEY_NAME"]
+    release_label = environ["EMR_RELEASE_LABEL"]
+    flow_role = environ["EMR_FLOW_ROLE"]
+    service_role = environ["EMR_SERVICE_ROLE"]
+    instance_type = environ["EMR_INSTANCE_TYPE"]
+    spark_bucket = environ["SPARK_BUCKET"]
+    airflow_bucket = environ["AIRFLOW_BUCKET"]
 
     def __del__(self):
         self.on_kill()
@@ -60,46 +61,44 @@ class EMRSparkOperator(BaseOperator):
 
 
     @apply_defaults
-    def __init__(self, job_name, email, uri, instance_count, env={}, *args, **kwargs):
+    def __init__(self, job_name, owner, uri, instance_count, env={}, arguments="", *args, **kwargs):
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
-        self.user = ",".join(email)
-        self.instance_count = instance_count
         self.job_name = job_name
-        self.job_flow_id = None
-        self.environment = " ".join(["{}={}".format(k, v) for k, v in env.iteritems()])
+        self.owner = owner
         self.uri = uri
+        self.arguments = arguments
+        self.environment = " ".join(["{}={}".format(k, v) for k, v in env.iteritems()])
+        self.job_flow_id = None
+        self.instance_count = instance_count
 
 
     def execute(self, context):
-        if self.uri.endswith(".ipynb"):
-            self.steps = Steps=[{
-                'Name': 'RunNotebookStep',
-                'ActionOnFailure': 'TERMINATE_JOB_FLOW',
-                'HadoopJarStep': {
-                    'Jar': 's3://{}.elasticmapreduce/libs/script-runner/script-runner.jar'.format(EMRSparkOperator.region),
-                    'Args': [
-                        "s3://{}/steps/batch.sh".format(EMRSparkOperator.spark_bucket),
-                        "--job-name", self.job_name,
-                        "--notebook", self.uri,
-                        "--data-bucket", EMRSparkOperator.airflow_bucket,
-                        "--environment", self.environment
-                    ]
-                }
-            }]
-        elif self.uri.ends_with(".jar"):
-            raise AirflowException("Not implemented yet")
-        else:
-            raise AirflowException("Invalid job URI")
+        self.steps = Steps=[{
+            'Name': 'RunNotebookStep',
+            'ActionOnFailure': 'TERMINATE_JOB_FLOW',
+            'HadoopJarStep': {
+                'Jar': 's3://{}.elasticmapreduce/libs/script-runner/script-runner.jar'.format(EMRSparkOperator.region),
+                'Args': [
+                    "s3://{}/steps/airflow.sh".format(EMRSparkOperator.airflow_bucket),
+                    "--job-name", self.job_name,
+                    "--user", self.owner,
+                    "--uri", self.uri,
+                    "--arguments", '"{}"'.format(self.arguments),
+                    "--data-bucket", EMRSparkOperator.airflow_bucket,
+                    "--environment", self.environment
+                ]
+            }
+        }]
 
         client = boto3.client('emr')
         response = client.run_job_flow(
-            Name = "airflow-test",
+            Name = self.job_name,
             ReleaseLabel = EMRSparkOperator.release_label,
             JobFlowRole = EMRSparkOperator.flow_role,
             ServiceRole = EMRSparkOperator.service_role,
             Applications = [{'Name': 'Spark'}, {'Name': 'Hive'}],
             Configurations = requests.get("https://s3-{}.amazonaws.com/{}/configuration/configuration.json".format(EMRSparkOperator.region, EMRSparkOperator.spark_bucket)).json(),
-            LogUri = "s3://{}/logs/{}/{}/".format("telemetry-airflow", self.user, self.job_name),
+            LogUri = "s3://{}/logs/{}/{}/".format(EMRSparkOperator.airflow_bucket, self.owner, self.job_name),
             Instances = {
                 'MasterInstanceType': EMRSparkOperator.instance_type,
                 'SlaveInstanceType': EMRSparkOperator.instance_type,
@@ -113,7 +112,7 @@ class EMRSparkOperator(BaseOperator):
                 }
             }],
             Tags=[
-                {'Key': 'Owner', 'Value': self.user},
+                {'Key': 'Owner', 'Value': self.owner},
                 {'Key': 'Application', 'Value': "telemetry-analysis-worker-instance"},
             ],
             Steps=self.steps

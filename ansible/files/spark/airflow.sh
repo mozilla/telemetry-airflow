@@ -3,8 +3,8 @@ set -o verbose
 # Log everything
 spark_log_dir=/mnt/var/log/spark
 sudo chmod o+w $spark_log_dir
-rm $spark_log_dir/*.log
-exec > >(tee -i "$spark_log_dir/job_$(date +%Y%m%d%H%M%S).log")
+rm -f $spark_log_dir/*.log
+exec > "$spark_log_dir/job_$(date +%Y%m%d%H%M%S).log"
 exec 2>&1
 
 HOME=/home/hadoop
@@ -59,7 +59,7 @@ if [ -z "$job_name" ] || [ -z "$user" ] || [ -z "$uri" ] || [ -z "$data_bucket" 
     exit -1
 fi
 
-s3_base="s3://$data_bucket/$user/$job_name"
+s3_base="s3://$data_bucket/data/$user/$job_name"
 
 # Wait for Parquet datasets to be loaded
 while ps aux | grep hive_config.sh | grep -v grep > /dev/null; do sleep 1; done

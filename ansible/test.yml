@@ -1,0 +1,15 @@
+- name: test airflow task
+  hosts: localhost
+
+  tasks:
+    - name: run airflow task
+      shell: airflow test {{dag}} {{task}} {{date}}
+      environment:
+        REGION: "{{region}}"
+        AIRFLOW_BUCKET: "{{airflow_bucket}}"
+        SPARK_BUCKET: "{{spark_bucket}}"
+        EMR_KEY_NAME: "{{emr_key_name}}"
+        EMR_RELEASE_LABEL: "{{emr_release_label}}"
+        EMR_FLOW_ROLE: "{{emr_flow_role}}"
+        EMR_SERVICE_ROLE: "{{emr_service_role}}"
+        EMR_INSTANCE_TYPE: "{{emr_instance_type}}"

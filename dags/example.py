@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 
 default_args = {
-    'owner': 'airflow',
+    'owner': 'rvitillo@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2016, 1, 1),
     'email': ['rvitillo@mozilla.com'],
@@ -17,8 +17,8 @@ default_args = {
 dag = DAG('example', default_args=default_args, schedule_interval='0 1 * * *')
 
 t0 = EMRSparkOperator(task_id = "spark",
-                      job_name = "airflow-test",
+                      job_name = "spark-example",
                       instance_count = 1,
                       env = {"date": "{{ yesterday_ds_nodash }}"},
-                      uri = "s3://telemetry-analysis-code-2/jobs/LongitudinalTutorial/Longitudinal Dataset Tutorial.ipynb",
+                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/first/examples/spark/example_date.ipynb",
                       dag = dag)

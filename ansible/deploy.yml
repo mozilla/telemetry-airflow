@@ -1,0 +1,9 @@
+- name: provision aws resources
+  hosts: localhost
+
+  tasks:
+    - name: create bucket
+      s3: bucket={{airflow_bucket}} region={{region}} mode=create
+
+    - name: copy EMR bootstrap script
+      s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src=ansible/files/spark/airflow.sh mode=put
