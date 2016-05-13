@@ -43,7 +43,7 @@ class EMRSparkOperator(BaseOperator):
         self.on_kill()
 
 
-    def post_execute(self):
+    def post_execute(self, context):
         self.on_kill()
 
 

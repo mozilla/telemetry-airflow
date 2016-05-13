@@ -1,12 +1,5 @@
 set -o verbose
 
-# Log everything
-spark_log_dir=/mnt/var/log/spark
-sudo chmod o+w $spark_log_dir
-rm -f $spark_log_dir/*.log
-exec > "$spark_log_dir/job_$(date +%Y%m%d%H%M%S).log"
-exec 2>&1
-
 HOME=/home/hadoop
 source $HOME/.bashrc
 
@@ -91,7 +84,7 @@ cd output
 if [[ $uri == *.jar ]]; then
     time env $environment spark-submit --master yarn-client "../$job" $args
 elif [[ $uri == *.ipynb ]]; then
-    time env $environment runipy "../$job" "$job" --pylab $args
+    time env $environment runipy "../$job" "$job" --pylab
 else
     echo "Job type not supported"
     exit 1;
