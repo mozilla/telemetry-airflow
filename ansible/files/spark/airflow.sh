@@ -109,11 +109,11 @@ do
     f=$(sed -e "s/^\.\///" <<< $f)
     echo $f
 
-    UPLOAD_CMD="aws s3 cp './$f' '$s3_base/$f'"
+    upload_cmd="aws s3 cp './$f' '$s3_base/$f'"
 
     if [[ "$f" == *.gz ]]; then
-        UPLOAD_CMD="$UPLOAD_CMD --content-encoding gzip"
+        upload_cmd="$upload_cmd --content-encoding gzip"
     fi
 
-    eval $UPLOAD_CMD
+    eval $upload_cmd
 done
