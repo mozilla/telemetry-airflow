@@ -1,8 +1,10 @@
 set -o verbose
 
 # Log everything
-sudo chmod o+w "/mnt/var/log/spark/"
-exec > >(tee -i "/mnt/var/log/spark/job_$(date +%Y%m%d%H%M%S).log")
+spark_log_dir=/mnt/var/log/spark
+sudo chmod o+w $spark_log_dir
+rm $spark_log_dir/*.log
+exec > >(tee -i "$spark_log_dir/job_$(date +%Y%m%d%H%M%S).log")
 exec 2>&1
 
 HOME=/home/hadoop
@@ -19,31 +21,27 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --job-name)
             shift
-            JOB_NAME=$1
+            job_name=$1
             ;;
         --user)
             shift
-            USER=$1
+            user=$1
             ;;
-        --notebook)
+        --uri)
             shift
-            NOTEBOOK=$1
+            uri=$1
             ;;
-        --jar)
+        --arguments)
             shift
-            JAR=$1
-            ;;
-        --spark-submit-args)
-            shift
-            ARGS=$1
+            args=$1
             ;;
         --data-bucket)
             shift
-            DATA_BUCKET=$1
+            data_bucket=$1
             ;;
         --environment)
             shift
-            ENVIRONMENT=$1
+            environment=$1
             ;;
          -*)
             # do not exit out, just note failure
@@ -56,11 +54,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [ -z "$JOB_NAME" ] || [ -z "$USER" ] || ([ -z "$NOTEBOOK" ] && [ -z "$JAR" ]) || ([ -n "$NOTEBOOK" ] && [ -n "$JAR" ]) || [ -z "$DATA_BUCKET" ]; then
+if [ -z "$job_name" ] || [ -z "$user" ] || [ -z "$uri" ] || [ -z "$data_bucket" ]; then
+    error_msg "missing argument(s)"
     exit -1
 fi
 
-S3_BASE="s3://$DATA_BUCKET/$USER/$JOB_NAME"
+s3_base="s3://$data_bucket/$user/$job_name"
 
 # Wait for Parquet datasets to be loaded
 while ps aux | grep hive_config.sh | grep -v grep > /dev/null; do sleep 1; done
@@ -69,16 +68,38 @@ mkdir -p $HOME/analyses && cd $HOME/analyses
 mkdir -p logs
 mkdir -p output
 
-if [ -n "$JAR" ]; then
-    # Run JAR
-    aws s3 cp "$JAR" .
-    cd output
-    time env $ENVIRONMENT spark-submit --master yarn-client "../${JAR##*/}" $ARGS
+urldecode() {
+    local url_encoded="${1//+/ }"
+    printf '%b' "${url_encoded//%/\\x}"
+}
+
+# Download file
+if [[ $uri == s3://* ]]; then
+    aws s3 cp "$uri" .
+elif [[ $uri == http://* ]]; then
+    uri=$(urldecode $uri)
+    wget -N "$uri"
+elif [[ $uri == https://* ]]; then
+    uri=$(urldecode $uri)
+    wget -N "$uri"
+fi
+
+# Run job
+job="${uri##*/}"
+cd output
+
+if [[ $uri == *.jar ]]; then
+    time env $environment spark-submit --master yarn-client "../$job" $args
+elif [[ $uri == *.ipynb ]]; then
+    time env $environment runipy "../$job" "$job" --pylab $args
 else
-    # Run notebook
-    aws s3 cp "$NOTEBOOK" .
-    cd output
-    time env $ENVIRONMENT runipy "../${NOTEBOOK##*/}" "${NOTEBOOK##*/}" --pylab
+    echo "Job type not supported"
+    exit 1;
+fi
+
+rc=$?
+if [[ $rc != 0 ]]; then
+    exit $rc;
 fi
 
 # Upload output files
@@ -88,7 +109,7 @@ do
     f=$(sed -e "s/^\.\///" <<< $f)
     echo $f
 
-    UPLOAD_CMD="aws s3 cp './$f' '$S3_BASE/$f'"
+    UPLOAD_CMD="aws s3 cp './$f' '$s3_base/$f'"
 
     if [[ "$f" == *.gz ]]; then
         UPLOAD_CMD="$UPLOAD_CMD --content-encoding gzip"
