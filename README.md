@@ -14,7 +14,7 @@ ansible-playbook ansible/deploy.yml -e '@ansible/envs/test.yml'
 
 ### Testing
 
-A single task, e.g. `spark`, of an airflow dag, e.g. `example`, can be run with an execution date, e.g. `2015-06-2`, in the `test` environment with:
+A single task, e.g. `spark`, of an airflow dag, e.g. `example`, can be run with an execution date, e.g. `2015-06-02`, in the `test` environment with:
 ```bash
 ansible-playbook ansible/test.yml --extra-vars "@ansible/envs/test.yml" --extra-vars "dag=example task=spark date=2015-06-02"
 ```
