@@ -7,9 +7,14 @@ Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The 
 
 ### Deployment
 
-Airflow can be deployed to an environment, e.g. `test`, with:
+In order to deploy Airflow to e.g. the test environment, an ECS cluster has to be created first with at least one container instance:
 ```bash
-ansible-playbook ansible/deploy.yml -e '@ansible/envs/test.yml'
+ansible-playbook ansible/deploy_ecs.yml -e '@ansible/envs/test.yml'
+```
+
+Once the ECS cluster is up and running, Airflow can be (re)deployed with:
+```bash
+ansible-playbook ansible/deploy_container.yml -e '@ansible/envs/test.yml'
 ```
 
 ### Testing

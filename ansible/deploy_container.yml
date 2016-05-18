@@ -7,3 +7,11 @@
 
     - name: copy EMR bootstrap script
       s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src=ansible/files/spark/airflow.sh mode=put
+
+    - name: create task definition
+      shell: "{{ item }}"
+      with_items:
+        - ecs-cli configure --cluster {{ ecs_cluster_name }}
+        - ecs-cli compose --project-name airflow-test --file ansible/files/docker-compose.yml up
+      environment:
+        AWS_REGION: "{{ region }}"

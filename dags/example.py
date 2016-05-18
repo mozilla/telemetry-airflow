@@ -20,5 +20,5 @@ t0 = EMRSparkOperator(task_id = "spark",
                       job_name = "spark-example",
                       instance_count = 1,
                       env = {"date": "{{ yesterday_ds_nodash }}"},
-                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/first/examples/spark/example_date.ipynb",
+                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/first/examples/spark/example_failure.ipynb",
                       dag = dag)

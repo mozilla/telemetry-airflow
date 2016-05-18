@@ -1,0 +1,67 @@
+- name: provision ECS cluster
+  hosts: localhost
+  vars:
+    ecs_cluster_size: 1
+
+  tasks:
+    - name: create ECS cluster for telemetry
+      ecs_cluster:
+        region: "{{ region }}"
+        name: "{{ ecs_cluster_name }}"
+        state: present
+
+    - name: create role for container instances
+      cloudformation:
+        stack_name: "telemetry-ecs-cloudformation"
+        state: "present"
+        region: "{{ region }}"
+        disable_rollback: true
+        template: "ansible/files/cloudformation.json"
+        tags:
+          type: "telemetry"
+          application: "ecs"
+      register: cloudformation
+
+    - name: create security group for container instances
+      ec2_group:
+        name: telemetry-ecs
+        description: telemetry ECS
+        region: "{{region}}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            from_port: all
+            to_port: all
+            cidr_ip: 0.0.0.0/0
+        vpc_id: "{{ ecs_vpc_id }}"
+
+    - name: launch ECS container instances
+      ec2:
+        image: ami-a28476c2
+        region: "{{ region }}"
+        instance_type: "{{ ecs_instance_type }}"
+        key_name: "{{ ecs_key_name }}"
+        assign_public_ip: yes
+        group: telemetry-ecs
+        instance_tags: { App: pipeline, Name: telemetry-ecs-instance, Type: telemetry-ecs-instance, Owner: rvitillo@mozilla.com }
+        exact_count: "{{ ecs_cluster_size }}"
+        count_tag: { Name: telemetry-ecs-instance }
+        vpc_subnet_id: "{{ ecs_vpc_subnet_id }}"
+        instance_profile_name: "{{ cloudformation.stack_outputs.InstanceProfile }}"
+        user_data: |
+          #!/bin/bash
+          echo ECS_CLUSTER={{ ecs_cluster_name }} >> /etc/ecs/ecs.config
+        wait: yes
+      register: ec2
+
+    - name: wait for ssh server to be running
+      wait_for: host={{ item.public_dns_name }} port=22 search_regex=OpenSSH
+      with_items: "{{ ec2.instances }}"

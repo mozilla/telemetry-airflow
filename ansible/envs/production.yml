@@ -1,8 +1,15 @@
 region: us-west-2
 airflow_bucket: telemetry-airflow
 spark_bucket: telemetry-spark-emr-2
+
 emr_key_name: 20151209-cloudservices-aws-ssh-dev 
 emr_release_label: emr-4.3.0
 emr_flow_role: telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3
 emr_service_role: EMR_DefaultRole
 emr_instance_type: c3.4xlarge
+
+ecs_key_name: 20151209-cloudservices-aws-ssh-dev 
+ecs_vpc_id: vpc-4283d227
+ecs_vpc_subnet_id: subnet-125a7c77
+ecs_cluster_name: telemetry
+ecs_instance_type: c4.xlarge
