@@ -50,6 +50,7 @@ flower:
 scheduler:
     image: puckel/docker-airflow
     restart: always
+    mem_limit: 2147483648
     # volumes:
     #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
@@ -62,6 +63,7 @@ scheduler:
 worker:
     image: puckel/docker-airflow
     restart: always
+    mem_limit: 2147483648
     # volumes:
     #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
