@@ -21,7 +21,7 @@ rabbitmq:
         - RABBITMQ_DEFAULT_VHOST=airflow
 
 webserver:
-    image: puckel/docker-airflow
+    image: vitillo/telemetry-airflow
     restart: always
     # volumes:
     #     - /localpath/to/dags:/usr/local/airflow/dags
@@ -37,7 +37,7 @@ webserver:
     command: webserver
 
 flower:
-    image: puckel/docker-airflow
+    image: vitillo/telemetry-airflow
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
@@ -48,20 +48,28 @@ flower:
     command: flower
 
 scheduler:
-    image: puckel/docker-airflow
+    image: vitillo/telemetry-airflow
     restart: always
     mem_limit: 2147483648
     # volumes:
     #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - REGION=$REGION
+        - EMR_KEY_NAME=$EMR_KEY_NAME
+        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
+        - SPARK_BUCKET=$SPARK_BUCKET
+        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
     command: scheduler
 
 worker:
-    image: puckel/docker-airflow
+    image: vitillo/telemetry-airflow
     restart: always
     mem_limit: 2147483648
     # volumes:

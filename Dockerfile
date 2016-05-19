@@ -13,4 +13,4 @@ RUN apt-get update -yqq && \
 
 USER airflow
 ADD dags/ /usr/local/airflow/dags/
-ENTRYPOINT ["/bin/sh", "-c"]
+# ENTRYPOINT ["/bin/sh", "-c"]
