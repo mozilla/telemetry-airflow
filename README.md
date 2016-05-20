@@ -40,7 +40,7 @@ Assuming you are on OS X, first create a docker machine with a sufficient amount
 docker-machine create --d virtualbox --virtualbox-memory 4096 default
 ```
 
-To deploy the Airflow container on the docker engine with its required dependencies, run: 
+To deploy the Airflow container on the docker engine, with its required dependencies, run:
 ```bash
 AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/test.yml'
 ```
