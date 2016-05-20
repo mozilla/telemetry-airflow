@@ -22,7 +22,8 @@ docker push vitillo/telemetry-airflow
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2015-06-02`, in the `test` environment with:
 ```bash
-AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... ansible-playbook ansible/test.yml -e '@ansible/envs/test.yml' -e "dag=example task=spark date=20160101"
+AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
+ansible-playbook ansible/test.yml -e '@ansible/envs/test.yml' -e "dag=example task=spark date=20160101"
 ```
 
 The container will run the desired task to completion (or failure). Note that if the container is stopped during the execution of a task, the task will
@@ -42,7 +43,8 @@ docker-machine create --d virtualbox --virtualbox-memory 4096 default
 
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 ```bash
-AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/test.yml'
+AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
+ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/test.yml'
 ```
 
 ### Remote Deployment
