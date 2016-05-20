@@ -51,7 +51,7 @@ class EMRSparkOperator(BaseOperator):
         if self.job_flow_id is None:
             return
 
-        client = boto3.client('emr')
+        client = boto3.client('emr', region_name=EMRSparkOperator.region)
         result = client.describe_cluster(ClusterId = self.job_flow_id)
         status = result["Cluster"]["Status"]["State"]
 
@@ -90,7 +90,7 @@ class EMRSparkOperator(BaseOperator):
             }
         }]
 
-        client = boto3.client('emr')
+        client = boto3.client('emr', region_name=EMRSparkOperator.region)
         response = client.run_job_flow(
             Name = self.job_name,
             ReleaseLabel = EMRSparkOperator.release_label,

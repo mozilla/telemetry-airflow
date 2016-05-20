@@ -7,6 +7,12 @@ Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The 
 
 ### Local Deployment
 
+Assuming you are on OS X, first create a docker machine with a sufficient amount of memory:
+```bash
+docker-machine create --d virtualbox --virtualbox-memory 4096 default
+```
+
+To run the Airflow container on the docker engine run: 
 ```bash
 ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/test.yml'
 ```

@@ -1,6 +1,7 @@
 mysql:
     image: mysql
     restart: always
+    mem_limit: 2147483648
     ports:
         - "3306:3306"
     environment:
@@ -27,6 +28,16 @@ webserver:
     #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - REGION=$REGION
+        - EMR_KEY_NAME=$EMR_KEY_NAME
+        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
+        - SPARK_BUCKET=$SPARK_BUCKET
+        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     ports:
         - "8080:8080"
     links:
@@ -41,6 +52,16 @@ flower:
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - REGION=$REGION
+        - EMR_KEY_NAME=$EMR_KEY_NAME
+        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
+        - SPARK_BUCKET=$SPARK_BUCKET
+        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     ports:
         - "5555:5555"
     links:
@@ -63,6 +84,8 @@ scheduler:
         - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
         - SPARK_BUCKET=$SPARK_BUCKET
         - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq

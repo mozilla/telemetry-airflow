@@ -11,6 +11,8 @@ RUN apt-get update -yqq && \
     apt-get install -yqq python-pip && \
     pip install boto3
 
+ADD config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
+
 USER airflow
 ADD dags/ /usr/local/airflow/dags/
 # ENTRYPOINT ["/bin/sh", "-c"]
