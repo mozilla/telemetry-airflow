@@ -1,0 +1,95 @@
+mysql:
+    image: mysql
+    mem_limit: 2147483648
+    ports:
+        - "3306:3306"
+    environment:
+        - MYSQL_RANDOM_ROOT_PASSWORD=true
+        - MYSQL_USER=airflow
+        - MYSQL_PASSWORD=airflow
+        - MYSQL_DATABASE=airflow
+
+rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+        - "15672:15672"
+        - "5672:5672"
+    environment:
+        - RABBITMQ_DEFAULT_USER=airflow
+        - RABBITMQ_DEFAULT_PASS=airflow
+        - RABBITMQ_DEFAULT_VHOST=airflow
+
+webserver:
+    image: vitillo/telemetry-airflow
+    environment:
+        - AIRFLOW_HOME=/usr/local/airflow
+        - REGION=$REGION
+        - EMR_KEY_NAME=$EMR_KEY_NAME
+        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
+        - SPARK_BUCKET=$SPARK_BUCKET
+        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    ports:
+        - "8080:8080"
+    links:
+        - mysql:mysql
+        - rabbitmq:rabbitmq
+        - worker:worker
+        - scheduler:scheduler
+    command: webserver
+
+flower:
+    image: vitillo/telemetry-airflow
+    environment:
+        - AIRFLOW_HOME=/usr/local/airflow
+        - REGION=$REGION
+        - EMR_KEY_NAME=$EMR_KEY_NAME
+        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
+        - SPARK_BUCKET=$SPARK_BUCKET
+        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    ports:
+        - "5555:5555"
+    links:
+        - rabbitmq:rabbitmq
+    command: flower
+
+scheduler:
+    image: vitillo/telemetry-airflow
+    mem_limit: 2147483648
+    environment:
+        - AIRFLOW_HOME=/usr/local/airflow
+        - REGION=$REGION
+        - EMR_KEY_NAME=$EMR_KEY_NAME
+        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
+        - SPARK_BUCKET=$SPARK_BUCKET
+        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    links:
+        - mysql:mysql
+        - rabbitmq:rabbitmq
+    command: $COMMAND
+
+worker:
+    image: vitillo/telemetry-airflow
+    mem_limit: 2147483648
+    environment:
+        - AIRFLOW_HOME=/usr/local/airflow
+    ports:
+        - "8793:8793"
+    links:
+        - mysql:mysql
+        - rabbitmq:rabbitmq
+    command: worker
