@@ -16,4 +16,3 @@ ADD ansible/files/airflow/entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
 
 USER airflow
 ADD dags/ /usr/local/airflow/dags/
-# ENTRYPOINT ["/bin/sh", "-c"]
