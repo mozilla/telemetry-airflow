@@ -24,8 +24,6 @@ rabbitmq:
 webserver:
     image: vitillo/telemetry-airflow
     restart: always
-    # volumes:
-    #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
         - REGION=$REGION
@@ -72,8 +70,6 @@ scheduler:
     image: vitillo/telemetry-airflow
     restart: always
     mem_limit: 2147483648
-    # volumes:
-    #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
         - REGION=$REGION
@@ -95,8 +91,6 @@ worker:
     image: vitillo/telemetry-airflow
     restart: always
     mem_limit: 2147483648
-    # volumes:
-    #     - /localpath/to/dags:/usr/local/airflow/dags
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
     ports:
