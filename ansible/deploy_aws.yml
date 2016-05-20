@@ -21,4 +21,4 @@
         EMR_SERVICE_ROLE: "{{ emr_service_role }}"
         EMR_INSTANCE_TYPE: "{{ emr_instance_type }}"
         SPARK_BUCKET: "{{ spark_bucket }}"
-        AIRFLOW_BUCKET: "{{ airflow_bucket }} "
+        AIRFLOW_BUCKET: "{{ airflow_bucket }}"
