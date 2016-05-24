@@ -1,0 +1,24 @@
+- name: provision aws resources
+  hosts: localhost
+
+  tasks:
+    - name: create bucket
+      s3: bucket={{airflow_bucket}} region={{region}} mode=create
+
+    - name: copy EMR bootstrap script
+      s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src=ansible/files/spark/airflow.sh mode=put
+
+    - name: create task definition
+      shell: "{{ item }}"
+      with_items:
+        - ecs-cli configure --cluster {{ ecs_cluster_name }}
+        - ecs-cli compose --project-name telemetry-airflow --file ansible/files/docker-compose.yml up
+      environment:
+        AWS_REGION: "{{ region }}"
+        EMR_KEY_NAME: "{{ emr_key_name }}"
+        EMR_RELEASE_LABEL: "{{ emr_release_label }}"
+        EMR_FLOW_ROLE: "{{ emr_flow_role }}"
+        EMR_SERVICE_ROLE: "{{ emr_service_role }}"
+        EMR_INSTANCE_TYPE: "{{ emr_instance_type }}"
+        SPARK_BUCKET: "{{ spark_bucket }}"
+        AIRFLOW_BUCKET: "{{ airflow_bucket }}"
