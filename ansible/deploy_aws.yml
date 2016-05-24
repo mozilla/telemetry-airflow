@@ -12,7 +12,7 @@
       shell: "{{ item }}"
       with_items:
         - ecs-cli configure --cluster {{ ecs_cluster_name }}
-        - ecs-cli compose --project-name airflow-test --file ansible/files/docker-compose.yml up
+        - ecs-cli compose --project-name telemetry-airflow --file ansible/files/docker-compose.yml up
       environment:
         AWS_REGION: "{{ region }}"
         EMR_KEY_NAME: "{{ emr_key_name }}"

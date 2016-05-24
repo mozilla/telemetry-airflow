@@ -55,7 +55,7 @@ fi
 s3_base="s3://$data_bucket/data/$user/$job_name"
 
 # Wait for Parquet datasets to be loaded
-while ps aux | grep hive_config.sh | grep -v grep > /dev/null; do sleep 1; done
+while pgrep -f hive_config.sh | grep -v grep > /dev/null; do sleep 1; done
 
 mkdir -p $HOME/analyses && cd $HOME/analyses
 mkdir -p logs

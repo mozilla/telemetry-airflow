@@ -20,7 +20,7 @@ docker push vitillo/telemetry-airflow
 
 ### Testing
 
-A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2015-06-02`, in the `test` environment with:
+A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `test` environment with:
 ```bash
 AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
 ansible-playbook ansible/test.yml -e '@ansible/envs/test.yml' -e "dag=example task=spark date=20160101"
