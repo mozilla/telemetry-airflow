@@ -31,6 +31,7 @@
                   "Effect": "Allow",
                   "Action": [
                     "elasticmapreduce:Describe*",
+                    "elasticmapreduce:RunJobFlow",
                     "elasticmapreduce:TerminateJobFlows",
                     "ecs:CreateCluster",
                     "ecs:DeregisterContainerInstance",
@@ -43,6 +44,7 @@
                     "ecr:BatchCheckLayerAvailability",
                     "ecr:GetDownloadUrlForLayer",
                     "ecr:BatchGetImage",
+                    "iam:PassRole",
                     "logs:CreateLogStream",
                     "logs:PutLogEvents"
                   ],

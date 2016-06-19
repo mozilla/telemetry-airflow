@@ -97,6 +97,7 @@ class EMRSparkOperator(BaseOperator):
             JobFlowRole = EMRSparkOperator.flow_role,
             ServiceRole = EMRSparkOperator.service_role,
             Applications = [{'Name': 'Spark'}, {'Name': 'Hive'}],
+            VisibleToAllUsers=True,
             Configurations = requests.get("https://s3-{}.amazonaws.com/{}/configuration/configuration.json".format(EMRSparkOperator.region, EMRSparkOperator.spark_bucket)).json(),
             LogUri = "s3://{}/logs/{}/{}/".format(EMRSparkOperator.airflow_bucket, self.owner, self.job_name),
             Instances = {
