@@ -30,7 +30,7 @@ class EMRSparkOperator(BaseOperator):
     """
     template_fields = ('environment', )
 
-    region = environ["REGION"]
+    region = environ["AWS_REGION"]
     key_name = environ["EMR_KEY_NAME"]
     release_label = environ["EMR_RELEASE_LABEL"]
     flow_role = environ["EMR_FLOW_ROLE"]
