@@ -8,8 +8,10 @@ emr_flow_role: telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SAT
 emr_service_role: EMR_DefaultRole
 emr_instance_type: c3.4xlarge
 
+ecs_sg_name: telemetry-ecs
 ecs_key_name: 20151209-cloudservices-aws-ssh-dev 
 ecs_vpc_id: vpc-4283d227
 ecs_vpc_subnet_id: subnet-125a7c77
 ecs_cluster_name: telemetry
-ecs_instance_type: c4.xlarge
+ecs_instance_type: c4.2xlarge 
+ecs_role: arn:aws:iam::927034868273:role/telemetry-ecs-cloudformation-TelemetryECSRole-1UAYK6XNB6DG0

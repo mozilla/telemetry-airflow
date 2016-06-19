@@ -1,5 +1,7 @@
 - name: provision aws resources
   hosts: localhost
+  vars:
+    elb_name: telemetry-ecs
 
   tasks:
     - name: create bucket
@@ -8,11 +10,38 @@
     - name: copy EMR bootstrap script
       s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src=ansible/files/spark/airflow.sh mode=put
 
+    - ec2_group_facts:
+        region: "{{ region }}"
+        filters:
+          group-name: "{{ ecs_sg_name }}"
+      register: sg
+
+    - name: create load balancer
+      ec2_elb_lb:
+        name: "{{ elb_name }}"
+        region: "{{ region }}"
+        state: present
+        security_group_ids:
+          - "{{ sg.sgs[0].group_id }}"
+        subnets:
+          - "{{ ecs_vpc_subnet_id }}"
+        listeners:
+          - protocol: http
+            load_balancer_port: 80
+            instance_port: 8080
+        health_check:
+          ping_protocol: tcp
+          ping_port: 8080
+          response_timeout: 50 # seconds
+          interval: 60 # seconds
+          unhealthy_threshold: 2
+          healthy_threshold: 2
+
     - name: create task definition
       shell: "{{ item }}"
       with_items:
         - ecs-cli configure --cluster {{ ecs_cluster_name }}
-        - ecs-cli compose --project-name telemetry-airflow --file ansible/files/docker-compose.yml up
+        - ecs-cli compose --project-name telemetry-airflow --file ansible/files/docker-compose.yml create
       environment:
         AWS_REGION: "{{ region }}"
         EMR_KEY_NAME: "{{ emr_key_name }}"
@@ -22,3 +51,19 @@
         EMR_INSTANCE_TYPE: "{{ emr_instance_type }}"
         SPARK_BUCKET: "{{ spark_bucket }}"
         AIRFLOW_BUCKET: "{{ airflow_bucket }}"
+
+    # TODO: create a new module capable of updating the service with the new definition or ensure that the
+    # revision of a new task definition is incremental (for some reason it's not always the case...)
+    - name: update service
+      ecs_service:
+        region: "{{ region }}"
+        name: telemetry-airflow
+        cluster: "{{ ecs_cluster_name }}"
+        desired_count: 1
+        state: present
+        role: "{{ ecs_role }}"
+        load_balancers:
+          - loadBalancerName: "{{ elb_name }}"
+            containerName: webserver
+            containerPort: 8080
+        task_definition: ecscompose-telemetry-airflow
