@@ -36,6 +36,9 @@ webserver:
         - AIRFLOW_BUCKET
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     ports:
         - "8080:8080"
     links:
@@ -82,6 +85,9 @@ scheduler:
         - AIRFLOW_BUCKET
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
@@ -107,6 +113,9 @@ worker:
         - AIRFLOW_BUCKET
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq

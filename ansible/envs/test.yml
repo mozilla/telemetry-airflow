@@ -15,3 +15,7 @@ ecs_vpc_subnet_id: subnet-125a7c77
 ecs_cluster_name: telemetry
 ecs_instance_type: c4.2xlarge 
 ecs_role: arn:aws:iam::927034868273:role/telemetry-ecs-cloudformation-TelemetryECSRole-1UAYK6XNB6DG0
+
+db_uri: telemetry-ecs-airflow.cppmil15uwvg.us-west-2.rds.amazonaws.com
+db_user: airflow
+db_password: telemetry-airflow  # DB is not accessible from the outside world
