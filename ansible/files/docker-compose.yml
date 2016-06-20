@@ -26,6 +26,7 @@ webserver:
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
         - EMR_RELEASE_LABEL
@@ -53,6 +54,7 @@ flower:
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
         - EMR_RELEASE_LABEL
@@ -75,6 +77,7 @@ scheduler:
     mem_limit: 2147483648
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
         - EMR_RELEASE_LABEL
@@ -103,6 +106,7 @@ worker:
         - "8793:8793"
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
+        - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
         - EMR_RELEASE_LABEL
