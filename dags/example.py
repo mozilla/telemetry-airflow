@@ -19,6 +19,6 @@ dag = DAG('example', default_args=default_args, schedule_interval='@daily')
 t0 = EMRSparkOperator(task_id = "spark",
                       job_name = "spark",
                       instance_count = 1,
-                      env = {"date": "{{ yesterday_ds_nodash }}"},
+                      env = {"date": "{{ ds_nodash }}"},
                       uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/first/examples/spark/example_date.ipynb",
                       dag = dag)
