@@ -24,6 +24,11 @@ if [ "$1" = "webserver" ] || [ "$1" = "worker" ] || [ "$1" = "scheduler" ] || [ 
   done
 fi
 
+sed -i "s/{DB_URI}/${DB_URI}/" $AIRFLOW_HOME/airflow.cfg
+sed -i "s/{DB_USER}/${DB_USER}/" $AIRFLOW_HOME/airflow.cfg
+sed -i "s/{DB_PASSWORD}/${DB_PASSWORD}/" $AIRFLOW_HOME/airflow.cfg
+sed -i "s/{AIRFLOW_ENABLE_AUTH}/${AIRFLOW_ENABLE_AUTH}/" $AIRFLOW_HOME/airflow.cfg
+
 # wait for DB
 if [ "$1" = "webserver" ] || [ "$1" = "worker" ] || [ "$1" = "scheduler" ] || [ "$1" = "test" ]; then
   i=0

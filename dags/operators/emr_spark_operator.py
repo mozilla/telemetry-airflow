@@ -30,7 +30,7 @@ class EMRSparkOperator(BaseOperator):
     """
     template_fields = ('environment', )
 
-    region = environ["REGION"]
+    region = environ["AWS_REGION"]
     key_name = environ["EMR_KEY_NAME"]
     release_label = environ["EMR_RELEASE_LABEL"]
     flow_role = environ["EMR_FLOW_ROLE"]
@@ -97,6 +97,7 @@ class EMRSparkOperator(BaseOperator):
             JobFlowRole = EMRSparkOperator.flow_role,
             ServiceRole = EMRSparkOperator.service_role,
             Applications = [{'Name': 'Spark'}, {'Name': 'Hive'}],
+            VisibleToAllUsers=True,
             Configurations = requests.get("https://s3-{}.amazonaws.com/{}/configuration/configuration.json".format(EMRSparkOperator.region, EMRSparkOperator.spark_bucket)).json(),
             LogUri = "s3://{}/logs/{}/{}/".format(EMRSparkOperator.airflow_bucket, self.owner, self.job_name),
             Instances = {

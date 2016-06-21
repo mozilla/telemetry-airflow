@@ -8,10 +8,18 @@
         "AssumeRolePolicyDocument": {
           "Statement": [
             {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            },
+            {
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.amazonaws.com"
+                  "ecs.amazonaws.com"
                 ]
               },
               "Action": [
@@ -31,6 +39,7 @@
                   "Effect": "Allow",
                   "Action": [
                     "elasticmapreduce:Describe*",
+                    "elasticmapreduce:RunJobFlow",
                     "elasticmapreduce:TerminateJobFlows",
                     "ecs:CreateCluster",
                     "ecs:DeregisterContainerInstance",
@@ -43,8 +52,14 @@
                     "ecr:BatchCheckLayerAvailability",
                     "ecr:GetDownloadUrlForLayer",
                     "ecr:BatchGetImage",
+                    "iam:PassRole",
                     "logs:CreateLogStream",
-                    "logs:PutLogEvents"
+                    "logs:PutLogEvents",
+                    "elasticloadbalancing:Describe*",
+                    "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                    "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                    "ec2:Describe*",
+                    "ec2:AuthorizeSecurityGroupIngress"
                   ],
                   "Resource": [
                     "*"

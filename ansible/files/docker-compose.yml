@@ -26,16 +26,20 @@ webserver:
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
-        - REGION=$REGION
-        - EMR_KEY_NAME=$EMR_KEY_NAME
-        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
-        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
-        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
-        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
-        - SPARK_BUCKET=$SPARK_BUCKET
-        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
-        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+        - AIRFLOW_ENABLE_AUTH
+        - AWS_REGION
+        - EMR_KEY_NAME
+        - EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE
+        - SPARK_BUCKET
+        - AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     ports:
         - "8080:8080"
     links:
@@ -50,16 +54,17 @@ flower:
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
-        - REGION=$REGION
-        - EMR_KEY_NAME=$EMR_KEY_NAME
-        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
-        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
-        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
-        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
-        - SPARK_BUCKET=$SPARK_BUCKET
-        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
-        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+        - AIRFLOW_ENABLE_AUTH
+        - AWS_REGION
+        - EMR_KEY_NAME
+        - EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE
+        - SPARK_BUCKET
+        - AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
     ports:
         - "5555:5555"
     links:
@@ -72,16 +77,20 @@ scheduler:
     mem_limit: 2147483648
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
-        - REGION=$REGION
-        - EMR_KEY_NAME=$EMR_KEY_NAME
-        - EMR_RELEASE_LABEL=$EMR_RELEASE_LABEL
-        - EMR_FLOW_ROLE=$EMR_FLOW_ROLE
-        - EMR_SERVICE_ROLE=$EMR_SERVICE_ROLE
-        - EMR_INSTANCE_TYPE=$EMR_INSTANCE_TYPE
-        - SPARK_BUCKET=$SPARK_BUCKET
-        - AIRFLOW_BUCKET=$AIRFLOW_BUCKET
-        - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+        - AIRFLOW_ENABLE_AUTH
+        - AWS_REGION
+        - EMR_KEY_NAME
+        - EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE
+        - SPARK_BUCKET
+        - AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
@@ -95,6 +104,22 @@ worker:
         - AIRFLOW_HOME=/usr/local/airflow
     ports:
         - "8793:8793"
+    environment:
+        - AIRFLOW_HOME=/usr/local/airflow
+        - AIRFLOW_ENABLE_AUTH
+        - AWS_REGION
+        - EMR_KEY_NAME
+        - EMR_RELEASE_LABEL
+        - EMR_FLOW_ROLE
+        - EMR_SERVICE_ROLE
+        - EMR_INSTANCE_TYPE
+        - SPARK_BUCKET
+        - AIRFLOW_BUCKET
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq

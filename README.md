@@ -44,7 +44,7 @@ docker-machine create --d virtualbox --virtualbox-memory 4096 default
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 ```bash
 AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
-ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/test.yml'
+ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/local.yml'
 ```
 
 ### Remote Deployment

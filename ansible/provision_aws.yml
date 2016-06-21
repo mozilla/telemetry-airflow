@@ -1,7 +1,7 @@
 - name: provision ECS cluster
   hosts: localhost
   vars:
-    ecs_cluster_size: 1
+    ecs_cluster_size: 2  # need at least 2 to update a running service
 
   tasks:
     - name: create ECS cluster for telemetry
@@ -24,9 +24,9 @@
 
     - name: create security group for container instances
       ec2_group:
-        name: telemetry-ecs
+        name: "{{ ecs_sg_name }}"
         description: telemetry ECS
-        region: "{{region}}"
+        region: "{{ region }}"
         rules:
           - proto: tcp
             from_port: 22
@@ -54,7 +54,7 @@
         instance_type: "{{ ecs_instance_type }}"
         key_name: "{{ ecs_key_name }}"
         assign_public_ip: yes
-        group: telemetry-ecs
+        group: "{{ ecs_sg_name }}"
         instance_tags: { App: pipeline, Name: telemetry-ecs-instance, Type: telemetry-ecs-instance, Owner: rvitillo@mozilla.com }
         exact_count: "{{ ecs_cluster_size }}"
         count_tag: { Name: telemetry-ecs-instance }
