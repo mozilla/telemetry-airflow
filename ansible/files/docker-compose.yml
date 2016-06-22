@@ -94,7 +94,7 @@ scheduler:
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
-    command: scheduler
+    command: $COMMAND
 
 worker:
     image: vitillo/telemetry-airflow
