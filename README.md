@@ -38,14 +38,23 @@ docker logs -f files_scheduler_1
 
 Assuming you are on OS X, first create a docker machine with a sufficient amount of memory with e.g.:
 ```bash
-docker-machine create --d virtualbox --virtualbox-memory 4096 default
+docker-machine create -d virtualbox --virtualbox-memory 4096 default
 ```
 
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 ```bash
 AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
 ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/local.yml'
+echo "Airflow web console should now be running locally at http://$(docker-machine ip default):8080"
 ```
+
+If you get a message saying "Couldn't connect to Docker daemon - you might need to run `docker-machine start default`.", try the following:
+```bash
+docker-machine start default
+eval "$(docker-machine env default)"
+```
+
+You can now connect to your local Airflow web console with a URL like `http://192.168.99.100:8080` (see above for how to identify the exact IP address).
 
 ### Remote Deployment
 
@@ -58,3 +67,5 @@ Once the ECS cluster is up and running, Airflow can be (re)deployed with:
 ```bash
 ansible-playbook ansible/deploy_aws.yml -e '@ansible/envs/test.yml'
 ```
+
+If you get an error about `ecs-cli` missing, follow [these steps](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html) to install it.
