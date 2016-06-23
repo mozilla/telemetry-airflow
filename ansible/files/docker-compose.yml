@@ -65,6 +65,9 @@ flower:
         - AIRFLOW_BUCKET
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
+        - DB_URI
+        - DB_USER
+        - DB_PASSWORD
     ports:
         - "5555:5555"
     links:
@@ -86,6 +89,7 @@ scheduler:
         - EMR_INSTANCE_TYPE
         - SPARK_BUCKET
         - AIRFLOW_BUCKET
+        - COMMAND
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
         - DB_URI
@@ -94,7 +98,6 @@ scheduler:
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
-    command: $COMMAND
 
 worker:
     image: vitillo/telemetry-airflow
