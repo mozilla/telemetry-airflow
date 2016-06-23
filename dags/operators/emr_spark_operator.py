@@ -4,7 +4,8 @@ import requests
 import time
 
 from airflow.models import BaseOperator
-from airflow.utils import apply_defaults, AirflowException
+from airflow.utils.decorators import apply_defaults
+from airflow.exceptions import AirflowException
 from os import environ
 
 class EMRSparkOperator(BaseOperator):

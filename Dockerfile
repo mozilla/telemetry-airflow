@@ -3,12 +3,12 @@
 # BUILD: docker build --rm -t vitillo/telemetry-airflow
 # SOURCE: https://github.com/vitillo/telemetry-airflow
 
-FROM puckel/docker-airflow
+FROM puckel/docker-airflow:1.7.1.3
 MAINTAINER vitillo
 
 USER root
 RUN apt-get update -yqq && \
-    apt-get install -yqq python-pip && \
+    apt-get install -yqq python-pip python-mysqldb && \
     pip install boto3 && \
     pip install airflow[async] && \
     pip install airflow[password]
