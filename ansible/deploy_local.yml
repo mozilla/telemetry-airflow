@@ -1,5 +1,7 @@
 - name: deploy Airflow containers locally
   hosts: localhost
+  vars:
+    command: scheduler
 
   tasks:
     - name: launch Airflow containers
@@ -24,3 +26,4 @@
         DB_PASSWORD: "{{ db_password }}"
         AIRFLOW_BUCKET: "{{ airflow_bucket }}"
         AIRFLOW_ENABLE_AUTH: False
+        COMMAND: "{{ command }}"
