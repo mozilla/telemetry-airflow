@@ -11,22 +11,20 @@
     - name: copy EMR bootstrap script
       s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src=ansible/files/spark/airflow.sh mode=put
 
-    - ec2_group_facts:
-        region: "{{ region }}"
-        filters:
-          group-name: "{{ ecs_sg_name }}"
-      register: sg
-
     - name: create load balancer
       ec2_elb_lb:
         name: "{{ elb_name }}"
         region: "{{ region }}"
         state: present
-        security_group_ids:
-          - "{{ sg.sgs[0].group_id }}"
+        security_group_names: "{{ elb_sg_name }}"
         subnets:
           - "{{ ecs_vpc_subnet_id }}"
         listeners:
+          - protocol: https
+            load_balancer_port: 443
+            instance_protocol: http
+            instance_port: 8080
+            ssl_certificate_id: "{{ ssl_cert_id }}"
           - protocol: http
             load_balancer_port: 80
             instance_port: 8080

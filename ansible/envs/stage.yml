@@ -13,8 +13,12 @@ ecs_key_name: mozilla_vitillo
 ecs_vpc_id: vpc-4283d227
 ecs_vpc_subnet_id: subnet-125a7c77
 ecs_cluster_name: telemetry
-ecs_instance_type: c4.2xlarge 
+ecs_instance_type: c4.2xlarge
 ecs_role: arn:aws:iam::927034868273:role/telemetry-ecs-cloudformation-TelemetryECSRole-1UAYK6XNB6DG0
+
+elb_name: telemetry-ecs
+elb_sg_name: telemetry-workflow-elb
+ssl_cert_id: arn:aws:iam::927034868273:server-certificate/cloudfront/exp20180829_cf_star_telemetry_mozilla_org
 
 db_uri: telemetry-ecs-airflow.cppmil15uwvg.us-west-2.rds.amazonaws.com
 db_user: airflow
