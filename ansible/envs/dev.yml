@@ -1,4 +1,5 @@
 region: us-west-2
+airflow_bucket: telemetry-test-bucket
 spark_bucket: telemetry-spark-emr-2
 
 emr_key_name: mozilla_vitillo
@@ -15,9 +16,12 @@ ecs_cluster_name: telemetry
 ecs_instance_type: c4.2xlarge 
 ecs_role: arn:aws:iam::927034868273:role/telemetry-ecs-cloudformation-TelemetryECSRole-1UAYK6XNB6DG0
 
+elb_name: telemetry-airflow-test-lb
+elb_sg_name: telemetry-workflow-elb
+ssl_cert_id: arn:aws:iam::927034868273:server-certificate/exp20170718_wildcard.dev.mozaws.net
+
 db_uri: mysql
 db_user: airflow
 db_password: airflow
 
-airflow_bucket: telemetry-test-bucket
 airflow_enable_auth: false
