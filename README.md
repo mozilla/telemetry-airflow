@@ -57,14 +57,26 @@ You can now connect to your local Airflow web console with a URL like `http://19
 
 ### Remote Deployment
 
-In order to deploy Airflow to e.g. the `test` environment, an ECS cluster has to be created first with at least one container instance:
+In order to deploy Airflow to e.g. the `stage` environment, an ECS cluster has to be created first with at least one container instance:
 ```bash
-ansible-playbook ansible/provision_aws.yml -e '@ansible/envs/test.yml'
+ansible-playbook ansible/provision_aws.yml -e '@ansible/envs/stage.yml'
 ```
 
 Once the ECS cluster is up and running, Airflow can be (re)deployed with:
 ```bash
-ansible-playbook ansible/deploy_aws.yml -e '@ansible/envs/test.yml'
+ansible-playbook ansible/deploy_aws.yml -e '@ansible/envs/stage.yml'
 ```
 
+### Debugging
+
 If you get an error about `ecs-cli` missing, follow [these steps](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html) to install it.
+
+Some useful docker tricks for development and debugging:
+
+```bash
+# Stop all docker containers:
+docker stop $(docker ps -aq)
+
+# Remove any leftover docker volumes:
+docker volume rm $(docker volume ls -qf dangling=true)
+```

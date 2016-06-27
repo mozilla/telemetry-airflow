@@ -22,6 +22,28 @@
           application: "ecs"
       register: cloudformation
 
+    - name: create security group for load balancer
+      ec2_group:
+        name: "{{ elb_sg_name }}"
+        description: Telemetry Workflow ELB
+        region: "{{ region }}"
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            from_port: all
+            to_port: all
+            cidr_ip: 0.0.0.0/0
+        vpc_id: "{{ ecs_vpc_id }}"
+      register: elb_sg
+
     - name: create security group for container instances
       ec2_group:
         name: "{{ ecs_sg_name }}"
@@ -33,13 +55,9 @@
             to_port: 22
             cidr_ip: 0.0.0.0/0
           - proto: tcp
-            from_port: 80
-            to_port: 80
-            cidr_ip: 0.0.0.0/0
-          - proto: tcp
             from_port: 8080
             to_port: 8080
-            cidr_ip: 0.0.0.0/0
+            group_id: "{{ elb_sg.group_id }}"
         rules_egress:
           - proto: all
             from_port: all
