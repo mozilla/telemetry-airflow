@@ -25,3 +25,4 @@ db_user: airflow
 db_password: airflow
 
 airflow_enable_auth: false
+metadata_bucket: net-mozaws-prod-us-west-2-pipeline-metadata
