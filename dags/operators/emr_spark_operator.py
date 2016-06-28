@@ -122,6 +122,11 @@ class EMRSparkOperator(BaseOperator):
 
         self.job_flow_id = response["JobFlowId"]
         logging.info("Running Spark Job {} with JobFlow ID {}".format(self.job_name, self.job_flow_id))
+        logging.info("Logs will be available at: https://console.aws.amazon.com/s3/home?region={}#&bucket={}&prefix=logs/{}/{}/{}".format(EMRSparkOperator.region,
+                                                                                                                                          EMRSparkOperator.airflow_bucket,
+                                                                                                                                          self.owner,
+                                                                                                                                          self.job_name,
+                                                                                                                                          self.job_flow_id))
 
         while True:
             result = client.describe_cluster(ClusterId = self.job_flow_id)
