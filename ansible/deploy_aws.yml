@@ -36,6 +36,13 @@
           unhealthy_threshold: 2
           healthy_threshold: 2
 
+    - name: fetch SMTP credentials
+      s3: bucket={{metadata_bucket}} region={{region}} object=smtp_ses/credentials.json mode=getstr
+      register: smtp_credentials_json
+
+    - set_fact:
+      smtp_credentials: "{{ smtp_credentials_json.contents|from_json }}"
+
     - name: create task definition
       shell: "{{ item }}"
       with_items:
@@ -54,6 +61,9 @@
         DB_PASSWORD: "{{ db_password }}"
         AIRFLOW_BUCKET: "{{ airflow_bucket }}"
         AIRFLOW_ENABLE_AUTH: True
+        SMTP_HOST: "{{ smtp_credentials.host }}"
+        SMTP_USER: "{{ smtp_credentials.user }}"
+        SMTP_PASSWORD: "{{ smtp_credentials.password }}"
         COMMAND: scheduler  # https://github.com/aws/amazon-ecs-cli/issues/28
 
     # TODO: create a new module capable of updating the service with the new definition or ensure that the
