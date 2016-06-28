@@ -28,6 +28,10 @@ while [ $# -gt 0 ]; do
             shift
             args=$1
             ;;
+        --runner-arguments)
+            shift
+            runner_args=$1
+            ;;
         --data-bucket)
             shift
             data_bucket=$1
@@ -69,10 +73,7 @@ urldecode() {
 # Download file
 if [[ $uri == s3://* ]]; then
     aws s3 cp "$uri" .
-elif [[ $uri == http://* ]]; then
-    uri=$(urldecode $uri)
-    wget -N "$uri"
-elif [[ $uri == https://* ]]; then
+elif [[ $uri =~ ^https?.*$ ]]; then
     uri=$(urldecode $uri)
     wget -N "$uri"
 fi
@@ -82,12 +83,12 @@ job="${uri##*/}"
 cd output
 
 if [[ $uri == *.jar ]]; then
-    time env $environment spark-submit --master yarn-client "../$job" $args
+    time env $environment spark-submit $runner_args --master yarn-client "../$job" $args
 elif [[ $uri == *.ipynb ]]; then
-    time env $environment runipy "../$job" "$job" --pylab
+    time env $environment runipy $runner_args "../$job" "$job" --pylab
 else
-    echo "Job type not supported"
-    exit 1;
+    chmod +x "../$job"
+    time env $environment "../$job" $args
 fi
 
 rc=$?
