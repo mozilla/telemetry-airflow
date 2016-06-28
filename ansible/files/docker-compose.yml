@@ -40,6 +40,9 @@ webserver:
         - DB_URI
         - DB_USER
         - DB_PASSWORD
+        - SMTP_HOST
+        - SMTP_USER
+        - SMTP_PASSWORD
     ports:
         - "8080:8080"
     links:
@@ -68,6 +71,9 @@ flower:
         - DB_URI
         - DB_USER
         - DB_PASSWORD
+        - SMTP_HOST
+        - SMTP_USER
+        - SMTP_PASSWORD
     ports:
         - "5555:5555"
     links:
@@ -95,6 +101,9 @@ scheduler:
         - DB_URI
         - DB_USER
         - DB_PASSWORD
+        - SMTP_HOST
+        - SMTP_USER
+        - SMTP_PASSWORD
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
@@ -123,6 +132,9 @@ worker:
         - DB_URI
         - DB_USER
         - DB_PASSWORD
+        - SMTP_HOST
+        - SMTP_USER
+        - SMTP_PASSWORD
     links:
         - mysql:mysql
         - rabbitmq:rabbitmq
