@@ -23,13 +23,13 @@ while ! curl -sI -u $RABBITMQ_CREDS http://$RABBITMQ_HOST:15672/api/whoami |grep
   sleep 5
 done
 
-sed -i "s/{DB_URI}/${DB_URI}/" $AIRFLOW_HOME/airflow.cfg
-sed -i "s/{DB_USER}/${DB_USER}/" $AIRFLOW_HOME/airflow.cfg
-sed -i "s/{DB_PASSWORD}/${DB_PASSWORD}/" $AIRFLOW_HOME/airflow.cfg
-sed -i "s/{AIRFLOW_ENABLE_AUTH}/${AIRFLOW_ENABLE_AUTH}/" $AIRFLOW_HOME/airflow.cfg
-sed -i "s/{SMTP_HOST}/${SMTP_HOST}/" $AIRFLOW_HOME/airflow.cfg
-sed -i "s/{SMTP_USER}/${SMTP_USER}/" $AIRFLOW_HOME/airflow.cfg
-sed -i "s/{SMTP_PASSWORD}/${SMTP_PASSWORD}/" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{DB_URI}~${DB_URI}~" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{DB_USER}~${DB_USER}~" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{DB_PASSWORD}~${DB_PASSWORD}~" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{AIRFLOW_ENABLE_AUTH}~${AIRFLOW_ENABLE_AUTH}~" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{SMTP_HOST}~${SMTP_HOST}~" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{SMTP_USER}~${SMTP_USER}~" $AIRFLOW_HOME/airflow.cfg
+sed -i "s~{SMTP_PASSWORD}~${SMTP_PASSWORD}~" $AIRFLOW_HOME/airflow.cfg
 
 i=0
 while ! nc $MYSQL_HOST $MYSQL_PORT >/dev/null 2>&1 < /dev/null; do
