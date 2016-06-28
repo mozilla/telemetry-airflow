@@ -86,8 +86,8 @@ if [[ $uri == *.jar ]]; then
 elif [[ $uri == *.ipynb ]]; then
     time env $environment runipy "../$job" "$job" --pylab
 else
-    echo "Job type not supported"
-    exit 1;
+    chmod +x "../$job"
+    time env $environment "../$job" $args
 fi
 
 rc=$?
