@@ -73,10 +73,7 @@ urldecode() {
 # Download file
 if [[ $uri == s3://* ]]; then
     aws s3 cp "$uri" .
-elif [[ $uri == http://* ]]; then
-    uri=$(urldecode $uri)
-    wget -N "$uri"
-elif [[ $uri == https://* ]]; then
+elif [[ $uri =~ ^https?.*$ ]]; then
     uri=$(urldecode $uri)
     wget -N "$uri"
 fi
