@@ -45,4 +45,5 @@ if [ "$1" = "webserver" ]; then
   $CMD upgradedb
 fi
 
+sleep 5
 eval $CMD "${@:-$COMMAND}"
