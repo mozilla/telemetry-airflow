@@ -20,5 +20,12 @@ t0 = EMRSparkOperator(task_id = "spark",
                       job_name = "Spark Example Job",
                       instance_count = 1,
                       env = {"date": "{{ ds_nodash }}"},
-                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/first/examples/spark/example_date.ipynb",
+                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/master/examples/spark/example_date.ipynb",
+                      dag = dag)
+
+t1 = EMRSparkOperator(task_id = "bash",
+                      job_name = "Bash Example Job",
+                      instance_count = 1,
+                      env = {"date": "{{ ds_nodash }}"},
+                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/master/examples/spark/example_date.sh",
                       dag = dag)
