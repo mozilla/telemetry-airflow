@@ -41,7 +41,7 @@
       register: smtp_credentials_json
 
     - set_fact:
-      smtp_credentials: "{{ smtp_credentials_json.contents|from_json }}"
+        smtp_credentials: "{{ smtp_credentials_json.contents|from_json }}"
 
     - name: create task definition
       shell: "{{ item }}"
