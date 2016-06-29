@@ -19,5 +19,5 @@ t0 = EMRSparkOperator(task_id = "telemetry_aggregate_view",
                       job_name = "Telemetry Aggregate View",
                       instance_count = 6,
                       env = {"date": "{{ ds_nodash }}"},
-                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/master/jobs/telemetry_aggregator.py",
+                      uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_aggregator.py",
                       dag = dag)

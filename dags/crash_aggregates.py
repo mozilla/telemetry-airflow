@@ -19,5 +19,5 @@ t0 = EMRSparkOperator(task_id = "crash_aggregate_view",
                       job_name = "Crash Aggregate View",
                       instance_count = 9,
                       env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.airflow_bucket }}"},
-                      uri = "https://raw.githubusercontent.com/vitillo/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
+                      uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
                       dag = dag)
