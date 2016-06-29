@@ -6,7 +6,7 @@ default_args = {
     'owner': 'mdoglio@mozilla.com',
     'depends_on_past': True,
     'start_date': datetime(2016, 6, 27),
-    'email': ['mdoglio@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'mdoglio@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 3,
