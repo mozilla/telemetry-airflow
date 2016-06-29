@@ -22,7 +22,7 @@ rabbitmq:
         - RABBITMQ_DEFAULT_VHOST=airflow
 
 webserver:
-    image: vitillo/telemetry-airflow
+    image: mozdata/telemetry-airflow
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
@@ -53,7 +53,7 @@ webserver:
     command: webserver
 
 flower:
-    image: vitillo/telemetry-airflow
+    image: mozdata/telemetry-airflow
     restart: always
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
@@ -81,7 +81,7 @@ flower:
     command: flower
 
 scheduler:
-    image: vitillo/telemetry-airflow
+    image: mozdata/telemetry-airflow
     restart: always
     mem_limit: 2147483648
     environment:
@@ -109,7 +109,7 @@ scheduler:
         - rabbitmq:rabbitmq
 
 worker:
-    image: vitillo/telemetry-airflow
+    image: mozdata/telemetry-airflow
     restart: always
     mem_limit: 2147483648
     environment:

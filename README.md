@@ -10,12 +10,12 @@ Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The 
 An Airflow container can be built with 
 
 ```bash
-docker build -t vitillo/telemetry-airflow .
+docker build -t mozdata/telemetry-airflow .
 ```
 
 and pushed to Docker hub with
 ```bash
-docker push vitillo/telemetry-airflow
+docker push mozdata/telemetry-airflow
 ```
 
 ### Testing
