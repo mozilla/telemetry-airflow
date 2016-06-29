@@ -75,7 +75,7 @@ class EMRSparkOperator(BaseOperator):
 
     def execute(self, context):
         self.steps = Steps=[{
-            'Name': 'RunNotebookStep',
+            'Name': 'RunJobStep',
             'ActionOnFailure': 'TERMINATE_JOB_FLOW',
             'HadoopJarStep': {
                 'Jar': 's3://{}.elasticmapreduce/libs/script-runner/script-runner.jar'.format(EMRSparkOperator.region),

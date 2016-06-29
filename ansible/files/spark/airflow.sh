@@ -61,8 +61,8 @@ s3_base="s3://$data_bucket/data/$user/$job_name"
 # Wait for Parquet datasets to be loaded
 while pgrep -f hive_config.sh | grep -v grep > /dev/null; do sleep 1; done
 
-mkdir -p $HOME/analyses && cd $HOME/analyses
-mkdir -p logs
+wd=/mnt/analyses
+mkdir -p $wd && cd $wd
 mkdir -p output
 
 urldecode() {
@@ -80,15 +80,15 @@ fi
 
 # Run job
 job="${uri##*/}"
-cd output
+cd $wd
 
 if [[ $uri == *.jar ]]; then
-    time env $environment spark-submit $runner_args --master yarn-client "../$job" $args
+    time env $environment spark-submit $runner_args --master yarn-client "./$job" $args
 elif [[ $uri == *.ipynb ]]; then
-    time env $environment runipy $runner_args "../$job" "$job" --pylab
+    time env $environment runipy $runner_args "./$job" "./output/$job" --pylab
 else
-    chmod +x "../$job"
-    time env $environment "../$job" $args
+    chmod +x "./$job"
+    time env $environment "./$job" $args
 fi
 
 rc=$?
@@ -97,6 +97,7 @@ if [[ $rc != 0 ]]; then
 fi
 
 # Upload output files
+cd $wd/output
 find . -iname "*" -type f | while read f
 do
     # Remove the leading "./"
