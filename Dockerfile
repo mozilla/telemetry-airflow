@@ -1,7 +1,7 @@
 # AUTHOR: Roberto Vitillo
 # DESCRIPTION: Mozilla's Airflow container
-# BUILD: docker build --rm -t vitillo/telemetry-airflow
-# SOURCE: https://github.com/vitillo/telemetry-airflow
+# BUILD: docker build --rm -t mozdata/telemetry-airflow
+# SOURCE: https://github.com/mozilla/telemetry-airflow
 
 FROM puckel/docker-airflow:1.7.1.3
 MAINTAINER vitillo
