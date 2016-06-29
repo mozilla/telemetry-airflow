@@ -25,3 +25,5 @@ ssl_cert_id: arn:aws:iam::927034868273:server-certificate/cloudfront/exp20180829
 db_uri: telemetry-ecs-airflow.cppmil15uwvg.us-west-2.rds.amazonaws.com
 db_user: airflow
 db_password: telemetry-airflow  # DB is not accessible from the outside world
+
+metadata_bucket: net-mozaws-prod-us-west-2-pipeline-metadata

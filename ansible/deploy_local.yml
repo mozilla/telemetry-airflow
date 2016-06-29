@@ -25,4 +25,7 @@
         DB_PASSWORD: "{{ db_password }}"
         AIRFLOW_BUCKET: "{{ airflow_bucket }}"
         AIRFLOW_ENABLE_AUTH: False
+        SMTP_HOST: "localhost"
+        SMTP_USER: "dummy"
+        SMTP_PASSWORD: "dummy_pass"
         COMMAND: "{{ command }}"
