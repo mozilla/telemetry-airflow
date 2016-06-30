@@ -2,14 +2,16 @@
   hosts: localhost
   vars:
     command: scheduler
-    compose_conf: ansible/files/docker-compose.yml
+    compose_conf:
+      - ansible/files/docker-compose.yml
+      - ansible/files/docker-compose-local.yml
 
   tasks:
     - name: launch Airflow containers
       shell: "{{ item }}"
       with_items:
-        - docker-compose -f {{ compose_conf }} down -v --remove-orphans
-        - docker-compose -f {{ compose_conf }} up -d
+        - docker-compose -f {{ compose_conf[0] }} -f {{ compose_conf[1] }} down -v --remove-orphans
+        - docker-compose -f {{ compose_conf[0] }} -f {{ compose_conf[1] }} up -d
       environment:
         AWS_REGION: "{{ region }}"
         EMR_KEY_NAME: "{{ emr_key_name }}"
