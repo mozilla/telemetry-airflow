@@ -47,6 +47,8 @@ ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/dev.yml'
 echo "Airflow web console should now be running locally at http://$(docker-machine ip default):8080"
 ```
 
+Note that this will start running all the DAGs with a start date in the past! To avoid that do not pass the AWS credentials.
+
 If you get a message saying "Couldn't connect to Docker daemon - you might need to run `docker-machine start default`.", try the following:
 ```bash
 docker-machine start default
