@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from airflow.operators import BashOperator
 
 default_args = {
     'owner': 'mreid@mozilla.com',
@@ -17,7 +18,7 @@ dag = DAG('main_summary', default_args=default_args, schedule_interval='@daily')
 
 # Make sure all the data for the given day has arrived before running.
 t0 = BashOperator(task_id="delayed_start",
-                  bash_command="sleep 1800"
+                  bash_command="sleep 1800",
                   dag=dag)
 
 t1 = EMRSparkOperator(task_id="main_summary",
