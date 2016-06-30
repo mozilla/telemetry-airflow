@@ -1,15 +1,3 @@
-mysql:
-    image: mysql
-    restart: always
-    mem_limit: 2147483648
-    ports:
-        - "3306:3306"
-    environment:
-        - MYSQL_RANDOM_ROOT_PASSWORD=true
-        - MYSQL_USER=airflow
-        - MYSQL_PASSWORD=airflow
-        - MYSQL_DATABASE=airflow
-
 rabbitmq:
     image: rabbitmq:3-management
     restart: always
@@ -46,7 +34,6 @@ webserver:
     ports:
         - "8080:8080"
     links:
-        - mysql:mysql
         - rabbitmq:rabbitmq
         - worker:worker
         - scheduler:scheduler
@@ -105,7 +92,6 @@ scheduler:
         - SMTP_USER
         - SMTP_PASSWORD
     links:
-        - mysql:mysql
         - rabbitmq:rabbitmq
 
 worker:
@@ -136,6 +122,5 @@ worker:
         - SMTP_USER
         - SMTP_PASSWORD
     links:
-        - mysql:mysql
         - rabbitmq:rabbitmq
     command: worker
