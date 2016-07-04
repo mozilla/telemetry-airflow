@@ -20,6 +20,8 @@ docker push mozdata/telemetry-airflow
 
 ### Testing
 
+When developing and testing a new DAG, it should be configured to write data to the `telemetry-test-bucket` bucket, and **not** the `airflow_bucket` specified in the ansible environment. Only when the new code and data have been validated should it begin writing to the `airflow_bucket`.
+
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `dev` environment with:
 ```bash
 AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \

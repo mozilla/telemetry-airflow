@@ -1,5 +1,5 @@
 region: us-west-2
-airflow_bucket: telemetry-test-bucket
+airflow_bucket: telemetry-parquet
 spark_bucket: telemetry-spark-emr-2
 
 emr_key_name: mozilla_vitillo
