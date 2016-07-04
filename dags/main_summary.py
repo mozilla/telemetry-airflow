@@ -23,7 +23,7 @@ t0 = BashOperator(task_id="delayed_start",
 
 t1 = EMRSparkOperator(task_id="main_summary",
                       job_name="Main Summary View",
-                      execution_timeout=timedelta(hours=6),
+                      execution_timeout=timedelta(hours=10),
                       instance_count=10,
                       env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.airflow_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
