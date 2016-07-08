@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -z $bucket || -z $date ]]; then
+if [[ -z "$bucket" || -z "$date" ]]; then
    echo "Missing arguments!" 1>&2
    exit 1
 fi
