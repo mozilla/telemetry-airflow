@@ -19,6 +19,19 @@ t0 = EMRSparkOperator(task_id="longitudinal",
                       job_name="Longitudinal View",
                       execution_timeout=timedelta(hours=10),
                       instance_count=30,
-                      env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.airflow_bucket }}"},
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.airflow_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/longitudinal_view.sh",
                       dag=dag)
+
+t1 = EMRSparkOperator(task_id="update_orphaning",
+                      job_name="Update Orphaning View",
+                      execution_timeout=timedelta(hours=10),
+                      instance_count=1,
+                      owner="spohl@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "spohl@mozilla.com",
+                             "mhowell@mozilla.com"],
+                      env={"date": "{{ ds_nodash }}"},
+                      uri="https://raw.githubusercontent.com/mozilla-services/data-pipeline/master/reports/update-orphaning/Update%20orphaning%20analysis%20using%20longitudinal%20dataset.ipynb",
+                      dag=dag)
+
+t1.set_upstream(t0)
