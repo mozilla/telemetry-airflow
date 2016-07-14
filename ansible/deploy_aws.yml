@@ -64,7 +64,7 @@
         SMTP_HOST: "{{ smtp_credentials.host }}"
         SMTP_USER: "{{ smtp_credentials.user }}"
         SMTP_PASSWORD: "{{ smtp_credentials.password }}"
-        COMMAND: scheduler  # https://github.com/aws/amazon-ecs-cli/issues/28
+        COMMAND: scheduler -n 5 # https://github.com/aws/amazon-ecs-cli/issues/28
 
     # TODO: create a new module capable of updating the service with the new definition or ensure that the
     # revision of a new task definition is incremental (for some reason it's not always the case...)
