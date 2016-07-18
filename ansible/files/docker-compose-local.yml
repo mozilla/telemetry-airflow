@@ -21,3 +21,7 @@ scheduler:
 worker:
     links:
         - mysql:mysql
+
+flower:
+    links:
+        - mysql:mysql
