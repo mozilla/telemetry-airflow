@@ -43,4 +43,18 @@ if [ "$1" = "webserver" ]; then
 fi
 
 sleep 5
-eval $CMD "${@:-$COMMAND}"
+
+case "$COMMAND" in
+  scheduler)
+    # Work around scheduler hangs, see bug 1286825.
+    while echo "Running"; do
+      $CMD scheduler -n 5
+      echo "Scheduler crashed with exit code $?.  Respawning.." >&2
+      date >> /tmp/airflow_scheduler_errrors.txt
+      sleep 1
+    done
+    ;;
+  *)
+    eval $CMD "${@:-$COMMAND}"
+    ;;
+esac
