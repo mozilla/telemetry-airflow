@@ -1,7 +1,7 @@
 - name: deploy Airflow containers locally
   hosts: localhost
   vars:
-    command: scheduler
+    command: scheduler -n 5 # See bug 1286825
     compose_conf:
       - ansible/files/docker-compose.yml
       - ansible/files/docker-compose-local.yml
