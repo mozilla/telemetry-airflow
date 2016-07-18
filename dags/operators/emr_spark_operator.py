@@ -39,6 +39,9 @@ class EMRSparkOperator(BaseOperator):
     instance_type = environ["EMR_INSTANCE_TYPE"]
     spark_bucket = environ["SPARK_BUCKET"]
     airflow_bucket = environ["AIRFLOW_BUCKET"]
+    private_output_bucket = environ["PRIVATE_OUTPUT_BUCKET"]
+    public_output_bucket = environ["PUBLIC_OUTPUT_BUCKET"]
+
 
     def __del__(self):
         self.on_kill()
@@ -62,7 +65,7 @@ class EMRSparkOperator(BaseOperator):
 
 
     @apply_defaults
-    def __init__(self, job_name, owner, uri, instance_count, env={}, arguments="", *args, **kwargs):
+    def __init__(self, job_name, owner, uri, instance_count, output_visibility="private", env={}, arguments="", *args, **kwargs):
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
         self.job_name = job_name
         self.owner = owner
@@ -71,6 +74,13 @@ class EMRSparkOperator(BaseOperator):
         self.environment = " ".join(["{}={}".format(k, v) for k, v in env.iteritems()])
         self.job_flow_id = None
         self.instance_count = instance_count
+
+        if output_visibility == "public":
+            self.data_bucket = EMRSparkOperator.public_output_bucket
+        elif output_visibility == "private":
+            self.data_bucket = EMRSparkOperator.private_output_bucket
+        else:
+            raise AirflowException("{} visibility is not supported!".format(output_visibility))
 
 
     def execute(self, context):
@@ -85,7 +95,7 @@ class EMRSparkOperator(BaseOperator):
                     "--user", self.owner,
                     "--uri", self.uri,
                     "--arguments", '"{}"'.format(self.arguments),
-                    "--data-bucket", EMRSparkOperator.airflow_bucket,
+                    "--data-bucket", self.data_bucket,
                     "--environment", self.environment
                 ]
             }
