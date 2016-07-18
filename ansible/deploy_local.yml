@@ -27,6 +27,8 @@
         DB_PASSWORD: "{{ db_password }}"
         AIRFLOW_BUCKET: "{{ airflow_bucket }}"
         AIRFLOW_ENABLE_AUTH: False
+        PRIVATE_OUTPUT_BUCKET: "{{ private_output_bucket }}"
+        PUBLIC_OUTPUT_BUCKET: "{{ public_output_bucket }}"
         SMTP_HOST: "localhost"
         SMTP_USER: "dummy"
         SMTP_PASSWORD: "dummy_pass"

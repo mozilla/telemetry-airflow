@@ -1,6 +1,8 @@
 region: us-west-2
-airflow_bucket: telemetry-test-bucket
 spark_bucket: telemetry-spark-emr-2
+airflow_bucket: telemetry-test-bucket
+public_output_bucket: telemetry-test-bucket
+private_output_bucket: telemetry-test-bucket
 
 emr_key_name: mozilla_vitillo
 emr_release_label: emr-4.3.0

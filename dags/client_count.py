@@ -19,6 +19,6 @@ t0 = EMRSparkOperator(task_id="client_count_view",
                       job_name="Client Count View",
                       execution_timeout=timedelta(hours=10),
                       instance_count=20,
-                      env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.airflow_bucket }}"},
+                      env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/client_count_view.sh",
                       dag=dag)
