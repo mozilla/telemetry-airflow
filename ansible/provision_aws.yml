@@ -100,3 +100,4 @@
           - Name: telemetry-ecs-instance
           - Type: telemetry-ecs-instance
           - Owner: telemetry@mozilla.com
+          - REAPER_SPARE_ME: true
