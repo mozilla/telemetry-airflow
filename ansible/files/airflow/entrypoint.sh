@@ -43,4 +43,16 @@ if [ "$1" = "webserver" ]; then
 fi
 
 sleep 5
-eval $CMD "${@:-$COMMAND}"
+
+if [[ "$COMMAND" == "scheduler"* ]]; then
+  # Work around scheduler hangs, see bug 1286825.
+  # Run the scheduler inside a retry loop.
+  while echo "Running"; do
+    eval $CMD "${@:-$COMMAND}"
+    echo "Scheduler exited with code $?.  Respawning.." >&2
+    date >> /tmp/airflow_scheduler_errors.txt
+    sleep 1
+  done
+else
+  eval $CMD "${@:-$COMMAND}"
+fi
