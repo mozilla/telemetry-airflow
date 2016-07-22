@@ -82,3 +82,31 @@ docker stop $(docker ps -aq)
 # Remove any leftover docker volumes:
 docker volume rm $(docker volume ls -qf dangling=true)
 ```
+
+### Triggering a task to re-run within the Airflow UI
+
+- Check if the task / run you want to re-run is visible in the DAG's Tree View UI
+  - For example, [the `main_summary` DAG tree view](http://workflow.telemetry.mozilla.org/admin/airflow/tree?num_runs=25&root=&dag_id=main_summary).
+  - Hover over the little squares to find the scheduled dag run you're looking for.
+- If the dag run is not showing in the Dag Tree View UI (maybe deleted)
+  - Browse -> Dag Runs
+  - Create (you can look at another dag run of the same dag for example values too)
+    - Dag Id: the name of the dag, for example `main_summary` or `crash_aggregates`
+    - Execution Date: The date the dag should have run, for example `2016-07-14 00:00:00`
+    - Start Date: Some date between the execution date and "now", for example `2016-07-20 00:00:05`
+    - End Date: Leave it blank
+    - State: success
+    - Run Id: `scheduled__2016-07-14T00:00:00`
+    - External Trigger: unchecked
+  - Click Save
+  - Click on the Graph view for the dag in question. From the main DAGs view, click the name of the DAG
+  - Select the "Run Id" you just entered from the drop-down list
+  - Click "Go"
+  - Click each element of the DAG and "Mark Success"
+  - The tasks should now show in the Tree View UI
+- If the dag run is showing in the DAG's Tree View UI
+  - Click on the small square for the task you want to re-run
+  - **Uncheck** the "Downstream" toggle
+  - Click the "Clear" button
+  - Confirm that you want to clear it
+  - The task should be scheduled to run again straight away.
