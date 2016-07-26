@@ -6,7 +6,7 @@ from airflow.operators import BashOperator
 default_args = {
     'owner': 'mreid@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 6, 27),
+    'start_date': datetime(2016, 6, 25),
     'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -14,7 +14,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('main_summary', default_args=default_args, schedule_interval='@daily')
+dag = DAG('main_summary', default_args=default_args, schedule_interval='@daily', max_active_runs=10)
 
 # Make sure all the data for the given day has arrived before running.
 t0 = BashOperator(task_id="delayed_start",
@@ -25,7 +25,7 @@ t1 = EMRSparkOperator(task_id="main_summary",
                       job_name="Main Summary View",
                       execution_timeout=timedelta(hours=10),
                       instance_count=10,
-                      env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
                       dag=dag)
 
