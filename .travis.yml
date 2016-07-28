@@ -1,0 +1,24 @@
+sudo: false
+language: python
+cache: pip
+python:
+  - "2.7"
+env:
+  global:
+    - AIRFLOW_HOME=~/airflow
+    - AWS_REGION=''
+    - EMR_KEY_NAME=''
+    - EMR_RELEASE_LABEL=''
+    - EMR_FLOW_ROLE=''
+    - EMR_SERVICE_ROLE=''
+    - EMR_INSTANCE_TYPE=''
+    - SPARK_BUCKET=''
+    - AIRFLOW_BUCKET=''
+    - PRIVATE_OUTPUT_BUCKET=''
+    - PUBLIC_OUTPUT_BUCKET=''
+install:
+  - pip install airflow boto3
+script:
+  - export PYTHONPATH=.:./dags:$PYTHONPATH
+  - echo $PYTHONPATH
+  - airflow list_dags -sd=./dags | grep -C 10 'ERROR' &&  exit 1
