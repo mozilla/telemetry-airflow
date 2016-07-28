@@ -1,0 +1,14 @@
+sudo: false
+language: python
+cache: pip
+python:
+  - "2.7"
+env:
+  global:
+    - AIRFLOW_HOME=~/airflow
+install:
+  - pip install "airflow"
+before_script:
+  - airflow initdb
+script:
+  - airflow list_dags
