@@ -35,4 +35,16 @@ t1 = EMRSparkOperator(task_id="update_orphaning",
                       output_visibility="public",
                       dag=dag)
 
+t2 = EMRSparkOperator(task_id="addon_recommender",
+                      job_name="Train the Addon Recommender",
+                      execution_timeout=timedelta(hours=10),
+                      instance_count=20,
+                      owner="aplacitelli@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "rvitillo@mozilla.com",
+                             "aplacitelli@mozilla.com"],
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
+                      dag=dag)
+
 t1.set_upstream(t0)
+t2.set_upstream(t0)
