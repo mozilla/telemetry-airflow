@@ -35,4 +35,16 @@ t1 = EMRSparkOperator(task_id="update_orphaning",
                       output_visibility="public",
                       dag=dag)
 
+t2 = EMRSparkOperator(task_id="game_hw_survey",
+                      job_name="Game Hardware Survey",
+                      execution_timeout=timedelta(hours=10),
+                      instance_count=15,
+                      owner="aplacitelli@mozilla.com",
+                      depends_on_past=True,
+                      email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
+                      uri="https://github.com/mozilla/firefox-hardware-survey/raw/master/report/summarize_json.ipynb",
+                      output_visibility="public",
+                      dag=dag)
+
 t1.set_upstream(t0)
+t2.set_upstream(t0)
