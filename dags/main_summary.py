@@ -6,7 +6,7 @@ from airflow.operators import BashOperator
 default_args = {
     'owner': 'mreid@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 6, 25),
+    'start_date': datetime(2015, 11, 3),
     'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
