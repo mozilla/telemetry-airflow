@@ -110,3 +110,10 @@ docker volume rm $(docker volume ls -qf dangling=true)
   - Click the "Clear" button
   - Confirm that you want to clear it
   - The task should be scheduled to run again straight away.
+
+### Triggering backfill tasks using the CLI
+
+- SSH in to the ECS container instance
+- List docker containers using `docker ps`
+- Log in to one of the docker containers using `docker exec -it <container_id> bash`. The webserver instance is a good choice.
+- Run the desired backfill command, something like `$ airflow backfill main_summary -s 2016-06-20 -e 2016-06-26`
