@@ -17,7 +17,6 @@ webserver:
         - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
-        - EMR_RELEASE_LABEL
         - EMR_FLOW_ROLE
         - EMR_SERVICE_ROLE
         - EMR_INSTANCE_TYPE
@@ -49,7 +48,6 @@ flower:
         - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
-        - EMR_RELEASE_LABEL
         - EMR_FLOW_ROLE
         - EMR_SERVICE_ROLE
         - EMR_INSTANCE_TYPE
@@ -80,7 +78,6 @@ scheduler:
         - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
-        - EMR_RELEASE_LABEL
         - EMR_FLOW_ROLE
         - EMR_SERVICE_ROLE
         - EMR_INSTANCE_TYPE
@@ -113,7 +110,6 @@ worker:
         - AIRFLOW_ENABLE_AUTH
         - AWS_REGION
         - EMR_KEY_NAME
-        - EMR_RELEASE_LABEL
         - EMR_FLOW_ROLE
         - EMR_SERVICE_ROLE
         - EMR_INSTANCE_TYPE
