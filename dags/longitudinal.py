@@ -18,9 +18,10 @@ dag = DAG('longitudinal', default_args=default_args, schedule_interval='@weekly'
 t0 = EMRSparkOperator(task_id="longitudinal",
                       job_name="Longitudinal View",
                       execution_timeout=timedelta(hours=10),
+                      release_label="emr-5.0.0",
                       instance_count=30,
                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/longitudinal_view.sh",
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/spark2/jobs/longitudinal_view.sh",
                       dag=dag)
 
 t1 = EMRSparkOperator(task_id="update_orphaning",
