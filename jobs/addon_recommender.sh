@@ -5,7 +5,7 @@ if [[ -z "$privateBucket" || -z "$publicBucket" || -z "$date" ]]; then
     exit 1
 fi
 
-git clone https://github.com/mozilla/telemetry-batch-view.git
+git clone -b spark1.6 https://github.com/mozilla/telemetry-batch-view.git
 cd telemetry-batch-view
 sbt assembly
 mkdir ml_output
