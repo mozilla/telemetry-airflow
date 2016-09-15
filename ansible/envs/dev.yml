@@ -5,7 +5,6 @@ public_output_bucket: telemetry-test-bucket
 private_output_bucket: telemetry-test-bucket
 
 emr_key_name: mozilla_vitillo
-emr_release_label: emr-4.5.0
 emr_flow_role: telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3
 emr_service_role: EMR_DefaultRole
 emr_instance_type: c3.4xlarge

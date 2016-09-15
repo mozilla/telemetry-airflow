@@ -33,7 +33,6 @@ class EMRSparkOperator(BaseOperator):
 
     region = environ["AWS_REGION"]
     key_name = environ["EMR_KEY_NAME"]
-    release_label = environ["EMR_RELEASE_LABEL"]
     flow_role = environ["EMR_FLOW_ROLE"]
     service_role = environ["EMR_SERVICE_ROLE"]
     instance_type = environ["EMR_INSTANCE_TYPE"]
@@ -65,11 +64,12 @@ class EMRSparkOperator(BaseOperator):
 
 
     @apply_defaults
-    def __init__(self, job_name, owner, uri, instance_count, output_visibility="private", env={}, arguments="", *args, **kwargs):
+    def __init__(self, job_name, owner, uri, instance_count, release_label="emr-4.5.0", output_visibility="private", env={}, arguments="", *args, **kwargs):
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
         self.job_name = job_name
         self.owner = owner
         self.uri = uri
+        self.release_label = release_label
         self.arguments = arguments
         self.environment = " ".join(["{}={}".format(k, v) for k, v in env.iteritems()])
         self.job_flow_id = None
@@ -104,7 +104,7 @@ class EMRSparkOperator(BaseOperator):
         client = boto3.client('emr', region_name=EMRSparkOperator.region)
         response = client.run_job_flow(
             Name = self.job_name,
-            ReleaseLabel = EMRSparkOperator.release_label,
+            ReleaseLabel = self.release_label,
             JobFlowRole = EMRSparkOperator.flow_role,
             ServiceRole = EMRSparkOperator.service_role,
             Applications = [{'Name': 'Spark'}, {'Name': 'Hive'}],
