@@ -17,6 +17,7 @@ dag = DAG('crash_aggregates', default_args=default_args, schedule_interval='@dai
 
 t0 = EMRSparkOperator(task_id = "crash_aggregate_view",
                       job_name = "Crash Aggregate View",
+                      release_label="emr-5.0.0",
                       instance_count = 9,
                       env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
