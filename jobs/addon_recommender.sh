@@ -5,13 +5,14 @@ if [[ -z "$privateBucket" || -z "$publicBucket" || -z "$date" ]]; then
     exit 1
 fi
 
-git clone -b spark1.6 https://github.com/mozilla/telemetry-batch-view.git
+git clone https://github.com/mozilla/telemetry-batch-view.git
 cd telemetry-batch-view
 sbt assembly
 mkdir ml_output
-spark-submit --master yarn-client \
+spark-submit --master yarn \
+             --deploy-mode client \
              --class com.mozilla.telemetry.ml.AddonRecommender \
-             target/scala-2.10/telemetry-batch-view-1.1.jar \
+             target/scala-2.11/telemetry-batch-view-1.1.jar \
              train \
              --output ml_output \
              --privateBucket $privateBucket \
