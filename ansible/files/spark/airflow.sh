@@ -81,20 +81,26 @@ fi
 # Run job
 job="${uri##*/}"
 cd $wd
+NOTEBOOK_EXIT_CODE=0
 
 if [[ $uri == *.jar ]]; then
     time env $environment spark-submit $runner_args --master yarn-client "./$job" $args
 elif [[ $uri == *.ipynb ]]; then
-    time env $environment runipy $runner_args "./$job" "./output/$job" --pylab
+    time env $environment \
+    PYSPARK_DRIVER_PYTHON=jupyter \
+    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to notebook --log-level=10 --execute ./${job} --allow-errors --output ./output/${job}" \
+    pyspark
+    NOTEBOOK_EXIT_CODE=$?
+    if [ $NOTEBOOK_EXIT_CODE != 0 ] || [ "`grep  '\"output_type\": \"error\"' ./output/${job}`" ] ;then
+        PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to markdown --stdout ./output/${job}" pyspark
+        NOTEBOOK_EXIT_CODE = 1
+    fi
 else
     chmod +x "./$job"
     time env $environment "./$job" $args
 fi
 
 rc=$?
-if [[ $rc != 0 ]]; then
-    exit $rc;
-fi
 
 # Upload output files
 cd $wd/output
@@ -112,3 +118,9 @@ do
 
     eval $upload_cmd
 done
+
+if [[ $rc != 0 ]]; then
+    exit $rc;
+elif [[ $NOTEBOOK_EXIT_CODE != 0 ]]; then
+    exit $NOTEBOOK_EXIT_CODE;
+fi
