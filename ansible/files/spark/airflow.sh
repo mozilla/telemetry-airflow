@@ -81,19 +81,26 @@ fi
 # Run job
 job="${uri##*/}"
 cd $wd
-
 if [[ $uri == *.jar ]]; then
     time env $environment spark-submit $runner_args --master yarn-client "./$job" $args
+    rc=$?
 elif [[ $uri == *.ipynb ]]; then
-    time env $environment runipy $runner_args "./$job" "./output/$job" --pylab
+    time env $environment \
+    PYSPARK_DRIVER_PYTHON=jupyter \
+    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to notebook --log-level=10 --execute ./${job} --allow-errors --output ./output/${job}" \
+    pyspark
+    rc=$?
+    # When nbconvert is called with --allow-errors there's no way to detect if a cell raised an exception.
+    # Grepping the output notebook looking for a 'error' output type does the trick.
+    if [ $rc != 0 ] || [ "`grep  '\"output_type\": \"error\"' ./output/${job}`" ] ;then
+        # If an error is detected, print out the notebook in a human readable (markdown) format.
+        PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to markdown --stdout ./output/${job}" pyspark
+        rc=1
+    fi
 else
     chmod +x "./$job"
     time env $environment "./$job" $args
-fi
-
-rc=$?
-if [[ $rc != 0 ]]; then
-    exit $rc;
+    rc=$?
 fi
 
 # Upload output files
@@ -112,3 +119,7 @@ do
 
     eval $upload_cmd
 done
+
+if [[ $rc != 0 ]]; then
+    exit $rc;
+fi
