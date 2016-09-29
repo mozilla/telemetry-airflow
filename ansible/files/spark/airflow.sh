@@ -97,6 +97,11 @@ elif [[ $uri == *.ipynb ]]; then
         PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to markdown --stdout ./output/${job}" pyspark
         rc=1
     fi
+elif [[ $uri == *.py ]]; then
+    time env $environment \
+    PYSPARK_PYTHON=/home/hadoop/anaconda2/bin/python spark-submit \
+    $runner_args --master yarn-client "./$job" $args
+    rc=$?
 else
     chmod +x "./$job"
     time env $environment "./$job" $args
