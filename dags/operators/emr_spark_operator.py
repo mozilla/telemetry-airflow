@@ -7,6 +7,7 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from airflow.exceptions import AirflowException
 from os import environ
+from retrying import retry
 
 class EMRSparkOperator(BaseOperator):
     """
@@ -139,7 +140,12 @@ class EMRSparkOperator(BaseOperator):
                                                                                                                                           self.job_flow_id))
 
         while True:
-            result = client.describe_cluster(ClusterId = self.job_flow_id)
+            # wait 2^i seconds between each retry up to 5m, stop after 30m
+            @retry(wait_exponential_multiplier=1000, wait_exponential_max=300000, stop_max_delay=1800000)
+            def describe_cluster():
+                return client.describe_cluster(ClusterId = self.job_flow_id)
+
+            result = describe_cluster()
             status = result["Cluster"]["Status"]["State"]
 
             if status == "TERMINATED_WITH_ERRORS":
@@ -152,4 +158,4 @@ class EMRSparkOperator(BaseOperator):
                 raise AirflowException("Spark job {} is waiting".format(self.job_name))
 
             logging.info("Spark Job '{}' status' is {}".format(self.job_name, status))
-            time.sleep(60)
+            time.sleep(300)
