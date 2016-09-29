@@ -13,7 +13,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('addons', default_args=default_args, schedule_interval='@daily')
+dag = DAG('addons', default_args=default_args, schedule_interval='@daily', max_active_runs=5)
 
 t0 = EMRSparkOperator(task_id="addons",
                       job_name="Addons View",
