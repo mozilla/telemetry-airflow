@@ -87,7 +87,7 @@ if [[ $uri == *.jar ]]; then
 elif [[ $uri == *.ipynb ]]; then
     time env $environment \
     PYSPARK_DRIVER_PYTHON=jupyter \
-    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to notebook --log-level=10 --execute ./${job} --allow-errors --output ./output/${job}" \
+    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --ExecutePreprocessor.timeout=-1 --to notebook --log-level=10 --execute ./${job} --allow-errors --output ./output/${job}" \
     pyspark
     rc=$?
     # When nbconvert is called with --allow-errors there's no way to detect if a cell raised an exception.
@@ -97,6 +97,11 @@ elif [[ $uri == *.ipynb ]]; then
         PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to markdown --stdout ./output/${job}" pyspark
         rc=1
     fi
+elif [[ $uri == *.py ]]; then
+    time env $environment \
+    PYSPARK_PYTHON=/home/hadoop/anaconda2/bin/python spark-submit \
+    $runner_args --master yarn-client "./$job" $args
+    rc=$?
 else
     chmod +x "./$job"
     time env $environment "./$job" $args
