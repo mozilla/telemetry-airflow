@@ -99,7 +99,7 @@ elif [[ $uri == *.ipynb ]]; then
     fi
 elif [[ $uri == *.py ]]; then
     time env $environment \
-    PYSPARK_PYTHON=/home/hadoop/anaconda2/bin/python spark-submit \
+    PYSPARK_DRIVER_PYTHON=/home/hadoop/anaconda2/bin/python spark-submit \
     $runner_args --master yarn-client "./$job" $args
     rc=$?
 else
