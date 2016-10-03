@@ -87,14 +87,14 @@ if [[ $uri == *.jar ]]; then
 elif [[ $uri == *.ipynb ]]; then
     time env $environment \
     PYSPARK_DRIVER_PYTHON=jupyter \
-    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --ExecutePreprocessor.timeout=-1 --to notebook --log-level=10 --execute ./${job} --allow-errors --output ./output/${job}" \
+    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --ExecutePreprocessor.timeout=-1 --to notebook --log-level=10 --execute \"./${job}\" --allow-errors --output \"./output/${job}\"" \
     pyspark
     rc=$?
     # When nbconvert is called with --allow-errors there's no way to detect if a cell raised an exception.
     # Grepping the output notebook looking for a 'error' output type does the trick.
     if [ $rc != 0 ] || [ "`grep  '\"output_type\": \"error\"' ./output/${job}`" ] ;then
         # If an error is detected, print out the notebook in a human readable (markdown) format.
-        PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to markdown --stdout ./output/${job}" pyspark
+        PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --to markdown --stdout \"./output/${job}\"" pyspark
         rc=1
     fi
 elif [[ $uri == *.py ]]; then
