@@ -19,6 +19,7 @@ t0 = EMRSparkOperator(task_id = "crash_aggregates_view_backfill",
                       job_name = "Crash Aggregates View Backfill",
                       release_label="emr-5.0.0",
                       instance_count = 20,
+                      execution_timeout=timedelta(hours=4),
                       env = {"date": "{{ ds_nodash }}", "bucket": "telemetry-test-bucket"},
                       uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
                       dag = dag)

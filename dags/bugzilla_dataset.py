@@ -29,6 +29,7 @@ env = {
 t0 = EMRSparkOperator(
     task_id="update_bugs",
     job_name="Bugzilla Dataset Update",
+    execution_timeout=timedelta(hours=5),
     instance_count=1,
     env=env,
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/bugzilla_dataset.sh",
