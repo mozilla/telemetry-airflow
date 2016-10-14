@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.constants import DS_WEEKLY
 
 default_args = {
     'owner': 'rvitillo@mozilla.com',
@@ -20,7 +21,7 @@ t0 = EMRSparkOperator(task_id="longitudinal",
                       execution_timeout=timedelta(hours=10),
                       release_label="emr-5.0.0",
                       instance_count=30,
-                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/longitudinal_view.sh",
                       dag=dag)
 
@@ -31,7 +32,7 @@ t1 = EMRSparkOperator(task_id="update_orphaning",
                       owner="spohl@mozilla.com",
                       email=["telemetry-alerts@mozilla.com", "spohl@mozilla.com",
                              "mhowell@mozilla.com"],
-                      env={"date": "{{ ds_nodash }}"},
+                      env={"date": DS_WEEKLY},
                       uri="https://raw.githubusercontent.com/mozilla-services/data-pipeline/master/reports/update-orphaning/Update%20orphaning%20analysis%20using%20longitudinal%20dataset.ipynb",
                       output_visibility="public",
                       dag=dag)
@@ -44,7 +45,7 @@ t2 = EMRSparkOperator(task_id="addon_recommender",
                       owner="aplacitelli@mozilla.com",
                       email=["telemetry-alerts@mozilla.com", "rvitillo@mozilla.com",
                              "aplacitelli@mozilla.com"],
-                      env={"date": "{{ ds_nodash }}",
+                      env={"date": DS_WEEKLY,
                            "privateBucket": "{{ task.__class__.private_output_bucket }}",
                            "publicBucket": "{{ task.__class__.public_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
@@ -66,7 +67,7 @@ t4 = EMRSparkOperator(task_id="cross_sectional",
                       execution_timeout=timedelta(hours=10),
                       release_label="emr-5.0.0",
                       instance_count=30,
-                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/cross_sectional_view.sh",
                       dag=dag)
 
