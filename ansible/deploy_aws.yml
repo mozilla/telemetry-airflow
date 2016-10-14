@@ -9,7 +9,7 @@
       s3: bucket={{airflow_bucket}} region={{region}} mode=create
 
     - name: copy EMR bootstrap script
-      s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src=ansible/files/spark/airflow.sh mode=put
+      s3: bucket={{airflow_bucket}} region={{region}} object=steps/airflow.sh src={{ playbook_dir }}/files/spark/airflow.sh mode=put
 
     - name: create load balancer
       ec2_elb_lb:
@@ -47,7 +47,7 @@
       shell: "{{ item }}"
       with_items:
         - ecs-cli configure --cluster {{ ecs_cluster_name }}
-        - ecs-cli compose --project-name telemetry-airflow --file ansible/files/docker-compose.yml create
+        - ecs-cli compose --project-name telemetry-airflow --file {{ playbook_dir }}/files/docker-compose.yml create
       environment:
         AWS_REGION: "{{ region }}"
         EMR_KEY_NAME: "{{ emr_key_name }}"

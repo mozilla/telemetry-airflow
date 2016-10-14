@@ -3,8 +3,8 @@
   vars:
     command: scheduler -n 5 # See bug 1286825
     compose_conf:
-      - ansible/files/docker-compose.yml
-      - ansible/files/docker-compose-local.yml
+      - "{{ playbook_dir }}/files/docker-compose.yml"
+      - "{{ playbook_dir }}/files/docker-compose-local.yml"
 
   tasks:
     - name: launch Airflow containers
