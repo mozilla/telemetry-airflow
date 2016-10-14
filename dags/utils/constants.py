@@ -1,4 +1,4 @@
-DS_PLUS_7_NO_DASH = (
+DS_WEEKLY = (
     '{% if dag_run.external_trigger %}'
         '{{ ds_nodash }}'
     '{% else %}'
