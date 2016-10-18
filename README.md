@@ -5,6 +5,10 @@ When workflows are defined as code, they become more maintainable, versionable, 
 
 Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The Airflow scheduler executes your tasks on an array of workers while following the specified dependencies. Rich command line utilities make performing complex surgeries on DAGs a snap. The rich user interface makes it easy to visualize pipelines running in production, monitor progress, and troubleshoot issues when needed.
 
+### Prerequisites
+
+This app is built and deployed with [docker](https://docs.docker.com/engine/installation/) and [ansible](http://docs.ansible.com/ansible/intro_installation.html).
+
 ### Build Container
 
 An Airflow container can be built with 
@@ -36,18 +40,18 @@ docker logs -f files_scheduler_1
 
 ### Local Deployment
 
-Assuming you are on OS X, first create a docker machine with a sufficient amount of memory with e.g.:
+Assuming you are on OS X and using docker toolbox, first create a docker machine with a sufficient amount of memory with e.g.:
 ```bash
 docker-machine create -d virtualbox --virtualbox-memory 4096 default
 ```
+
+If you're using OS X and the new Docker for OS X, start the docker service, click the docker icon in the tray, click on preferences and change the available memory to 4GB.
 
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 ```bash
 ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/dev.yml'
 echo "Airflow web console should now be running locally at http://$(docker-machine ip default):8080"
 ```
-
-Note that this will start running all the DAGs with a start date in the past! To avoid that do not pass the AWS credentials.
 
 If you get a message saying "Couldn't connect to Docker daemon - you might need to run `docker-machine start default`.", try the following:
 ```bash
