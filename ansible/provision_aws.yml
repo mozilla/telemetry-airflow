@@ -16,7 +16,7 @@
         state: "present"
         region: "{{ region }}"
         disable_rollback: true
-        template: "ansible/files/cloudformation.json"
+        template: "{{ playbook_dir }}/files/cloudformation.json"
         tags:
           type: "telemetry"
           application: "ecs"
