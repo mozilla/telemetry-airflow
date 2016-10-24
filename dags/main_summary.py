@@ -30,5 +30,13 @@ t1 = EMRSparkOperator(task_id="main_summary",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
                       dag=dag)
 
-# Wait a little while after midnight to start for a given day.
+t2 = EMRSparkOperator(task_id="engagement_ratio",
+                      job_name="Update Engagement Ratio",
+                      execution_timeout=timedelta(hours=6),
+                      instance_count=10,
+                      uri="https://raw.githubusercontent.com/mozilla-services/data-pipeline/master/reports/engagement_ratio/MauDau.ipynb",
+                      output_visibility="public",
+                      dag=dag)
+
 t1.set_upstream(t0)
+t2.set_upstream(t1)
