@@ -71,7 +71,19 @@ t4 = EMRSparkOperator(task_id="cross_sectional",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/cross_sectional_view.sh",
                       dag=dag)
 
+t5 = EMRSparkOperator(task_id="distribution_viewer",
+                      job_name="Distribution Viewer",
+                      owner="chudson@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "chudson@mozilla.com"],
+                      execution_timeout=timedelta(hours=10),
+                      release_label="emr-5.0.0",
+                      instance_count=5,
+                      env={"date": DS_WEEKLY},
+                      uri="https://raw.githubusercontent.com/mozilla/distribution-viewer/master/notebooks/aggregate-and-import.py",
+                      dag=dag)
+
 t1.set_upstream(t0)
 t2.set_upstream(t0)
 t3.set_upstream(t0)
 t4.set_upstream(t0)
+t5.set_upstream(t4)
