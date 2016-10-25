@@ -75,6 +75,8 @@ ansible-playbook ansible/deploy_aws.yml -e '@ansible/envs/stage.yml'
 
 ### Debugging
 
+If you do a remote deploy and the changes are not reflected in the [live site](http://workflow.telemetry.mozilla.org), you may have to remove ECS task definitions from the AWS Console and try again. To do this, go to the ECS page, click Task Definitions, click ecscompose-telemetry-airflow, then remove all the listed task definitions. After that, re-deploy and things should work as expected.
+
 If you get an error about `ecs-cli` missing, follow [these steps](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html) to install it.
 
 Some useful docker tricks for development and debugging:
