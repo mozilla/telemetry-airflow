@@ -5,9 +5,8 @@ if [[ -z "$bucket" || -z "$date" ]]; then
    exit 1
 fi
 
-git clone https://github.com/mreid-moz/telemetry-batch-view.git
+git clone https://github.com/mozilla/telemetry-batch-view.git
 cd telemetry-batch-view
-git checkout addons_view
 sbt assembly
 spark-submit --master yarn \
              --deploy-mode client \

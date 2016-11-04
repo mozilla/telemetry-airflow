@@ -38,5 +38,16 @@ t2 = EMRSparkOperator(task_id="engagement_ratio",
                       output_visibility="public",
                       dag=dag)
 
+t3 = EMRSparkOperator(task_id="addons",
+                      job_name="Addons View",
+                      execution_timeout=timedelta(hours=4),
+                      release_label="emr-5.0.0",
+                      instance_count=10,
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addons_view.sh",
+                      dag=dag)
+
+
 t1.set_upstream(t0)
 t2.set_upstream(t1)
+t3.set_upstream(t1)
