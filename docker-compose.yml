@@ -1,0 +1,53 @@
+version: '2'
+
+services:
+  db:
+    image: postgres:9.4
+
+  redis:
+    image: redis:3.2
+
+  app:
+    build: .
+    restart: always
+
+  web:
+    extends:
+      service: app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - app
+    links:
+      - db
+      - redis
+    command: bin/run web
+
+  worker:
+    extends:
+      service: app
+    mem_limit: 2147483648
+    ports:
+      - "8793:8793"
+    links:
+      - db
+      - redis
+    command: bin/run worker
+
+  scheduler:
+    mem_limit: 2147483648
+    extends:
+      service: app
+    links:
+      - db
+      - redis
+    command: bin/run scheduler
+
+  flower:
+    extends:
+      service: app
+    ports:
+      - "5555:5555"
+    links:
+      - redis
+    command: bin/run flower
