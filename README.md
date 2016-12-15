@@ -1,25 +1,28 @@
 # telemetry-airflow
 Airflow is a platform to programmatically author, schedule and monitor workflows.
 
-When workflows are defined as code, they become more maintainable, versionable, testable, and collaborative.
+When workflows are defined as code, they become more maintainable, versionable,
+testable, and collaborative.
 
-Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The Airflow scheduler executes your tasks on an array of workers while following the specified dependencies. Rich command line utilities make performing complex surgeries on DAGs a snap. The rich user interface makes it easy to visualize pipelines running in production, monitor progress, and troubleshoot issues when needed.
+Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks.
+The Airflow scheduler executes your tasks on an array of workers while following
+the specified dependencies. Rich command line utilities make performing complex
+surgeries on DAGs a snap. The rich user interface makes it easy to visualize
+pipelines running in production, monitor progress, and troubleshoot issues when
+needed.
 
 ### Prerequisites
 
-This app is built and deployed with [docker](https://docs.docker.com/engine/installation/) and [ansible](http://docs.ansible.com/ansible/intro_installation.html).
+This app is built and deployed with
+[docker](https://docs.docker.com/) and
+[docker-compose](https://docs.docker.com/compose/).
 
 ### Build Container
 
-An Airflow container can be built with 
+An Airflow container can be built with
 
 ```bash
-docker build -t mozdata/telemetry-airflow .
-```
-
-and pushed to Docker hub with
-```bash
-docker push mozdata/telemetry-airflow
+make build
 ```
 
 ### Testing
@@ -27,57 +30,66 @@ docker push mozdata/telemetry-airflow
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `dev` environment with:
 ```bash
 AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
-ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/dev.yml' -e "command='test example spark 20160101'"
+make run COMMAND="test example spark 20160101"
 ```
 
-The container will run the desired task to completion (or failure). Note that if the container is stopped during the execution of a task, the task will
-be aborted. In the example's case, the Spark job will be terminated. 
+The container will run the desired task to completion (or failure).
+Note that if the container is stopped during the execution of a task,
+the task will be aborted. In the example's case, the Spark job will be
+terminated.
 
 The logs of the task can be inspected in real-time with:
 ```bash
-docker logs -f files_scheduler_1
+docker logs -f telemetryairflow_scheduler_1
 ```
 
 ### Local Deployment
 
-Assuming you are on OS X and using docker toolbox, first create a docker machine with a sufficient amount of memory with e.g.:
-```bash
-docker-machine create -d virtualbox --virtualbox-memory 4096 default
-```
-
-If you're using OS X and the new Docker for OS X, start the docker service, click the docker icon in the tray, click on preferences and change the available memory to 4GB.
+Assuming you're using macOS and Docker for macOS, start the docker service,
+click the docker icon in the menu bar, click on preferences and change the
+available memory to 4GB.
 
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 ```bash
-ansible-playbook ansible/deploy_local.yml -e '@ansible/envs/dev.yml'
-echo "Airflow web console should now be running locally at http://$(docker-machine ip default):8080"
+make up
 ```
 
-If you get a message saying "Couldn't connect to Docker daemon - you might need to run `docker-machine start default`.", try the following:
-```bash
-docker-machine start default
-eval "$(docker-machine env default)"
-```
+You can now connect to your local Airflow web console at
+`http://localhost:8000/`.
 
-You can now connect to your local Airflow web console with a URL like `http://192.168.99.100:8080` (see above for how to identify the exact IP address).
+### Production Setup
 
-### Remote Deployment
+When deploying to production make sure to set up the following environment
+variables:
 
-In order to deploy Airflow to e.g. the `stage` environment, an ECS cluster has to be created first with at least one container instance:
-```bash
-ansible-playbook ansible/provision_aws.yml -e '@ansible/envs/stage.yml'
-```
+- `AWS_ACCESS_KEY_ID` -- The AWS access key ID to spin up the Spark clusters
+- `AWS_SECRET_ACCESS_KEY` -- The AWS secret access key
+- `SPARK_BUCKET` -- The AWS S3 bucket where Spark related files are stored,
+  e.g. `telemetry-spark-emr-2`
+- `AIRFLOW_BUCKET` -- The AWS S3 bucket where airflow specific files are stored,
+  e.g. `telemetry-airflow`
+- `PUBLIC_OUTPUT_BUCKET` -- The AWS S3 bucket where public job results are
+  stored in, e.g. `telemetry-public-analysis-2`
+- `PRIVATE_OUTPUT_BUCKET` -- The AWS S3 bucket where private job results are
+  stored in, e.g. `telemetry-parquet`
+- `AIRFLOW_DATABASE_URL` -- The connection URI for the Airflow database, e.g.
+  `postgres://username:password@hostname:port/password`
+- `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
+  `redis://hostname:6379/0`
 
-Once the ECS cluster is up and running, Airflow can be (re)deployed with:
-```bash
-ansible-playbook ansible/deploy_aws.yml -e '@ansible/envs/stage.yml'
-```
+Also, please set
+
+- `AIRFLOW_SECRET_KEY` -- A secret key for Airflow's Flask based webserver
+- `AIRFLOW_FERNET_KEY` -- A secret key to save connection passwords in the db
+
+Both values should be set by using the cryptography module's fernet tool that
+we've wrapped in a docker-compose call:
+
+    make secret
+
+Run this for each key config variable, and **don't use the same for both!**
 
 ### Debugging
-
-If you do a remote deploy and the changes are not reflected in the [live site](http://workflow.telemetry.mozilla.org), you may have to remove ECS task definitions from the AWS Console and try again. To do this, go to the ECS page, click Task Definitions, click ecscompose-telemetry-airflow, then remove all the listed task definitions. After that, re-deploy and things should work as expected.
-
-If you get an error about `ecs-cli` missing, follow [these steps](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html) to install it.
 
 Some useful docker tricks for development and debugging:
 

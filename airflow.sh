@@ -1,3 +1,4 @@
+# to be copied to $AIRFLOW_BUCKET/steps/airflow.sh
 set -o verbose
 
 HOME=/home/hadoop
