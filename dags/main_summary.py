@@ -47,7 +47,18 @@ t3 = EMRSparkOperator(task_id="addons",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addons_view.sh",
                       dag=dag)
 
+t4 = EMRSparkOperator(task_id="hbase_main_summary",
+                      job_name="HBase Main Summary View",
+                      owner="rvitillo@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "rvitillo@mozilla.com"],
+                      execution_timeout=timedelta(hours=10),
+                      release_label="emr-5.0.0",
+                      instance_count=5,
+                      env={"date": "{{ ds_nodash }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_main_summary_view.sh",
+                      dag=dag)
 
 t1.set_upstream(t0)
 t2.set_upstream(t1)
 t3.set_upstream(t1)
+t4.set_upstream(t1)
