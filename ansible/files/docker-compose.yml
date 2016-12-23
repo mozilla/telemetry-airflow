@@ -72,7 +72,7 @@ flower:
 scheduler:
     image: mozdata/telemetry-airflow
     restart: always
-    mem_limit: 2147483648
+    mem_limit: 4294967296
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
         - AIRFLOW_ENABLE_AUTH
@@ -100,7 +100,7 @@ scheduler:
 worker:
     image: mozdata/telemetry-airflow
     restart: always
-    mem_limit: 2147483648
+    mem_limit: 4294967296
     environment:
         - AIRFLOW_HOME=/usr/local/airflow
     ports:
