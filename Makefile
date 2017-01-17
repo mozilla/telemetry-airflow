@@ -37,6 +37,7 @@ secret:
 	"from cryptography.fernet import Fernet; print Fernet.generate_key().decode()"
 
 stop:
+	docker-compose down
 	docker-compose stop
 
 up:
