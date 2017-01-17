@@ -21,7 +21,7 @@ clean: stop
 
 migrate:
 	docker-compose run web airflow initdb
-	docker-compose run web airflow updatedb
+	docker-compose run web airflow upgradedb
 
 shell:
 	docker-compose run web bash
