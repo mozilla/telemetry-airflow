@@ -13,7 +13,8 @@ ENV PYTHONUNBUFFERED=1 \
     EMR_FLOW_ROLE=telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3 \
     EMR_SERVICE_ROLE=EMR_DefaultRole \
     EMR_INSTANCE_TYPE=c3.4xlarge \
-    PORT=8000
+    PORT=8000 \
+    DEVELOPMENT=1
 
 ENV AIRFLOW_HOME=/app \
     AIRFLOW_AUTHENTICATE=False \
@@ -52,10 +53,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Switch back to home directory
 WORKDIR /app
-
-COPY . /app
-
-RUN chown -R 10001:10001 /app
 
 USER 10001
 

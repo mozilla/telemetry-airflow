@@ -8,8 +8,13 @@ services:
     image: redis:3.2
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     restart: always
+    volumes:
+      - $PWD:/app
+    command: "true"
 
   web:
     extends:
@@ -21,7 +26,7 @@ services:
     links:
       - db
       - redis
-    command: bin/run web
+    command: web
 
   worker:
     extends:
@@ -32,7 +37,7 @@ services:
     links:
       - db
       - redis
-    command: bin/run worker
+    command: worker
 
   scheduler:
     mem_limit: 4294967296
@@ -41,7 +46,7 @@ services:
     links:
       - db
       - redis
-    command: bin/run scheduler
+    command: scheduler
 
   flower:
     extends:
@@ -50,4 +55,4 @@ services:
       - "5555:5555"
     links:
       - redis
-    command: bin/run flower
+    command: flower
