@@ -1,7 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
-from airflow.operators import BashOperator
 
 default_args = {
     'owner': 'mreid@mozilla.com',
@@ -14,12 +13,9 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('main_summary', default_args=default_args, schedule_interval='@daily')
-
 # Make sure all the data for the given day has arrived before running.
-t0 = BashOperator(task_id="delayed_start",
-                  bash_command="sleep 3600",
-                  dag=dag)
+# Running at 1am should suffice.
+dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
 
 t1 = EMRSparkOperator(task_id="main_summary",
                       job_name="Main Summary View",
@@ -58,7 +54,6 @@ t4 = EMRSparkOperator(task_id="hbase_main_summary",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_main_summary_view.sh",
                       dag=dag)
 
-t1.set_upstream(t0)
 t2.set_upstream(t1)
 t3.set_upstream(t1)
 t4.set_upstream(t1)

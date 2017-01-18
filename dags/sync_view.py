@@ -1,7 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
-from airflow.operators import BashOperator
 
 default_args = {
     'owner': 'markh@mozilla.com',
