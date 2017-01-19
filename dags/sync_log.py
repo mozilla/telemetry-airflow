@@ -3,23 +3,25 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 
 default_args = {
-    'owner': 'markh@mozilla.com',
+    'owner': 'mreid@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 7, 12),
-    'email': ['telemetry-alerts@mozilla.com', 'markh@mozilla.com', 'tchiovoloni@mozilla.com'],
+    'start_date': datetime(2017, 1, 1),
+    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('sync_view', default_args=default_args, schedule_interval='@daily')
+# Make sure all the data for the given day has arrived before running.
+# Running at 1am should suffice.
+dag = DAG('sync_log', default_args=default_args, schedule_interval='0 1 * * *')
 
-t0 = EMRSparkOperator(task_id="sync_view",
-                      job_name="Sync Pings View",
+t0 = EMRSparkOperator(task_id="sync_log",
+                      job_name="Sync Log Import",
                       execution_timeout=timedelta(hours=10),
                       release_label="emr-5.0.0",
                       instance_count=10,
                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/sync_view.sh",
+                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/sync_log.kp/orig_src/ImportSyncLogs.ipynb",
                       dag=dag)
