@@ -13,7 +13,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('telemetry_aggregates', default_args=default_args, schedule_interval='@daily')
+dag = DAG('telemetry_aggregates_fennec_backfill', default_args=default_args, schedule_interval='@daily')
 
 t0 = EMRSparkOperator(task_id = "telemetry_aggregate_fennec_backfill",
                       job_name = "Telemetry Aggregate Fennec Backfill",
