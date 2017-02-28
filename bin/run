@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+# default variables
+: "${PORT:=8000}"
+: "${SLEEP:=1}"
+: "${TRIES:=60}"
+
+usage() {
+  echo "usage: bin/run flower|web|worker|scheduler"
+  exit 1
+}
+
+wait_for() {
+  tries=0
+  echo "Waiting for $1 to listen on $2..."
+  while true; do
+    [[ $tries -lt $TRIES ]] || return
+    (echo > /dev/tcp/$1/$2) >/dev/null 2>&1
+    result=
+    [[ $? -eq 0 ]] && return
+    sleep $SLEEP
+    tries=$((tries + 1))
+  done
+}
+
+[ $# -lt 1 ] && usage
+
+# Only wait for backend services in development
+# http://stackoverflow.com/a/13864829
+[ ! -z ${DEVELOPMENT+check} ] && wait_for db 5432 && wait_for redis 6379
+
+case $1 in
+  flower)
+    exec newrelic-admin run-program airflow flower
+    ;;
+  web)
+    newrelic-admin run-program airflow initdb
+    newrelic-admin run-program airflow upgradedb
+    exec newrelic-admin run-program airflow webserver -p ${PORT} --workers 4
+    ;;
+  worker)
+    exec newrelic-admin run-program airflow worker
+    ;;
+  scheduler)
+    while echo "Running"; do
+      exec newrelic-admin run-program airflow scheduler -n 5
+      echo "Scheduler exited with code $?.  Respawning.." >&2
+      date >> /tmp/airflow_scheduler_errors.txt
+      sleep 1
+    done
+    ;;
+  *)
+    exec "$@"
+    ;;
+esac
