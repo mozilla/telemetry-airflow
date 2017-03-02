@@ -77,7 +77,7 @@ t5 = EMRSparkOperator(task_id="distribution_viewer",
                       email=["telemetry-alerts@mozilla.com", "chudson@mozilla.com"],
                       execution_timeout=timedelta(hours=10),
                       release_label="emr-5.0.0",
-                      instance_count=5,
+                      instance_count=30,
                       env={"date": DS_WEEKLY},
                       uri="https://raw.githubusercontent.com/mozilla/distribution-viewer/master/notebooks/aggregate-and-import.py",
                       dag=dag)
