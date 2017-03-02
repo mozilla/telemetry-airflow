@@ -1,4 +1,4 @@
-#!/home/hadoop/anaconda2/bin/ipython
+#!/mnt/anaconda2/bin/ipython
 
 import logging
 from os import environ
