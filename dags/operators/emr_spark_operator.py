@@ -102,6 +102,12 @@ class EMRSparkOperator(BaseOperator):
             }
         }]
 
+        if environ.get("AWS_ACCESS_KEY_ID", None) == "":
+            del(environ["AWS_ACCESS_KEY_ID"])
+
+        if environ.get("AWS_SECRET_ACCESS_KEY", None) == "":
+            del(environ["AWS_SECRET_ACCESS_KEY"])
+
         client = boto3.client('emr', region_name=EMRSparkOperator.region)
         response = client.run_job_flow(
             Name = self.job_name,
