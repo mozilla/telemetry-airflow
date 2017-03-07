@@ -18,7 +18,6 @@ dag = DAG('telemetry_aggregates_fennec_backfill', default_args=default_args, sch
 t0 = EMRSparkOperator(task_id = "telemetry_aggregate_fennec_backfill",
                       job_name = "Telemetry Aggregate Fennec Backfill",
                       instance_count = 7,
-                      release_label="emr-4.5.0",
                       execution_timeout=timedelta(hours=5),
                       env = {"date": "{{ ds_nodash }}"},
                       uri = "https://raw.githubusercontent.com/fbertsch/python_mozaggregator/fennec_backfill/telemetry_aggregator.py",
