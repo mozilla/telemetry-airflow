@@ -53,6 +53,7 @@ t4 = EMRSparkOperator(task_id="hbase_main_summary",
 
 t5 = EMRSparkOperator(task_id="daily_search_rollup",
                       job_name="Daily Search Rollup",
+                      email=["telemetry-alerts@mozilla.com", "spenrose@mozilla.com", "amiyaguchi@mozilla.com"],
                       execution_timeout=timedelta(hours=6),
                       instance_count=30,
                       uri="https://gist.githubusercontent.com/SamPenrose/856aa21191ef9f0de18c94220cd311a8/raw/afaafc7e5903afb4dde047b43d8e5b2dc2bf6968/daily-main_summary-to-vertica-search-rollups.ipynb",
