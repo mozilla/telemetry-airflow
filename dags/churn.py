@@ -19,7 +19,6 @@ dag = DAG('churn', default_args=default_args, schedule_interval='@weekly')
 t0 = EMRSparkOperator(task_id="churn",
                       job_name="Generate weekly desktop retention dataset",
                       execution_timeout=timedelta(hours=4),
-                      release_label="emr-5.0.0",
                       instance_count=5,
                       env={"date": DS_WEEKLY},
                       uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/churn.kp/orig_src/Churn.ipynb",

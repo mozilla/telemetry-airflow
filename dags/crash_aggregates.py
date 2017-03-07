@@ -17,7 +17,6 @@ dag = DAG('crash_aggregates', default_args=default_args, schedule_interval='@dai
 
 t0 = EMRSparkOperator(task_id = "crash_aggregate_view",
                       job_name = "Crash Aggregate View",
-                      release_label="emr-5.0.0",
                       instance_count = 9,
                       execution_timeout=timedelta(hours=4),
                       env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
