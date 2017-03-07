@@ -17,7 +17,6 @@ dag = DAG('crash_aggregates_backfill', default_args=default_args, schedule_inter
 
 t0 = EMRSparkOperator(task_id = "crash_aggregates_view_backfill",
                       job_name = "Crash Aggregates View Backfill",
-                      release_label="emr-5.0.0",
                       instance_count = 20,
                       execution_timeout=timedelta(hours=4),
                       env = {"date": "{{ ds_nodash }}", "bucket": "telemetry-test-bucket"},

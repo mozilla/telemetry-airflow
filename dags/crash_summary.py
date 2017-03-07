@@ -17,7 +17,6 @@ dag = DAG('crash_summary', default_args=default_args, schedule_interval='@daily'
 
 t0 = EMRSparkOperator(task_id="crash_summary_view",
                       job_name="Crash Summary View",
-                      release_label="emr-5.2.1",
                       instance_count=20,
                       execution_timeout=timedelta(hours=4),
                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
