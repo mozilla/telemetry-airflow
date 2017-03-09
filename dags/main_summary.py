@@ -70,8 +70,19 @@ t6 = EMRSparkOperator(task_id="main_events",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_events_view.sh",
                       dag=dag)
 
+t7 = EMRSparkOperator(task_id="addon_aggregates",
+                      job_name="Addon Aggregates View",
+                      execution_timeout=timedelta(hours=4),
+                      owner="bmiroglio@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
+                      instance_count=3,
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/addons/okr-daily-script.kp/orig_src/addonOKRDataCollection.ipynb",
+                      dag=dag)
+
 t2.set_upstream(t1)
 t3.set_upstream(t1)
 t4.set_upstream(t1)
 t5.set_upstream(t1)
 t6.set_upstream(t1)
+t7.set_upstream(t3)
