@@ -24,3 +24,13 @@ t0 = EMRSparkOperator(task_id="churn",
                       uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/churn.kp/orig_src/Churn.ipynb",
                       output_visibility="public",
                       dag=dag)
+
+t1 = EMRSparkOperator(task_id="churn_to_csv",
+                      job_name="Generate Churn CSV files",
+                      execution_timeout=timedelta(hours=4),
+                      instance_count=1,
+                      env={"date": DS_WEEKLY},
+                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/churn_to_csv.kp/orig_src/churn_to_csv.ipynb",
+                      dag=dag)
+
+t1.set_upstream(t0)
