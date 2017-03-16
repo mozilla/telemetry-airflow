@@ -87,7 +87,7 @@ if [[ $uri == *.jar ]]; then
 elif [[ $uri == *.ipynb ]]; then
     time env $environment \
     PYSPARK_DRIVER_PYTHON=jupyter \
-    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --ExecutePreprocessor.timeout=-1 --to notebook --log-level=10 --execute \"./${job}\" --allow-errors --output-dir ./output/ " \
+    PYSPARK_DRIVER_PYTHON_OPTS="nbconvert --ExecutePreprocessor.kernel_name=python2 --ExecutePreprocessor.timeout=-1 --to notebook --log-level=10 --execute \"./${job}\" --allow-errors --output-dir ./output/ " \
     pyspark
     rc=$?
     # When nbconvert is called with --allow-errors there's no way to detect if a cell raised an exception.
