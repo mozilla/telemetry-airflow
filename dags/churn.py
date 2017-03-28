@@ -14,7 +14,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('churn', default_args=default_args, schedule_interval='@weekly')
+dag = DAG('churn', default_args=default_args, schedule_interval='0 0 * * 3')
 
 t0 = EMRSparkOperator(task_id="churn",
                       job_name="Generate weekly desktop retention dataset",
