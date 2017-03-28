@@ -56,7 +56,7 @@ t3 = EMRSparkOperator(task_id="game_hw_survey",
                       owner="aplacitelli@mozilla.com",
                       depends_on_past=True,
                       email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
-                      uri="https://github.com/mozilla/firefox-hardware-survey/raw/master/report/summarize_json.ipynb",
+                      uri="https://github.com/mozilla/firefox-hardware-report/raw/master/report/summarize_json.ipynb",
                       output_visibility="public",
                       dag=dag)
 
