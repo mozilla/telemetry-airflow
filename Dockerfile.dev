@@ -18,6 +18,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 ENV AIRFLOW_HOME=/app \
     AIRFLOW_AUTHENTICATE=False \
+    AIRFLOW_AUTH_BACKEND=airflow.contrib.auth.backends.password_auth \
     AIRFLOW_BROKER_URL=redis://redis:6379/0 \
     AIRFLOW_RESULT_URL=${AIRFLOW_BROKER_URL} \
     AIRFLOW_FLOWER_PORT="5555" \

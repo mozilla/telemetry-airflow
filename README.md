@@ -76,6 +76,18 @@ variables:
   `postgres://username:password@hostname:port/password`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
   `redis://hostname:6379/0`
+- `AIRFLOW_GOOGLE_CLIENT_ID` -- The Google Auth client id used for
+  authentication.
+- `AIRFLOW_GOOGLE_CLIENT_SECRET` -- The Google Auth client secret used for
+  authentication.
+- `AIRFLOW_GOOGLE_APPS_DOMAIN` -- The domain(s) to restrict Google Auth login
+  to e.g. `mozilla.com;mozilla.org`
+- `AIRFLOW_SMTP_HOST` -- The SMTP server to use to send emails e.g.
+  `email-smtp.us-west-2.amazonaws.com`
+- `AIRFLOW_SMTP_USER` -- The SMTP user name
+- `AIRFLOW_SMTP_PASSWORD` --  The SMTP password
+- `AIRFLOW_SMTP_FROM` -- The email address to send emails from e.g.
+  `telemetry-alerts@workflow.telemetry.mozilla.org`
 
 Also, please set
 
