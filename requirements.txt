@@ -1,5 +1,5 @@
 boto3
-airflow[celery,postgres,hive,hdfs,jdbc,async,password,crypto]
+airflow[celery,postgres,hive,hdfs,jdbc,async,password,crypto]==1.8.0
 retrying
 newrelic
 redis
