@@ -51,6 +51,9 @@ COPY requirements.txt /tmp/
 WORKDIR /tmp
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY mozlog.diff .
+RUN patch -d /usr/local/lib/python2.7/site-packages -p1 < mozlog.diff
+
 # Switch back to home directory
 WORKDIR /app
 

@@ -1,0 +1,26 @@
+diff --git a/airflow/settings.py b/airflow/settings.py
+index 45f7fba..b632bd3 100644
+--- a/airflow/settings.py
++++ b/airflow/settings.py
+@@ -27,6 +27,7 @@ from sqlalchemy.pool import NullPool
+ 
+ from airflow import configuration as conf
+ 
++from mozlogging import MozLogFormatter
+ 
+ class DummyStatsLogger(object):
+ 
+@@ -119,8 +120,11 @@ def policy(task_instance):
+ 
+ def configure_logging(log_format=LOG_FORMAT):
+     logging.root.handlers = []
+-    logging.basicConfig(
+-        format=log_format, stream=sys.stdout, level=LOGGING_LEVEL)
++    handler = logging.StreamHandler()
++    handler.setFormatter(MozLogFormatter())
++    logging.root.addHandler(handler)
++    logging.root.setLevel(LOGGING_LEVEL)
++    logging.root.name = "airflow"
+ 
+ 
+ def configure_vars():
