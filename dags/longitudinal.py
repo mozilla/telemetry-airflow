@@ -50,12 +50,13 @@ t2 = EMRSparkOperator(task_id="addon_recommender",
                       dag=dag)
 
 t3 = EMRSparkOperator(task_id="game_hw_survey",
-                      job_name="Game Hardware Survey",
+                      job_name="Firefox Hardware Report",
                       execution_timeout=timedelta(hours=10),
                       instance_count=15,
                       owner="aplacitelli@mozilla.com",
                       depends_on_past=True,
-                      email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
+                      email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com",
+                             "firefox-hardware-report-feedback@mozilla.com"],
                       uri="https://github.com/mozilla/firefox-hardware-report/raw/master/report/summarize_json.ipynb",
                       output_visibility="public",
                       dag=dag)
