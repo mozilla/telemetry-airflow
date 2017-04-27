@@ -37,4 +37,4 @@ dag_monthly = DAG('topline_monthly',
                   schedule_interval='@monthly')
 
 topline_dag(dag_weekly, "weekly", instance_count=5)
-topline_dag(dag_monthly, "monthly", instance_count=10)
+topline_dag(dag_monthly, "monthly", instance_count=20)
