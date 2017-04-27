@@ -44,12 +44,7 @@ case $1 in
     exec newrelic-admin run-program airflow worker
     ;;
   scheduler)
-    while echo "Running"; do
-      exec newrelic-admin run-program airflow scheduler -n 5
-      echo "Scheduler exited with code $?.  Respawning.." >&2
-      date >> /tmp/airflow_scheduler_errors.txt
-      sleep 1
-    done
+    exec newrelic-admin run-program airflow scheduler
     ;;
   *)
     exec "$@"
