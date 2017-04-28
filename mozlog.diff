@@ -1,3 +1,76 @@
+diff --git a/airflow/bin/cli.py b/airflow/bin/cli.py
+index 61d8707..3db4b02 100755
+--- a/airflow/bin/cli.py
++++ b/airflow/bin/cli.py
+@@ -58,6 +58,8 @@ from airflow.www.app import cached_app
+ from sqlalchemy import func
+ from sqlalchemy.orm import exc
+ 
++from mozlogging import MozLogFormatter
++
+ 
+ api.load_auth()
+ api_module = import_module(conf.get('cli', 'api_client'))
+@@ -90,10 +92,10 @@ def sigquit_handler(sig, frame):
+ def setup_logging(filename):
+     root = logging.getLogger()
+     handler = logging.FileHandler(filename)
+-    formatter = logging.Formatter(settings.SIMPLE_LOG_FORMAT)
+-    handler.setFormatter(formatter)
++    handler.setFormatter(MozLogFormatter())
+     root.addHandler(handler)
+     root.setLevel(settings.LOGGING_LEVEL)
++    root.name = "airflow"
+ 
+     return handler.stream
+ 
+@@ -128,9 +130,11 @@ def get_dag(args):
+ 
+ 
+ def backfill(args, dag=None):
+-    logging.basicConfig(
+-        level=settings.LOGGING_LEVEL,
+-        format=settings.SIMPLE_LOG_FORMAT)
++    handler = logging.StreamHandler()
++    handler.setFormatter(MozLogFormatter())
++    logging.root.addHandler(handler)
++    logging.root.setLevel(settings.LOGGING_LEVEL)
++    logging.root.name = "airflow"
+ 
+     dag = dag or get_dag(args)
+ 
+@@ -600,9 +604,11 @@ def render(args):
+ 
+ 
+ def clear(args):
+-    logging.basicConfig(
+-        level=settings.LOGGING_LEVEL,
+-        format=settings.SIMPLE_LOG_FORMAT)
++    handler = logging.StreamHandler()
++    handler.setFormatter(MozLogFormatter())
++    logging.root.addHandler(handler)
++    logging.root.setLevel(settings.LOGGING_LEVEL)
++    logging.root.name = "airflow"
+     dag = get_dag(args)
+ 
+     if args.task_regex:
+@@ -914,8 +920,11 @@ def resetdb(args):
+     if args.yes or input(
+             "This will drop existing tables if they exist. "
+             "Proceed? (y/n)").upper() == "Y":
+-        logging.basicConfig(level=settings.LOGGING_LEVEL,
+-                            format=settings.SIMPLE_LOG_FORMAT)
++        handler = logging.StreamHandler()
++        handler.setFormatter(MozLogFormatter())
++        logging.root.addHandler(handler)
++        logging.root.setLevel(settings.LOGGING_LEVEL)
++        logging.root.name = "airflow"
+         db_utils.resetdb()
+     else:
+         print("Bail.")
+diff --git a/airflow/jobs.py b/airflow/jobs.py
+index 222d9ba..eea2dd8 100644
+--- a/airflow/jobs.py
 diff --git a/airflow/settings.py b/airflow/settings.py
 index 45f7fba..b632bd3 100644
 --- a/airflow/settings.py
