@@ -59,6 +59,9 @@ You can now connect to your local Airflow web console at
 
 ### Production Setup
 
+Note: the canonical reference for production environment variables lives
+in [a private repository](https://github.com/mozilla-services/cloudops-deployment/blob/master/projects/data/puppet/yaml/app/data.prod.wtmo.yaml)
+
 When deploying to production make sure to set up the following environment
 variables:
 
@@ -76,18 +79,22 @@ variables:
   `postgres://username:password@hostname:port/password`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
   `redis://hostname:6379/0`
+- `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow result backend, e.g.
+  `redis://hostname:6379/1`
 - `AIRFLOW_GOOGLE_CLIENT_ID` -- The Google Auth client id used for
   authentication.
 - `AIRFLOW_GOOGLE_CLIENT_SECRET` -- The Google Auth client secret used for
   authentication.
 - `AIRFLOW_GOOGLE_APPS_DOMAIN` -- The domain(s) to restrict Google Auth login
-  to e.g. `mozilla.com;mozilla.org`
+  to e.g. `mozilla.com`
 - `AIRFLOW_SMTP_HOST` -- The SMTP server to use to send emails e.g.
   `email-smtp.us-west-2.amazonaws.com`
 - `AIRFLOW_SMTP_USER` -- The SMTP user name
 - `AIRFLOW_SMTP_PASSWORD` --  The SMTP password
 - `AIRFLOW_SMTP_FROM` -- The email address to send emails from e.g.
   `telemetry-alerts@workflow.telemetry.mozilla.org`
+- `URL` -- The base url of the website e.g.
+  `https://workflow.telemetry.mozilla.org`
 
 Also, please set
 
