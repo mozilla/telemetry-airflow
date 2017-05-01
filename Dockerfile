@@ -2,32 +2,32 @@ FROM python:2-slim
 MAINTAINER Jannis Leidel <jezdez@mozilla.com>
 
 ENV PYTHONUNBUFFERED=1 \
-    AWS_REGION=us-west-2 \
+    # AWS_REGION= \
     # AWS_ACCESS_KEY_ID= \
     # AWS_SECRET_ACCESS_KEY= \
-    SPARK_BUCKET=telemetry-spark-emr-2 \
-    AIRFLOW_BUCKET=telemetry-test-bucket \
-    PRIVATE_OUTPUT_BUCKET=telemetry-test-bucket \
-    PUBLIC_OUTPUT_BUCKET=telemetry-test-bucket \
-    EMR_KEY_NAME=mozilla_vitillo \
-    EMR_FLOW_ROLE=telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3 \
-    EMR_SERVICE_ROLE=EMR_DefaultRole \
-    EMR_INSTANCE_TYPE=c3.4xlarge \
+    # SPARK_BUCKET= \
+    # AIRFLOW_BUCKET= \
+    # PRIVATE_OUTPUT_BUCKET= \
+    # PUBLIC_OUTPUT_BUCKET= \
+    # EMR_KEY_NAME= \
+    # EMR_FLOW_ROLE= \
+    # EMR_SERVICE_ROLE= \
+    # EMR_INSTANCE_TYPE= \
     PORT=8000
 
-ENV AIRFLOW_HOME=/app \
-    AIRFLOW_AUTHENTICATE=True \
-    AIRFLOW_AUTH_BACKEND=airflow.contrib.auth.backends.google_auth \
-    AIRFLOW_BROKER_URL=redis://redis:6379/0 \
-    AIRFLOW_RESULT_URL=${AIRFLOW_BROKER_URL} \
-    AIRFLOW_FLOWER_PORT="5555" \
-    AIRFLOW_DATABASE_URL=postgres://postgres@db/postgres \
-    AIRFLOW_FERNET_KEY="VDRN7HAYDw36BTFbLPibEgJ7q2Dzn-dVGwtbu8iKwUg" \
-    AIRFLOW_SECRET_KEY="3Pxs_qg7J6TvRuAIIpu4E2EK_8sHlOYsxZbB-o82mcg" \
+ENV AIRFLOW_HOME=/app
+    # AIRFLOW_AUTHENTICATE= \
+    # AIRFLOW_AUTH_BACKEND= \
+    # AIRFLOW_BROKER_URL= \
+    # AIRFLOW_RESULT_URL= \
+    # AIRFLOW_FLOWER_PORT= \
+    # AIRFLOW_DATABASE_URL= \
+    # AIRFLOW_FERNET_KEY= \
+    # AIRFLOW_SECRET_KEY= \
     # AIRFLOW_SMTP_HOST= \
     # AIRFLOW_SMTP_USER= \
     # AIRFLOW_SMTP_PASSWORD= \
-    AIRFLOW_SMTP_FROM=telemetry-alerts@airflow.dev.mozaws.net
+    # AIRFLOW_SMTP_FROM=
 
 EXPOSE $PORT
 
