@@ -60,7 +60,7 @@ You can now connect to your local Airflow web console at
 ### Production Setup
 
 Note: the canonical reference for production environment variables lives
-in [a private repository](https://github.com/mozilla-services/cloudops-deployment/blob/master/projects/data/puppet/yaml/app/data.prod.wtmo.yaml)
+in [a private repository](https://github.com/mozilla-services/cloudops-deployment/blob/master/projects/data/puppet/yaml/app/data.prod.wtmo.yaml).
 
 When deploying to production make sure to set up the following environment
 variables:
