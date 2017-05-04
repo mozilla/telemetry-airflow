@@ -20,8 +20,8 @@ t0 = EMRSparkOperator(task_id="churn",
                       job_name="Generate weekly desktop retention dataset",
                       execution_timeout=timedelta(hours=4),
                       instance_count=5,
-                      env={"date": "{{ ds_nodash }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/churn.kp/orig_src/Churn.ipynb",
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/churn.sh",
                       output_visibility="public",
                       dag=dag)
 
