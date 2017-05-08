@@ -28,6 +28,17 @@ def topline_dag(dag, mode, instance_count):
         uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/topline_summary_view.sh",
         dag=dag)
 
+    t1 = EMRSparkOperator(
+        task_id="topline_dashboard",
+        job_name="Topline Dashboard",
+        execution_timeout=timedelta(hours=2),
+        instance_count=1,
+        env={"mode": mode},
+        uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/topline_dashboard.sh",
+        dag=dag)
+
+    t1.set_upstream(t0)
+
 
 dag_weekly = DAG('topline_weekly',
                  default_args=default_args,
