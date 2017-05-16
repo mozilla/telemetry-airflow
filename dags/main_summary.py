@@ -80,9 +80,24 @@ t7 = EMRSparkOperator(task_id="addon_aggregates",
                       uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/addons/okr-daily-script.kp/orig_src/addonOKRDataCollection.ipynb",
                       dag=dag)
 
+t8 = EMRSparkOperator(task_id="txp_mau_dau",
+                      job_name="Test Pilot MAU DAU",
+                      execution_timeout=timedelta(hours=4),
+                      owner="ssuh@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+                      instance_count=5,
+                      env={"date": "{{ ds_nodash }}",
+                           "bucket": "{{ task.__class__.private_output_bucket }}",
+                           "prefix": "txp_mau_dau_simple",
+                           "inbucket": "{{ task.__class__.private_output_bucket }}",
+                           "inprefix": "addons/v2"},
+                      uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/testpilot/txp_mau_dau.py",
+                      dag=dag)
+
 t2.set_upstream(t1)
 t3.set_upstream(t1)
 t4.set_upstream(t1)
 t5.set_upstream(t1)
 t6.set_upstream(t1)
 t7.set_upstream(t3)
+t8.set_upstream(t3)
