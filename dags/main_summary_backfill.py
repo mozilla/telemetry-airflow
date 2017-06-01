@@ -14,7 +14,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('main_summary_backfill', default_args=default_args, schedule_interval='@weekly')
+dag = DAG('main_summary_backfill', default_args=default_args, schedule_interval='@weekly', catchup=True)
 
 t0 = EMRSparkOperator(task_id="main_summary_backfill",
                       job_name="Main Summary Backfill",
