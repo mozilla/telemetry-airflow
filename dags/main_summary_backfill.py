@@ -18,8 +18,8 @@ dag = DAG('main_summary_backfill', default_args=default_args, schedule_interval=
 
 t0 = EMRSparkOperator(task_id="main_summary_backfill",
                       job_name="Main Summary Backfill",
-                      execution_timeout=timedelta(hours=10),
-                      instance_count=20,
+                      execution_timeout=timedelta(hours=48),
+                      instance_count=30,
                       env={
                         "date": "{{ ds_nodash }}",
                         "todate": "{{ macros.ds_format(macros.ds_add(ds, 6), '%Y-%m-%d', '%Y%m%d') }}",
