@@ -94,6 +94,17 @@ t8 = EMRSparkOperator(task_id="txp_mau_dau",
                       uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/testpilot/txp_mau_dau.py",
                       dag=dag)
 
+t9 = EMRSparkOperator(task_id="p2h_main_summary",
+                      job_name="P2H for Main Summary",
+                      execution_timeout=timedelta(hours=4),
+                      owner="bimsland@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
+                      instance_count=1,
+                      env={"bucket": "{{ task.__class__.private_output_bucket }}"
+                           "prefix": "main_summary"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/parquet2hive.sh",
+                      dag=dag)
+
 t2.set_upstream(t1)
 t3.set_upstream(t1)
 t4.set_upstream(t1)
@@ -101,3 +112,4 @@ t5.set_upstream(t1)
 t6.set_upstream(t1)
 t7.set_upstream(t3)
 t8.set_upstream(t3)
+t9.set_upstream(t1)
