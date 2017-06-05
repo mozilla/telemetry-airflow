@@ -94,10 +94,24 @@ t8 = EMRSparkOperator(task_id="txp_mau_dau",
                       uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/testpilot/txp_mau_dau.py",
                       dag=dag)
 
+t9 = EMRSparkOperator(task_id="main_summary_experiments",
+                      job_name="Experiments Main Summary View",
+                      execution_timeout=timedelta(hours=10),
+                      instance_count=10,
+                      owner="ssuh@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_main_summary_view.sh",
+                      dag=dag)
+
+
+
 t2.set_upstream(t1)
 t3.set_upstream(t1)
 t4.set_upstream(t1)
 t5.set_upstream(t1)
 t6.set_upstream(t1)
+t9.set_upstream(t1)
+
 t7.set_upstream(t3)
 t8.set_upstream(t3)
