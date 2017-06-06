@@ -101,7 +101,7 @@ t9 = EMRSparkOperator(task_id="main_summary_experiments",
                       owner="ssuh@mozilla.com",
                       email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_main_summary_view.sh",
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_main_summary_view.sh",
                       dag=dag)
 
 
