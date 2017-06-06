@@ -10,7 +10,7 @@ cd telemetry-batch-view
 sbt assembly
 spark-submit --master yarn \
              --deploy-mode client \
-             --class com.mozilla.telemetry.views.ExperimentsSummaryView \
+             --class com.mozilla.telemetry.views.ExperimentSummaryView \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
              --bucket $bucket \
              --from $date \
