@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 
 default_args = {
-    'owner': 'mdoglio@mozilla.com',
+    'owner': 'frank@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2016, 9, 20),
-    'email': ['telemetry-alerts@mozilla.com', 'mdoglio@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -19,8 +19,8 @@ t0 = EMRSparkOperator(task_id="android_clients",
                       job_name="Update android clients",
                       execution_timeout=timedelta(hours=4),
                       instance_count=5,
-                      owner="mdoglio@mozilla.com",
-                      email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
+                      owner="frank@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "frank@mozilla.com"],
                       env={"date": "{{ ds_nodash }}"},
                       uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/android-clients.kp/orig_src/android-clients.ipynb",
                       output_visibility="public",
