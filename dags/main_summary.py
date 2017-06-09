@@ -104,14 +104,26 @@ t9 = EMRSparkOperator(task_id="main_summary_experiments",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_main_summary_view.sh",
                       dag=dag)
 
+t10 = EMRSparkOperator(task_id="experiments_aggregates",
+                      job_name="Experiments Aggregates View",
+                      execution_timeout=timedelta(hours=10),
+                      instance_count=10,
+                      owner="ssuh@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_aggregates_view.sh",
+                      dag=dag)
 
 
 t2.set_upstream(t1)
+
 t3.set_upstream(t1)
+t7.set_upstream(t3)
+t8.set_upstream(t3)
+
 t4.set_upstream(t1)
 t5.set_upstream(t1)
 t6.set_upstream(t1)
-t9.set_upstream(t1)
 
-t7.set_upstream(t3)
-t8.set_upstream(t3)
+t9.set_upstream(t1)
+t10.set_upstream(t9)
