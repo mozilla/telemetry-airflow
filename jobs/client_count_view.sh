@@ -36,7 +36,6 @@ spark-submit --master yarn \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
              --to $date \
              --files "s3://telemetry-parquet/main_summary/v4/" \
-             --submission-date-col "submission_date" \
              --count-column "client_id" \
              --select "$select" \
              --grouping-columns "$group" \
