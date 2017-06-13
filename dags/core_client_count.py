@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.constants import DS_WEEKLY
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -19,6 +20,6 @@ t0 = EMRSparkOperator(task_id="core_client_count_view",
                       job_name="Core Client Count View",
                       execution_timeout=timedelta(hours=4),
                       instance_count=20,
-                      env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      env = {"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/core_client_count_view.sh",
                       dag=dag)
