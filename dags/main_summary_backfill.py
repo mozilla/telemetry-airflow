@@ -23,7 +23,7 @@ t0 = EMRSparkOperator(task_id="main_summary_backfill",
                       env={
                         "date": "{{ ds_nodash }}",
                         "todate": "{{ macros.ds_format(macros.ds_add(ds, 6), '%Y-%m-%d', '%Y%m%d') }}",
-                        "bucket": "{{ task.__class__.private_output_bucket }}"
+                        "bucket": "telemetry-backfill"
                       },
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_backfill.sh",
                       dag=dag)
