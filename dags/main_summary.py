@@ -105,15 +105,24 @@ t9 = EMRSparkOperator(task_id="main_summary_experiments",
                       dag=dag)
 
 t10 = EMRSparkOperator(task_id="experiments_aggregates",
-                      job_name="Experiments Aggregates View",
-                      execution_timeout=timedelta(hours=10),
-                      instance_count=10,
-                      owner="ssuh@mozilla.com",
-                      email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
-                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_aggregates_view.sh",
-                      dag=dag)
+                       job_name="Experiments Aggregates View",
+                       execution_timeout=timedelta(hours=10),
+                       instance_count=10,
+                       owner="ssuh@mozilla.com",
+                       email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
+                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_aggregates_view.sh",
+                       dag=dag)
 
+t11 = EMRSparkOperator(task_id="experiments_aggregates_import",
+                       job_name="Experiments Aggregates Import",
+                       execution_timeout=timedelta(hours=2),
+                       instance_count=1,
+                       owner="chudson@mozilla.com",
+                       email=["telemetry-alerts@mozilla.com", "chudson@mozilla.com"],
+                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                       uri="https://raw.githubusercontent.com/mozilla/experiments-viewer/master/notebooks/import.py",
+                       dag=dag)
 
 t2.set_upstream(t1)
 
@@ -127,3 +136,4 @@ t6.set_upstream(t1)
 
 t9.set_upstream(t1)
 t10.set_upstream(t9)
+t11.set_upstream(t10)
