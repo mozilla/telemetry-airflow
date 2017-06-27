@@ -24,18 +24,6 @@ t0 = EMRSparkOperator(task_id="longitudinal",
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/longitudinal_view.sh",
                       dag=dag)
 
-t1 = EMRSparkOperator(task_id="update_orphaning",
-                      job_name="Update Orphaning View",
-                      execution_timeout=timedelta(hours=10),
-                      instance_count=1,
-                      owner="spohl@mozilla.com",
-                      email=["telemetry-alerts@mozilla.com", "spohl@mozilla.com",
-                             "mhowell@mozilla.com"],
-                      env={"date": DS_WEEKLY},
-                      uri="https://raw.githubusercontent.com/mozilla-services/data-pipeline/master/reports/update-orphaning/Update%20orphaning%20analysis%20using%20longitudinal%20dataset.ipynb",
-                      output_visibility="public",
-                      dag=dag)
-
 t2 = EMRSparkOperator(task_id="addon_recommender",
                       job_name="Train the Addon Recommender",
                       execution_timeout=timedelta(hours=10),
@@ -79,7 +67,6 @@ t5 = EMRSparkOperator(task_id="distribution_viewer",
                       uri="https://raw.githubusercontent.com/mozilla/distribution-viewer/master/notebooks/aggregate-and-import.py",
                       dag=dag)
 
-t1.set_upstream(t0)
 t2.set_upstream(t0)
 t3.set_upstream(t0)
 t4.set_upstream(t0)
