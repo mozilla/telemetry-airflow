@@ -55,7 +55,11 @@ t5 = EMRSparkOperator(task_id="daily_search_rollup",
                       job_name="Daily Search Rollup",
                       email=["telemetry-alerts@mozilla.com", "spenrose@mozilla.com", "amiyaguchi@mozilla.com", "harterrt@mozilla.com"],
                       execution_timeout=timedelta(hours=6),
-                      instance_count=30,
+                      instance_count=10,
+                      env={
+                        "date": "{{ ds_nodash }}",
+                        "mode": "daily"
+                      },
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/search_rollups.sh",
                       output_visibility="private",
                       dag=dag)
