@@ -27,9 +27,10 @@ t1 = EMRSparkOperator(task_id="main_summary",
 
 t2 = EMRSparkOperator(task_id="engagement_ratio",
                       job_name="Update Engagement Ratio",
+                      email=["telemetry-alerts@mozilla.com", "spenrose@mozilla.com"],
                       execution_timeout=timedelta(hours=6),
                       instance_count=10,
-                      uri="https://raw.githubusercontent.com/mozilla-services/data-pipeline/master/reports/engagement_ratio/MauDau.ipynb",
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/engagement_ratio.sh"
                       output_visibility="public",
                       dag=dag)
 
