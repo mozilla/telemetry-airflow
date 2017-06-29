@@ -24,4 +24,4 @@ unset PYSPARK_DRIVER_PYTHON
 spark-submit --master yarn \
              --deploy-mode client \
              --py-files dist/*.egg \
-             run.py $mode $date $bucket $prefix
+             run.py $date $mode $bucket $prefix
