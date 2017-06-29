@@ -10,6 +10,8 @@ git clone https://github.com/mozilla/python_mozetl.git
 cd python_mozetl
 python setup.py bdist_egg
 
+pip install -e .
+
 bucket="net-mozaws-prod-us-west-2-pipeline-analysis"
 prefix="spenrose/search/to_vertica"
 
