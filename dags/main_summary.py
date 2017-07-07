@@ -30,7 +30,7 @@ t2 = EMRSparkOperator(task_id="engagement_ratio",
                       email=["telemetry-alerts@mozilla.com", "spenrose@mozilla.com"],
                       execution_timeout=timedelta(hours=6),
                       instance_count=10,
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/engagement_ratio.sh"
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/engagement_ratio.sh",
                       output_visibility="public",
                       dag=dag)
 
