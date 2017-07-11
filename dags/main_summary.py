@@ -56,7 +56,7 @@ t5 = EMRSparkOperator(task_id="daily_search_rollup",
                       job_name="Daily Search Rollup",
                       email=["telemetry-alerts@mozilla.com", "spenrose@mozilla.com", "amiyaguchi@mozilla.com", "harterrt@mozilla.com"],
                       execution_timeout=timedelta(hours=6),
-                      instance_count=10,
+                      instance_count=1,
                       env={
                         "date": "{{ ds_nodash }}",
                         "mode": "daily"
