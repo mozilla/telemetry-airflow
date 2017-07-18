@@ -121,7 +121,7 @@ t10 = EMRSparkOperator(task_id="experiments_aggregates",
 
 t11 = EMRSparkOperator(task_id="experiments_aggregates_import",
                        job_name="Experiments Aggregates Import",
-                       execution_timeout=timedelta(hours=2),
+                       execution_timeout=timedelta(hours=10),
                        instance_count=1,
                        owner="chudson@mozilla.com",
                        email=["telemetry-alerts@mozilla.com", "chudson@mozilla.com"],
