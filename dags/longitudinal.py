@@ -4,10 +4,10 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 
 default_args = {
-    'owner': 'rvitillo@mozilla.com',
+    'owner': 'frank@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2016, 6, 30),
-    'email': ['telemetry-alerts@mozilla.com', 'rvitillo@mozilla.com', 'rharter@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com', 'rharter@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -29,8 +29,7 @@ t2 = EMRSparkOperator(task_id="addon_recommender",
                       execution_timeout=timedelta(hours=10),
                       instance_count=20,
                       owner="aplacitelli@mozilla.com",
-                      email=["telemetry-alerts@mozilla.com", "rvitillo@mozilla.com",
-                             "aplacitelli@mozilla.com"],
+                      email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
                       env={"date": DS_WEEKLY,
                            "privateBucket": "{{ task.__class__.private_output_bucket }}",
                            "publicBucket": "{{ task.__class__.public_output_bucket }}"},
