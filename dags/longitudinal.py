@@ -38,13 +38,14 @@ t2 = EMRSparkOperator(task_id="addon_recommender",
 
 t3 = EMRSparkOperator(task_id="game_hw_survey",
                       job_name="Firefox Hardware Report",
-                      execution_timeout=timedelta(hours=10),
+                      execution_timeout=timedelta(hours=5),
                       instance_count=15,
-                      owner="aplacitelli@mozilla.com",
+                      owner="fbertsch@mozilla.com",
                       depends_on_past=True,
-                      email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "fbertsch@mozilla.com", "wfu@mozilla.com",
                              "firefox-hardware-report-feedback@mozilla.com"],
-                      uri="https://github.com/mozilla/firefox-hardware-report/raw/master/report/summarize_json.ipynb",
+                      env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.public_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hardware_report.sh",
                       output_visibility="public",
                       dag=dag)
 
