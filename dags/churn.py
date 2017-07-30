@@ -1,7 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
-from utils.constants import DS_WEEKLY
+from utils.mozetl import mozetl_envvar
 
 default_args = {
     'owner': 'amiyaguchi@mozilla.com',
@@ -20,8 +20,11 @@ t0 = EMRSparkOperator(task_id="churn",
                       job_name="Generate weekly desktop retention dataset",
                       execution_timeout=timedelta(hours=4),
                       instance_count=5,
-                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/churn.sh",
+                      env=mozetl_envvar("churn", {
+                          "start_date": "{{ ds_nodash }}",
+                          "bucket": "{{ task.__class__.private_output_bucket }}"
+                      }),
+                      uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
                       output_visibility="public",
                       dag=dag)
 
