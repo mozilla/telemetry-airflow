@@ -8,6 +8,7 @@ fi
 # Create the package for distribution across the cluster
 git clone https://github.com/mozilla/python_mozetl.git
 cd python_mozetl
+pip install .
 python setup.py bdist_egg
 
 # Generate the driver script
