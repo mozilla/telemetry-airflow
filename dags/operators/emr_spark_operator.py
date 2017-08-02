@@ -41,6 +41,7 @@ class EMRSparkOperator(BaseOperator):
     airflow_bucket = environ['AIRFLOW_BUCKET']
     private_output_bucket = environ['PRIVATE_OUTPUT_BUCKET']
     public_output_bucket = environ['PUBLIC_OUTPUT_BUCKET']
+    staging_private_output_bucket = environ['STAGING_PRIVATE_OUTPUT_BUCKET']
 
     def __del__(self):
         self.on_kill()

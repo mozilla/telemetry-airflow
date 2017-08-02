@@ -75,6 +75,8 @@ variables:
   stored in, e.g. `telemetry-public-analysis-2`
 - `PRIVATE_OUTPUT_BUCKET` -- The AWS S3 bucket where private job results are
   stored in, e.g. `telemetry-parquet`
+- `STAGING_PRIVATE_OUTPUT_BUCKET` -- The AWS S3 bucket where private job
+  results for staging environments are stored in, e.g. `telemetry-parquet-staging`
 - `AIRFLOW_DATABASE_URL` -- The connection URI for the Airflow database, e.g.
   `postgres://username:password@hostname:port/password`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.

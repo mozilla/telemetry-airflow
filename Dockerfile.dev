@@ -8,6 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
     SPARK_BUCKET=telemetry-spark-emr-2 \
     AIRFLOW_BUCKET=telemetry-test-bucket \
     PRIVATE_OUTPUT_BUCKET=telemetry-test-bucket \
+    STAGING_PRIVATE_OUTPUT_BUCKET=telemetry-test-bucket-staging \
     PUBLIC_OUTPUT_BUCKET=telemetry-test-bucket \
     EMR_KEY_NAME=20161025-dataops-dev \
     EMR_FLOW_ROLE=telemetry-spark-cloudformation-TelemetrySparkInstanceProfile-1SATUBVEXG7E3 \

@@ -125,7 +125,7 @@ t11 = EMRSparkOperator(task_id="experiments_aggregates_import",
                        instance_count=1,
                        owner="chudson@mozilla.com",
                        email=["telemetry-alerts@mozilla.com", "chudson@mozilla.com"],
-                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                       env={"date": "{{ ds_nodash }}", "db": "experiments-viewer-db", "bucket": "{{ task.__class__.private_output_bucket }}"},
                        uri="https://raw.githubusercontent.com/mozilla/experiments-viewer/master/notebooks/import.py",
                        dag=dag)
 
