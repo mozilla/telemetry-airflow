@@ -146,7 +146,7 @@ t13 = EMRSparkOperator(task_id="search_dashboard",
                        owner="harterrt@mozilla.com",
                        email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com"],
                        env=mozetl_envvar("search_dashboard", {
-                             "start_date": "{{ ds_nodash }}",
+                             "submission_date": "{{ ds_nodash }}",
                              "bucket": "{{ task.__class__.private_output_bucket }}"
                              "prefix": "harter/searchdb"
                        })
