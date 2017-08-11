@@ -148,9 +148,9 @@ t13 = EMRSparkOperator(task_id="search_dashboard",
                        email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com"],
                        env=mozetl_envvar("search_dashboard", {
                              "submission_date": "{{ ds_nodash }}",
-                             "bucket": "{{ task.__class__.private_output_bucket }}"
+                             "bucket": "{{ task.__class__.private_output_bucket }}",
                              "prefix": "harter/searchdb"
-                       })
+                       }),
                        uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
                        output_visibility="private",
                        dag=dag)
