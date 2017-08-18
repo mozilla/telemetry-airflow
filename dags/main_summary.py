@@ -129,6 +129,16 @@ t11 = EMRSparkOperator(task_id="experiments_aggregates_import",
                        uri="https://raw.githubusercontent.com/mozilla/experiments-viewer/master/notebooks/import.py",
                        dag=dag)
 
+t12 = EMRSparkOperator(task_id="hbase_addon_recommender",
+                       job_name="HBase Addon Recommender View",
+                       owner="aplacitelli@mozilla.com",
+                       email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
+                       execution_timeout=timedelta(hours=10),
+                       instance_count=5,
+                       env={"date": "{{ ds_nodash }}"},
+                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_addon_recommender_view.sh",
+                       dag=dag)
+
 t2.set_upstream(t1)
 
 t3.set_upstream(t1)
@@ -142,3 +152,5 @@ t6.set_upstream(t1)
 t9.set_upstream(t1)
 t10.set_upstream(t9)
 t11.set_upstream(t10)
+
+t12.set_upstream(t1)
