@@ -1,7 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
-from utils.mozetl import mozetl_envvar
 
 default_args = {
     'owner': 'mreid@mozilla.com',
@@ -51,21 +50,6 @@ t4 = EMRSparkOperator(task_id="hbase_main_summary",
                       instance_count=5,
                       env={"date": "{{ ds_nodash }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_main_summary_view.sh",
-                      dag=dag)
-
-t5 = EMRSparkOperator(task_id="daily_search_rollup",
-                      job_name="Daily Search Rollup",
-                      email=["telemetry-alerts@mozilla.com", "spenrose@mozilla.com", "amiyaguchi@mozilla.com", "harterrt@mozilla.com"],
-                      execution_timeout=timedelta(hours=6),
-                      instance_count=1,
-                      env=mozetl_envvar("search_rollup", {
-                          "start_date": "{{ ds_nodash }}",
-                          "mode": "daily",
-                          "bucket": "net-mozaws-prod-us-west-2-pipeline-analysis",
-                          "prefix": "spenrose/search/to_vertica",
-                      }),
-                      uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-                      output_visibility="private",
                       dag=dag)
 
 t6 = EMRSparkOperator(task_id="main_events",
@@ -166,7 +150,6 @@ t7.set_upstream(t3)
 t8.set_upstream(t3)
 
 t4.set_upstream(t1)
-t5.set_upstream(t1)
 t6.set_upstream(t1)
 
 t9.set_upstream(t1)
