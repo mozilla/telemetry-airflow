@@ -143,13 +143,14 @@ t12 = EMRSparkOperator(task_id="hbase_addon_recommender",
 t13 = EMRSparkOperator(task_id="search_dashboard",
                        job_name="Search Dashboard",
                        execution_timeout=timedelta(hours=3),
-                       instance_count=5,
+                       instance_count=3,
                        owner="harterrt@mozilla.com",
                        email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com"],
                        env=mozetl_envvar("search_dashboard", {
                              "submission_date": "{{ ds_nodash }}",
                              "bucket": "{{ task.__class__.private_output_bucket }}",
-                             "prefix": "harter/searchdb"
+                             "prefix": "harter/searchdb",
+                             "save_mode": "overwrite"
                        }),
                        uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
                        output_visibility="private",
