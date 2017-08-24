@@ -139,6 +139,21 @@ t12 = EMRSparkOperator(task_id="hbase_addon_recommender",
                        uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_addon_recommender_view.sh",
                        dag=dag)
 
+t13 = EMRSparkOperator(task_id="search_dashboard",
+                       job_name="Search Dashboard",
+                       execution_timeout=timedelta(hours=3),
+                       instance_count=5,
+                       owner="harterrt@mozilla.com",
+                       email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com"],
+                       env=mozetl_envvar("search_dashboard", {
+                             "start_date": "{{ ds_nodash }}",
+                             "bucket": "{{ task.__class__.private_output_bucket }}"
+                             "prefix": "harter/searchdb"
+                       })
+                       uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+                       output_visibility="private",
+                       dag=dag)
+
 t2.set_upstream(t1)
 
 t3.set_upstream(t1)
@@ -152,5 +167,5 @@ t6.set_upstream(t1)
 t9.set_upstream(t1)
 t10.set_upstream(t9)
 t11.set_upstream(t10)
-
 t12.set_upstream(t1)
+t13.set_upstream(t1)
