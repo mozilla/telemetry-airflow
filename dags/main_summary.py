@@ -139,6 +139,7 @@ t12 = EMRSparkOperator(task_id="hbase_addon_recommender",
                        execution_timeout=timedelta(hours=10),
                        instance_count=5,
                        env={"date": "{{ ds_nodash }}"},
+                       release_label="emr-5.8.0",
                        uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_addon_recommender_view.sh",
                        dag=dag)
 
