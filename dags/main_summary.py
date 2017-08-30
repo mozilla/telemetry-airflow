@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.mozetl import mozetl_envvar
 
 default_args = {
     'owner': 'mreid@mozilla.com',
