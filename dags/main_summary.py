@@ -184,6 +184,17 @@ experiments_daily = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
+heavy_users = EMRSparkOperator(task_id="heavy_users_view",
+    job_name="Heavy Users View",
+    owner="frank@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
+    execution_timeout=timedelta(hours=4),
+    instance_count=10,
+    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/heavy_users_view.sh",
+    dag=dag)
+
+
 engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
@@ -204,3 +215,5 @@ search_dashboard.set_upstream(main_summary)
 add_search_rollup(dag, "daily", 1, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
+
+heavy_users.set_upstream(main_summary)
