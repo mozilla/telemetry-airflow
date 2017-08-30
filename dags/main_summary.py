@@ -159,6 +159,17 @@ t13 = EMRSparkOperator(task_id="search_dashboard",
                        output_visibility="private",
                        dag=dag)
 
+t14 = EMRSparkOperator(task_id="heavy_users_view",
+                      job_name="Heavy Users View",
+                      owner="frank@mozilla.com",
+                      email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
+                      depends_on_past=True,
+                      execution_timeout=timedelta(hours=4),
+                      instance_count=10,
+                      env={"date": "{{ ds_nodash }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/heavy_users_view.sh",
+                      dag=dag)
+
 t2.set_upstream(t1)
 
 t3.set_upstream(t1)
@@ -174,3 +185,5 @@ t10.set_upstream(t9)
 t11.set_upstream(t10)
 t12.set_upstream(t1)
 t13.set_upstream(t1)
+
+t14.set_upstream(t1)
