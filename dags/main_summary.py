@@ -151,7 +151,7 @@ t14 = EMRSparkOperator(task_id="heavy_users_view",
                       depends_on_past=True,
                       execution_timeout=timedelta(hours=4),
                       instance_count=10,
-                      env={"date": "{{ ds_nodash }}"},
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/heavy_users_view.sh",
                       dag=dag)
 
