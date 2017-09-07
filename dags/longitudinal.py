@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
+from utils.mozetl import mozetl_envvar
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -67,7 +68,24 @@ t5 = EMRSparkOperator(task_id="distribution_viewer",
                       uri="https://raw.githubusercontent.com/mozilla/distribution-viewer/master/notebooks/aggregate-and-import.py",
                       dag=dag)
 
+t6 = EMRSparkOperator(task_id="taar_locale_job",
+                      job_name="TAAR Locale Model",
+                      owner="aplacitelli@mozilla.com",
+                      email=["aplacitelli@mozilla.com", "mlopatka@mozilla.com"],
+                      execution_timeout=timedelta(hours=5),
+                      instance_count=3,
+                      env=mozetl_envvar("taar_locale", {
+                            "date": "{{ ds_nodash }}",
+                            "bucket": "{{ task.__class__.private_output_bucket }}",
+                            "prefix": "taar/locale/"
+                      }),
+                      release_label="emr-5.8.0",
+                      uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+                      output_visibility="private",
+                      dag=dag)
+
 t2.set_upstream(t0)
 t3.set_upstream(t0)
 t4.set_upstream(t0)
 t5.set_upstream(t4)
+t6.set_upstream(t0)
