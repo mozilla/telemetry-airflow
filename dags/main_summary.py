@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.mozetl import mozetl_envvar
+from search_rollup import add_search_rollup
 
 default_args = {
     'owner': 'mreid@mozilla.com',
@@ -158,3 +159,5 @@ t10.set_upstream(t9)
 t11.set_upstream(t10)
 t12.set_upstream(t1)
 t13.set_upstream(t1)
+
+add_search_rollup(dag, "daily", 1, upstream=t1)
