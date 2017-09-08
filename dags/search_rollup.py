@@ -24,25 +24,13 @@ default_args = {
 }
 
 
-dag_daily = DAG('search_rollup_daily',
-                 default_args=default_args,
-                 schedule_interval='@daily')
-
-
 dag_monthly = DAG('search_rollup_monthly',
                   default_args=default_args,
-                  schedule_interval='@monthly')
+                  schedule_interval='0 0 2 * *')
 
 
-def search_rollup_dag(dag, mode, instance_count):
-    """Create a sensor for main_summary and attach the search rollup."""
-
-    main_summary_sensor = ExternalTaskSensor(
-        task_id="main_summary_sensor",
-        external_dag_id="main_summary",
-        external_task_id="main_summary",
-        dag=dag
-    )
+def add_search_rollup(dag, mode, instance_count, upstream=None):
+    """Create a search rollup for a particular date date"""
 
     search_rollup = EMRSparkOperator(
         task_id="search_rollup_{}".format(mode),
@@ -59,8 +47,8 @@ def search_rollup_dag(dag, mode, instance_count):
         dag=dag
     )
 
-    search_rollup.set_upstream(main_summary_sensor)
+    if upstream:
+        search_rollup.set_upstream(upstream)
 
 
-search_rollup_dag(dag_daily, "daily", instance_count=1)
-search_rollup_dag(dag_monthly, "monthly", instance_count=3)
+add_search_rollup(dag_monthly, "monthly", instance_count=3)
