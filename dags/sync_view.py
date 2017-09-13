@@ -31,3 +31,11 @@ t1 = EMRSparkOperator(task_id="sync_events_view",
                       env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/sync_events_view.sh",
                       dag=dag)
+
+t2 = EMRSparkOperator(task_id="sync_flat_view",
+                      job_name="Flattened Sync Pings View",
+                      execution_timeout=timedelta(hours=10),
+                      instance_count=5,
+                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/sync_flat_view.sh",
+                      dag=dag)
