@@ -17,5 +17,5 @@ spark-submit \
   --to "$date" \
   --tablename telemetry_focus_event_parquet \
   --output-path "$bucket/focus_event_longitudinal" \
-  --num-parquet-files 2 \
+  --num-parquet-files 30 \
   --ordering-columns "seq,created"
