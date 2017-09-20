@@ -40,4 +40,5 @@ spark-submit --master yarn \
              --select "$select" \
              --grouping-columns "$group" \
              --where "client_id IS NOT NULL" \
-             --output "$bucket/client_count"
+             --output "$bucket/client_count" \
+             --num-parquet-files 250
