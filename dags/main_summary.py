@@ -156,6 +156,33 @@ search_dashboard = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
+clients_daily = EMRSparkOperator(
+    task_id="clients_daily",
+    job_name="Clients Daily",
+    execution_timeout=timedelta(hours=5),
+    instance_count=10,
+    env=mozetl_envvar("clients_daily", {
+        # Note that the output of this job will be earlier
+        # than this date to account for submission latency.
+        # See the clients_daily code in the python_mozetl
+        # repo for more details.
+        "date": "{{ ds }}",
+        "output-bucket": "{{ task.__class__.private_output_bucket }}"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    dag=dag)
+
+experiments_daily = EMRSparkOperator(
+    task_id="experiments_daily",
+    job_name="Experiments Daily",
+    execution_timeout=timedelta(hours=8),
+    instance_count=10,
+    env=mozetl_envvar("experiments_daily", {
+        "output-bucket": "{{ task.__class__.private_output_bucket }}"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    dag=dag)
+
 engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
@@ -167,8 +194,12 @@ main_events.set_upstream(main_summary)
 
 main_summary_experiments.set_upstream(main_summary)
 experiments_aggregates.set_upstream(main_summary_experiments)
+experiments_daily.set_upstream(main_summary_experiments)
+
 experiments_aggregates_import.set_upstream(experiments_aggregates)
 hbase_addon_recommender.set_upstream(main_summary)
 search_dashboard.set_upstream(main_summary)
 
 add_search_rollup(dag, "daily", 1, upstream=main_summary)
+
+clients_daily.set_upstream(main_summary)
