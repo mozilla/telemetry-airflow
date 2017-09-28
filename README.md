@@ -25,11 +25,18 @@ An Airflow container can be built with
 make build
 ```
 
+You should then run the database migrations to complete the container initialization with
+
+```bash
+make migrate
+```
+
 ### Testing
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `dev` environment with:
 ```bash
-AWS_SECRET_ACCESS_KEY=... AWS_ACCESS_KEY_ID=... \
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_ACCESS_KEY_ID=...
 make run COMMAND="test example spark 20160101"
 ```
 
