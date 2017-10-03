@@ -20,7 +20,8 @@ dag = DAG('longitudinal', default_args=default_args, schedule_interval='@weekly'
 t0 = EMRSparkOperator(task_id="longitudinal",
                       job_name="Longitudinal View",
                       execution_timeout=timedelta(hours=12),
-                      instance_count=40,
+                      instance_count=30,
+                      release_label="emr-5.8.0",
                       env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
                       uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/longitudinal_view.sh",
                       dag=dag)
