@@ -16,7 +16,7 @@ def mozetl_envvar(command, options, other={}):
     :returns: a dictionary that contains properly prefixed command and options
     """
     prefixed_options = {
-        "MOZETL_{}_{}".format(command.upper(), key.upper()): value
+        "MOZETL_{}_{}".format(command.upper(), key.upper().replace("-", "_")): value
         for key, value in options.iteritems()
     }
     prefixed_options["MOZETL_COMMAND"] = command
