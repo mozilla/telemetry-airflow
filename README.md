@@ -1,4 +1,4 @@
-# telemetry-airflow
+# Telemetry-Airflow
 Airflow is a platform to programmatically author, schedule and monitor workflows.
 
 When workflows are defined as code, they become more maintainable, versionable,
@@ -100,13 +100,13 @@ variables:
 - `AIRFLOW_SMTP_PASSWORD` --  The SMTP password
 - `AIRFLOW_SMTP_FROM` -- The email address to send emails from e.g.
   `telemetry-alerts@workflow.telemetry.mozilla.org`
-- `URL` -- The base url of the website e.g.
+- `URL` -- The base URL of the website e.g.
   `https://workflow.telemetry.mozilla.org`
 
 Also, please set
 
 - `AIRFLOW_SECRET_KEY` -- A secret key for Airflow's Flask based webserver
-- `AIRFLOW_FERNET_KEY` -- A secret key to save connection passwords in the db
+- `AIRFLOW_FERNET_KEY` -- A secret key to saving connection passwords in the DB
 
 Both values should be set by using the cryptography module's fernet tool that
 we've wrapped in a docker-compose call:
@@ -135,9 +135,9 @@ docker volume rm $(docker volume ls -qf dangling=true)
 - If the dag run is not showing in the Dag Tree View UI (maybe deleted)
   - Browse -> Dag Runs
   - Create (you can look at another dag run of the same dag for example values too)
-    - Dag Id: the name of the dag, for example `main_summary` or `crash_aggregates`
-    - Execution Date: The date the dag should have run, for example `2016-07-14 00:00:00`
-    - Start Date: Some date between the execution date and "now", for example `2016-07-20 00:00:05`
+    - Dag Id: the name of the dag, for example, `main_summary` or `crash_aggregates`
+    - Execution Date: The date the dag should have run, for example, `2016-07-14 00:00:00`
+    - Start Date: Some date between the execution date and "now", for example, `2016-07-20 00:00:05`
     - End Date: Leave it blank
     - State: success
     - Run Id: `scheduled__2016-07-14T00:00:00`
@@ -157,7 +157,7 @@ docker volume rm $(docker volume ls -qf dangling=true)
 
 ### Triggering backfill tasks using the CLI
 
-- SSH in to the ECS container instance
+- SSH into the ECS container instance
 - List docker containers using `docker ps`
-- Log in to one of the docker containers using `docker exec -it <container_id> bash`. The webserver instance is a good choice.
+- Log in to one of the docker containers using `docker exec -it <container_id> bash`. The web server instance is a good choice.
 - Run the desired backfill command, something like `$ airflow backfill main_summary -s 2016-06-20 -e 2016-06-26`
