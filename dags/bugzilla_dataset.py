@@ -28,7 +28,7 @@ try:
         "DATABASE_NAME": connection_details.schema,
     }
 
-    t0 = EMRSparkOperator(
+    update_bugs = EMRSparkOperator(
         task_id="update_bugs",
         job_name="Bugzilla Dataset Update",
         execution_timeout=timedelta(hours=5),

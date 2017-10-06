@@ -15,13 +15,14 @@ default_args = {
 
 dag = DAG('mobile_clients', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(task_id="mobile_clients",
-                      job_name="Update mobile clients",
-                      execution_timeout=timedelta(hours=8),
-                      instance_count=10,
-                      owner="frank@mozilla.com",
-                      email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
-                      env={"date": "{{ ds_nodash }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/mobile-clients.kp/orig_src/mobile-clients.ipynb",
-                      output_visibility="public",
-                      dag=dag)
+mobile_clients = EMRSparkOperator(
+    task_id="mobile_clients",
+    job_name="Update mobile clients",
+    execution_timeout=timedelta(hours=8),
+    instance_count=10,
+    owner="frank@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
+    env={"date": "{{ ds_nodash }}"},
+    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/mobile-clients.kp/orig_src/mobile-clients.ipynb",
+    output_visibility="public",
+    dag=dag)

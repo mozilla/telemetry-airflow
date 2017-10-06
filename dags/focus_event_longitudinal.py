@@ -16,10 +16,11 @@ default_args = {
 
 dag = DAG('focus_event_longitudinal', default_args=default_args, schedule_interval='@weekly')
 
-t0 = EMRSparkOperator(task_id="focus_event_longitudinal",
-                      job_name="Focus Event Longitudinal View",
-                      execution_timeout=timedelta(hours=6),
-                      instance_count=10,
-                      env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/focus_event_longitudinal_view.sh",
-                      dag=dag)
+focus_event_longitudinal = EMRSparkOperator(
+    task_id="focus_event_longitudinal",
+    job_name="Focus Event Longitudinal View",
+    execution_timeout=timedelta(hours=6),
+    instance_count=10,
+    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/focus_event_longitudinal_view.sh",
+    dag=dag)

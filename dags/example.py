@@ -16,18 +16,20 @@ default_args = {
 
 dag = DAG('example', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(task_id = "spark",
-                      job_name = "Spark Example Job",
-                      instance_count = 1,
-                      execution_timeout=timedelta(hours=4),
-                      env = {"date": "{{ ds_nodash }}"},
-                      uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/examples/spark/example_date.ipynb",
-                      dag = dag)
+spark = EMRSparkOperator(
+    task_id = "spark",
+    job_name = "Spark Example Job",
+    instance_count = 1,
+    execution_timeout=timedelta(hours=4),
+    env = {"date": "{{ ds_nodash }}"},
+    uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/examples/spark/example_date.ipynb",
+    dag = dag)
 
-t1 = EMRSparkOperator(task_id = "bash",
-                      job_name = "Bash Example Job",
-                      instance_count = 1,
-                      execution_timeout=timedelta(hours=4),
-                      env = {"date": "{{ ds_nodash }}"},
-                      uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/examples/spark/example_date.sh",
-                      dag = dag)
+bash = EMRSparkOperator(
+    task_id = "bash",
+    job_name = "Bash Example Job",
+    instance_count = 1,
+    execution_timeout=timedelta(hours=4),
+    env = {"date": "{{ ds_nodash }}"},
+    uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/examples/spark/example_date.sh",
+    dag = dag)

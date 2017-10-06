@@ -15,13 +15,14 @@ default_args = {
 
 dag = DAG('android_addons', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(task_id="android_addons",
-                      job_name="Update android addons",
-                      execution_timeout=timedelta(hours=4),
-                      instance_count=5,
-                      owner="frank@mozilla.com",
-                      email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
-                      env={"date": "{{ ds_nodash }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/android-addons.kp/orig_src/android-addons.ipynb",
-                      output_visibility="public",
-                      dag=dag)
+android_addons = EMRSparkOperator(
+    task_id="android_addons",
+    job_name="Update android addons",
+    execution_timeout=timedelta(hours=4),
+    instance_count=5,
+    owner="frank@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
+    env={"date": "{{ ds_nodash }}"},
+    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/android-addons.kp/orig_src/android-addons.ipynb",
+    output_visibility="public",
+    dag=dag)

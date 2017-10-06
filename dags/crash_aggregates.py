@@ -15,10 +15,11 @@ default_args = {
 
 dag = DAG('crash_aggregates', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(task_id = "crash_aggregate_view",
-                      job_name = "Crash Aggregate View",
-                      instance_count = 9,
-                      execution_timeout=timedelta(hours=4),
-                      env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
-                      dag = dag)
+crash_aggregate_view = EMRSparkOperator(
+    task_id = "crash_aggregate_view",
+    job_name = "Crash Aggregate View",
+    instance_count = 9,
+    execution_timeout=timedelta(hours=4),
+    env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
+    dag = dag)

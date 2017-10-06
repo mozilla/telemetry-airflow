@@ -15,10 +15,11 @@ default_args = {
 
 dag = DAG('txp_pulse', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(task_id="txp_pulse",
-                      job_name="Pulse Testpilot Experiment ETL",
-                      execution_timeout=timedelta(hours=2),
-                      instance_count=5,
-                      env={},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/txp_pulse.sh",
-                      dag=dag)
+txp_pulse = EMRSparkOperator(
+    task_id="txp_pulse",
+    job_name="Pulse Testpilot Experiment ETL",
+    execution_timeout=timedelta(hours=2),
+    instance_count=5,
+    env={},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/txp_pulse.sh",
+    dag=dag)

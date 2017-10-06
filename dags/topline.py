@@ -15,7 +15,7 @@ default_args = {
 
 
 def topline_dag(dag, mode, instance_count):
-    t0 = EMRSparkOperator(
+    topline_summary = EMRSparkOperator(
         task_id="topline_summary",
         job_name="Topline Summary View",
         execution_timeout=timedelta(hours=8),
@@ -28,7 +28,7 @@ def topline_dag(dag, mode, instance_count):
         uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/topline_summary_view.sh",
         dag=dag)
 
-    t1 = EMRSparkOperator(
+    topline_dashboard = EMRSparkOperator(
         task_id="topline_dashboard",
         job_name="Topline Dashboard",
         execution_timeout=timedelta(hours=2),
@@ -37,7 +37,7 @@ def topline_dag(dag, mode, instance_count):
         uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/topline_dashboard.sh",
         dag=dag)
 
-    t1.set_upstream(t0)
+    topline_dashboard.set_upstream(topline_summary)
 
 
 dag_weekly = DAG('topline_weekly',
