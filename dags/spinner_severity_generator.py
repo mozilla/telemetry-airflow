@@ -15,7 +15,7 @@ default_args = {
 
 dag = DAG('tab_spinner_severity', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(
+update_tab_spinner_severity = EMRSparkOperator(
     task_id="update_tab_spinner_severity",
     job_name="Tab Spinner Severity Job",
     execution_timeout=timedelta(hours=12),

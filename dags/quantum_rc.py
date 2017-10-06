@@ -16,10 +16,11 @@ default_args = {
 
 dag = DAG('quantum_release_criteria_view', default_args=default_args, schedule_interval='@weekly')
 
-t0 = EMRSparkOperator(task_id="quantum_release_criteria_view",
-                      job_name="Quantum Release Criteria View",
-                      execution_timeout=timedelta(hours=2),
-                      instance_count=10,
-                      env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/quantum_rc_view.sh",
-                      dag=dag)
+quantum_release_criteria_view = EMRSparkOperator(
+    task_id="quantum_release_criteria_view",
+    job_name="Quantum Release Criteria View",
+    execution_timeout=timedelta(hours=2),
+    instance_count=10,
+    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/quantum_rc_view.sh",
+    dag=dag)

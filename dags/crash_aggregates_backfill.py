@@ -15,10 +15,11 @@ default_args = {
 
 dag = DAG('crash_aggregates_backfill', default_args=default_args, schedule_interval='@daily')
 
-t0 = EMRSparkOperator(task_id = "crash_aggregates_view_backfill",
-                      job_name = "Crash Aggregates View Backfill",
-                      instance_count = 20,
-                      execution_timeout=timedelta(hours=4),
-                      env = {"date": "{{ ds_nodash }}", "bucket": "telemetry-test-bucket"},
-                      uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
-                      dag = dag)
+crash_aggregates_view_backfill = EMRSparkOperator(
+    task_id = "crash_aggregates_view_backfill",
+    job_name = "Crash Aggregates View Backfill",
+    instance_count = 20,
+    execution_timeout=timedelta(hours=4),
+    env = {"date": "{{ ds_nodash }}", "bucket": "telemetry-test-bucket"},
+    uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_aggregate_view.sh",
+    dag = dag)

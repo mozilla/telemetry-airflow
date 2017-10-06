@@ -17,10 +17,11 @@ default_args = {
 # Running at 1am should suffice.
 dag = DAG('sync_log', default_args=default_args, schedule_interval='0 1 * * *')
 
-t0 = EMRSparkOperator(task_id="sync_log",
-                      job_name="Sync Log Import",
-                      execution_timeout=timedelta(hours=10),
-                      instance_count=10,
-                      env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-                      uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/sync_log.kp/orig_src/ImportSyncLogs.ipynb",
-                      dag=dag)
+sync_log = EMRSparkOperator(
+    task_id="sync_log",
+    job_name="Sync Log Import",
+    execution_timeout=timedelta(hours=10),
+    instance_count=10,
+    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/sync_log.kp/orig_src/ImportSyncLogs.ipynb",
+    dag=dag)
