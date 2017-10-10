@@ -46,17 +46,6 @@ addons = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addons_view.sh",
     dag=dag)
 
-hbase_main_summary = EMRSparkOperator(
-    task_id="hbase_main_summary",
-    job_name="HBase Main Summary View",
-    owner="jason@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jason@mozilla.com"],
-    execution_timeout=timedelta(hours=10),
-    instance_count=5,
-    env={"date": "{{ ds_nodash }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_main_summary_view.sh",
-    dag=dag)
-
 main_events = EMRSparkOperator(
     task_id="main_events",
     job_name="Main Events View",
@@ -216,7 +205,6 @@ addons.set_upstream(main_summary)
 addon_aggregates.set_upstream(addons)
 txp_mau_dau.set_upstream(addons)
 
-hbase_main_summary.set_upstream(main_summary)
 main_events.set_upstream(main_summary)
 
 main_summary_experiments.set_upstream(main_summary)
