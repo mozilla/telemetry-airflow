@@ -203,6 +203,7 @@ retention = EMRSparkOperator(task_id="retention",
     env=mozetl_envvar("retention", {
         "start_date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
+        "slack": 4
     }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/retention.sh",
     dag=dag)
