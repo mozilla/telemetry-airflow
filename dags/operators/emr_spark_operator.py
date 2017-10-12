@@ -91,22 +91,28 @@ class EMRSparkOperator(BaseOperator):
             's3://{}.elasticmapreduce/libs/script-runner/script-runner.jar'
             .format(EMRSparkOperator.region)
         )
+
+        args = [
+            's3://{}/steps/airflow.sh'.format(
+                EMRSparkOperator.airflow_bucket
+            ),
+            '--job-name', self.job_name,
+            '--user', self.owner,
+            '--uri', self.uri,
+            '--data-bucket', self.data_bucket,
+            '--environment', self.environment
+        ]
+        # Empty quotes will be parsed as literals in the shell, so avoid
+        # passing in arguments unless they are actually needed. See issue #189.
+        if self.arguments:
+            args += ['--arguments', '"{}"'.format(self.arguments)]
+
         self.steps = [{
             'Name': 'RunJobStep',
             'ActionOnFailure': 'TERMINATE_JOB_FLOW',
             'HadoopJarStep': {
                 'Jar': jar_url,
-                'Args': [
-                    's3://{}/steps/airflow.sh'.format(
-                        EMRSparkOperator.airflow_bucket
-                    ),
-                    '--job-name', self.job_name,
-                    '--user', self.owner,
-                    '--uri', self.uri,
-                    '--arguments', '"{}"'.format(self.arguments),
-                    '--data-bucket', self.data_bucket,
-                    '--environment', self.environment
-                ]
+                'Args': args
             }
         }]
 
