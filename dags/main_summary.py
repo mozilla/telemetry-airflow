@@ -184,7 +184,8 @@ experiments_daily = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
-heavy_users = EMRSparkOperator(task_id="heavy_users_view",
+heavy_users = EMRSparkOperator(
+    task_id="heavy_users_view",
     job_name="Heavy Users View",
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
@@ -194,7 +195,8 @@ heavy_users = EMRSparkOperator(task_id="heavy_users_view",
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/heavy_users_view.sh",
     dag=dag)
 
-retention = EMRSparkOperator(task_id="retention",
+retention = EMRSparkOperator(
+    task_id="retention",
     job_name="1-Day Firefox Retention",
     owner="amiyaguchi@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
