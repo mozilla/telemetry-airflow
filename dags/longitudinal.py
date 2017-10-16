@@ -91,8 +91,8 @@ taar_locale_job = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
-addon_recommender.set_upstream(longitudial)
-game_hw_survey.set_upstream(longitudial)
-cross_sectional.set_upstream(longitudial)
+addon_recommender.set_upstream(longitudinal)
+game_hw_survey.set_upstream(longitudinal)
+cross_sectional.set_upstream(longitudinal)
 distribution_viewer.set_upstream(cross_sectional)
-taar_locale_job.set_upstream(longitudial)
+taar_locale_job.set_upstream(longitudinal)
