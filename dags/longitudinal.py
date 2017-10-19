@@ -96,3 +96,5 @@ game_hw_survey.set_upstream(longitudinal)
 cross_sectional.set_upstream(longitudinal)
 distribution_viewer.set_upstream(cross_sectional)
 taar_locale_job.set_upstream(longitudinal)
+taar_legacy_job.set_upstream(longitudinal)
+
