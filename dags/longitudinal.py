@@ -91,8 +91,26 @@ taar_locale_job = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
+taar_legacy_job = EMRSparkOperator(
+    task_id="taar_legacy_job",
+    job_name="TAAR Legacy Model",
+    owner="mlopatka@mozilla.com",
+    email=["aplacitelli@mozilla.com", "mlopatka@mozilla.com"],
+    execution_timeout=timedelta(hours=1),
+    instance_count=1,
+    env=mozetl_envvar("taar_legacy", {
+          "date": "{{ ds_nodash }}",
+          "bucket": "{{ task.__class__.private_output_bucket }}",
+          "prefix": "taar/legacy/"
+    }),
+    release_label="emr-5.8.0",
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag)
+
 addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
 cross_sectional.set_upstream(longitudinal)
 distribution_viewer.set_upstream(cross_sectional)
 taar_locale_job.set_upstream(longitudinal)
+taar_legacy_job.set_upstream(longitudinal)
