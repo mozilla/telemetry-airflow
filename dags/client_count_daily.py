@@ -5,7 +5,7 @@ from operators.emr_spark_operator import EMRSparkOperator
 default_args = {
     'owner': 'relud@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 11, 1),
+    'start_date': datetime(2017, 11, 1),
     'email': ['telemetry-alerts@mozilla.com', 'relud@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
