@@ -18,7 +18,11 @@ base+="osversion,"
 base+="distribution_id," # 31 values
 base+="arch" # 5 values
 
-select="regexp_extract(created, '(201[67]-[0-9]{2}-[0-9]{2})', 1) as created_date,"
+year=$(date +"%Y")
+prev_year=$(($year - 1))
+next_year=$(($year + 1))
+
+select="regexp_extract(created, '(($prev_year|$year|$next_year)-[0-9]{2}-[0-9]{2})', 1) as created_date,"
 select+="metadata.geo_country as geo_country," # 247 values
 select+=$base
 
