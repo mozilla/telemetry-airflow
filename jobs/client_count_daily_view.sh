@@ -14,12 +14,10 @@ base+="country,"
 base+="locale,"
 base+="app_name,"
 base+="app_version,"
-base+="e10s_enabled,"
-base+="e10s_cohort,"
 base+="os,"
 base+="os_version"
 
-select="substr(subsession_start_date, 0, 10) as activity_date,"
+select="regexp_extract(subsession_start_date, '(20[0-9]{2}-[0-9]{2}-[0-9]{2})', 1) as activity_date,"
 select+="devtools_toolbox_opened_count > 0 as devtools_toolbox_opened,"
 select+="case when distribution_id in ('canonical', 'MozillaOnline', 'yandex') "
 select+="then distribution_id else null end as top_distribution_id,"
@@ -42,6 +40,6 @@ spark-submit --master yarn \
              --count-column "client_id" \
              --select "$select" \
              --grouping-columns "$group" \
-             --where "client_id IS NOT NULL" \
+             --where "client_id IS NOT NULL AND activity_date IS NOT NULL" \
              --output "$bucket/client_count_daily" \
-             --num-parquet-files 250
+             --num-parquet-files 2
