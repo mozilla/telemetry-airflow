@@ -34,7 +34,7 @@ spark-submit --master yarn \
              --deploy-mode client \
              --class com.mozilla.telemetry.views.GenericCountView \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
-             --version "v2" \
+             --version "v1" \
              --output-parition "submission_date=$date" \
              --from $date \
              --to $date \
@@ -43,5 +43,5 @@ spark-submit --master yarn \
              --select "$select" \
              --grouping-columns "$group" \
              --where "client_id IS NOT NULL" \
-             --output "$bucket/client_count" \
+             --output "$bucket/client_count_daily" \
              --num-parquet-files 250
