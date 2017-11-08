@@ -33,7 +33,7 @@ spark-submit --master yarn \
              --class com.mozilla.telemetry.views.GenericCountView \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
              --version "v1" \
-             --output-parition "submission_date=$date" \
+             --output-partition "submission_date=$date" \
              --from $date \
              --to $date \
              --files "s3://telemetry-parquet/main_summary/v4/" \
