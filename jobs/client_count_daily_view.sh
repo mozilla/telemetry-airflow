@@ -14,6 +14,7 @@ base+="country,"
 base+="locale,"
 base+="app_name,"
 base+="app_version,"
+base+="e10s_enabled,"
 base+="os,"
 base+="os_version"
 
