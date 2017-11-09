@@ -42,4 +42,4 @@ spark-submit --master yarn \
              --grouping-columns "$group" \
              --where "client_id IS NOT NULL AND activity_date IS NOT NULL" \
              --output "$bucket/client_count_daily" \
-             --num-parquet-files 2
+             --num-parquet-files 5
