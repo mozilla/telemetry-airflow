@@ -161,3 +161,8 @@ docker volume rm $(docker volume ls -qf dangling=true)
 - List docker containers using `docker ps`
 - Log in to one of the docker containers using `docker exec -it <container_id> bash`. The web server instance is a good choice.
 - Run the desired backfill command, something like `$ airflow backfill main_summary -s 2016-06-20 -e 2016-06-26`
+
+### CircleCI
+
+- Commits to forked repo PRs will trigger CircleCI builds that build the docker container and test python dag compilation. This should pass prior to merging.
+- Every commit to master or tag will trigger a CircleCI build that will build and push the container to dockerhub

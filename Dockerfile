@@ -37,6 +37,10 @@ RUN mkdir /app && \
     groupadd --gid 10001 app && \
     useradd --no-create-home --uid 10001 --gid 10001 --home-dir /app app
 
+# python-slim base image has missing directories required for psql install
+RUN mkdir -p /usr/share/man/man1
+RUN mkdir -p /usr/share/man/man7
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-transport-https build-essential curl git libpq-dev \

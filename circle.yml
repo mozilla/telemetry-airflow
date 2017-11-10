@@ -36,6 +36,11 @@ dependencies:
 
     - docker build -t app:build .
 
+# Make sure dag files compile for PRs
+test:
+  override:
+    - python -m py_compile dags/*.py
+
 # appropriately tag and push the container to dockerhub
 deployment:
   hub_latest:
