@@ -199,6 +199,17 @@ retention = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/retention.sh",
     dag=dag)
 
+client_count_daily_view = EMRSparkOperator(
+    task_id="client_count_daily_view",
+    job_name="Client Count Daily View",
+    execution_timeout=timedelta(hours=10),
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    instance_count=2,
+    env = {"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/client_count_daily_view.sh",
+    dag=dag)
+
 engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
@@ -222,3 +233,5 @@ clients_daily.set_upstream(main_summary)
 heavy_users.set_upstream(main_summary)
 
 retention.set_upstream(main_summary)
+
+client_count_daily_view.set_upstream(main_summary)
