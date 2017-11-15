@@ -177,8 +177,13 @@ experiments_daily = EMRSparkOperator(
     task_id="experiments_daily",
     job_name="Experiments Daily",
     execution_timeout=timedelta(hours=8),
-    instance_count=10,
+    instance_count=2,
     env=mozetl_envvar("experiments_daily", {
+        # Note that the output of this job will be earlier
+        # than this date to account for submission latency.
+        # See the experiments_daily code in the python_mozetl
+        # repo for more details.
+        "date": "{{ ds }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
