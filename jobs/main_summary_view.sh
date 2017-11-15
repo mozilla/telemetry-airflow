@@ -17,7 +17,7 @@ spark-submit --master yarn \
              --to $date
 
 if [[ -n "$glue_access_key_id" ]]; then
-  pip install --upgrade --user git+https://github.com/robotblake/pdsm.git#egg=pdsm
+  pip install --upgrade --user git+https://github.com/robotblake/pdsm.git@ef83fff23e4fecb4a0653273bc0e972a20650cc9#egg=pdsm
   AWS_ACCESS_KEY_ID=$glue_access_key_id \
     AWS_SECRET_ACCESS_KEY=$glue_secret_access_key \
     AWS_DEFAULT_REGION=$glue_default_region \
