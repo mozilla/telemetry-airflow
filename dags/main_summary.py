@@ -24,7 +24,13 @@ main_summary = EMRSparkOperator(
     job_name="Main Summary View",
     execution_timeout=timedelta(hours=14),
     instance_count=25,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    env={
+        "date": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}",
+        "glue_access_key_id": "{{ var.value.glue_access_key_id }}",
+        "glue_secret_access_key": "{{ var.value.glue_secret_access_key }}",
+        "glue_default_region": "{{ var.value.glue_default_region }}",
+    },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
     dag=dag)
 
