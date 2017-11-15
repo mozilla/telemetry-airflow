@@ -214,6 +214,8 @@ main_summary_glue = EMRSparkOperator(
     task_id="main_summary_glue",
     job_name="Main Summary Update Glue",
     execution_timeout=timedelta(hours=2),
+    owner="bimsland@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
     instance_count=1,
     env={
         "bucket": "{{ task.__class__.private_output_bucket }}",
