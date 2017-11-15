@@ -22,8 +22,8 @@ dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * 
 main_summary = EMRSparkOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    execution_timeout=timedelta(hours=10),
-    instance_count=100,
+    execution_timeout=timedelta(hours=14),
+    instance_count=25,
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
     dag=dag)
