@@ -14,4 +14,5 @@ spark-submit --master yarn \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
              --input "s3://$bucket/experiments/v1" \
              --output "s3://$bucket/experiments_aggregates/v1" \
-             --date $date
+             --date $date \
+             --nobootstrapScalars
