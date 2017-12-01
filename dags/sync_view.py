@@ -1,6 +1,8 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.mozetl import mozetl_envvar
+
 
 default_args = {
     'owner': 'markh@mozilla.com',
@@ -42,3 +44,19 @@ sync_flat_view = EMRSparkOperator(
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/sync_flat_view.sh",
     dag=dag)
+
+sync_bookmark_validation = EMRSparkOperator(
+    task_id="sync_bookmark_validation",
+    job_name="Sync Bookmark Validation",
+    execution_timeout=timedelta(hours=2),
+    instance_count=1,
+    email=["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
+    env=mozetl_envvar("sync_bookmark_validation", {
+        "start_date": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}",
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    dag=dag)
+
+
+sync_bookmark_validation.set_upstream(sync_view)
