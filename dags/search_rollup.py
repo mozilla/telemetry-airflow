@@ -51,4 +51,4 @@ def add_search_rollup(dag, mode, instance_count, upstream=None):
         search_rollup.set_upstream(upstream)
 
 
-add_search_rollup(dag_monthly, "monthly", instance_count=3)
+add_search_rollup(dag_monthly, "monthly", instance_count=10)
