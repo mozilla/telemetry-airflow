@@ -28,6 +28,17 @@ main_summary = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
     dag=dag)
 
+experiments_error_aggregates = EMRSparkOperator(
+    task_id="experiments_error_aggregates",
+    job_name="Experiments Error Aggregates View",
+    execution_timeout=timedelta(hours=5),
+    instance_count=20,
+    owner="frank@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
+    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_error_aggregates.sh",
+    dag=dag)
+
 engagement_ratio = EMRSparkOperator(
     task_id="engagement_ratio",
     job_name="Update Engagement Ratio",
@@ -237,8 +248,10 @@ txp_mau_dau.set_upstream(addons)
 main_events.set_upstream(main_summary)
 
 main_summary_experiments.set_upstream(main_summary)
-experiments_aggregates.set_upstream(main_summary_experiments)
 experiments_daily.set_upstream(main_summary_experiments)
+
+experiments_aggregates.set_upstream(experiments_error_aggregates)
+experiments_aggregates.set_upstream(main_summary_experiments)
 
 experiments_aggregates_import.set_upstream(experiments_aggregates)
 hbase_addon_recommender.set_upstream(main_summary)
