@@ -190,7 +190,7 @@ retention = EMRSparkOperator(
     owner="amiyaguchi@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
     execution_timeout=timedelta(hours=4),
-    instance_count=6,
+    instance_count=10,
     env=mozetl_envvar("retention", {
         "start_date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",

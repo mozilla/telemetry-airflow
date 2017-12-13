@@ -20,7 +20,7 @@ churn = EMRSparkOperator(
     task_id="churn",
     job_name="churn 7-day v3",
     execution_timeout=timedelta(hours=4),
-    instance_count=5,
+    instance_count=10,
     env=mozetl_envvar("churn", {
         "start_date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}"
