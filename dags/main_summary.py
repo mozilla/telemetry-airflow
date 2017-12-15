@@ -36,7 +36,7 @@ experiments_error_aggregates = EMRSparkOperator(
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_error_aggregates.sh",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_error_aggregates_view.sh",
     dag=dag)
 
 engagement_ratio = EMRSparkOperator(
