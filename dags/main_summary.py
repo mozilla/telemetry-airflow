@@ -189,7 +189,7 @@ heavy_users = EMRSparkOperator(
     job_name="Heavy Users View",
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
-    execution_timeout=timedelta(hours=4),
+    execution_timeout=timedelta(hours=8),
     instance_count=10,
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/heavy_users_view.sh",
