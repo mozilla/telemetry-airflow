@@ -128,18 +128,6 @@ experiments_aggregates_import = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/experiments-viewer/master/notebooks/import.py",
     dag=dag)
 
-hbase_addon_recommender = EMRSparkOperator(
-    task_id="hbase_addon_recommender",
-    job_name="HBase Addon Recommender View",
-    owner="aplacitelli@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
-    execution_timeout=timedelta(hours=10),
-    instance_count=5,
-    env={"date": "{{ ds_nodash }}"},
-    release_label="emr-5.8.0",
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hbase_addon_recommender_view.sh",
-    dag=dag)
-
 search_dashboard = EMRSparkOperator(
     task_id="search_dashboard",
     job_name="Search Dashboard",
@@ -254,7 +242,6 @@ experiments_aggregates.set_upstream(experiments_error_aggregates)
 experiments_aggregates.set_upstream(main_summary_experiments)
 
 experiments_aggregates_import.set_upstream(experiments_aggregates)
-hbase_addon_recommender.set_upstream(main_summary)
 search_dashboard.set_upstream(main_summary)
 
 add_search_rollup(dag, "daily", 1, upstream=main_summary)
