@@ -49,8 +49,8 @@ churn_to_csv = EMRSparkOperator(
     job_name="Convert Churn v2 to csv",
     execution_timeout=timedelta(hours=4),
     instance_count=1,
-    env={"date": "{{ ds_nodash }}"},
-    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/churn_to_csv.kp/orig_src/churn_to_csv.ipynb",
+    env=mozetl_envvar("churn_to_csv", {"start_date": "{{ ds_nodash }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
 churn_to_csv.set_upstream(churn_v2)
