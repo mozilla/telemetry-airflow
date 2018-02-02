@@ -40,6 +40,17 @@ addon_recommender = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
     dag=dag)
 
+ensemble_recommender = EMRSparkOperator(
+    task_id="ensemble_recommender",
+    job_name="Extract the addon data for each Telemetry user to DynamoDB",
+    execution_timeout=timedelta(hours=10),
+    instance_count=20,
+    owner="vng@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "vng@mozilla.com"],
+    env={},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/ensemble_taar.sh",
+    dag=dag)
+
 game_hw_survey = EMRSparkOperator(
     task_id="game_hw_survey",
     job_name="Firefox Hardware Report",
@@ -114,3 +125,4 @@ cross_sectional.set_upstream(longitudinal)
 distribution_viewer.set_upstream(cross_sectional)
 taar_locale_job.set_upstream(longitudinal)
 taar_legacy_job.set_upstream(longitudinal)
+ensemble_recommender.set_upstream(longitudinal)
