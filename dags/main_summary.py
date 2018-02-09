@@ -72,12 +72,15 @@ main_events = EMRSparkOperator(
 addon_aggregates = EMRSparkOperator(
     task_id="addon_aggregates",
     job_name="Addon Aggregates View",
-    execution_timeout=timedelta(hours=4),
+    execution_timeout=timedelta(hours=8),
     owner="bmiroglio@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
-    instance_count=3,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/addons/okr-daily-script.kp/orig_src/addonOKRDataCollection.ipynb",
+    instance_count=10,
+    env=mozetl_envvar("addon_aggregates", {
+        "date": "{{ ds }}",
+        "output-bucket": "{{ task.__class__.private_output_bucket }}"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
 txp_mau_dau = EMRSparkOperator(
