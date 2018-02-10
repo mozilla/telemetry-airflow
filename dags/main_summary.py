@@ -77,7 +77,7 @@ addon_aggregates = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
     instance_count=10,
     env=mozetl_envvar("addon_aggregates", {
-        "date": "{{ ds }}",
+        "date": "{{ ds_nodash }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
