@@ -20,6 +20,9 @@ crash_summary_view = EMRSparkOperator(
     job_name="Crash Summary View",
     instance_count=20,
     execution_timeout=timedelta(hours=4),
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/crash_summary_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.CrashSummaryView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "outputBucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
