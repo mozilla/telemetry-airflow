@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
+from utils.tbv import tbv_envvar
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -21,6 +22,8 @@ quantum_release_criteria_view = EMRSparkOperator(
     job_name="Quantum Release Criteria View",
     execution_timeout=timedelta(hours=2),
     instance_count=10,
-    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/quantum_rc_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.QuantumRCView", {
+        "to": DS_WEEKLY,
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
