@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.mozetl import mozetl_envvar
+from utils.tbv import tbv_envvar
 
 
 default_args = {
@@ -41,8 +42,11 @@ sync_flat_view = EMRSparkOperator(
     job_name="Flattened Sync Pings View",
     execution_timeout=timedelta(hours=10),
     instance_count=5,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/sync_flat_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.SyncFlatView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 sync_bookmark_validation = EMRSparkOperator(
