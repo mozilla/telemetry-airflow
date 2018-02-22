@@ -54,8 +54,11 @@ addons = EMRSparkOperator(
     job_name="Addons View",
     execution_timeout=timedelta(hours=4),
     instance_count=3,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addons_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.AddonsView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 main_events = EMRSparkOperator(
@@ -165,22 +168,6 @@ clients_daily = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
-experiments_daily = EMRSparkOperator(
-    task_id="experiments_daily",
-    job_name="Experiments Daily",
-    execution_timeout=timedelta(hours=8),
-    instance_count=2,
-    env=mozetl_envvar("experiments_daily", {
-        # Note that the output of this job will be earlier
-        # than this date to account for submission latency.
-        # See the experiments_daily code in the python_mozetl
-        # repo for more details.
-        "date": "{{ ds }}",
-        "output-bucket": "{{ task.__class__.private_output_bucket }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    dag=dag)
-
 heavy_users = EMRSparkOperator(
     task_id="heavy_users_view",
     job_name="Heavy Users View",
@@ -247,10 +234,8 @@ txp_mau_dau.set_upstream(addons)
 main_events.set_upstream(main_summary)
 
 main_summary_experiments.set_upstream(main_summary)
-experiments_daily.set_upstream(main_summary_experiments)
-
-experiments_aggregates.set_upstream(experiments_error_aggregates)
 experiments_aggregates.set_upstream(main_summary_experiments)
+experiments_aggregates.set_upstream(experiments_error_aggregates)
 
 experiments_aggregates_import.set_upstream(experiments_aggregates)
 search_dashboard.set_upstream(main_summary)
