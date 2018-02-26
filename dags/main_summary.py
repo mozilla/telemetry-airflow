@@ -54,8 +54,11 @@ addons = EMRSparkOperator(
     job_name="Addons View",
     execution_timeout=timedelta(hours=4),
     instance_count=3,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addons_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.AddonsView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 main_events = EMRSparkOperator(
@@ -108,8 +111,11 @@ main_summary_experiments = EMRSparkOperator(
     instance_count=10,
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_main_summary_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.ExperimentSummaryView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 experiments_aggregates = EMRSparkOperator(
