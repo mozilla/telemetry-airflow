@@ -162,7 +162,7 @@ search_clients_daily = EMRSparkOperator(
     env=mozetl_envvar("search_clients_daily", {
         "submission_date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "harter/searchdb",
+        "prefix": "search_clients_daily",
         "save_mode": "overwrite"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
