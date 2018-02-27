@@ -8,7 +8,7 @@ from airflow.contrib.sensors.emr_job_flow_sensor import EmrJobFlowSensor
 DEFAULT_ARGS = {
     'owner': 'jthomas@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2018, 2, 11),
+    'start_date': datetime(2018, 2, 26),
     'email': ['jthomas@mozilla.com', 'dataops+alerts@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
