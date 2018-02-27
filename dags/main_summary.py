@@ -68,8 +68,11 @@ main_events = EMRSparkOperator(
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
     instance_count=1,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_events_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.MainEventsView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 addon_aggregates = EMRSparkOperator(
