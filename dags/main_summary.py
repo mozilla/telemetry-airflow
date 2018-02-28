@@ -25,8 +25,11 @@ main_summary = EMRSparkOperator(
     job_name="Main Summary View",
     execution_timeout=timedelta(hours=14),
     instance_count=40,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 experiments_error_aggregates = EMRSparkOperator(
