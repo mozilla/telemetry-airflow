@@ -280,6 +280,7 @@ experiments_aggregates.set_upstream(experiments_error_aggregates)
 
 experiments_aggregates_import.set_upstream(experiments_aggregates)
 search_dashboard.set_upstream(main_summary)
+search_clients_daily.set_upstream(main_summary)
 
 taar_dynamo.set_upstream(main_summary)
 
