@@ -259,7 +259,7 @@ taar_dynamo = EMRSparkOperator(
     owner="vng@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
     env=mozetl_envvar("taar_dynamo", {
-        "date": "{{ yesterday_ds_nodash }}"
+        "date": "{{ ds_nodash }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
