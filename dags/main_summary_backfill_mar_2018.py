@@ -116,7 +116,8 @@ create_job_flow_task = EmrCreateJobFlowSelectiveTemplateOperator(
     job_flow_overrides=EmrCreateJobFlowSelectiveTemplateOperator.get_jobflow_args(
         owner="ssuh@mozilla.com",
         instance_count=20,
-        keep_alive=True
+        keep_alive=True,
+        job_name="Main Summary Backfill"
     ),
     templated_job_flow_overrides={
         "Name": "Main Summary Backfill {{ ds }}",

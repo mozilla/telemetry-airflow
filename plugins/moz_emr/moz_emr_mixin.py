@@ -59,6 +59,10 @@ class MozEmrMixin:
                 {'Key': 'Owner', 'Value': owner},
                 {'Key': 'Application',
                  'Value': 'telemetry-analysis-worker-instance'},
+                {'Key': 'Source',
+                 'Value': 'Airflow'},
+                {'Key': 'Job',
+                 'Value': job_name},
             ]
         }
 
