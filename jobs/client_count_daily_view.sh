@@ -15,16 +15,17 @@ base+="locale,"
 base+="app_name,"
 base+="app_version,"
 base+="e10s_enabled,"
-base+="os,"
-base+="os_version"
+base+="os"
 
 select+="devtools_toolbox_opened_count > 0 as devtools_toolbox_opened,"
 select+="case when distribution_id in ('canonical', 'MozillaOnline', 'yandex') "
 select+="then distribution_id else null end as top_distribution_id,"
+select+="normalized_os_version as os_version,"
 select+=$base
 
 group+="devtools_toolbox_opened,"
 group+="top_distribution_id,"
+group+="os_version,"
 group+=$base
 
 spark-submit --master yarn \
