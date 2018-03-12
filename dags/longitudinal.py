@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 from utils.mozetl import mozetl_envvar
+from utils.tbv import tbv_envvar
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -59,8 +60,10 @@ cross_sectional = EMRSparkOperator(
     job_name="Cross Sectional View",
     execution_timeout=timedelta(hours=10),
     instance_count=30,
-    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/cross_sectional_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.CrossSectionalView", {
+        "outName": "v" + DS_WEEKLY,
+        "outputBucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 distribution_viewer = EMRSparkOperator(

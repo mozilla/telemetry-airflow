@@ -26,7 +26,7 @@ command = ["sbt", "assembly"]
 call_exit_errors(command)
 
 command = sum([
-    ["--{}".format(key[4:].lower().replace("_", "-")), value]
+    ["--{}".format(key[4:].replace("_", "-")), value]
     for key, value in environ.items()
     if key.startswith("TBV_") and key != "TBV_CLASS"
 ], [

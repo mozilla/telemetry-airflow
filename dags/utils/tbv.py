@@ -17,7 +17,7 @@ def tbv_envvar(klass, options, other={}):
     :returns: a dictionary that contains properly prefixed class and options
     """
     prefixed_options = {
-        "TBV_{}".format(key.upper().replace("-", "_")): value
+        "TBV_{}".format(key.replace("-", "_")): value
         for key, value in options.items()
     }
     prefixed_options["TBV_CLASS"] = klass
