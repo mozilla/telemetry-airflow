@@ -5,7 +5,6 @@ from airflow.models import DagBag
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.contrib.sensors.emr_step_sensor import EmrStepSensor
-from airflow.operators.sensors import TimeDeltaSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.operators.moz_emr import (EmrAddStepsOperator,
                                        EmrCreateJobFlowSelectiveTemplateOperator,
@@ -65,13 +64,6 @@ def main_summary_subdag_factory(parent_dag, task_id, day):
     parent_job_flow_id = ("{{{{ task_instance.xcom_pull('setup_backfill_cluster', "
                           "key='return_value', dag_id={}) }}}}".format(parent_dag.dag_id))
 
-    # Try to alleviate throttling issues by introducing some slight jitter on each of the days
-    timedelta_task = TimeDeltaSensor(
-        task_id="day_start_jitter",
-        delta=timedelta(seconds=day),
-        dag=subdag
-    )
-
     add_step_task = EmrAddStepsOperator(
         task_id='submit_main_summary_day',
         job_flow_id=parent_job_flow_id,
@@ -103,7 +95,6 @@ def main_summary_subdag_factory(parent_dag, task_id, day):
     )
 
     step_sensor_task.set_upstream(add_step_task)
-    add_step_task.set_upstream(timedelta_task)
 
     return subdag
 
@@ -157,6 +148,7 @@ job_flow_termination_sensor_task = MozEmrClusterEndSensor(
 
 cluster_start_sensor_task.set_upstream(create_job_flow_task)
 
+upstream = cluster_start_sensor_task
 for day in range(7):
     task_id = "main_summary_day_{}".format(day)
     subdag_task = SubDagOperator(
@@ -165,7 +157,9 @@ for day in range(7):
         on_retry_callback=clear_subdag_callback,
         dag=dag
     )
-    subdag_task.set_upstream(cluster_start_sensor_task)
-    terminate_job_flow_task.set_upstream(subdag_task)
+    subdag_task.set_upstream(upstream)
+    upstream = subdag_task
+
+terminate_job_flow_task.set_upstream(upstream)
 
 job_flow_termination_sensor_task.set_upstream(terminate_job_flow_task)
