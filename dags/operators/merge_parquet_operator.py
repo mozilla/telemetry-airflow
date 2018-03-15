@@ -29,7 +29,7 @@ class MergeParquetOperator(BaseOperator):
         self.file_list = []
         self.new_directory = new_directory
 
-    #def execute(self, context):
+    def execute(self, context):
         for root, dirs, files in os.walk(self.directory):
             for file in files:
                 if os.path.splitext(file)[1] == '.parquet':
