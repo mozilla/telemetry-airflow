@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.tbv import tbv_envvar
 
 default_args = {
     'owner': 'mdoglio@mozilla.com',

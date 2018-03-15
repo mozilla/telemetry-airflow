@@ -26,7 +26,7 @@ focus_event_longitudinal = EMRSparkOperator(
         "to": DS_WEEKLY,
         "tablename": "telemetry_focus_event_parquet",
         "output-path": "{{ task.__class__.private_output_bucket }}/focus_event_longitudinal",
-        "num-parquet-files": 30,
+        "num-parquet-files": "30",
         "ordering-columns": "seq,created"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
