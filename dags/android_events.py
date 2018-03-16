@@ -21,7 +21,7 @@ android_events = EMRSparkOperator(
     execution_timeout=timedelta(hours=4),
     instance_count=5,
     owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}"},
     uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/android-events.kp/orig_src/android-events.ipynb",
     output_visibility="public",

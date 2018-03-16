@@ -4,10 +4,10 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.tbv import tbv_envvar
 
 default_args = {
-    'owner': 'mdoglio@mozilla.com',
+    'owner': 'mreid@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2016, 6, 27),
-    'email': ['telemetry-alerts@mozilla.com', 'mdoglio@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 3,
