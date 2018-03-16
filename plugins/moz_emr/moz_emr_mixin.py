@@ -105,7 +105,7 @@ class MozEmrMixin:
 
         return [{
             'Name': job_name,
-            'ActionOnFailure': 'TERMINATE_JOB_FLOW',
+            'ActionOnFailure': action_on_failure,
             'HadoopJarStep': {
                 'Jar': jar_url,
                 'Args': args
