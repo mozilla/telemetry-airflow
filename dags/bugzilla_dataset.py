@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 
 default_args = {
-    'owner': 'mdoglio@mozilla.com',
+    'owner': 'mreid@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2016, 8, 18),
-    'email': ['telemetry-alerts@mozilla.com', 'mdoglio@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 3,

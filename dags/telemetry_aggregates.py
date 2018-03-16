@@ -18,7 +18,6 @@ dag = DAG('telemetry_aggregates', default_args=default_args, schedule_interval='
 telemetry_aggregate_view = EMRSparkOperator(
     task_id = "telemetry_aggregate_view",
     job_name = "Telemetry Aggregate View",
-    owner = "frank@mozilla.com",
     instance_count = 10,
     execution_timeout=timedelta(hours=12),
     env = {"date": "{{ ds_nodash }}"},
