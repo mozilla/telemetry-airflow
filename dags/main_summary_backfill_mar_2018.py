@@ -34,7 +34,7 @@ dag = DAG('main_summary_backfill_mar_2018',
           schedule_interval=SCHEDULE_INTERVAL,
           catchup=True,
           # Change this back to 10 after we get a successful run on prod
-          max_active_runs=1)
+          max_active_runs=4)
 
 job_flow_id_template = "{{ task_instance.xcom_pull('setup_backfill_cluster', key='return_value') }}"
 
@@ -158,8 +158,7 @@ for day in range(7):
         dag=dag
     )
     subdag_task.set_upstream(upstream)
+    terminate_job_flow_task.set_upstream(subdag_task)
     upstream = subdag_task
-
-terminate_job_flow_task.set_upstream(upstream)
 
 job_flow_termination_sensor_task.set_upstream(terminate_job_flow_task)
