@@ -21,7 +21,7 @@ mobile_clients = EMRSparkOperator(
     execution_timeout=timedelta(hours=8),
     instance_count=10,
     owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "mdoglio@mozilla.com", "frank@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}"},
     uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/mobile-clients.kp/orig_src/mobile-clients.ipynb",
     output_visibility="public",

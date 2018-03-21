@@ -22,7 +22,6 @@ probe_scraper = EMRSparkOperator(
     job_name="Probe Scraper",
     execution_timeout=timedelta(hours=4),
     instance_count=1,
-    owner="gfritzsche@mozilla.com",
     email=['telemetry-client-dev@mozilla.com', 'gfritzsche@mozilla.com', 'aplacitelli@mozilla.com'],
     env={},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/probe_scraper.sh",
