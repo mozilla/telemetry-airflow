@@ -3,8 +3,7 @@
 # Print all the executed commands to the terminal.
 set -x
 
-BUCKET="telemetry-public-analysis-2"
-PREFIX="probe-scraper/data-rest/"
+BUCKET="net-mozaws-prod-us-west-2-data-pitmo"
 CACHE_DIR="probe_cache"
 OUTPUT_DIR="probe_data"
 
@@ -28,7 +27,7 @@ gzip -9 -r $OUTPUT_DIR
 find $OUTPUT_DIR -type f -name '*.gz' | while read f; do mv "$f" "${f%.gz}"; done
 
 # Upload to S3.
-aws s3 cp $OUTPUT_DIR s3://$BUCKET/$PREFIX \
+aws s3 cp $OUTPUT_DIR s3://$BUCKET/ \
        --recursive \
        --content-encoding 'gzip' \
        --content-type 'application/json' \
