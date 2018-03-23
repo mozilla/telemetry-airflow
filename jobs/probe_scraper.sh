@@ -27,8 +27,8 @@ gzip -9 -r $OUTPUT_DIR
 find $OUTPUT_DIR -type f -name '*.gz' | while read f; do mv "$f" "${f%.gz}"; done
 
 # Upload to S3.
-aws s3 cp $OUTPUT_DIR s3://$BUCKET/ \
-       --recursive \
+aws s3 sync $OUTPUT_DIR/ s3://$BUCKET/ \
+       --delete \
        --content-encoding 'gzip' \
        --content-type 'application/json' \
        --cache-control 'max-age=28800' \
