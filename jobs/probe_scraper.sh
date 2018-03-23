@@ -19,17 +19,9 @@ mkdir $CACHE_DIR $OUTPUT_DIR
 # Finally run the scraper.
 python probe_scraper/runner.py --outdir $OUTPUT_DIR --tempdir $CACHE_DIR
 
-# Recursively GZIP the files in the output dir. Each file
-# will be compressed separately, creating a 'file.gz' file.
-gzip -9 -r $OUTPUT_DIR
-
-# Drop the '.gz' extension from the files.
-find $OUTPUT_DIR -type f -name '*.gz' | while read f; do mv "$f" "${f%.gz}"; done
-
 # Upload to S3.
 aws s3 sync $OUTPUT_DIR/ s3://$BUCKET/ \
        --delete \
-       --content-encoding 'gzip' \
        --content-type 'application/json' \
        --cache-control 'max-age=28800' \
        --acl public-read
