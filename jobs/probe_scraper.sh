@@ -19,6 +19,7 @@ mkdir $CACHE_DIR $OUTPUT_DIR
 # Finally run the scraper.
 python probe_scraper/runner.py --outdir $OUTPUT_DIR --tempdir $CACHE_DIR
 
+# The Cloudfront distribution will automatically gzip objects
 # Upload to S3.
 aws s3 sync $OUTPUT_DIR/ s3://$BUCKET/ \
        --delete \
