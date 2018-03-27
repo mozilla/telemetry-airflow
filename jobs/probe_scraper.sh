@@ -24,4 +24,5 @@ python probe_scraper/runner.py --outdir $OUTPUT_DIR --tempdir $CACHE_DIR
 aws s3 sync $OUTPUT_DIR/ s3://$BUCKET/ \
        --delete \
        --content-type 'application/json' \
-       --cache-control 'max-age=28800'
+       --cache-control 'max-age=28800' \
+       --acl public-read
