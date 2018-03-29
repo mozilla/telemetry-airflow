@@ -25,8 +25,11 @@ main_summary = EMRSparkOperator(
     job_name="Main Summary View",
     execution_timeout=timedelta(hours=14),
     instance_count=40,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_summary_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 experiments_error_aggregates = EMRSparkOperator(
@@ -68,8 +71,11 @@ main_events = EMRSparkOperator(
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
     instance_count=1,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/main_events_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.MainEventsView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 addon_aggregates = EMRSparkOperator(
@@ -108,8 +114,11 @@ main_summary_experiments = EMRSparkOperator(
     instance_count=10,
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_main_summary_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.ExperimentSummaryView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 experiments_aggregates = EMRSparkOperator(
@@ -141,11 +150,28 @@ search_dashboard = EMRSparkOperator(
     execution_timeout=timedelta(hours=3),
     instance_count=3,
     owner="harterrt@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
     env=mozetl_envvar("search_dashboard", {
         "submission_date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "harter/searchdb",
+        "save_mode": "overwrite"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag)
+
+search_clients_daily = EMRSparkOperator(
+    task_id="search_clients_daily",
+    job_name="Search Clients Daily",
+    execution_timeout=timedelta(hours=5),
+    instance_count=5,
+    owner="harterrt@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
+    env=mozetl_envvar("search_clients_daily", {
+        "submission_date": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}",
+        "prefix": "search_clients_daily",
         "save_mode": "overwrite"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
@@ -225,6 +251,21 @@ main_summary_glue = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/update_glue.sh",
     dag=dag)
 
+taar_dynamo = EMRSparkOperator(
+    task_id="taar_dynamo",
+    job_name="TAAR DynamoDB loader",
+    execution_timeout=timedelta(hours=14),
+    instance_count=6,
+    owner="vng@mozilla.com",
+    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
+    env=mozetl_envvar("taar_dynamo", {
+        "date": "{{ ds_nodash }}"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag)
+
+
 engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
@@ -239,6 +280,9 @@ experiments_aggregates.set_upstream(experiments_error_aggregates)
 
 experiments_aggregates_import.set_upstream(experiments_aggregates)
 search_dashboard.set_upstream(main_summary)
+search_clients_daily.set_upstream(main_summary)
+
+taar_dynamo.set_upstream(main_summary)
 
 add_search_rollup(dag, "daily", 1, upstream=main_summary)
 

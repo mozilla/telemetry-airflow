@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
+from utils.tbv import tbv_envvar
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -21,6 +22,11 @@ focus_event_longitudinal = EMRSparkOperator(
     job_name="Focus Event Longitudinal View",
     execution_timeout=timedelta(hours=12),
     instance_count=10,
-    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/focus_event_longitudinal_view.sh",
+    env = tbv_envvar("com.mozilla.telemetry.views.GenericLongitudinalView", {
+        "to": DS_WEEKLY,
+        "tablename": "telemetry_focus_event_parquet",
+        "output-path": "{{ task.__class__.private_output_bucket }}/focus_event_longitudinal",
+        "num-parquet-files": "30",
+        "ordering-columns": "seq,created"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
