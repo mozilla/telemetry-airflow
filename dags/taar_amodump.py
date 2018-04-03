@@ -29,7 +29,7 @@ amodump = EMRSparkOperator(
                       {"path": "/tmp/amo_cache",
                        "date": "{{ ds_nodash }}"},
                       {'MOZETL_SUBMISSION_METHOD': 'python'}),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/taar_amodump.sh",
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
     dag=dag
 )
