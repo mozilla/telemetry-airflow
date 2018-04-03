@@ -27,10 +27,10 @@ try:
         instance_count=1,
         owner="vng@mozilla.com",
         email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
-        env=mozetl_envvar("taar_amodump", {
-            "path": "/tmp/amo_cache",
-            "date": "{{ ds_nodash }}"
-        }),
+        env=mozetl_envvar("taar_amodump",
+                          {"path": "/tmp/amo_cache",
+                           "date": "{{ ds_nodash }}"},
+                          {'MOZETL_SUBMISSION_METHOD': 'python'}),
         uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/taar_amodump.sh",
         output_visibility="private",
         dag=dag
