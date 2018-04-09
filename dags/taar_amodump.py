@@ -36,7 +36,7 @@ amodump = EMRSparkOperator(
 
 amowhitelist = EMRSparkOperator(
     task_id="taar_amowhitelist",
-    job_name="Transform the AMO addon JSON into a whitelisted set of addons for futher TAAR processing",
+    job_name="Generate a whitelisted set of addons for TAAR",
     execution_timeout=timedelta(hours=1),
     instance_count=1,
     owner="vng@mozilla.com",
