@@ -33,3 +33,21 @@ amodump = EMRSparkOperator(
     output_visibility="private",
     dag=dag
 )
+
+amowhitelist = EMRSparkOperator(
+    task_id="taar_amowhitelist",
+    job_name="Generate a whitelisted set of addons for TAAR",
+    execution_timeout=timedelta(hours=1),
+    instance_count=1,
+    owner="vng@mozilla.com",
+    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
+    env=mozetl_envvar("taar_amowhitelist",
+                      {},
+                      {'MOZETL_SUBMISSION_METHOD': 'python'}),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag
+)
+
+# Set a dependency on amodump from amowhitelist
+amowhitelist.set_upstream(amodump)
