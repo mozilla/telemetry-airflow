@@ -16,7 +16,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('taar_amodump', default_args=default_args, schedule_interval='@weekly')
+dag = DAG('taar_amodump', default_args=default_args, schedule_interval='@daily')
 
 amodump = EMRSparkOperator(
     task_id="taar_amodump",
