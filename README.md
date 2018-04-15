@@ -104,6 +104,8 @@ variables:
   `telemetry-alerts@workflow.telemetry.mozilla.org`
 - `URL` -- The base URL of the website e.g.
   `https://workflow.telemetry.mozilla.org`
+- `DEPLOY_ENVIRONMENT` -- The environment currently running, e.g.
+  `stage` or `prod`
 
 Also, please set
 
