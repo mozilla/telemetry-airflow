@@ -35,7 +35,6 @@ class MergeParquetOperator(BaseOperator):
             for file in files:
                 if os.path.splitext(file)[1] == '.parquet':
                     self.file_list.append(file)
-            print(self.file_list)
         self.file_length = len(self.file_list)
         while self.file_length >= 1:
 
@@ -53,7 +52,6 @@ class MergeParquetOperator(BaseOperator):
                     df = pq.ParquetDataset(parquet_list)
                     self.uuid_id = str(uuid.uuid1())
                     table = df.read()
-                    print(table)
                     filepath = os.path.join(self.new_directory, self.uuid_id+'.parquet')
                     pq.write_table(table, filepath)
                     parquet_list = []
