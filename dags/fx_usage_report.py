@@ -21,7 +21,7 @@ wait_for_main_summary = ExternalTaskSensor(
     task_id='wait_for_main_summary',
     external_dag_id='main_summary',
     external_task_id='main_summary',
-    execution_delta=timedelta(days = -7, hours = -1), # main_summary waits one hour, execution date is beginning of week
+    execution_delta=timedelta(days=-7, hours=-1), # main_summary waits one hour, execution date is beginning of the week
     dag=dag)
 
 usage_report = EMRSparkOperator(
@@ -32,7 +32,9 @@ usage_report = EMRSparkOperator(
     release_label="emr-5.11.0",
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "shong@mozilla.com"],
-    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
+    env={"date": DS_WEEKLY,
+         "bucket": "{{ task.__class__.private_output_bucket }}",
+         "deploy_environment": "{{ task.__class__.deploy_environment }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/fx_usage_report.sh",
     dag=dag)
 
