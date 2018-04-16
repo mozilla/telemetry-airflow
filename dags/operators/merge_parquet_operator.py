@@ -30,7 +30,7 @@ class MergeParquetOperator(BaseOperator):
         self.parquet_list = []
 
 
-   # def execute(self, context):
+    def execute(self, context):
         for root, dirs, files in os.walk(self.directory):
             for file in files:
                 if os.path.splitext(file)[1] == '.parquet':
