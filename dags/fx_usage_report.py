@@ -21,7 +21,7 @@ wait_for_main_summary = ExternalTaskSensor(
     task_id='wait_for_main_summary',
     external_dag_id='main_summary',
     external_task_id='main_summary',
-    execution_delta=timedelta(hours = -1), # main_summary waits one hour
+    execution_delta=timedelta(days = -7, hours = -1), # main_summary waits one hour, execution date is beginning of week
     dag=dag)
 
 usage_report = EMRSparkOperator(
