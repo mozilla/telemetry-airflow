@@ -15,16 +15,21 @@ base+="locale,"
 base+="app_name,"
 base+="app_version,"
 base+="e10s_enabled,"
-base+="os,"
-base+="os_version"
+base+="os"
 
 select+="devtools_toolbox_opened_count > 0 as devtools_toolbox_opened,"
-select+="case when distribution_id in ('canonical', 'MozillaOnline', 'yandex') "
-select+="then distribution_id else null end as top_distribution_id,"
+select+="case when distribution_id in ('canonical', 'MozillaOnline', 'yandex')"
+select+=" then distribution_id else null end as top_distribution_id,"
+select+="normalized_os_version as os_version,"
+select+="bucketed(scalar_parent_browser_engagement_total_uri_count,"
+select+=" array(int('0'), int('5'), int('20'), int('50'), int('100'), int('250')))"
+select+=" as total_uri_count_threshold,"
 select+=$base
 
 group+="devtools_toolbox_opened,"
 group+="top_distribution_id,"
+group+="os_version,"
+group+="total_uri_count_threshold,"
 group+=$base
 
 spark-submit --master yarn \
