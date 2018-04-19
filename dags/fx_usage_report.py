@@ -33,7 +33,7 @@ usage_report = EMRSparkOperator(
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "shong@mozilla.com"],
     env={"date": DS_WEEKLY,
-         "bucket": "{{ task.__class__.private_output_bucket }}",
+         "bucket": "{{ task.__class__.public_output_bucket }}",
          "deploy_environment": "{{ task.__class__.deploy_environment }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/fx_usage_report.sh",
     dag=dag)
