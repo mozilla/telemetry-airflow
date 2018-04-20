@@ -133,7 +133,7 @@ experiments_aggregates = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "input": "s3://{{ task.__class__.private_output_bucket }}/experiments/v1",
         "output": "s3://{{ task.__class__.private_output_bucket }}/experiments_aggregates/v1"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_aggregates_view.sh",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 experiments_aggregates_import = EMRSparkOperator(
