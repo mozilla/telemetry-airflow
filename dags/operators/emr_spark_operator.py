@@ -42,6 +42,12 @@ class EMRSparkOperator(BaseOperator):
     private_output_bucket = environ['PRIVATE_OUTPUT_BUCKET']
     public_output_bucket = environ['PUBLIC_OUTPUT_BUCKET']
     deploy_environment = environ['DEPLOY_ENVIRONMENT']
+    deploy_tag = environ['DEPLOY_TAG']
+    artifacts_bucket = environ['ARTIFACTS_BUCKET']
+
+    # constants
+    mozilla_slug = 'mozilla'
+    telemetry_streaming_slug = 'telemetry-streaming'
 
     def __del__(self):
         self.on_kill()

@@ -106,6 +106,12 @@ variables:
   `https://workflow.telemetry.mozilla.org`
 - `DEPLOY_ENVIRONMENT` -- The environment currently running, e.g.
   `stage` or `prod`
+- `DEPLOY_TAG` -- The tag or branch to retrieve the JAR from, e.g.
+  `master` or `tags`. You can specify the tag or travis build exactly as well, e.g.
+  `master/42.1` or `tags/v2.2.1`. Not specifying the exact tag or build will
+  use the latest from that branch, or the latest tag.
+- `ARTIFACTS_BUCKET` -- The s3 bucket where the build artifacts can be found, e.g.
+  `net-mozaws-data-us-west-2-ops-ci-artifacts`
 
 Also, please set
 
