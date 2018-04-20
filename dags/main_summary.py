@@ -129,7 +129,10 @@ experiments_aggregates = EMRSparkOperator(
     release_label="emr-5.8.0",
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    env=tbv_envvar("com.mozilla.telemetry.views.ExperimentAnalysisView", {
+        "date": "{{ ds_nodash }}",
+        "input": "s3://{{ task.__class__.private_output_bucket }}/experiments/v1",
+        "output": "s3://{{ task.__class__.private_output_bucket }}/experiments_aggregates/v1"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiment_aggregates_view.sh",
     dag=dag)
 
