@@ -16,18 +16,20 @@ class MergeParquetOperator(BaseOperator):
     :param directory: string
     :param new_directory: the directory you want to write the merged files to
     :param new_directory: string
-
+    :param file_size: the desired size of the aggregated parquet file in bytes
+    :param file_size: integer
 
     """
 
     @apply_defaults
-    def __init__(self, directory, new_directory, *args, **kwargs):
+    def __init__(self, directory, new_directory, file_size, *args, **kwargs):
 
         super(MergeParquetOperator, self).__init__(*args, **kwargs)
         self.directory = directory
         self.file_list = []
         self.new_directory = new_directory
         self.parquet_list = []
+        self.aggregated_file_size = int(file_size)
 
     def execute(self, context):
         for root, dirs, files in os.walk(self.directory):
@@ -38,7 +40,7 @@ class MergeParquetOperator(BaseOperator):
         while self.file_length >= 1:
 
             self.additive_size = os.stat(os.path.join(self.directory, (self.file_list[0]))).st_size
-            if self.additive_size < 200000000:
+            if self.additive_size < self.aggregated_file_size:
 
                 file1 = os.path.join(self.directory, self.file_list[0])
 
@@ -46,7 +48,7 @@ class MergeParquetOperator(BaseOperator):
                 self.file_list.pop(0)
                 self.additive_size = self.additive_size + os.stat(os.path.join(self.directory, (self.file_list[0]))).st_size
                 self.file_length = len(self.file_list)
-            if self.additive_size >= 20000000:
+            if self.additive_size >= self.aggregated_file_size:
                 if len(self.parquet_list) >= 0:
                     df = pq.ParquetDataset(parquet_list)
                     self.uuid_id = str(uuid.uuid1())
