@@ -29,7 +29,6 @@ class MergeParquetOperator(BaseOperator):
         self.new_directory = new_directory
         self.parquet_list = []
 
-
     def execute(self, context):
         for root, dirs, files in os.walk(self.directory):
             for file in files:
