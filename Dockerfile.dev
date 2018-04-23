@@ -54,6 +54,8 @@ RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7 && \
 COPY requirements.txt /tmp/
 # Switch to /tmp to install dependencies outside home dir
 WORKDIR /tmp
+
+RUN pip install pip==9.0.3
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Switch back to home directory
