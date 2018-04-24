@@ -1,12 +1,12 @@
 from datetime import timedelta, datetime
 
 from airflow import DAG
-from airflow.operators import ExternalTaskSensor
 
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.mozetl import mozetl_envvar
 
 
+# These settings only apply to the monthly DAG
 default_args = {
     'owner': 'amiyaguchi@mozilla.com',
     'depends_on_past': False,
@@ -15,12 +15,11 @@ default_args = {
         'telemetry-alerts@mozilla.com',
         'amiyaguchi@mozilla.com',
         'harterrt@mozilla.com',
-        'spenrose@mozilla.com'
     ],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
-    'retry_delay': timedelta(minutes=30),
+    'retry_delay': timedelta(hours=2),
 }
 
 
@@ -30,11 +29,17 @@ dag_monthly = DAG('search_rollup_monthly',
 
 
 def add_search_rollup(dag, mode, instance_count, upstream=None):
-    """Create a search rollup for a particular date date"""
+    """Create a search rollup for a particular date date
+
+    This can be called with an optional DAG passed into `upstream`. The rollup
+    job will inherit the default values of the referenced DAG.
+    """
 
     search_rollup = EMRSparkOperator(
         task_id="search_rollup_{}".format(mode),
         job_name="{} search rollup".format(mode).title(),
+        owner="amiyaguchi@mozilla.com",
+        email=default_args["email"],
         execution_timeout=timedelta(hours=4),
         instance_count=instance_count,
         env=mozetl_envvar("search_rollup", {
