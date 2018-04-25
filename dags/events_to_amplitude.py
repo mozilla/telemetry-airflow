@@ -29,7 +29,7 @@ events_to_amplitude = EMRSparkOperator(
     job_name="Focus Android Events to Amplitude",
     execution_timeout=timedelta(hours=8),
     instance_count=FOCUS_ANDROID_INSTANCES,
-    release_label="emr-5.11.0",
+    release_label="emr-5.13.0",
     env={
         "date": "{{ ds_nodash }}",
         "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
