@@ -288,7 +288,7 @@ search_clients_daily.set_upstream(main_summary)
 
 taar_dynamo.set_upstream(main_summary)
 
-add_search_rollup(dag, "daily", 1, upstream=main_summary)
+add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
 
