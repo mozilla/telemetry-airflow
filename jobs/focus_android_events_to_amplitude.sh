@@ -6,7 +6,7 @@ if [[ -z "$date" || -z "$max_requests" || -z "$key_file" || -z "$artifact" ]]; t
 fi
 
 artifact_filename="artifact.jar"
-aws s3 cp "$artifact" "$artifact_filename"
+wget "$artifact" -O "$artifact_filename"
 
 key_filename="amplitude_key_file"
 aws s3 cp "$key_file" "$key_filename"
