@@ -15,7 +15,7 @@ bucket = "{{ task.__class__.artifacts_bucket }}"
 mozilla_slug = "{{ test.__class__.mozilla_slug }}"
 slug = "{{ task.__class__.telemetry_streaming_slug }}"
 deploy_tag = "{{ task.__class__.deploy_tag }}"
-artifact = "s3://{bucket}/{mozilla_slug}/{slug}/{deploy_tag}/{slug}.jar".format(
+url = "https://s3-us-west-2.amazonaws.com/{bucket}/{mozilla_slug}/{slug}/{deploy_tag}/{slug}.jar".format(
     bucket=bucket, mozilla_slug=mozilla_slug, slug=slug, deploy_tag=deploy_tag)
 
 default_args = {
@@ -41,7 +41,7 @@ events_to_amplitude = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file,
-        "artifact": artifact
+        "artifact": url
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/focus_android_events_to_amplitude.sh",
     dag=dag)
