@@ -43,7 +43,7 @@ def submit_job():
     call_exit_errors(command)
 
 
-if environ.get("DO_ASSEMBLY", "True") == "True":
+if environ.get("DO_RETRIEVE", "True") == "True":
     retrieve_jar()
 
 if environ.get("DO_SUBMIT", "True") == "True":
