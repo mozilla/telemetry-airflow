@@ -79,7 +79,7 @@ def main_summary_subdag_factory(parent_dag, task_id, day):
                 "to": ds,
                 "bucket": "telemetry-backfill"
             }, {
-                "DO_ASSEMBLY": "False"
+                "DO_RETRIEVE": "False"
             }),
         ),
         dag=subdag
