@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
+import requests
 from os import chdir
 from os import environ
 from subprocess import call
+
+
+artifact_file = "artifact.jar"
 
 
 def call_exit_errors(command):
@@ -12,22 +16,15 @@ def call_exit_errors(command):
         exit(rc)
 
 
-def clone_and_compile_tbv():
-    command = [
-        "git",
-        "clone",
-        environ.get("GIT_PATH", "https://github.com/mozilla/telemetry-batch-view.git"),
-        "--branch",
-        environ.get("GIT_BRANCH", "master"),
-    ]
+def retrieve_jar():
+    jar_url = environ.get("ARTIFACT_URL")
 
-    call_exit_errors(command)
+    if jar_url is None:
+        exit(1)
 
-    print("+ cd telemetry-batch-view")
-    chdir("telemetry-batch-view")
-
-    command = ["sbt", "assembly"]
-    call_exit_errors(command)
+    response = requests.get(jar_url)
+    with open(artifact_file, 'wb') as f:
+        f.write(response.content)
 
 
 def submit_job():
@@ -40,16 +37,14 @@ def submit_job():
         "--master", "yarn",
         "--deploy-mode", "client",
         "--class", environ["TBV_CLASS"],
-        "target/scala-2.11/telemetry-batch-view-1.1.jar",
+        artifact_file,
     ])
+
     call_exit_errors(command)
 
 
 if environ.get("DO_ASSEMBLY", "True") == "True":
-    clone_and_compile_tbv()
-else:
-    print("+ cd telemetry-batch-view")
-    chdir("telemetry-batch-view")
+    retrieve_jar()
 
 if environ.get("DO_SUBMIT", "True") == "True":
     submit_job()
