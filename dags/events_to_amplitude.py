@@ -10,6 +10,7 @@ VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
 key_file = "s3://telemetry-airflow/config/amplitude/{}/apiKey".format(environment)
+config_file = "focus_android_events_schemas.json"
 
 slug = "{{ task.__class__.telemetry_streaming_slug }}"
 url = get_artifact_url(slug)
@@ -27,6 +28,8 @@ default_args = {
 
 dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0 1 * * *')
 
+
+
 events_to_amplitude = EMRSparkOperator(
     task_id="focus_android_events_to_amplitude",
     job_name="Focus Android Events to Amplitude",
@@ -37,7 +40,8 @@ events_to_amplitude = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file,
-        "artifact": url
+        "artifact": url,
+        "config_filename": config_file
     },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/focus_android_events_to_amplitude.sh",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
