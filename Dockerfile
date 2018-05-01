@@ -13,6 +13,9 @@ ENV PYTHONUNBUFFERED=1 \
     # EMR_FLOW_ROLE= \
     # EMR_SERVICE_ROLE= \
     # EMR_INSTANCE_TYPE= \
+    # DEPLOY_ENVIRONMENT = \
+    # DEPLOY_TAG = \
+    # ARTIFACTS_BUCKET = \
     PORT=8000
 
 ENV AIRFLOW_HOME=/app
@@ -53,6 +56,8 @@ RUN apt-get update && \
 COPY requirements.txt /tmp/
 # Switch to /tmp to install dependencies outside home dir
 WORKDIR /tmp
+# See Bug 1455683
+RUN pip install pip==9.0.3
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY mozlog.diff .
