@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -z "$date" || -z "$max_requests" || -z "$key_file" || -z "$artifact" || -z "$config_filename"]]; then
+if [[ -z "$date" || -z "$max_requests" || -z "$key_file" || -z "$artifact" || -z "$config_filename" ]]; then
     echo "Missing arguments!" 1>&2
     exit 1
 fi
