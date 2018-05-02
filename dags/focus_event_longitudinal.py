@@ -20,7 +20,7 @@ dag = DAG('focus_event_longitudinal', default_args=default_args, schedule_interv
 focus_event_longitudinal = EMRSparkOperator(
     task_id="focus_event_longitudinal",
     job_name="Focus Event Longitudinal View",
-    execution_timeout=timedelta(hours=6),
+    execution_timeout=timedelta(hours=12),
     instance_count=10,
     env = tbv_envvar("com.mozilla.telemetry.views.GenericLongitudinalView", {
         "to": DS_WEEKLY,

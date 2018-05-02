@@ -79,7 +79,7 @@ def main_summary_subdag_factory(parent_dag, task_id, day):
                 "to": ds,
                 "bucket": "telemetry-backfill"
             }, {
-                "DO_ASSEMBLY": "False"
+                "DO_RETRIEVE": "False"
             }),
         ),
         dag=subdag
@@ -116,7 +116,7 @@ create_job_flow_task = EmrCreateJobFlowSelectiveTemplateOperator(
             job_name="compile_main_summary",
             owner="ssuh@mozilla.com",
             uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-            env={"DO_SUBMIT": "False", "GIT_BRANCH": "backfill"}
+            env=tbv_envvar(None, options={}, branch="backfill", other={"DO_SUBMIT": "False"})
         ),
     },
     dag=dag
