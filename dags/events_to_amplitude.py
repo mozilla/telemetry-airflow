@@ -3,20 +3,17 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 from utils.mozetl import mozetl_envvar
-from utils.tbv import tbv_envvar
+from utils.deploy import get_artifact_url
 
 FOCUS_ANDROID_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
 key_file = "s3://telemetry-airflow/config/amplitude/{}/apiKey".format(environment)
+config_file = "focus_android_events_schemas.json"
 
-bucket = "{{ task.__class__.artifacts_bucket }}"
-mozilla_slug = "{{ test.__class__.mozilla_slug }}"
 slug = "{{ task.__class__.telemetry_streaming_slug }}"
-deploy_tag = "{{ task.__class__.deploy_tag }}"
-url = "https://s3-us-west-2.amazonaws.com/{bucket}/{mozilla_slug}/{slug}/{deploy_tag}/{slug}.jar".format(
-    bucket=bucket, mozilla_slug=mozilla_slug, slug=slug, deploy_tag=deploy_tag)
+url = get_artifact_url(slug)
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -31,6 +28,8 @@ default_args = {
 
 dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0 1 * * *')
 
+
+
 events_to_amplitude = EMRSparkOperator(
     task_id="focus_android_events_to_amplitude",
     job_name="Focus Android Events to Amplitude",
@@ -41,7 +40,8 @@ events_to_amplitude = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file,
-        "artifact": url
+        "artifact": url,
+        "config_filename": config_file
     },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/focus_android_events_to_amplitude.sh",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
