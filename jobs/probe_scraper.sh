@@ -19,10 +19,16 @@ mkdir $CACHE_DIR $OUTPUT_DIR
 # Finally run the scraper.
 python probe_scraper/runner.py --outdir $OUTPUT_DIR --tempdir $CACHE_DIR
 
-# The Cloudfront distribution will automatically gzip objects
-# Upload to S3.
-aws s3 sync $OUTPUT_DIR/ s3://$BUCKET/ \
-       --delete \
-       --content-type 'application/json' \
-       --cache-control 'max-age=28800' \
-       --acl public-read
+if [ -n "$(find $OUTPUT_DIR -prune -empty 2>/dev/null)" ]
+then
+    echo "$OUTPUT_DIR is empty"
+    exit 1
+else
+    # The Cloudfront distribution will automatically gzip objects
+    # Upload to S3.
+    aws s3 sync $OUTPUT_DIR/ s3://$BUCKET/ \
+           --delete \
+           --content-type 'application/json' \
+           --cache-control 'max-age=28800' \
+           --acl public-read
+fi
