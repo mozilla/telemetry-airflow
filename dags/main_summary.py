@@ -207,7 +207,7 @@ clients_daily_v6 = EMRSparkOperator(
     instance_count=10,
     env=tbv_envvar("com.mozilla.telemetry.views.ClientsDailyView", {
         "date": "{{ ds_nodash }}",
-        "output-bucket": "telemetry-backfill"
+        "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
