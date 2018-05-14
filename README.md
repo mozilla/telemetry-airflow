@@ -33,7 +33,7 @@ You should then run the database migrations to complete the container initializa
 make migrate
 ```
 
-### Testing
+## Testing
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `dev` environment with:
 ```bash
@@ -65,6 +65,19 @@ make up
 
 You can now connect to your local Airflow web console at
 `http://localhost:8000/`.
+
+### Testing Dev Changes
+
+*Note: This only works for `telemetry-batch-view` and `telemetry-streaming` jobs*
+
+A dev changes can be run by simply changing the `DEPLOY_TAG` environment variable
+to whichever upstream branch you've pushed your local changes to.
+
+Afterwards, you're going to need to rebuild: `make build`
+
+From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the 
+Dockerfile and run `make up` to get a local UI and run from there, or you can follow the
+testing instructions above and use `make run`.
 
 ### Production Setup
 
