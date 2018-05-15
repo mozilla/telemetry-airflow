@@ -269,20 +269,6 @@ main_summary_glue = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/update_glue.sh",
     dag=dag)
 
-taar_dynamo = EMRSparkOperator(
-    task_id="taar_dynamo",
-    job_name="TAAR DynamoDB loader",
-    execution_timeout=timedelta(hours=14),
-    instance_count=6,
-    owner="vng@mozilla.com",
-    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
-    env=mozetl_envvar("taar_dynamo", {
-        "date": "{{ ds_nodash }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
 
 engagement_ratio.set_upstream(main_summary)
 
@@ -300,7 +286,6 @@ experiments_aggregates_import.set_upstream(experiments_aggregates)
 search_dashboard.set_upstream(main_summary)
 search_clients_daily.set_upstream(main_summary)
 
-taar_dynamo.set_upstream(main_summary)
 
 add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
