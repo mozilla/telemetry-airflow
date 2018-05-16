@@ -51,8 +51,8 @@ amowhitelist = EMRSparkOperator(
 taar_lite = EMRSparkOperator(
     task_id="taar_lite",
     job_name="Generate GUID coinstallation JSON for TAAR",
-    execution_timeout=timedelta(hours=1),
-    instance_count=1,
+    execution_timeout=timedelta(hours=2),
+    instance_count=5,
     owner="mlopatka@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com"],
     env=mozetl_envvar("taar_lite",
