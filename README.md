@@ -33,7 +33,7 @@ You should then run the database migrations to complete the container initializa
 make migrate
 ```
 
-### Testing
+## Testing
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `dev` environment with:
 ```bash
@@ -65,6 +65,19 @@ make up
 
 You can now connect to your local Airflow web console at
 `http://localhost:8000/`.
+
+### Testing Dev Changes
+
+*Note: This only works for `telemetry-batch-view` and `telemetry-streaming` jobs*
+
+A dev changes can be run by simply changing the `DEPLOY_TAG` environment variable
+to whichever upstream branch you've pushed your local changes to.
+
+Afterwards, you're going to need to rebuild: `make build`
+
+From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the 
+Dockerfile and run `make up` to get a local UI and run from there, or you can follow the
+testing instructions above and use `make run`.
 
 ### Production Setup
 
@@ -106,6 +119,12 @@ variables:
   `https://workflow.telemetry.mozilla.org`
 - `DEPLOY_ENVIRONMENT` -- The environment currently running, e.g.
   `stage` or `prod`
+- `DEPLOY_TAG` -- The tag or branch to retrieve the JAR from, e.g.
+  `master` or `tags`. You can specify the tag or travis build exactly as well, e.g.
+  `master/42.1` or `tags/v2.2.1`. Not specifying the exact tag or build will
+  use the latest from that branch, or the latest tag.
+- `ARTIFACTS_BUCKET` -- The s3 bucket where the build artifacts can be found, e.g.
+  `net-mozaws-data-us-west-2-ops-ci-artifacts`
 
 Also, please set
 

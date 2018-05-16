@@ -24,7 +24,7 @@ amodump = EMRSparkOperator(
     execution_timeout=timedelta(hours=1),
     instance_count=1,
     owner="vng@mozilla.com",
-    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
+    email=["mlopatka@mozilla.com", "vng@mozilla.com"],
     env=mozetl_envvar("taar_amodump",
                       {"date": "{{ ds_nodash }}"},
                       {'MOZETL_SUBMISSION_METHOD': 'python'}),
@@ -39,9 +39,24 @@ amowhitelist = EMRSparkOperator(
     execution_timeout=timedelta(hours=1),
     instance_count=1,
     owner="vng@mozilla.com",
-    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
+    email=["mlopatka@mozilla.com", "vng@mozilla.com"],
     env=mozetl_envvar("taar_amowhitelist",
                       {},
+                      {'MOZETL_SUBMISSION_METHOD': 'spark'}),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag
+)
+
+taar_lite = EMRSparkOperator(
+    task_id="taar_lite",
+    job_name="Generate GUID coinstallation JSON for TAAR",
+    execution_timeout=timedelta(hours=2),
+    instance_count=5,
+    owner="mlopatka@mozilla.com",
+    email=["mlopatka@mozilla.com", "vng@mozilla.com"],
+    env=mozetl_envvar("taar_lite",
+                      {"date": "{{ ds_nodash }}"},
                       {'MOZETL_SUBMISSION_METHOD': 'python'}),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
@@ -50,3 +65,6 @@ amowhitelist = EMRSparkOperator(
 
 # Set a dependency on amodump from amowhitelist
 amowhitelist.set_upstream(amodump)
+
+# Set a dependency on amowhitelist from taar_lite
+taar_lite.set_upstream(amowhitelist)

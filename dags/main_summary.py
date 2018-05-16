@@ -37,6 +37,7 @@ experiments_error_aggregates = EMRSparkOperator(
     job_name="Experiments Error Aggregates View",
     execution_timeout=timedelta(hours=5),
     instance_count=20,
+    release_label="emr-5.13.0",
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
@@ -197,6 +198,20 @@ clients_daily = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
+clients_daily_v6 = EMRSparkOperator(
+    task_id="clients_daily_v6",
+    job_name="Clients Daily v6",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    execution_timeout=timedelta(hours=5),
+    instance_count=10,
+    env=tbv_envvar("com.mozilla.telemetry.views.ClientsDailyView", {
+        "date": "{{ ds_nodash }}",
+        "output-bucket": "{{ task.__class__.private_output_bucket }}"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    dag=dag)
+
 heavy_users = EMRSparkOperator(
     task_id="heavy_users_view",
     job_name="Heavy Users View",
@@ -254,20 +269,6 @@ main_summary_glue = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/update_glue.sh",
     dag=dag)
 
-taar_dynamo = EMRSparkOperator(
-    task_id="taar_dynamo",
-    job_name="TAAR DynamoDB loader",
-    execution_timeout=timedelta(hours=14),
-    instance_count=6,
-    owner="vng@mozilla.com",
-    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
-    env=mozetl_envvar("taar_dynamo", {
-        "date": "{{ ds_nodash }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
 
 engagement_ratio.set_upstream(main_summary)
 
@@ -285,11 +286,11 @@ experiments_aggregates_import.set_upstream(experiments_aggregates)
 search_dashboard.set_upstream(main_summary)
 search_clients_daily.set_upstream(main_summary)
 
-taar_dynamo.set_upstream(main_summary)
 
-add_search_rollup(dag, "daily", 1, upstream=main_summary)
+add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
+clients_daily_v6.set_upstream(main_summary)
 
 heavy_users.set_upstream(main_summary)
 
