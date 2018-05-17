@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from search_rollup import add_search_rollup
@@ -28,8 +29,16 @@ main_summary = EMRSparkOperator(
     env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
         "from": "{{ ds_nodash }}",
         "to": "{{ ds_nodash }}",
+        "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    dag=dag)
+
+main_summary_schema = EmailSchemaChangeOperator(
+    task_id="main_summary_schema",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    to=["ssuh@mozilla.com"],
+    key_prefix='schema/main_summary/submission_date_s3=',
     dag=dag)
 
 experiments_error_aggregates = EMRSparkOperator(
@@ -269,6 +278,8 @@ main_summary_glue = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/update_glue.sh",
     dag=dag)
 
+
+main_summary_schema.set_upstream(main_summary)
 
 engagement_ratio.set_upstream(main_summary)
 
