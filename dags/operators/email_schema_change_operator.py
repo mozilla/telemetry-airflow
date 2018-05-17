@@ -38,7 +38,7 @@ class EmailSchemaChangeOperator(EmailOperator):
     public_output_bucket = environ['PUBLIC_OUTPUT_BUCKET']
 
     @apply_defaults
-    def __init__(self, key_prefix, bucket='{{ private_output_bucket }}',
+    def __init__(self, key_prefix, bucket='{{ task.__class__.private_output_bucket }}',
                  latest_schema_key='{{ ds_nodash }}',
                  previous_schema_key='{{ yesterday_ds_nodash }}',
                  html_content='schema diff between {{ yesterday_ds }} and {{ ds }}:<br><br>',
