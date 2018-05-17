@@ -154,7 +154,7 @@ experiments_aggregates_import = EMRSparkOperator(
     owner="robhudson@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/experiments-viewer/master/notebooks/import.py",
+    uri="https://raw.githubusercontent.com/mozilla/firefox-test-tube/master/notebook/import.py",
     dag=dag)
 
 search_dashboard = EMRSparkOperator(
