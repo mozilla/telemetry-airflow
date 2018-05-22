@@ -221,19 +221,6 @@ clients_daily_v6 = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
-heavy_users = EMRSparkOperator(
-    task_id="heavy_users_view",
-    job_name="Heavy Users View",
-    owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
-    execution_timeout=timedelta(hours=8),
-    instance_count=10,
-    env=tbv_envvar("com.mozilla.telemetry.views.HeavyUsersView", {
-        "date": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
 retention = EMRSparkOperator(
     task_id="retention",
     job_name="1-Day Firefox Retention",
@@ -302,8 +289,6 @@ add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
-
-heavy_users.set_upstream(main_summary)
 
 retention.set_upstream(main_summary)
 

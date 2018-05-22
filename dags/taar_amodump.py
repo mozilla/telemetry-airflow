@@ -51,13 +51,13 @@ amowhitelist = EMRSparkOperator(
 taar_lite = EMRSparkOperator(
     task_id="taar_lite",
     job_name="Generate GUID coinstallation JSON for TAAR",
-    execution_timeout=timedelta(hours=2),
     instance_count=5,
+    execution_timeout=timedelta(hours=4),
     owner="mlopatka@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com"],
     env=mozetl_envvar("taar_lite",
                       {"date": "{{ ds_nodash }}"},
-                      {'MOZETL_SUBMISSION_METHOD': 'python'}),
+                      {'MOZETL_SUBMISSION_METHOD': 'spark'}),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
     dag=dag
