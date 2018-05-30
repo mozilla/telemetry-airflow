@@ -66,17 +66,6 @@ cross_sectional = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
-distribution_viewer = EMRSparkOperator(
-    task_id="distribution_viewer",
-    job_name="Distribution Viewer",
-    owner="chudson@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "chudson@mozilla.com"],
-    execution_timeout=timedelta(hours=10),
-    instance_count=5,
-    env={"date": DS_WEEKLY},
-    uri="https://raw.githubusercontent.com/mozilla/distribution-viewer/master/notebooks/aggregate-and-import.py",
-    dag=dag)
-
 taar_locale_job = EMRSparkOperator(
     task_id="taar_locale_job",
     job_name="TAAR Locale Model",
@@ -114,6 +103,5 @@ taar_legacy_job = EMRSparkOperator(
 addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
 cross_sectional.set_upstream(longitudinal)
-distribution_viewer.set_upstream(cross_sectional)
 taar_locale_job.set_upstream(longitudinal)
 taar_legacy_job.set_upstream(longitudinal)
