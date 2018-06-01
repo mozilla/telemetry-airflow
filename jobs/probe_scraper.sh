@@ -17,7 +17,7 @@ pip install -r requirements.txt
 mkdir $CACHE_DIR $OUTPUT_DIR
 
 # Finally run the scraper.
-python probe_scraper/runner.py --outdir $OUTPUT_DIR --tempdir $CACHE_DIR
+python probe_scraper/runner.py --out-dir $OUTPUT_DIR --cache-dir $CACHE_DIR
 
 if [ -n "$(find $OUTPUT_DIR -prune -empty 2>/dev/null)" ]
 then
