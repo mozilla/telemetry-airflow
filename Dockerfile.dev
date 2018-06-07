@@ -31,7 +31,8 @@ ENV AIRFLOW_HOME=/app \
     # AIRFLOW_SMTP_HOST= \
     # AIRFLOW_SMTP_USER= \
     # AIRFLOW_SMTP_PASSWORD= \
-    AIRFLOW_SMTP_FROM=telemetry-alerts@airflow.dev.mozaws.net
+    AIRFLOW_SMTP_FROM=telemetry-alerts@airflow.dev.mozaws.net \
+    AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
 
 EXPOSE $PORT
 
