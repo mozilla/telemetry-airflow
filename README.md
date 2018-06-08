@@ -35,11 +35,11 @@ make migrate
 
 ## Testing
 
-A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2016-01-01`, in the `dev` environment with:
+A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
 ```bash
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_ACCESS_KEY_ID=...
-make run COMMAND="test example spark 20160101"
+make run COMMAND="test example spark 20180101"
 ```
 
 The container will run the desired task to completion (or failure).
@@ -51,6 +51,41 @@ The logs of the task can be inspected in real-time with:
 ```bash
 docker logs -f telemetryairflow_scheduler_1
 ```
+
+You can task logs and see cluster status on
+[the EMR console](https://us-west-2.console.aws.amazon.com/elasticmapreduce/home?region=us-west-2)
+
+By default, the results will end up in the `telemetry-test-bucket` in S3.
+If your desired task depends on other views, it will expect to be able to find those results
+in `telemetry-test-bucket` too. It's your responsibility to run the tasks in correct
+order of their dependencies.
+
+### Testing main_summary
+
+`main_summary` can be a good test case for any large changes to telemetry-batch-view,
+but you'll likely want to make some modifications before launching a test to keep runtime reasonable.
+
+Edit the `EMRSparkOperator` definition for the `main_summary` task in `dags/main_summary.py`
+to add some additional parameters to the `tbv_envvar` dictionary:
+
+```python
+        "channel": "nightly",   # run on smaller nightly data rather than release
+        "read-mode": "aligned", # more efficient RDD splitting for small datasets
+```
+
+Then launch in dev as:
+
+```bash
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_ACCESS_KEY_ID=...
+make run COMMAND="test main_summary main_summary 20180523"
+```
+
+To run the full `main_summary` DAG via local Airflow, you'll need to remove
+the `main_summary_glue` task definition and all references to it, since
+your local instance doesn't have the proper credentials set up to access
+AWS Glue. See the next section for info on how to configure a full DAG run,
+though this should only be needed to significant changes affecting many view definitions.
 
 ### Local Deployment
 
@@ -65,6 +100,13 @@ make up
 
 You can now connect to your local Airflow web console at
 `http://localhost:8000/`.
+
+All DAGs are paused by default for local instances and our staging instance of Airflow.
+In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On",
+but be very careful to check what DAG runs are generated (Browse > DAG Runs), since it may start
+generating backfill runs based on the DAG's configured start date, which could get very expensive
+(set `schedule_interval=None` in your DAG definition to prevent these scheduled runs).
+You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
 
 ### Testing Dev Changes
 
@@ -159,11 +201,11 @@ docker volume rm $(docker volume ls -qf dangling=true)
   - Browse -> Dag Runs
   - Create (you can look at another dag run of the same dag for example values too)
     - Dag Id: the name of the dag, for example, `main_summary` or `crash_aggregates`
-    - Execution Date: The date the dag should have run, for example, `2016-07-14 00:00:00`
-    - Start Date: Some date between the execution date and "now", for example, `2016-07-20 00:00:05`
+    - Execution Date: The date the dag should have run, for example, `2018-05-14 00:00:00`
+    - Start Date: Some date between the execution date and "now", for example, `2018-05-20 00:00:05`
     - End Date: Leave it blank
     - State: success
-    - Run Id: `scheduled__2016-07-14T00:00:00`
+    - Run Id: `scheduled__2018-05-14T00:00:00`
     - External Trigger: unchecked
   - Click Save
   - Click on the Graph view for the dag in question. From the main DAGs view, click the name of the DAG
@@ -183,7 +225,7 @@ docker volume rm $(docker volume ls -qf dangling=true)
 - SSH into the ECS container instance
 - List docker containers using `docker ps`
 - Log in to one of the docker containers using `docker exec -it <container_id> bash`. The web server instance is a good choice.
-- Run the desired backfill command, something like `$ airflow backfill main_summary -s 2016-06-20 -e 2016-06-26`
+- Run the desired backfill command, something like `$ airflow backfill main_summary -s 2018-05-20 -e 2018-05-26`
 
 ### CircleCI
 

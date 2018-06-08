@@ -60,7 +60,7 @@ cross_sectional = EMRSparkOperator(
     job_name="Cross Sectional View",
     execution_timeout=timedelta(hours=10),
     instance_count=30,
-    env = tbv_envvar("com.mozilla.telemetry.views.CrossSectionalView", {
+    env=tbv_envvar("com.mozilla.telemetry.views.CrossSectionalView", {
         "outName": "v" + DS_WEEKLY,
         "outputBucket": "{{ task.__class__.private_output_bucket }}"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
@@ -100,8 +100,24 @@ taar_legacy_job = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
+taar_lite_guidranking = EMRSparkOperator(
+    task_id="taar_lite_guidranking",
+    job_name="TAARlite Addon Ranking",
+    owner="mlopatka@mozilla.com",
+    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
+    execution_timeout=timedelta(hours=2),
+    instance_count=4,
+    env=mozetl_envvar("taar_lite_guidranking",
+                      {"date": "{{ ds_nodash }}"},
+                      {'MOZETL_SUBMISSION_METHOD': 'spark'}),
+    release_label="emr-5.8.0",
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag)
+
 addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
 cross_sectional.set_upstream(longitudinal)
 taar_locale_job.set_upstream(longitudinal)
 taar_legacy_job.set_upstream(longitudinal)
+taar_lite_guidranking.set_upstream(longitudinal)
