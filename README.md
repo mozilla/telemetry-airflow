@@ -108,6 +108,20 @@ generating backfill runs based on the DAG's configured start date, which could g
 (set `schedule_interval=None` in your DAG definition to prevent these scheduled runs).
 You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
 
+
+#### Workaround for permission issues
+
+Users on Linux distributions will encounter permission issues with `docker-compose`.
+This is because the local application folder is mounted as a volume into the running container.
+The Airflow user and group in the container is set to `10001`.
+
+To work around this, replace all instances of `10001` in `Dockerfile.dev` with the host user id.
+
+```bash
+sed -i "s/10001/$(id -u)/g" Dockerfile.dev
+
+```
+
 ### Testing Dev Changes
 
 *Note: This only works for `telemetry-batch-view` and `telemetry-streaming` jobs*
