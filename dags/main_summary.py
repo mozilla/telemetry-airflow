@@ -250,7 +250,7 @@ client_count_daily_view = EMRSparkOperator(
 main_summary_glue = EMRSparkOperator(
     task_id="main_summary_glue",
     job_name="Main Summary Update Glue",
-    execution_timeout=timedelta(hours=2),
+    execution_timeout=timedelta(hours=8),
     owner="bimsland@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
     instance_count=1,

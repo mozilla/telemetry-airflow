@@ -70,7 +70,7 @@ to add some additional parameters to the `tbv_envvar` dictionary:
 
 ```python
         "channel": "nightly",   # run on smaller nightly data rather than release
-        "read-mode": "aligned", # group into fewer Spark tasks
+        "read-mode": "aligned", # more efficient RDD splitting for small datasets
 ```
 
 Then launch in dev as:
@@ -103,9 +103,9 @@ You can now connect to your local Airflow web console at
 
 All DAGs are paused by default for local instances and our staging instance of Airflow.
 In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On",
-but check to see what DAG runs are generated (Browse > DAG Runs), since it may start
-generating backfill runs based on the DAG's configured start date
-(set `schedule_interval=None` in your DAG definition to prevent these scheduled runs). 
+but be very careful to check what DAG runs are generated (Browse > DAG Runs), since it may start
+generating backfill runs based on the DAG's configured start date, which could get very expensive
+(set `schedule_interval=None` in your DAG definition to prevent these scheduled runs).
 You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
 
 
