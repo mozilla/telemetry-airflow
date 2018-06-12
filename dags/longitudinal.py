@@ -24,8 +24,14 @@ longitudinal = EMRSparkOperator(
     execution_timeout=timedelta(hours=12),
     instance_count=40,
     release_label="emr-5.11.0",
-    env={"date": DS_WEEKLY, "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/longitudinal_view.sh",
+    env=tbv_envvar(
+        "com.mozilla.telemetry.views.LongitudinalView",
+        {
+            "bucket": "{{ task.__class__.private_output_bucket }}",
+            "to": DS_WEEKLY
+        },
+        metastore_location="s3://telemetry-parquet/longitudinal"),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 addon_recommender = EMRSparkOperator(
