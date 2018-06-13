@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from search_rollup import add_search_rollup
@@ -28,8 +29,16 @@ main_summary = EMRSparkOperator(
     env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
         "from": "{{ ds_nodash }}",
         "to": "{{ ds_nodash }}",
+        "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    dag=dag)
+
+main_summary_schema = EmailSchemaChangeOperator(
+    task_id="main_summary_schema",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    to=["ssuh@mozilla.com"],
+    key_prefix='schema/main_summary/submission_date_s3=',
     dag=dag)
 
 experiments_error_aggregates = EMRSparkOperator(
@@ -145,7 +154,7 @@ experiments_aggregates_import = EMRSparkOperator(
     owner="robhudson@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/experiments-viewer/master/notebooks/import.py",
+    uri="https://raw.githubusercontent.com/mozilla/firefox-test-tube/master/notebook/import.py",
     dag=dag)
 
 search_dashboard = EMRSparkOperator(
@@ -212,19 +221,6 @@ clients_daily_v6 = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
-heavy_users = EMRSparkOperator(
-    task_id="heavy_users_view",
-    job_name="Heavy Users View",
-    owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com"],
-    execution_timeout=timedelta(hours=8),
-    instance_count=10,
-    env=tbv_envvar("com.mozilla.telemetry.views.HeavyUsersView", {
-        "date": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
 retention = EMRSparkOperator(
     task_id="retention",
     job_name="1-Day Firefox Retention",
@@ -246,7 +242,7 @@ client_count_daily_view = EMRSparkOperator(
     execution_timeout=timedelta(hours=10),
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    instance_count=2,
+    instance_count=10,
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/client_count_daily_view.sh",
     dag=dag)
@@ -254,7 +250,7 @@ client_count_daily_view = EMRSparkOperator(
 main_summary_glue = EMRSparkOperator(
     task_id="main_summary_glue",
     job_name="Main Summary Update Glue",
-    execution_timeout=timedelta(hours=2),
+    execution_timeout=timedelta(hours=8),
     owner="bimsland@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
     instance_count=1,
@@ -269,6 +265,8 @@ main_summary_glue = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/update_glue.sh",
     dag=dag)
 
+
+main_summary_schema.set_upstream(main_summary)
 
 engagement_ratio.set_upstream(main_summary)
 
@@ -291,8 +289,6 @@ add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
-
-heavy_users.set_upstream(main_summary)
 
 retention.set_upstream(main_summary)
 
