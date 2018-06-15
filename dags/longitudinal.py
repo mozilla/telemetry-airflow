@@ -22,7 +22,7 @@ longitudinal = EMRSparkOperator(
     task_id="longitudinal",
     job_name="Longitudinal View",
     execution_timeout=timedelta(hours=12),
-    instance_count=40,
+    instance_count=50,
     release_label="emr-5.11.0",
     env=tbv_envvar(
         "com.mozilla.telemetry.views.LongitudinalView",
