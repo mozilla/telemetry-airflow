@@ -29,7 +29,6 @@ usage_report = EMRSparkOperator(
     job_name="Fx Usage Report",
     execution_timeout=timedelta(hours=4),
     instance_count=10,
-    release_label="emr-5.11.0",
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "shong@mozilla.com"],
     env={"date": DS_WEEKLY,
