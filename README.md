@@ -129,7 +129,7 @@ sed -i "s/10001/$(id -u)/g" Dockerfile.dev
 A dev changes can be run by simply changing the `DEPLOY_TAG` environment variable
 to whichever upstream branch you've pushed your local changes to.
 
-Afterwards, you're going to need to rebuild: `make build`
+Afterwards, you're going to need to rebuild: `make build && make migrate`
 
 From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the 
 Dockerfile and run `make up` to get a local UI and run from there, or you can follow the

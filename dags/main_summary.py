@@ -46,7 +46,6 @@ experiments_error_aggregates = EMRSparkOperator(
     job_name="Experiments Error Aggregates View",
     execution_timeout=timedelta(hours=5),
     instance_count=20,
-    release_label="emr-5.13.0",
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
@@ -136,7 +135,6 @@ experiments_aggregates = EMRSparkOperator(
     job_name="Experiments Aggregates View",
     execution_timeout=timedelta(hours=15),
     instance_count=20,
-    release_label="emr-5.8.0",
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
     env=tbv_envvar("com.mozilla.telemetry.views.ExperimentAnalysisView", {

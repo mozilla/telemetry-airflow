@@ -1,6 +1,34 @@
 FROM python:2-slim
 MAINTAINER Jannis Leidel <jezdez@mozilla.com>
 
+# add a non-privileged user for installing and running the application
+RUN mkdir /app && \
+    chown 10001:10001 /app && \
+    groupadd --gid 10001 app && \
+    useradd --no-create-home --uid 10001 --gid 10001 --home-dir /app app
+
+RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        apt-transport-https build-essential curl git libpq-dev \
+        postgresql-client gettext sqlite3 libffi-dev libsasl2-dev && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Python dependencies
+COPY requirements.txt /tmp/
+# Switch to /tmp to install dependencies outside home dir
+WORKDIR /tmp
+
+RUN pip install pip==9.0.3
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Switch back to home directory
+WORKDIR /app
+
+USER 10001
+
 ENV PYTHONUNBUFFERED=1 \
     AWS_REGION=us-west-2 \
     # AWS_ACCESS_KEY_ID= \
@@ -39,34 +67,6 @@ ENV AIRFLOW_HOME=/app \
     AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
 
 EXPOSE $PORT
-
-# add a non-privileged user for installing and running the application
-RUN mkdir /app && \
-    chown 10001:10001 /app && \
-    groupadd --gid 10001 app && \
-    useradd --no-create-home --uid 10001 --gid 10001 --home-dir /app app
-
-RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7 && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        apt-transport-https build-essential curl git libpq-dev \
-        postgresql-client gettext sqlite3 libffi-dev libsasl2-dev && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install Python dependencies
-COPY requirements.txt /tmp/
-# Switch to /tmp to install dependencies outside home dir
-WORKDIR /tmp
-
-RUN pip install pip==9.0.3
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Switch back to home directory
-WORKDIR /app
-
-USER 10001
 
 # Using /bin/bash as the entrypoint works around some volume mount issues on Windows
 # where volume-mounted files do not have execute bits set.
