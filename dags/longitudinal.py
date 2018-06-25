@@ -23,7 +23,6 @@ longitudinal = EMRSparkOperator(
     job_name="Longitudinal View",
     execution_timeout=timedelta(hours=12),
     instance_count=50,
-    release_label="emr-5.13.0",
     env=tbv_envvar(
         "com.mozilla.telemetry.views.LongitudinalView",
         {
@@ -84,7 +83,6 @@ taar_locale_job = EMRSparkOperator(
           "bucket": "{{ task.__class__.private_output_bucket }}",
           "prefix": "taar/locale/"
     }),
-    release_label="emr-5.8.0",
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
     dag=dag)
@@ -101,7 +99,6 @@ taar_legacy_job = EMRSparkOperator(
           "bucket": "{{ task.__class__.private_output_bucket }}",
           "prefix": "taar/legacy/"
     }),
-    release_label="emr-5.8.0",
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
     dag=dag)
@@ -116,7 +113,6 @@ taar_lite_guidranking = EMRSparkOperator(
     env=mozetl_envvar("taar_lite_guidranking",
                       {"date": "{{ ds_nodash }}"},
                       {'MOZETL_SUBMISSION_METHOD': 'spark'}),
-    release_label="emr-5.8.0",
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
     dag=dag)

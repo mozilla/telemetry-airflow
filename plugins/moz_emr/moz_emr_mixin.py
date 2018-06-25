@@ -3,7 +3,7 @@ import requests
 
 
 class MozEmrMixin:
-    DEFAULT_EMR_RELEASE = 'emr-5.9.0'
+    DEFAULT_EMR_RELEASE = 'emr-5.13.0'
 
     template_fields = ('environment',)
     region = environ['AWS_REGION']

@@ -70,7 +70,7 @@ class EMRSparkOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self, job_name, owner, uri, instance_count,
-                 release_label='emr-5.9.0', output_visibility='private',
+                 release_label='emr-5.13.0', output_visibility='private',
                  env=None, arguments='', *args, **kwargs):
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
         self.job_name = job_name
