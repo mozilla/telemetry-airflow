@@ -39,8 +39,8 @@ addon_recommender = EMRSparkOperator(
     job_name="Train the Addon Recommender",
     execution_timeout=timedelta(hours=10),
     instance_count=20,
-    owner="aplacitelli@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "aplacitelli@mozilla.com"],
+    owner="mlopatka@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"],
     env={"date": DS_WEEKLY,
          "privateBucket": "{{ task.__class__.private_output_bucket }}",
          "publicBucket": "{{ task.__class__.public_output_bucket }}"},
@@ -75,8 +75,8 @@ cross_sectional = EMRSparkOperator(
 taar_locale_job = EMRSparkOperator(
     task_id="taar_locale_job",
     job_name="TAAR Locale Model",
-    owner="aplacitelli@mozilla.com",
-    email=["aplacitelli@mozilla.com", "mlopatka@mozilla.com"],
+    owner="mlopatka@mozilla.com",
+    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
     execution_timeout=timedelta(hours=10),
     instance_count=5,
     env=mozetl_envvar("taar_locale", {
@@ -93,7 +93,7 @@ taar_legacy_job = EMRSparkOperator(
     task_id="taar_legacy_job",
     job_name="TAAR Legacy Model",
     owner="mlopatka@mozilla.com",
-    email=["aplacitelli@mozilla.com", "mlopatka@mozilla.com"],
+    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
     execution_timeout=timedelta(hours=1),
     instance_count=1,
     env=mozetl_envvar("taar_legacy", {
