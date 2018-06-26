@@ -13,7 +13,8 @@ key_file = "s3://telemetry-airflow/config/amplitude/{}/apiKey".format(environmen
 config_file = "focus_android_events_schemas.json"
 
 slug = "{{ task.__class__.telemetry_streaming_slug }}"
-url = get_artifact_url(slug)
+tag = "v1.0.1"
+url = get_artifact_url(slug, tag=tag)
 
 default_args = {
     'owner': 'frank@mozilla.com',
