@@ -2,7 +2,8 @@
 
 from utils.deploy import get_artifact_url
 
-def tbv_envvar(klass, options, branch=None, tag=None, other={}, metastore_location=None):
+
+def tbv_envvar(klass, options, branch=None, tag=None, other={}, metastore_location=None, artifact_url=None):
     """Set up environment variables for telemetry-batch-view jobs.
 
     The command line interface can read options from the environment. All
@@ -19,8 +20,11 @@ def tbv_envvar(klass, options, branch=None, tag=None, other={}, metastore_locati
 
     :returns: a dictionary that contains properly prefixed class and options
     """
-    slug = "{{ task.__class__.telemetry_batch_view_slug }}"
-    url = get_artifact_url(slug, branch=branch, tag=tag)
+    if artifact_url is None:
+        slug = "{{ task.__class__.telemetry_batch_view_slug }}"
+        url = get_artifact_url(slug, branch=branch, tag=tag)
+    else:
+        url = artifact_url
 
     prefixed_options = {
         "TBV_{}".format(key.replace("-", "_")): value
