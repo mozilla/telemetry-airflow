@@ -182,7 +182,7 @@ amo_logs.set_downstream(amo_job_sensor)
 amo_dev_stage_dag = DAG(
     'mango_log_processing_amo_dev_stage',
     default_args=DEFAULT_ARGS,
-    dagrun_timeout=timedelta(hours=6),
+    dagrun_timeout=timedelta(hours=2),
     schedule_interval='0 3 * * *'
 )
 
