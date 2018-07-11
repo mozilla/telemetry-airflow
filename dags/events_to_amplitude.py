@@ -10,7 +10,12 @@ SAVANT_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
-key_file = "s3://telemetry-airflow/config/amplitude/{}/apiKey".format(environment)
+
+def key_file(project):
+    return (
+        "s3://telemetry-airflow/config/amplitude/{}/{}/apiKey"
+        .format(environment, project)
+    )
 
 slug = "{{ task.__class__.telemetry_streaming_slug }}"
 tag = "v1.0.1"
@@ -30,7 +35,6 @@ default_args = {
 dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0 1 * * *')
 
 
-
 focus_events_to_amplitude = EMRSparkOperator(
     task_id="focus_android_events_to_amplitude",
     job_name="Focus Android Events to Amplitude",
@@ -39,7 +43,7 @@ focus_events_to_amplitude = EMRSparkOperator(
     env={
         "date": "{{ ds_nodash }}",
         "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file,
+        "key_file": key_file("focus_android"),
         "artifact": url,
         "config_filename": "focus_android_events_schemas.json",
     },
@@ -54,7 +58,7 @@ savant_events_to_amplitude = EMRSparkOperator(
     env={
         "date": "{{ ds_nodash }}",
         "max_requests": SAVANT_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file,
+        "key_file": key_file("savant"),
         "artifact": url,
         "config_filename": "desktop_savant_events_schemas.json",
     },
