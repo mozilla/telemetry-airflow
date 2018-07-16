@@ -105,6 +105,7 @@ addon_aggregates = EMRSparkOperator(
     instance_count=10,
     env=mozetl_envvar("addon_aggregates", {
         "date": "{{ ds_nodash }}",
+        "input-bucket": "{{ task.__class__.private_output_bucket }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
