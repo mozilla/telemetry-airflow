@@ -174,6 +174,7 @@ search_dashboard = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
     env=mozetl_envvar("search_dashboard", {
         "submission_date": "{{ ds_nodash }}",
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "harter/searchdb",
         "save_mode": "overwrite"
@@ -191,6 +192,7 @@ search_clients_daily = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
     env=mozetl_envvar("search_clients_daily", {
         "submission_date": "{{ ds_nodash }}",
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "search_clients_daily",
         "save_mode": "overwrite"
