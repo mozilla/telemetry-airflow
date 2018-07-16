@@ -212,6 +212,7 @@ clients_daily = EMRSparkOperator(
         # See the clients_daily code in the python_mozetl
         # repo for more details.
         "date": "{{ ds }}",
+        "input-bucket": "{{ task.__class__.private_output_bucket }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
