@@ -242,6 +242,7 @@ retention = EMRSparkOperator(
     instance_count=10,
     env=mozetl_envvar("retention", {
         "start_date": "{{ ds_nodash }}",
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "slack": 4
     }),
