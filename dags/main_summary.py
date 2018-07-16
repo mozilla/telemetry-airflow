@@ -57,7 +57,16 @@ engagement_ratio = EMRSparkOperator(
     job_name="Update Engagement Ratio",
     execution_timeout=timedelta(hours=6),
     instance_count=10,
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/engagement_ratio.sh",
+    env=mozetl_envvar("engagement_ratio", {
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
+        "output_bucket": """
+            {% if task.__class__.deploy_environment == 'dev' %}
+                {{- task.__class__.private_output_bucket }}
+            {% else %}
+                {{- 'net-mozaws-prod-us-west-2-pipeline-analysis' }}
+            {% endif %}""".strip(),
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="public",
     dag=dag)
 
