@@ -23,12 +23,9 @@ RUN apt-get update && \
 COPY requirements.txt /tmp/
 # Switch to /tmp to install dependencies outside home dir
 WORKDIR /tmp
-# See Bug 1455683
-RUN pip install pip==9.0.3
-RUN pip install --no-cache-dir -r requirements.txt
 
-COPY mozlog.diff .
-RUN patch -d /usr/local/lib/python2.7/site-packages -p1 < mozlog.diff
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Switch back to home directory
 WORKDIR /app
@@ -63,7 +60,7 @@ ENV AIRFLOW_HOME=/app
     # AIRFLOW_RESULT_URL= \
     # AIRFLOW_FLOWER_PORT= \
     # AIRFLOW_DATABASE_URL= \
-    # AIRFLOW_FERNET_KEY= \
+    # AIRFLOW__CORE__FERNET_KEY= \
     # AIRFLOW_SECRET_KEY= \
     # AIRFLOW_SMTP_HOST= \
     # AIRFLOW_SMTP_USER= \

@@ -185,7 +185,7 @@ variables:
 Also, please set
 
 - `AIRFLOW_SECRET_KEY` -- A secret key for Airflow's Flask based webserver
-- `AIRFLOW_FERNET_KEY` -- A secret key to saving connection passwords in the DB
+- `AIRFLOW__CORE__FERNET_KEY` -- A secret key to saving connection passwords in the DB
 
 Both values should be set by using the cryptography module's fernet tool that
 we've wrapped in a docker-compose call:
