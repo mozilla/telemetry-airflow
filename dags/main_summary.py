@@ -105,6 +105,7 @@ addon_aggregates = EMRSparkOperator(
     instance_count=10,
     env=mozetl_envvar("addon_aggregates", {
         "date": "{{ ds_nodash }}",
+        "input-bucket": "{{ task.__class__.private_output_bucket }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
@@ -173,6 +174,7 @@ search_dashboard = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
     env=mozetl_envvar("search_dashboard", {
         "submission_date": "{{ ds_nodash }}",
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "harter/searchdb",
         "save_mode": "overwrite"
@@ -190,6 +192,7 @@ search_clients_daily = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
     env=mozetl_envvar("search_clients_daily", {
         "submission_date": "{{ ds_nodash }}",
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "search_clients_daily",
         "save_mode": "overwrite"
@@ -209,6 +212,7 @@ clients_daily = EMRSparkOperator(
         # See the clients_daily code in the python_mozetl
         # repo for more details.
         "date": "{{ ds }}",
+        "input-bucket": "{{ task.__class__.private_output_bucket }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
@@ -223,6 +227,7 @@ clients_daily_v6 = EMRSparkOperator(
     instance_count=10,
     env=tbv_envvar("com.mozilla.telemetry.views.ClientsDailyView", {
         "date": "{{ ds_nodash }}",
+        "input-bucket": "{{ task.__class__.private_output_bucket }}",
         "output-bucket": "{{ task.__class__.private_output_bucket }}"
     }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
@@ -237,6 +242,7 @@ retention = EMRSparkOperator(
     instance_count=10,
     env=mozetl_envvar("retention", {
         "start_date": "{{ ds_nodash }}",
+        "input_bucket": "{{ task.__class__.private_output_bucket }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "slack": 4
     }),
