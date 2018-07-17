@@ -21,7 +21,7 @@ COPY requirements.txt /tmp/
 # Switch to /tmp to install dependencies outside home dir
 WORKDIR /tmp
 
-RUN pip install pip==9.0.3
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Switch back to home directory
@@ -58,7 +58,7 @@ ENV AIRFLOW_HOME=/app \
     AIRFLOW_RESULT_URL=redis://redis:6379/0 \
     AIRFLOW_FLOWER_PORT="5555" \
     AIRFLOW_DATABASE_URL=postgres://postgres@db/postgres \
-    AIRFLOW_FERNET_KEY="000000000000000000000000000000000000000000=" \
+    AIRFLOW__CORE__FERNET_KEY="0000000000000000000000000000000000000000000=" \
     AIRFLOW_SECRET_KEY="000000000000000000000000000000000000000000=" \
     # AIRFLOW_SMTP_HOST= \
     # AIRFLOW_SMTP_USER= \
