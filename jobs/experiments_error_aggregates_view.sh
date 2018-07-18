@@ -13,7 +13,8 @@ spark-submit --master yarn \
              --deploy-mode client \
              --class com.mozilla.telemetry.streaming.ExperimentsErrorAggregator \
              target/scala-2.11/telemetry-streaming-assembly-0.1-SNAPSHOT.jar \
-             --outputPath "s3://telemetry-parquet" \
+             --outputPath "s3://$bucket" \
              --numParquetFiles 6 \
              --from $date \
-             --to $date
+             --to $date \
+             $(if [[ ! -z "$channel" ]]; then echo "--channel $channel"; fi)
