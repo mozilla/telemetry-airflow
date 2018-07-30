@@ -6,6 +6,21 @@ from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from search_rollup import add_search_rollup
 
+
+def cond_env(prod, dev=None):
+    """Set a conditional set of options to be merged into the production options.
+     This is useful for passing into mozetl or tbv wrappers. If dev is set,
+     then the dev will be merged into the prod_env.
+
+    :param prod: The production environment variables
+    :param dev: The variables to set if the deploy environment is dev
+    """
+    env = prod.copy()
+    if dev and EMRSparkOperator.deploy_environment == 'dev':
+        env.update(dev)
+    return env
+
+
 default_args = {
     'owner': 'mreid@mozilla.com',
     'depends_on_past': False,
@@ -26,11 +41,17 @@ main_summary = EMRSparkOperator(
     job_name="Main Summary View",
     execution_timeout=timedelta(hours=14),
     instance_count=40,
-    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
-        "from": "{{ ds_nodash }}",
-        "to": "{{ ds_nodash }}",
-        "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", cond_env(
+        prod={
+            "from": "{{ ds_nodash }}",
+            "to": "{{ ds_nodash }}",
+            "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
+            "bucket": "{{ task.__class__.private_output_bucket }}"
+        },
+        dev={
+            "channel": "nightly",   # run on smaller nightly data rather than release
+            "read-mode": "aligned", # more efficient RDD splitting for small datasets
+        })),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
@@ -48,7 +69,13 @@ experiments_error_aggregates = EMRSparkOperator(
     instance_count=20,
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
+    env=cond_env(
+        prod={
+            "date": "{{ ds_nodash }}",
+            "bucket": "{{ task.__class__.private_output_bucket }}"
+        },
+        dev={"channel": "nightly"}
+    ),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_error_aggregates_view.sh",
     dag=dag)
 
@@ -159,6 +186,7 @@ experiments_aggregates_import = EMRSparkOperator(
     job_name="Experiments Aggregates Import",
     execution_timeout=timedelta(hours=10),
     instance_count=1,
+    disable_on_dev=True,
     owner="robhudson@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
@@ -267,6 +295,7 @@ main_summary_glue = EMRSparkOperator(
     owner="bimsland@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
     instance_count=1,
+    disable_on_dev=True,
     env={
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "main_summary",
