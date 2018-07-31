@@ -19,7 +19,7 @@ socorro_import = EMRSparkOperator(
     task_id="socorro_import",
     job_name="Import crash data",
     execution_timeout=timedelta(hours=4),
-    instance_count=5,
+    instance_count=10,
     env={"date": "{{ ds_nodash }}"},
     uri="https://raw.githubusercontent.com/mozilla-services/data-pipeline/master/reports/socorro_import/ImportCrashData.ipynb",
     output_visibility="public",
