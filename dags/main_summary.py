@@ -175,6 +175,7 @@ experiments_aggregates_import = EMRSparkOperator(
     job_name="Experiments Aggregates Import",
     execution_timeout=timedelta(hours=10),
     instance_count=1,
+    dev_instance_count=3,
     disable_on_dev=True,
     owner="robhudson@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
@@ -257,6 +258,7 @@ retention = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
     execution_timeout=timedelta(hours=4),
     instance_count=10,
+    dev_instance_count=3,
     env=mozetl_envvar("retention", {
         "start_date": "{{ ds_nodash }}",
         "input_bucket": "{{ task.__class__.private_output_bucket }}",
