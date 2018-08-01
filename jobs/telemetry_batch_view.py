@@ -43,20 +43,16 @@ def retrieve_jar():
     response = requests.get(txt_url)
 
     if response.status_code != 404:
-        stripped = response.content.strip()
-        if len(stripped.split("\n")) == 1:
+        uri_query, _, build_url = response.content.partition("\n")
+        if not build_url:
             # Handle historical version
-            uri_query = stripped
             build_url = "Build URL not available"
-        else:
-            # Output both query string and build URL
-            uri_query, build_url = stripped.split("\n")
 
         parsed_uri = urlparse(jar_url)
         full_url = "{uri.scheme}://{uri.netloc}/{uri_query}".format(uri=parsed_uri, uri_query=uri_query)
 
-        print("Alias: {}".format(full_url))
-        print("Build URL: {}".format(build_url))
+        print("  Alias: {}".format(full_url))
+        print("  Build URL: {}".format(build_url.strip()))
 
     response = requests.get(jar_url)
     with open(artifact_file, 'wb') as f:
