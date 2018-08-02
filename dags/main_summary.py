@@ -303,6 +303,7 @@ taar_dynamo = EMRSparkOperator(
     job_name="TAAR DynamoDB loader",
     execution_timeout=timedelta(hours=14),
     instance_count=6,
+    disable_on_dev=True,
     owner="vng@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
     env=mozetl_envvar("taar_dynamo", {
