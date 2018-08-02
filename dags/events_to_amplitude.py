@@ -18,8 +18,6 @@ def key_file(project):
     )
 
 slug = "{{ task.__class__.telemetry_streaming_slug }}"
-tag = "v1.0.1"
-url = get_artifact_url(slug, tag=tag)
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -44,7 +42,8 @@ focus_events_to_amplitude = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file("focus_android"),
-        "artifact": url,
+        # This Focus events job is pinned to a tag for now due to breaking changes in telemetry-streaming.
+        "artifact": get_artifact_url(slug, tag="v1.0.1"),
         "config_filename": "focus_android_events_schemas.json",
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
@@ -59,7 +58,7 @@ savant_events_to_amplitude = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "max_requests": SAVANT_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file("savant"),
-        "artifact": url,
+        "artifact": get_artifact_url(slug, branch="master"),
         "config_filename": "desktop_savant_events_schemas.json",
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
