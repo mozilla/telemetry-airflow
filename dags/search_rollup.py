@@ -24,6 +24,7 @@ def add_search_rollup(dag, mode, instance_count, upstream=None):
         ],
         execution_timeout=timedelta(hours=4),
         instance_count=instance_count,
+        disable_on_dev=True,
         env=mozetl_envvar("search_rollup", {
             "start_date": "{{ ds_nodash }}",
             "mode": mode,
