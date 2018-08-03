@@ -161,6 +161,7 @@ experiments_aggregates = EMRSparkOperator(
     job_name="Experiments Aggregates View",
     execution_timeout=timedelta(hours=15),
     instance_count=20,
+    dev_instance_count=3,
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
     env=tbv_envvar("com.mozilla.telemetry.views.ExperimentAnalysisView", {
@@ -175,7 +176,6 @@ experiments_aggregates_import = EMRSparkOperator(
     job_name="Experiments Aggregates Import",
     execution_timeout=timedelta(hours=10),
     instance_count=1,
-    dev_instance_count=3,
     disable_on_dev=True,
     owner="robhudson@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
