@@ -62,29 +62,15 @@ order of their dependencies.
 
 ### Testing main_summary
 
-`main_summary` can be a good test case for any large changes to telemetry-batch-view,
-but you'll likely want to make some modifications before launching a test to keep runtime reasonable.
-
-Edit the `EMRSparkOperator` definition for the `main_summary` task in `dags/main_summary.py`
-to add some additional parameters to the `tbv_envvar` dictionary:
-
-```python
-        "channel": "nightly",   # run on smaller nightly data rather than release
-        "read-mode": "aligned", # more efficient RDD splitting for small datasets
-```
-
-Then launch in dev as:
+`main_summary` can be a good test case for any large changes to telemetry-batch-view, launch in dev as:
 
 ```bash
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_ACCESS_KEY_ID=...
-make run COMMAND="test main_summary main_summary 20180523"
+make run COMMAND="test main_summary main_summary 20180803"
 ```
 
-To run the full `main_summary` DAG via local Airflow, you'll need to remove
-the `main_summary_glue` task definition and all references to it, since
-your local instance doesn't have the proper credentials set up to access
-AWS Glue. See the next section for info on how to configure a full DAG run,
+See the next section for info on how to configure a full DAG run,
 though this should only be needed to significant changes affecting many view definitions.
 
 ### Local Deployment
@@ -102,10 +88,7 @@ You can now connect to your local Airflow web console at
 `http://localhost:8000/`.
 
 All DAGs are paused by default for local instances and our staging instance of Airflow.
-In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On",
-but be very careful to check what DAG runs are generated (Browse > DAG Runs), since it may start
-generating backfill runs based on the DAG's configured start date, which could get very expensive
-(set `schedule_interval=None` in your DAG definition to prevent these scheduled runs).
+In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On".
 You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
 
 
