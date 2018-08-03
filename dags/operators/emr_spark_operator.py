@@ -68,23 +68,44 @@ class EMRSparkOperator(BaseOperator):
             logging.warn('Terminating Spark job {}'.format(self.job_name))
             client.terminate_job_flows(JobFlowIds=[self.job_flow_id])
 
+    @staticmethod
+    def _format_envvar(env=None):
+        # use a default value if an environment dictionary isn't supplied
+        return ' '.join(['{}={}'.format(k, v) for k, v in (env or {}).items()])
+
     @apply_defaults
     def __init__(self, job_name, owner, uri, instance_count,
+                 dev_instance_count=1, disable_on_dev=False,
                  release_label='emr-5.13.0', output_visibility='private',
                  env=None, arguments='', *args, **kwargs):
+        """
+        Create an operator for launching EMR clusters.
+
+        :param job_name: Job name as seen in the EMR console
+        :param owner: Email address(es) for notifications
+        :param uri: Remote path to the executable application as per airflow.sh
+        :param instance_count: The number of instances to use in production
+        :param dev_instance_count: The number of instances to use in development
+        :param disable_on_dev: Turn the job into a no-op if run in development
+        :param release_label: The EMR release label (i.e. 'emr-5.13.0')
+        :param output_visibility: 'public' or 'private', specifying the default
+                                    output bucket for data
+        :param env: A dictionary of environment variables to pass during runtime
+        :param dev_env: Additional environment variables to pass in development
+        :param arguments: Passed to `airflow.sh`
+        """
+        is_dev = self.deploy_environment == 'dev'
+
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
         self.job_name = job_name
         self.owner = owner
         self.uri = uri
         self.release_label = release_label
         self.arguments = arguments
-        if env is not None:
-            self.environment = ' '.join(['{}={}'.format(k, v)
-                                         for k, v in env.items()])
-        else:
-            self.environment = ''
+        self.environment = self._format_envvar(env)
         self.job_flow_id = None
-        self.instance_count = instance_count
+        self.instance_count = dev_instance_count if is_dev else instance_count
+        self.disable_on_dev = is_dev and disable_on_dev
 
         if output_visibility == 'public':
             self.data_bucket = EMRSparkOperator.public_output_bucket
@@ -95,6 +116,13 @@ class EMRSparkOperator(BaseOperator):
                 '{} visibility is not supported!'.format(output_visibility))
 
     def execute(self, context):
+        if self.disable_on_dev:
+            logging.info(
+                "Skipping {} in the development environment"
+                .format(self.job_name)
+            )
+            return
+
         jar_url = (
             's3://{}.elasticmapreduce/libs/script-runner/script-runner.jar'
             .format(EMRSparkOperator.region)

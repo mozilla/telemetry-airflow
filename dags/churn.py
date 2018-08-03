@@ -37,7 +37,7 @@ churn_v2 = EMRSparkOperator(
     env=mozetl_envvar("churn", {
         "start_date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}"
-    }, {
+    }, other={
         "MOZETL_GIT_BRANCH": "churn-v2"
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",

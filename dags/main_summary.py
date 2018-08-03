@@ -2,9 +2,11 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
+from utils.deploy import get_artifact_url
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from search_rollup import add_search_rollup
+
 
 default_args = {
     'owner': 'mreid@mozilla.com',
@@ -26,11 +28,17 @@ main_summary = EMRSparkOperator(
     job_name="Main Summary View",
     execution_timeout=timedelta(hours=14),
     instance_count=40,
-    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
-        "from": "{{ ds_nodash }}",
-        "to": "{{ ds_nodash }}",
-        "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
+        options={
+            "from": "{{ ds_nodash }}",
+            "to": "{{ ds_nodash }}",
+            "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
+            "bucket": "{{ task.__class__.private_output_bucket }}"
+        },
+        dev_options={
+            "channel": "nightly",   # run on smaller nightly data rather than release
+            "read-mode": "aligned", # more efficient RDD splitting for small datasets
+        }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
@@ -48,8 +56,17 @@ experiments_error_aggregates = EMRSparkOperator(
     instance_count=20,
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/experiments_error_aggregates_view.sh",
+    env=tbv_envvar("com.mozilla.telemetry.streaming.ExperimentsErrorAggregator",
+        options={
+            "from": "{{ ds_nodash }}",
+            "to": "{{ds_nodash }}",
+            "outputPath": "s3://{{ task.__class__.private_output_bucket }}",
+            "numParquetFiles": "6"
+        },
+        dev_options={"channel": "nightly"},
+        artifact_url=get_artifact_url("{{ task.__class__.telemetry_streaming_slug }}")
+    ),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 engagement_ratio = EMRSparkOperator(
@@ -57,15 +74,14 @@ engagement_ratio = EMRSparkOperator(
     job_name="Update Engagement Ratio",
     execution_timeout=timedelta(hours=6),
     instance_count=10,
-    env=mozetl_envvar("engagement_ratio", {
-        "input_bucket": "{{ task.__class__.private_output_bucket }}",
-        "output_bucket": """
-            {% if task.__class__.deploy_environment == 'dev' %}
-                {{- task.__class__.private_output_bucket }}
-            {% else %}
-                {{- 'net-mozaws-prod-us-west-2-pipeline-analysis' }}
-            {% endif %}""".strip(),
-    }),
+    env=mozetl_envvar("engagement_ratio",
+        options={
+            "input_bucket": "{{ task.__class__.private_output_bucket }}",
+            "output_bucket": "net-mozaws-prod-us-west-2-pipeline-analysis"
+        },
+        dev_options={
+            "output_bucket": "{{ task.__class__.private_output_bucket }}"
+        }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="public",
     dag=dag)
@@ -159,6 +175,8 @@ experiments_aggregates_import = EMRSparkOperator(
     job_name="Experiments Aggregates Import",
     execution_timeout=timedelta(hours=10),
     instance_count=1,
+    dev_instance_count=3,
+    disable_on_dev=True,
     owner="robhudson@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
@@ -240,6 +258,7 @@ retention = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
     execution_timeout=timedelta(hours=4),
     instance_count=10,
+    dev_instance_count=3,
     env=mozetl_envvar("retention", {
         "start_date": "{{ ds_nodash }}",
         "input_bucket": "{{ task.__class__.private_output_bucket }}",
@@ -267,6 +286,7 @@ main_summary_glue = EMRSparkOperator(
     owner="bimsland@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
     instance_count=1,
+    disable_on_dev=True,
     env={
         "bucket": "{{ task.__class__.private_output_bucket }}",
         "prefix": "main_summary",
@@ -283,6 +303,7 @@ taar_dynamo = EMRSparkOperator(
     job_name="TAAR DynamoDB loader",
     execution_timeout=timedelta(hours=14),
     instance_count=6,
+    disable_on_dev=True,
     owner="vng@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
     env=mozetl_envvar("taar_dynamo", {
