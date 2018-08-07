@@ -318,8 +318,8 @@ desktop_dau = EMRSparkOperator(
     job_name="Desktop DAU",
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    execution_timeout=timedelta(hours=5),
-    instance_count=10,
+    execution_timeout=timedelta(hours=1),
+    instance_count=1,
     env=tbv_envvar("com.mozilla.telemetry.views.dau.DesktopDauView", {
         "to": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
