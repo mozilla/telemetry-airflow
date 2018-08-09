@@ -45,7 +45,7 @@ main_summary = EMRSparkOperator(
 main_summary_schema = EmailSchemaChangeOperator(
     task_id="main_summary_schema",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    to=["ssuh@mozilla.com"],
+    to=["bimsland@mozilla.com", "telemetry-alerts@mozilla.com"],
     key_prefix='schema/main_summary/submission_date_s3=',
     dag=dag)
 
