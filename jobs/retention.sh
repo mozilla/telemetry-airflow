@@ -17,6 +17,7 @@ MOZETL_COMMAND=${MOZETL_COMMAND:-retention}
 # `auto_envvar_prefix` convention.
 export MOZETL_RETENTION_START_DATE=${MOZETL_RETENTION_START_DATE?"start_date must be set"}
 export MOZETL_RETENTION_BUCKET=${MOZETL_RETENTION_BUCKET?"output bucket must be set"}
+export MOZETL_RETENTION_INPUT_BUCKET=${MOZETL_RETENTION_INPUT_BUCKET:-MOZETL_RETENTION_BUCKET}
 export MOZETL_RETENTION_PATH="intermediate_path"
 
 # NOTE: the development branch is under acmiyaguchi/<repo>:bug-1381840-retention

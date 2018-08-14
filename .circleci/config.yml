@@ -1,0 +1,80 @@
+# These environment variables must be set in CircleCI UI
+#
+# DOCKERHUB_REPO - docker hub repo, format: <username>/<repo>
+# DOCKER_USER
+# DOCKER_PASS
+#
+
+version: 2
+jobs:
+  build:
+    docker:
+      - image: docker:18.02.0-ce
+    working_directory: ~/mozilla/telemetry-airflow
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: |
+          printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" > version.json
+      - run: docker build -t app:build .
+
+  test:
+    machine:
+      enable: true
+    working_directory: ~/mozilla/telemetry-airflow
+    steps:
+      - checkout
+      - run: sudo apt-get update
+      - run: sudo apt-get install python-dev
+      - run: python -m py_compile dags/*.py
+
+  deploy:
+    docker:
+      - image: docker:18.02.0-ce
+    working_directory: ~/mozilla/telemetry-airflow
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: |
+          printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" > version.json
+      - run: docker build -t app:build .
+      - run:
+          name: Deploy to Dockerhub
+          command: |
+            # Deploy master
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker tag app:build ${DOCKERHUB_REPO}:latest
+              docker push ${DOCKERHUB_REPO}:latest
+            elif  [ ! -z "${CIRCLE_TAG}" ]; then
+            # Deploy a release tag...
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+              docker tag app:build "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+              docker images
+              docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+            fi
+
+
+workflows:
+  version: 2
+  build-test-deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+
+      - test:
+          filters:
+            tags:
+              only: /.*/
+
+      - deploy:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: master

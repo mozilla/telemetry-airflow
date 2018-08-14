@@ -40,7 +40,7 @@ spark-submit --master yarn \
              --output-partition "submission_date=$date" \
              --from $date \
              --to $date \
-             --files "s3://telemetry-parquet/main_summary/v4/" \
+             --files "s3://$bucket/main_summary/v4/" \
              --count-column "client_id" \
              --select "$select" \
              --grouping-columns "$group" \

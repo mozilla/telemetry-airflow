@@ -60,17 +60,6 @@ game_hw_survey = EMRSparkOperator(
     output_visibility="public",
     dag=dag)
 
-cross_sectional = EMRSparkOperator(
-    task_id="cross_sectional",
-    job_name="Cross Sectional View",
-    execution_timeout=timedelta(hours=10),
-    instance_count=30,
-    env=tbv_envvar("com.mozilla.telemetry.views.CrossSectionalView", {
-        "outName": "v" + DS_WEEKLY,
-        "outputBucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
 taar_locale_job = EMRSparkOperator(
     task_id="taar_locale_job",
     job_name="TAAR Locale Model",
@@ -119,7 +108,6 @@ taar_lite_guidranking = EMRSparkOperator(
 
 addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
-cross_sectional.set_upstream(longitudinal)
 taar_locale_job.set_upstream(longitudinal)
 taar_legacy_job.set_upstream(longitudinal)
 taar_lite_guidranking.set_upstream(longitudinal)

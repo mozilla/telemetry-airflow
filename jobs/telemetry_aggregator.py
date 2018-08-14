@@ -32,7 +32,7 @@ sc = SparkContext(conf=conf)
 sc.addPyFile(package_file)
 date = environ['date']
 print "Running job for {}".format(date)
-aggregates = aggregate_metrics(sc, ("nightly", "beta", "release"), date)
+aggregates = aggregate_metrics(sc, ("nightly", "aurora", "beta"), date)
 print "Number of build-id aggregates: {}".format(aggregates[0].count())
 print "Number of submission date aggregates: {}".format(aggregates[1].count())
 
