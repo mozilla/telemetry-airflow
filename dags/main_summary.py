@@ -327,6 +327,20 @@ desktop_dau = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
+desktop_active_dau = EMRSparkOperator(
+    task_id="desktop_active_dau",
+    job_name="Desktop Active DAU",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    execution_timeout=timedelta(hours=3),
+    instance_count=1,
+    env=tbv_envvar("com.mozilla.telemetry.views.dau.DesktopActiveDauView", {
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}",
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    dag=dag)
+
 
 main_summary_schema.set_upstream(main_summary)
 
@@ -352,6 +366,7 @@ add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
+desktop_active_dau.set_upstream(clients_daily_v6)
 
 retention.set_upstream(main_summary)
 
