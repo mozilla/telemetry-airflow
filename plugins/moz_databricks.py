@@ -23,6 +23,8 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
     telemetry_streaming_slug = 'telemetry-streaming'
     telemetry_batch_view_slug = 'telemetry-batch-view'
 
+    default_iam = "arn:aws:iam::144996185633:instance-profile/databricks-ec2"
+
     def __init__(self, job_name, env, instance_count,
                  dev_instance_count=1,
                  max_instance_count=None,
@@ -30,7 +32,11 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  enable_autoscale=False,
                  disable_on_dev=False,
                  release_label='4.3.x-scala2.11',
-                 owner="", uri=None, output_visibility=None, **kwargs):
+                 iam_role=None,
+                 owner="",
+                 uri=None,
+                 output_visibility=None,
+                 *args, **kwargs):
         """
         Generate parameters for running a job through the Databricks run-submit
         api. This is designed to be backwards compatible with EMRSparkOperator.
@@ -48,7 +54,11 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param disable_on_dev: Turn the job into a no-op if run in development
         :param release_label: Databricks Runtime versions,
             run `databricks clusters spark-versions` for possible values.
+        :param iam_role: An Amazon Resource Name (ARN) specifying an iam role
         :param owner: The e-mail address of the user owning the job.
+        :param uri: argument from EMRSparkOperator for compatibility
+        :param output_visibility: argument from EMRSparkOperator for compatibility
+
         :param kwargs: Keyword arguments to pass to DatabricksSubmitRunOperator
         """
 
@@ -75,8 +85,8 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             "node_type_id": self.instance_type,
             "aws_attributes": {
                 "availability": "ON_DEMAND",
-                "instance_profile_arn":
-                    "arn:aws:iam::144996185633:instance-profile/databricks-ec2"
+                "instance_profile_arn": iam_role or self.default_iam
+
             },
             "spark_env_vars": env,
             "custom_tags": {
