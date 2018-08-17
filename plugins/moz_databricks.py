@@ -10,7 +10,6 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
     template_fields = ('json',)
     region = environ['AWS_REGION']
-    instance_type = environ['EMR_INSTANCE_TYPE']
     spark_bucket = environ['SPARK_BUCKET']
     private_output_bucket = environ['PRIVATE_OUTPUT_BUCKET']
     public_output_bucket = environ['PUBLIC_OUTPUT_BUCKET']
@@ -31,6 +30,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  disable_on_dev=False,
                  release_label='4.3.x-scala2.11',
                  iam_role=environ["DATABRICKS_DEFAULT_IAM"],
+                 instance_type=environ['EMR_INSTANCE_TYPE'],
                  owner="",
                  uri=None,
                  output_visibility=None,
@@ -53,6 +53,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param release_label: Databricks Runtime versions,
             run `databricks clusters spark-versions` for possible values.
         :param iam_role: An Amazon Resource Name (ARN) specifying an iam role
+        :param instance_type: An EMR instance type
         :param owner: The e-mail address of the user owning the job.
         :param uri: argument from EMRSparkOperator for compatibility
         :param output_visibility: argument from EMRSparkOperator for compatibility
@@ -80,7 +81,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         # Create the cluster configuration
         new_cluster = {
             "spark_version": release_label,
-            "node_type_id": self.instance_type,
+            "node_type_id": instance_type,
             "aws_attributes": {
                 "availability": "ON_DEMAND",
                 "instance_profile_arn": iam_role
