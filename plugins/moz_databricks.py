@@ -129,10 +129,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         elif env.get("MOZETL_COMMAND"):
             # options are read directly from the environment via Click
             python_task = {
-                "python_file": (
-                    "s3://net-mozaws-prod-us-west-2-pipeline-analysis/"
-                    "amiyaguchi/databricks-poc/mozetl_runner.py"
-                ),
+                "python_file": "s3://telemetry-airflow/steps/mozetl_runner.py",
                 "parameters": [env["MOZETL_COMMAND"]]
             }
 
