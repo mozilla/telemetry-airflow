@@ -23,8 +23,6 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
     telemetry_streaming_slug = 'telemetry-streaming'
     telemetry_batch_view_slug = 'telemetry-batch-view'
 
-    default_iam = "arn:aws:iam::144996185633:instance-profile/databricks-ec2"
-
     def __init__(self, job_name, env, instance_count,
                  dev_instance_count=1,
                  max_instance_count=None,
@@ -32,7 +30,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  enable_autoscale=False,
                  disable_on_dev=False,
                  release_label='4.3.x-scala2.11',
-                 iam_role=None,
+                 iam_role=environ["DATABRICKS_DEFAULT_IAM"],
                  owner="",
                  uri=None,
                  output_visibility=None,
@@ -85,7 +83,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             "node_type_id": self.instance_type,
             "aws_attributes": {
                 "availability": "ON_DEMAND",
-                "instance_profile_arn": iam_role or self.default_iam
+                "instance_profile_arn": iam_role
 
             },
             "spark_env_vars": env,
