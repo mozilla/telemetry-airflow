@@ -45,7 +45,8 @@ ENV PYTHONUNBUFFERED=1 \
     DEPLOY_ENVIRONMENT=dev \
     DEVELOPMENT=1 \
     DEPLOY_TAG=master \
-    ARTIFACTS_BUCKET=net-mozaws-data-us-west-2-ops-ci-artifacts
+    ARTIFACTS_BUCKET=net-mozaws-data-us-west-2-ops-ci-artifacts \
+    DATABRICKS_DEFAULT_IAM=arn:aws:iam::144996185633:instance-profile/databricks-ec2
 
 # Airflow configuration can be set here using the following format:
 # $AIRFLOW__{SECTION}__{KEY}
