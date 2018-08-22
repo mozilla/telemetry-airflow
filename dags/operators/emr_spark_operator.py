@@ -99,11 +99,12 @@ class EMRSparkOperator(BaseOperator):
         super(EMRSparkOperator, self).__init__(*args, **kwargs)
         self.job_name = job_name
         if self.deploy_environment != 'prod':
-            prefix = "[{}]".format(self.deploy_environment)
             username = environ.get("DEV_USERNAME")
             if username:
-                prefix += "[{}]".format(username)
-            self.job_name = "{} {}".format(prefix, self.job_name)
+                prefix = "{}-{}".format(self.deploy_environment, username)
+            else:
+                prefix = self.deploy_environment
+            self.job_name = "{}: {}".format(prefix, self.job_name)
 
         self.owner = owner
         self.uri = uri
