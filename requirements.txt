@@ -5,3 +5,4 @@ retrying
 newrelic
 redis
 hiredis
+pyarrow
