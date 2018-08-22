@@ -30,7 +30,7 @@ redis-cli:
 	docker-compose run redis redis-cli -h redis
 
 run:
-	docker-compose run -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID web airflow $(COMMAND)
+	docker-compose run -e DEV_USERNAME -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID web airflow $(COMMAND)
 
 secret:
 	@docker-compose run web python -c \
