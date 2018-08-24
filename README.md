@@ -43,6 +43,9 @@ export AWS_ACCESS_KEY_ID=...
 make run COMMAND="test example spark 20180101"
 ```
 
+The `DEV_USERNAME` is a short string used to identify your EMR instances.
+This should be set to something like your IRC or Slack handle. 
+
 The container will run the desired task to completion (or failure).
 Note that if the container is stopped during the execution of a task,
 the task will be aborted. In the example's case, the Spark job will be
