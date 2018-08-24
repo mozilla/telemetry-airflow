@@ -7,6 +7,9 @@ from utils.deploy import get_artifact_url
 
 FOCUS_ANDROID_INSTANCES = 10
 SAVANT_INSTANCES = 10
+# Currently devtools is shipping only nightly events while they debug some issues,
+# so 2 nodes is plenty
+DEVTOOLS_INSTANCES = 2
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -60,6 +63,21 @@ savant_events_to_amplitude = EMRSparkOperator(
         "key_file": key_file("savant"),
         "artifact": get_artifact_url(slug, branch="master"),
         "config_filename": "desktop_savant_events_schemas.json",
+    },
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
+    dag=dag)
+
+devtools_events_to_amplitude = EMRSparkOperator(
+    task_id="devtools_events_to_amplitude",
+    job_name="DevTools Events for Savant Study to Amplitude",
+    execution_timeout=timedelta(hours=8),
+    instance_count=DEVTOOLS_INSTANCES,
+    env={
+        "date": "{{ ds_nodash }}",
+        "max_requests": DEVTOOLS_INSTANCES * VCPUS_PER_INSTANCE,
+        "key_file": key_file("devtools"),
+        "artifact": get_artifact_url(slug, branch="master"),
+        "config_filename": "devtools_events_schemas.json",
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
