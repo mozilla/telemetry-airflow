@@ -37,10 +37,14 @@ make migrate
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
 ```bash
+export DEV_USERNAME=...
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_ACCESS_KEY_ID=...
 make run COMMAND="test example spark 20180101"
 ```
+
+The `DEV_USERNAME` is a short string used to identify your EMR instances.
+This should be set to something like your IRC or Slack handle. 
 
 The container will run the desired task to completion (or failure).
 Note that if the container is stopped during the execution of a task,
@@ -65,6 +69,7 @@ order of their dependencies.
 `main_summary` can be a good test case for any large changes to telemetry-batch-view, launch in dev as:
 
 ```bash
+export DEV_USERNAME=...
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_ACCESS_KEY_ID=...
 make run COMMAND="test main_summary main_summary 20180803"
