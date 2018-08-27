@@ -6,7 +6,6 @@ from utils.mozetl import mozetl_envvar
 from utils.deploy import get_artifact_url
 
 FOCUS_ANDROID_INSTANCES = 10
-SAVANT_INSTANCES = 10
 # Currently devtools is shipping only nightly events while they debug some issues,
 # so 2 nodes is plenty
 DEVTOOLS_INSTANCES = 2
@@ -52,24 +51,9 @@ focus_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
 
-savant_events_to_amplitude = EMRSparkOperator(
-    task_id="desktop_savant_events_to_amplitude",
-    job_name="Desktop Events for Savant Study to Amplitude",
-    execution_timeout=timedelta(hours=8),
-    instance_count=SAVANT_INSTANCES,
-    env={
-        "date": "{{ ds_nodash }}",
-        "max_requests": SAVANT_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file("savant"),
-        "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "desktop_savant_events_schemas.json",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag)
-
 devtools_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_events_to_amplitude",
-    job_name="DevTools Events for Savant Study to Amplitude",
+    job_name="DevTools Events to Amplitude",
     execution_timeout=timedelta(hours=8),
     instance_count=DEVTOOLS_INSTANCES,
     env={
