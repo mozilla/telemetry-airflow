@@ -1,4 +1,5 @@
 from airflow import DAG
+from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
@@ -18,11 +19,12 @@ default_args = {
 
 dag = DAG('longitudinal', default_args=default_args, schedule_interval='@weekly')
 
-longitudinal = EMRSparkOperator(
+longitudinal = MozDatabricksSubmitRunOperator(
     task_id="longitudinal",
     job_name="Longitudinal View",
     execution_timeout=timedelta(hours=12),
-    instance_count=50,
+    instance_count=16,
+    instance_type="i3.8xlarge",
     env=tbv_envvar(
         "com.mozilla.telemetry.views.LongitudinalView",
         {
