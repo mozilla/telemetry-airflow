@@ -8,7 +8,7 @@ from utils.deploy import get_artifact_url
 FOCUS_ANDROID_INSTANCES = 10
 # Currently devtools is shipping only nightly events while they debug some issues,
 # so 2 nodes is plenty
-DEVTOOLS_INSTANCES = 2
+DEVTOOLS_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -56,6 +56,7 @@ devtools_events_to_amplitude = EMRSparkOperator(
     job_name="DevTools Events to Amplitude",
     execution_timeout=timedelta(hours=8),
     instance_count=DEVTOOLS_INSTANCES,
+    email=['ssuh@mozilla.com', 'telemetry-alerts@mozilla.com'],
     env={
         "date": "{{ ds_nodash }}",
         "max_requests": DEVTOOLS_INSTANCES * VCPUS_PER_INSTANCE,
