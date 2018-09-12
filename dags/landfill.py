@@ -23,6 +23,7 @@ landfill_sampler = MozDatabricksSubmitRunOperator(
     job_name="Landfill Sampler",
     execution_timeout=timedelta(hours=2),
     instance_count=3,
+    iam_role="arn:aws:iam::144996185633:instance-profile/databricks-ec2-landfill",
     env=mozetl_envvar("landfill_sampler", {
         "submission-date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
