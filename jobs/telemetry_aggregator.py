@@ -18,6 +18,7 @@ creds = json.loads(
     .get_key("aggregator_database_envvars.json")
     .get_contents_as_string()
 )
+
 for k, v in creds.items():
     environ[k] = v
 
@@ -30,9 +31,12 @@ print "Adding dependency " + package_file
 conf = SparkConf().setAppName('telemetry-aggregates')
 sc = SparkContext(conf=conf)
 sc.addPyFile(package_file)
+
 date = environ['date']
+channels = [c.strip() for c in environ['channels'].split(',')]
+
 print "Running job for {}".format(date)
-aggregates = aggregate_metrics(sc, ("nightly", "aurora", "beta"), date)
+aggregates = aggregate_metrics(sc, channels, date)
 print "Number of build-id aggregates: {}".format(aggregates[0].count())
 print "Number of submission date aggregates: {}".format(aggregates[1].count())
 
