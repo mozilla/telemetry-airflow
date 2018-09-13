@@ -49,7 +49,8 @@ def retrieve_jar():
             build_url = "Build URL not available"
 
         parsed_uri = urlparse(jar_url)
-        full_url = "{uri.scheme}://{uri.netloc}/{uri_query}".format(uri=parsed_uri, uri_query=uri_query)
+        bucket, _, _ = parsed_uri.path.lstrip("/").partition("/")
+        full_url = "{uri.scheme}://{uri.netloc}/{bucket}/{uri_query}".format(uri=parsed_uri, bucket=bucket, uri_query=uri_query)
 
         print("  Alias: {}".format(full_url))
         print("  Build URL: {}".format(build_url.strip()))
