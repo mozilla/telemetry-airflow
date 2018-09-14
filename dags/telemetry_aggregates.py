@@ -16,8 +16,8 @@ default_args = {
 dag = DAG('telemetry_aggregates', default_args=default_args, schedule_interval='@daily')
 
 prerelease_telemetry_aggregate_view = EMRSparkOperator(
-    task_id = "telemetry_aggregate_view",
-    job_name = "Telemetry Aggregate View - Prerelease",
+    task_id = "prerelease_telemetry_aggregate_view",
+    job_name = "Prerelease Telemetry Aggregate View",
     instance_count = 10,
     execution_timeout=timedelta(hours=12),
     env = {
@@ -28,8 +28,8 @@ prerelease_telemetry_aggregate_view = EMRSparkOperator(
     dag = dag)
 
 release_telemetry_aggregate_view = EMRSparkOperator(
-    task_id = "telemetry_aggregate_view",
-    job_name = "Telemetry Aggregate View - Release",
+    task_id = "release_telemetry_aggregate_view",
+    job_name = "Release Telemetry Aggregate View",
     instance_count = 40,
     execution_timeout=timedelta(hours=12),
     env = {
