@@ -15,11 +15,26 @@ default_args = {
 
 dag = DAG('telemetry_aggregates', default_args=default_args, schedule_interval='@daily')
 
-telemetry_aggregate_view = EMRSparkOperator(
-    task_id = "telemetry_aggregate_view",
-    job_name = "Telemetry Aggregate View",
+prerelease_telemetry_aggregate_view = EMRSparkOperator(
+    task_id = "prerelease_telemetry_aggregate_view",
+    job_name = "Prerelease Telemetry Aggregate View",
     instance_count = 10,
     execution_timeout=timedelta(hours=12),
-    env = {"date": "{{ ds_nodash }}"},
+    env = {
+      "date": "{{ ds_nodash }}",
+      "channels": "nightly, aurora, beta"
+    },
+    uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/run_telemetry_aggregator.sh",
+    dag = dag)
+
+release_telemetry_aggregate_view = EMRSparkOperator(
+    task_id = "release_telemetry_aggregate_view",
+    job_name = "Release Telemetry Aggregate View",
+    instance_count = 40,
+    execution_timeout=timedelta(hours=12),
+    env = {
+      "date": "{{ ds_nodash }}",
+      "channels": "release"
+    },
     uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/run_telemetry_aggregator.sh",
     dag = dag)
