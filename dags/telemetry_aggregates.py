@@ -22,7 +22,7 @@ prerelease_telemetry_aggregate_view = EMRSparkOperator(
     execution_timeout=timedelta(hours=12),
     env = {
       "date": "{{ ds_nodash }}",
-      "channels": "nightly, aurora, beta"
+      "channels": "nightly,aurora,beta"
     },
     uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/run_telemetry_aggregator.sh",
     dag = dag)
