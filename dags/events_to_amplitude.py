@@ -30,6 +30,7 @@ default_args = {
     'email_on_retry': True,
     'retries': 2,
     'retry_delay': timedelta(minutes=30),
+    'bootstrap_args': ['--metrics-provider', 'datadog'],
 }
 
 dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0 1 * * *')
