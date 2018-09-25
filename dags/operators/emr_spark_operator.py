@@ -204,6 +204,8 @@ class EMRSparkOperator(BaseOperator):
                 {'Key': 'Owner', 'Value': self.owner},
                 {'Key': 'Application',
                  'Value': 'telemetry-analysis-worker-instance'},
+                {'Key': 'Environment',
+                 'Value': EMRSparkOperator.deploy_environment},
             ],
             Steps=self.steps
         )
