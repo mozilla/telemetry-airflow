@@ -77,7 +77,8 @@ class EMRSparkOperator(BaseOperator):
     def __init__(self, job_name, owner, uri, instance_count,
                  dev_instance_count=1, disable_on_dev=False,
                  release_label='emr-5.13.0', output_visibility='private',
-                 env=None, arguments='', *args, **kwargs):
+                 env=None, arguments='', bootstrap_args=(),
+                 *args, **kwargs):
         """
         Create an operator for launching EMR clusters.
 
@@ -93,6 +94,7 @@ class EMRSparkOperator(BaseOperator):
         :param env: A dictionary of environment variables to pass during runtime
         :param dev_env: Additional environment variables to pass in development
         :param arguments: Passed to `airflow.sh`
+        :param bootstrap_args: An iterable of arguments passed to `telemetry.sh`
         """
         is_dev = self.deploy_environment == 'dev'
 
@@ -110,6 +112,7 @@ class EMRSparkOperator(BaseOperator):
         self.uri = uri
         self.release_label = release_label
         self.arguments = arguments
+        self.bootstrap_args = bootstrap_args
         self.environment = self._format_envvar(env)
         self.job_flow_id = None
         self.instance_count = dev_instance_count if is_dev else instance_count
@@ -197,7 +200,8 @@ class EMRSparkOperator(BaseOperator):
                     'Path': (
                         's3://{}/bootstrap/telemetry.sh'
                         .format(EMRSparkOperator.spark_bucket)
-                    )
+                    ),
+                    'Args': self.bootstrap_args,
                 }
             }],
             Tags=[
