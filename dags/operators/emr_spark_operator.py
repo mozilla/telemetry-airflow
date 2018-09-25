@@ -3,6 +3,9 @@ import time
 from os import environ
 
 import boto3
+from io import BytesIO
+from gzip import GzipFile
+from urlparse import urlparse
 import requests
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -179,12 +182,7 @@ class EMRSparkOperator(BaseOperator):
             Applications=[{'Name': 'Spark'}, {'Name': 'Hive'}],
             VisibleToAllUsers=True,
             Configurations=requests.get(config_url).json(),
-            LogUri=(
-                's3://{}/logs/{}/{}/'
-                .format(EMRSparkOperator.airflow_bucket,
-                        self.owner,
-                        self.job_name)
-            ),
+            LogUri=self._log_uri(),
             Instances={
                 'MasterInstanceType': EMRSparkOperator.instance_type,
                 'SlaveInstanceType': EMRSparkOperator.instance_type,
@@ -238,9 +236,16 @@ class EMRSparkOperator(BaseOperator):
             if status == 'TERMINATED_WITH_ERRORS':
                 reason_code = result['Cluster']['Status']['StateChangeReason']['Code']
                 reason_message = result['Cluster']['Status']['StateChangeReason']['Message']
+                step_logs = self.get_failed_step_logs()
+                spark_log_location = self.get_spark_log_location()
+
                 raise AirflowException(
-                    'Spark job {} terminated with errors: {} - {}'
-                    .format(self.job_name, reason_code, reason_message)
+                    'Spark job {} terminated with errors: {} - {}<br>'
+                    'Cluster Stderr: {}<br>'
+                    'Cluster Stdout: {}<br>'
+                    'Spark Driver Log Location: {}'
+                    .format(self.job_name, reason_code, reason_message,
+                            step_logs['stdout'], step_logs['stderr'], spark_log_location)
                 )
             elif status == 'TERMINATED':
                 break
@@ -253,3 +258,40 @@ class EMRSparkOperator(BaseOperator):
                 "Spark Job '{}' status' is {}".format(self.job_name, status)
             )
             time.sleep(300)
+
+    def _log_uri(self):
+        return ('s3://{}/logs/{}/{}/'
+                .format(EMRSparkOperator.airflow_bucket,
+                        self.owner,
+                        self.job_name))
+
+    def get_failed_step_logs(self):
+        logs = {'stdout': '', 'stderr': ''}
+
+        try:
+            emr_client = boto3.client('emr', region_name=EMRSparkOperator.region)
+            response = emr_client.list_steps(ClusterId=self.job_flow_id, StepStates=['FAILED'])
+            step_file_loc = urlparse(response['Steps'][0]['Status']['FailureDetails']['LogFile'])
+            bucket = step_file_loc.netloc
+            base_key = step_file_loc.path.lstrip('/')
+            s3 = boto3.client('s3')
+
+            for logfile in ['stdout', 'stderr']:
+                try:
+                    obj = s3.get_object(Bucket=bucket, Key=base_key + logfile + '.gz')
+                    bytestream = BytesIO(obj['Body'].read())
+                    logs[logfile] = GzipFile(None, 'rb', fileobj=bytestream).read().decode('utf-8')
+                except:
+                    pass
+        except:
+            pass
+        return logs
+
+    def get_spark_log_location(self):
+        try:
+            emr_client = boto3.client('emr', region_name=EMRSparkOperator.region)
+            response = emr_client.list_instances(ClusterId=self.job_flow_id, InstanceGroupTypes=['MASTER'])
+            master = response['Instances'][0]['Ec2InstanceId']
+            return '{}{}/node/{}/applications/spark/spark.log.gz'.format(self._log_uri(), self.job_flow_id, master)
+        except:
+            return ''
