@@ -11,6 +11,10 @@ import logging
 from airflow import configuration
 
 
+# This is mostly a copy of the `send_email_smtp` method in airflow
+# (https://github.com/apache/incubator-airflow/blob/f4f8027cbf61ce2ed6a9989facf6c99dffb12f66/airflow/utils/email.py#L58-L101)
+# except the payload is encoded as `quoted-printable` and the end of the method logs the
+# message instead of calling `send_MIME_email`
 def log_email_backend(to, subject, html_content, files=None,
                       dryrun=False, cc=None, bcc=None,
                       mime_subtype='mixed', mime_charset='utf-8',
@@ -22,16 +26,13 @@ def log_email_backend(to, subject, html_content, files=None,
     msg['Subject'] = subject
     msg['From'] = smtp_mail_from
     msg['To'] = ", ".join(to)
-    recipients = to
     if cc:
         cc = get_email_address_list(cc)
         msg['CC'] = ", ".join(cc)
-        recipients = recipients + cc
 
     if bcc:
         # don't add bcc in header
         bcc = get_email_address_list(bcc)
-        recipients = recipients + bcc
 
     msg['Date'] = formatdate(localtime=True)
     mime_text = MIMEText(None, 'plain', mime_charset)
