@@ -251,7 +251,7 @@ class EMRSparkOperator(BaseOperator):
                     'Cluster Stdout: {}<br>'
                     'Spark Driver Log Location: {}'
                     .format(self.job_name, reason_code, reason_message,
-                            step_logs['stdout'], step_logs['stderr'], spark_log_location)
+                            step_logs['stderr'], step_logs['stdout'], spark_log_location)
                 )
             elif status == 'TERMINATED':
                 break
@@ -287,10 +287,10 @@ class EMRSparkOperator(BaseOperator):
                     obj = s3.get_object(Bucket=bucket, Key=base_key + logfile + '.gz')
                     bytestream = BytesIO(obj['Body'].read())
                     logs[logfile] = GzipFile(None, 'rb', fileobj=bytestream).read().decode('utf-8')
-                except:
-                    pass
-        except:
-            pass
+                except Exception as e:
+                    logging.warn("Getting {} failed with {}".format(logfile, e))
+        except Exception as e:
+            logging.warn("Getting step logs failed with {}".format(e))
         return logs
 
     def get_spark_log_location(self):
@@ -299,5 +299,6 @@ class EMRSparkOperator(BaseOperator):
             response = emr_client.list_instances(ClusterId=self.job_flow_id, InstanceGroupTypes=['MASTER'])
             master = response['Instances'][0]['Ec2InstanceId']
             return '{}{}/node/{}/applications/spark/spark.log.gz'.format(self._log_uri(), self.job_flow_id, master)
-        except:
+        except Exception as e:
+            logging.warn("Exception while getting spark log location: {}".format(e))
             return ''
