@@ -56,7 +56,7 @@ make run COMMAND="test example spark 20180101"
 ```
 
 The `DEV_USERNAME` is a short string used to identify your EMR instances.
-This should be set to something like your IRC or Slack handle. 
+This should be set to something like your IRC or Slack handle.
 
 The container will run the desired task to completion (or failure).
 Note that if the container is stopped during the execution of a task,
@@ -75,6 +75,27 @@ By default, the results will end up in the `telemetry-test-bucket` in S3.
 If your desired task depends on other views, it will expect to be able to find those results
 in `telemetry-test-bucket` too. It's your responsibility to run the tasks in correct
 order of their dependencies.
+
+**CAVEAT**: When running the `make run` multiple times it can spin
+up multiple versions of the `web` container. It can also fail if you've never
+run `make up` to initialize the database. An alternative form of the above is to
+launch the containers and shell into the `web` container to run the `airflow
+test` command.
+
+In one terminal launch the docker containers:
+```bash
+make up
+```
+
+In another terminal shell into the `web` container, making sure to also supply
+the environment variables, then run the `airflow test` command:
+```bash
+export DEV_USERNAME=...
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+docker exec -ti -e DEV_USERNAME -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID telemetry-airflow_web_1 /bin/bash
+airflow test example spark 20180101
+```
 
 ### Testing main_summary
 
@@ -145,7 +166,7 @@ to whichever upstream branch you've pushed your local changes to.
 
 Afterwards, you're going to need to rebuild: `make build && make migrate`
 
-From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the 
+From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the
 Dockerfile and run `make up` to get a local UI and run from there, or you can follow the
 testing instructions above and use `make run`.
 
