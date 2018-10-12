@@ -15,7 +15,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
+dag = DAG('landfill', default_args=default_args, schedule_interval='0 1 * * *')
 
 
 landfill_sampler = MozDatabricksSubmitRunOperator(
