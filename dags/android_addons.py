@@ -23,6 +23,6 @@ android_addons = EMRSparkOperator(
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}"},
-    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/android-addons.kp/orig_src/android-addons.ipynb",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/android-addons.ipynb",
     output_visibility="public",
     dag=dag)
