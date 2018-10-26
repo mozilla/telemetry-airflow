@@ -23,6 +23,6 @@ mobile_clients = EMRSparkOperator(
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}"},
-    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/mobile-clients.kp/orig_src/mobile-clients.ipynb",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/mobile-clients.ipynb",
     output_visibility="public",
     dag=dag)
