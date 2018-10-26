@@ -27,7 +27,7 @@ landfill_sampler = MozDatabricksSubmitRunOperator(
     env=mozetl_envvar("landfill_sampler", {
         "submission-date": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "santitized-landfill-sample",
+        "prefix": "sanitized-landfill-sample",
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
