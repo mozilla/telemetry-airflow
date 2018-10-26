@@ -5,3 +5,5 @@ retrying
 newrelic
 redis
 hiredis
+requests
+jsonschema
