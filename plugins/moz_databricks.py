@@ -27,6 +27,8 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  max_instance_count=None,
                  dev_max_instance_count=3,
                  enable_autoscale=False,
+                 on_demand_instances=1,
+                 spot_bid_price_percent=75,
                  disable_on_dev=False,
                  release_label='4.3.x-scala2.11',
                  iam_role=environ["DATABRICKS_DEFAULT_IAM"],
@@ -34,6 +36,8 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  owner="",
                  uri=None,
                  output_visibility=None,
+                 ebs_volume_count=None,
+                 ebs_volume_size=None,
                  *args, **kwargs):
         """
         Generate parameters for running a job through the Databricks run-submit
@@ -48,6 +52,10 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param max_instance_count: Max number of instances during autoscaling
         :param dev_max_instance_count: Max number of instances during
             autoscaling in dev
+        :param on_demand_instances: Minimum number of on-demand instances. All
+            other instances will first be requested from the spot market,
+            with on-demand being a backup.
+        :param spot_bid_price_percent: Percent of max price to bid in spot market
         :param enable_autoscale: Enable autoscaling for the job
         :param disable_on_dev: Turn the job into a no-op if run in development
         :param release_label: Databricks Runtime versions,
@@ -57,6 +65,8 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param owner: The e-mail address of the user owning the job.
         :param uri: argument from EMRSparkOperator for compatibility
         :param output_visibility: argument from EMRSparkOperator for compatibility
+        :param ebs_volume_count: number of ebs volumes to attach to each node
+        :param ebs_volume_size: size of ebs volumes attached to each node
 
         :param kwargs: Keyword arguments to pass to DatabricksSubmitRunOperator
         """
@@ -78,15 +88,29 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         python_task = None
         libraries = []
 
+        aws_attributes = {
+            "availability": "SPOT_WITH_FALLBACK",
+            "spot_bid_price_percent": spot_bid_price_percent,
+            "first_on_demand": on_demand_instances,
+            "instance_profile_arn": iam_role
+        }
+
+        if ebs_volume_size ^ ebs_volume_count:
+            raise ValueError("`ebs_volume_count` and `ebs_volume_size` "
+                             "must be set together.")
+
+        if ebs_volume_count is not None:
+            aws_attributes["ebs_volume_count"] = ebs_volume_count
+
+        if ebs_volume_size is not None:
+            aws_attributes["ebs_volume_size"] = ebs_volume_size
+
+
         # Create the cluster configuration
         new_cluster = {
             "spark_version": release_label,
             "node_type_id": instance_type,
-            "aws_attributes": {
-                "availability": "ON_DEMAND",
-                "instance_profile_arn": iam_role
-
-            },
+            "aws_attributes": aws_attributes,
             "spark_env_vars": env,
             "custom_tags": {
                 "Owner": owner,
@@ -98,6 +122,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
         min_workers = dev_instance_count if is_dev else instance_count
         max_workers = dev_max_instance_count if is_dev else max_instance_count
+
         if enable_autoscale:
             new_cluster["autoscale"] = {
                 "min_workers": min_workers,
