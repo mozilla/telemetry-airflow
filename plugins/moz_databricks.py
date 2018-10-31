@@ -108,15 +108,19 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
         # Parse the environment variables to bootstrap the tbv/mozetl workflow
         if env.get("TBV_CLASS"):
+            opts = [
+                ["--{}".format(key[4:].replace("_", "-")), value]
+                for key, value in env.items()
+                if key.startswith("TBV_") and key != "TBV_CLASS"
+            ]
+
+            formatted_opts = [v for opt in opts for v in opt if v]
+
             jar_task = {
                 "main_class_name": env["TBV_CLASS"],
                 # Reconstruct TBV parameters from the environment, scallop does
                 # not support reading arguments in this form
-                "parameters": sum([
-                    ["--{}".format(key[4:].replace("_", "-")), value]
-                    for key, value in env.items()
-                    if key.startswith("TBV_") and key != "TBV_CLASS"
-                ], [])
+                "parameters": formatted_opts
             }
 
             # Currently the artifacts are fetched via HTTP. Databricks
