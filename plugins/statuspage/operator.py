@@ -24,14 +24,15 @@ class DatasetStatusOperator(BaseOperator):
 
     def execute(self, context):
         conn = DatasetStatusHook(statuspage_conn_id=self.statuspage_conn_id).get_conn()
-        component_id = conn.get_or_create(self.name, self.description)
-        if not component_id:
-            raise AirflowException(
-                "DatasetStatus API failed to create or fetch components"
-            )
+        comp_id = conn.get_or_create(self.name, self.description)
+
+        if not comp_id:
+            raise AirflowException("Failed to create or fetch component")
+
         self.log.info(
-            "Setting status for {} ({}) to {}".format(
-                self.name, component_id, self.status
-            )
+            "Setting status for {} ({}) to {}".format(self.name, comp_id, self.status)
         )
-        conn.update(component_id, self.status)
+
+        comp_id = conn.update(comp_id, self.status)
+        if not comp_id:
+            raise AirflowException("Failed to update component")

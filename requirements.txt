@@ -7,3 +7,6 @@ redis
 hiredis
 requests
 jsonschema
+
+pytest
+pytest-mock
