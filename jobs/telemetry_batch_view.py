@@ -63,7 +63,7 @@ def retrieve_jar():
 def submit_job():
     opts = [
         ["--{}".format(key[4:].replace("_", "-")), value]
-        for key, value in env.items()
+        for key, value in environ.items()
         if key.startswith("TBV_") and key != "TBV_CLASS"
     ]
 
