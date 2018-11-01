@@ -11,15 +11,18 @@ import os
 class DatasetStatusHook(BaseHook):
     """Create and update the status of a dataset."""
 
-    def __init__(
-        self, api_key=os.environ.get("STATUSPAGE_API_KEY"), statuspage_conn_id=None
-    ):
+    def __init__(self, api_key=None, statuspage_conn_id="statuspage_default"):
         """Initialize the client with an API key.
 
         :param api_key: Statuspage API key
         :param statuspage_conn_id: connection with the API token in the password field
         """
-        self.api_key = api_key or self.get_connection(statuspage_conn_id).password
+
+        self.api_key = (
+            api_key
+            or os.environ.get("STATUSPAGE_API_KEY")
+            or self.get_connection(statuspage_conn_id).password
+        )
         if not self.api_key:
             raise AirflowException("Missing an API key for Statuspage")
 
