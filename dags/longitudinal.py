@@ -9,7 +9,7 @@ from utils.tbv import tbv_envvar
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 6, 30),
+    'start_date': datetime(2018, 12, 16),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com', 'rharter@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,

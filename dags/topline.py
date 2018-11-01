@@ -2,10 +2,21 @@ from airflow import DAG
 from datetime import timedelta, datetime
 from operators.emr_spark_operator import EMRSparkOperator
 
-default_args = {
+default_args_weekly = {
     'owner': 'amiyaguchi@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2017, 3, 26),
+    'start_date': datetime(2018, 12, 9),
+    'email': ['telemetry-alerts@mozilla.com', 'amiyaguchi@mozilla.com'],
+    'email_on_failure': True,
+    'email_on_retry': True,
+    'retries': 2,
+    'retry_delay': timedelta(minutes=30),
+}
+
+default_args_monthly = {
+    'owner': 'amiyaguchi@mozilla.com',
+    'depends_on_past': False,
+    'start_date': datetime(2018, 12, 1),
     'email': ['telemetry-alerts@mozilla.com', 'amiyaguchi@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -41,10 +52,10 @@ def topline_dag(dag, mode, instance_count):
 
 
 dag_weekly = DAG('topline_weekly',
-                 default_args=default_args,
+                 default_args=default_args_weekly,
                  schedule_interval='@weekly')
 dag_monthly = DAG('topline_monthly',
-                  default_args=default_args,
+                  default_args=default_args_monthly,
                   schedule_interval='@monthly')
 
 topline_dag(dag_weekly, "weekly", instance_count=5)

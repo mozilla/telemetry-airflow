@@ -6,7 +6,7 @@ from utils.status import register_status
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2016, 11, 11),
+    "start_date": datetime(2018, 11, 26),
     "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
