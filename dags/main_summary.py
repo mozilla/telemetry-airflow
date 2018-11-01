@@ -24,9 +24,9 @@ default_args = {
 # Running at 1am should suffice.
 dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
 
-main_summary = MozDatabricksSubmitRunOperator(
-    task_id="main_summary",
-    job_name="Main Summary View",
+main_summary_all_histograms = MozDatabricksSubmitRunOperator(
+    task_id="main_summary_all_histograms",
+    job_name="Main Summary View - All Histograms",
     execution_timeout=timedelta(hours=12),
     instance_count=5,
     max_instance_count=50,
@@ -40,16 +40,34 @@ main_summary = MozDatabricksSubmitRunOperator(
             "from": "{{ ds_nodash }}",
             "to": "{{ ds_nodash }}",
             "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
-            "bucket": "{{ task.__class__.private_output_bucket }}",
+            "bucket": "telemetry-backfill",
             "all_histograms": "",
             "read-mode": "aligned",
-            "input-partition-multiplier": "400"
+            "input-partition-multiplier": "400",
+        },
+        dev_options={
+            "channel": "nightly",
+        }),
+    dag=dag)
+
+main_summary = EMRSparkOperator(
+    task_id="main_summary",
+    job_name="Main Summary View",
+    execution_timeout=timedelta(hours=14),
+    instance_count=40,
+    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
+        options={
+            "from": "{{ ds_nodash }}",
+            "to": "{{ ds_nodash }}",
+            "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
+            "bucket": "{{ task.__class__.private_output_bucket }}"
         },
         dev_options={
             "channel": "nightly",   # run on smaller nightly data rather than release
             "read-mode": "aligned", # more efficient RDD splitting for small datasets
         }),
-    dag=dag)
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+dag=dag)
 
 main_summary_schema = EmailSchemaChangeOperator(
     task_id="main_summary_schema",
