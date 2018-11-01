@@ -7,7 +7,7 @@ from utils.constants import DS_WEEKLY
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': True,
-    'start_date': datetime(2017, 1, 1),
+    'start_date': datetime(2018, 11, 25),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
