@@ -95,7 +95,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             "instance_profile_arn": iam_role
         }
 
-        if ebs_volume_size ^ ebs_volume_count:
+        if bool(ebs_volume_size) ^ bool(ebs_volume_count):
             raise ValueError("`ebs_volume_count` and `ebs_volume_size` "
                              "must be set together.")
 
