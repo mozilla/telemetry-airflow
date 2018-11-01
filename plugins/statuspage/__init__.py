@@ -3,9 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from airflow.plugins_manager import AirflowPlugin
-from statuspage import hook, operator
+from . import hook, operator
+
 
 class DatasetStatusPlugin(AirflowPlugin):
-    name = 'dataset_status'
+    name = "dataset_status"
     hooks = [hook.DatasetStatusHook]
     operators = [operator.DatasetStatusOperator]

@@ -10,7 +10,7 @@ component = {
             "properties": {
                 "description": {
                     "type": "string",
-                    "description": "More detailed description for component"
+                    "description": "More detailed description for component",
                 },
                 "status": {
                     "type": "string",
@@ -20,30 +20,27 @@ component = {
                         "degraded_performance",
                         "partial_outage",
                         "major_outage",
-                        ""
+                        "",
                     ],
-                    "description": "Status of component"
+                    "description": "Status of component",
                 },
-                "name": {
-                    "type": "string",
-                    "description": "Display name for component"
-                },
+                "name": {"type": "string", "description": "Display name for component"},
                 "only_show_if_degraded": {
                     "type": "boolean",
-                    "description": "Requires a special feature flag to be enabled"
+                    "description": "Requires a special feature flag to be enabled",
                 },
                 "group_id": {
                     "type": "string",
-                    "description": "Component Group identifier"
+                    "description": "Component Group identifier",
                 },
                 "showcase": {
                     "type": "boolean",
-                    "description": "Should this component be showcased"
-                }
+                    "description": "Should this component be showcased",
+                },
             },
             "additionalProperties": False,
         }
     },
     "additionalProperties": False,
-    "required": ["component"]
+    "required": ["component"],
 }
