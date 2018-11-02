@@ -4,7 +4,7 @@
 
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
-from .hook import DatasetStatusHook
+from statuspage.hook import DatasetStatusHook
 
 
 class DatasetStatusOperator(BaseOperator):

@@ -3,7 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from airflow.plugins_manager import AirflowPlugin
-from . import hook, operator
+
+from statuspage import hook, operator
 
 
 class DatasetStatusPlugin(AirflowPlugin):

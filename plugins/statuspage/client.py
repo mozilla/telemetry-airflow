@@ -8,7 +8,7 @@ import requests
 import jsonschema
 import logging
 
-from . import schema
+from statuspage import schema
 
 
 class StatuspageClient:
