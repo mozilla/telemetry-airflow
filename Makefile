@@ -44,7 +44,4 @@ up:
 	docker-compose up
 
 test:
-	PYTHONPATH=$(PYTHON_PATH):plugins:dags \
-	AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:///$(HOME)/airflow/airflow.db \
-	AIRFLOW__CORE__UNIT_TEST_MODE=True \
-	python -m pytest
+	tox
