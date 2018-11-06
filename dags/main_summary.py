@@ -10,10 +10,10 @@ from search_rollup import add_search_rollup
 
 
 default_args = {
-    'owner': 'mreid@mozilla.com',
+    'owner': 'frank@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2015, 11, 3),
-    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
