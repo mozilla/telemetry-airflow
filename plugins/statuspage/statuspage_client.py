@@ -39,6 +39,7 @@ class StatuspageClient:
         logging.info("status-code {} for {}".format(resp.status_code, url))
         if resp.status_code != 200:
             logging.error(resp.content)
+        resp.raise_for_status()
         return resp
 
     def get_id(self, data, predicate):
