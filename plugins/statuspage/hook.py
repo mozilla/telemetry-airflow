@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from statuspage.client import DatasetStatus
+from statuspage.dataset_client import DatasetStatus
 from airflow.hooks.base_hook import BaseHook
 from airflow.exceptions import AirflowException
 import os

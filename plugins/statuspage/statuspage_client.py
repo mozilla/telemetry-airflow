@@ -74,34 +74,3 @@ class StatuspageClient:
         route = "pages/{}/components/{}".format(self.page_id, component_id)
         resp = self._request("patch", route, component)
         return resp.json().get("id")
-
-
-class DatasetStatus:
-    def __init__(self, api_key):
-        self.client = StatuspageClient(
-            api_key, "Firefox Operations", "Data Engineering Datasets"
-        )
-
-    def _create(self, name, description="", status="operational"):
-        return self.client.create_component(
-            {
-                "component": {
-                    "name": name,
-                    "description": description,
-                    "status": status,
-                    "only_show_if_degraded": False,
-                    "group_id": self.client.group_id,
-                    "showcase": True,
-                }
-            }
-        )
-
-    def get_or_create(self, name, description=""):
-        cid = self.client.get_component_id(name)
-        if not cid:
-            cid = self._create(name, description)
-        return cid
-
-    def update(self, component_id, status):
-        patch = {"component": {"status": status}}
-        return self.client.update_component(component_id, patch)
