@@ -16,6 +16,13 @@ class DatasetStatusOperator(BaseOperator):
         statuspage_conn_id="statuspage_default",
         **kwargs
     ):
+        """Create and update the status of a Data Engineering Dataset.
+
+        :param name: Name of the Statuspage
+        :param description: Description of the dataset
+        :param status: one of [operational, under_maintenance, degraded_performance, partial_outage, major_outage]
+        :param statuspage_conn_id: Airflow connection id for credentials
+        """
         super(DatasetStatusOperator, self).__init__(**kwargs)
         self.statuspage_conn_id = statuspage_conn_id
         self.name = name
