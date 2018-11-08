@@ -18,6 +18,8 @@ from airflow.utils.state import State
 # fix relative path errors -- ordering is important in this section
 import plugins.statuspage.operator
 
+# Airflow dynamically registers DAGs and plugins by overwriting the sys modules.
+# Add an entry pointing to the module in `plugins/` for testing in `dags/`
 sys.modules["airflow.operators.dataset_status"] = plugins.statuspage.operator
 from dags.utils.status import register_status
 
