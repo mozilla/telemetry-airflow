@@ -42,3 +42,6 @@ stop:
 
 up:
 	docker-compose up
+
+test:
+	tox
