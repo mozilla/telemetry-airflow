@@ -9,6 +9,7 @@ FOCUS_ANDROID_INSTANCES = 10
 # Currently devtools is shipping only nightly events while they debug some issues,
 # so 2 nodes is plenty
 DEVTOOLS_INSTANCES = 10
+ROCKET_ANDROID_INSTANCES = 5
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -66,3 +67,19 @@ devtools_events_to_amplitude = EMRSparkOperator(
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
+
+rocket_android_events_to_amplitude = EMRSparkOperator(
+    task_id="rocket_android_events_to_amplitude",
+    job_name="Rocket Android Events to Amplitude",
+    execution_timeout=timedelta(hours=8),
+    instance_count=ROCKET_ANDROID_INSTANCES,
+    env={
+        "date": "{{ ds_nodash }}",
+        "max_requests": ROCKET_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
+        "key_file": key_file("rocket_android"),
+        "artifact": get_artifact_url(slug, branch="master"),
+        "config_filename": "rocket_android_events_schemas.json",
+    },
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
+    dag=dag)
+
