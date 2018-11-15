@@ -31,6 +31,6 @@ crash_report_parquet = EMRSparkOperator(
 
 register_status(
     crash_report_parquet,
-    "Socorro Crash Reports Parquet",
+    crash_report_parquet.job_name,
     "Convert processed crash reports into parquet for analysis",
 )
