@@ -6,6 +6,7 @@ from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.deploy import get_artifact_url
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
+from utils.status import register_status
 from search_rollup import add_search_rollup
 
 
@@ -67,7 +68,9 @@ main_summary = EMRSparkOperator(
             "read-mode": "aligned", # more efficient RDD splitting for small datasets
         }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-dag=dag)
+    dag=dag)
+
+register_status(main_summary, "Main Summary", "A summary view of main pings.")
 
 main_summary_schema = EmailSchemaChangeOperator(
     task_id="main_summary_schema",
