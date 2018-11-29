@@ -6,8 +6,6 @@ from utils.mozetl import mozetl_envvar
 from utils.deploy import get_artifact_url
 
 FOCUS_ANDROID_INSTANCES = 10
-# Currently devtools is shipping only nightly events while they debug some issues,
-# so 2 nodes is plenty
 DEVTOOLS_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
@@ -51,9 +49,9 @@ focus_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
 
-devtools_events_to_amplitude = EMRSparkOperator(
-    task_id="devtools_events_to_amplitude",
-    job_name="DevTools Events to Amplitude",
+devtools_prerelease_events_to_amplitude = EMRSparkOperator(
+    task_id="devtools_prerelease_events_to_amplitude",
+    job_name="DevTools Prerelease Events to Amplitude",
     execution_timeout=timedelta(hours=8),
     instance_count=DEVTOOLS_INSTANCES,
     email=['ssuh@mozilla.com', 'telemetry-alerts@mozilla.com'],
@@ -62,7 +60,8 @@ devtools_events_to_amplitude = EMRSparkOperator(
         "max_requests": DEVTOOLS_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file("devtools"),
         "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "devtools_events_schemas.json",
+        "config_filename": "devtools_prerelease_schemas.json",
+        "owner": "ssuh@mozilla.com"
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
