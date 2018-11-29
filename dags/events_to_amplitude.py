@@ -68,10 +68,12 @@ devtools_prerelease_events_to_amplitude = EMRSparkOperator(
     dag=dag)
 
 rocket_android_events_to_amplitude = EMRSparkOperator(
+    owner='nechen@mozilla.com',
     task_id="rocket_android_events_to_amplitude",
     job_name="Rocket Android Events to Amplitude",
     execution_timeout=timedelta(hours=8),
     instance_count=ROCKET_ANDROID_INSTANCES,
+    email=['frank@mozilla.com', 'nechen@mozilla.com'],
     env={
         "date": "{{ ds_nodash }}",
         "max_requests": ROCKET_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
@@ -80,5 +82,5 @@ rocket_android_events_to_amplitude = EMRSparkOperator(
         "config_filename": "rocket_android_events_schemas.json",
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag)
-
+    dag=dag
+)
