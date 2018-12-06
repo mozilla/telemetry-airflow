@@ -15,7 +15,7 @@ def call_exit_errors(command):
     print("+ {}".format(" ".join(command)))
     rc = call(command, env=environ.copy())
     if rc > 0:
-        exit(rc)
+       exit(rc)
 
 
 def retrieve_jar():
@@ -62,7 +62,11 @@ def retrieve_jar():
         f.write(response.content)
 
 
-def events_to_amplitude_setup(config_filename, api_key_bucket, api_key_path):
+def events_to_amplitude_setup():
+    config_filename = environ.get("TBV_config_file_path")
+    api_key_bucket = environ.get("KEY_BUCKET")
+    api_key_path = environ.get("KEY_PATH")
+
     print("Extracting config file {}".format(config_filename))
 
     zfile = zipfile.ZipFile(artifact_file)
@@ -111,7 +115,7 @@ if environ.get("DO_RETRIEVE", "True") == "True":
     retrieve_jar()
 
 if environ.get("DO_EVENTS_TO_AMPLITUDE_SETUP") == "True":
-    events_to_amplitude_setup(environ.get("TBV_config_file_path"), environ.get("KEY_BUCKET"), environ.get("KEY_PATH"))
+    events_to_amplitude_setup()
 
 if environ.get("DO_SUBMIT", "True") == "True":
     submit_job()
