@@ -5,15 +5,17 @@ from os import chdir
 from os import environ
 from subprocess import call, PIPE, Popen
 from urlparse import urlparse
+import zipfile
+import boto3
 
 artifact_file = "artifact.jar"
 
 
 def call_exit_errors(command):
     print("+ {}".format(" ".join(command)))
-    rc = call(command)
+    rc = call(command, env=environ.copy())
     if rc > 0:
-        exit(rc)
+       exit(rc)
 
 
 def retrieve_jar():
@@ -60,6 +62,26 @@ def retrieve_jar():
         f.write(response.content)
 
 
+def events_to_amplitude_setup():
+    config_filename = environ.get("TBV_config_file_path")
+    api_key_bucket = environ.get("KEY_BUCKET")
+    api_key_path = environ.get("KEY_PATH")
+
+    print("Extracting config file {}".format(config_filename))
+
+    zfile = zipfile.ZipFile(artifact_file)
+    data = zfile.read(config_filename)
+    with open(config_filename, "w") as outfile:
+        outfile.write(data)
+
+    print("Setting amplitude key to contents of {}/{}".format(api_key_bucket,
+                                                              api_key_path))
+    s3 = boto3.resource('s3')
+    obj = s3.Object(api_key_bucket, api_key_path)
+    key = obj.get()['Body'].read().decode('utf-8').strip()
+    environ["AMPLITUDE_API_KEY"] = key
+
+
 def submit_job():
     opts = [
         ["--{}".format(key[4:].replace("_", "-")), value]
@@ -91,6 +113,9 @@ def update_metastore(location, hive_server):
 
 if environ.get("DO_RETRIEVE", "True") == "True":
     retrieve_jar()
+
+if environ.get("DO_EVENTS_TO_AMPLITUDE_SETUP") == "True":
+    events_to_amplitude_setup()
 
 if environ.get("DO_SUBMIT", "True") == "True":
     submit_job()
