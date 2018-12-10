@@ -110,7 +110,7 @@ devtools_release_events_to_amplitude = EMRSparkOperator(
             "sample": "0.5",
             "partition_multiplier": "5"
         },
-        artifact_url=get_artifact_url(slug, branch="remove-main-pings"),
+        artifact_url=get_artifact_url(slug),
         other={
             "KEY_BUCKET": "telemetry-airflow",
             "KEY_PATH": key_path("devtools"),
