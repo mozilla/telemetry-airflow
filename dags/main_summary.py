@@ -39,7 +39,6 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
         options={
             "from": "{{ ds_nodash }}",
             "to": "{{ ds_nodash }}",
-            "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
             "bucket": "telemetry-backfill",
             "all_histograms": "",
             "read-mode": "aligned",
