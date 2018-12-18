@@ -1,18 +1,19 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.deploy import get_artifact_url
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
-from search_rollup import add_search_rollup
+from utils.status import register_status
 
 
 default_args = {
-    'owner': 'mreid@mozilla.com',
+    'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2015, 11, 3),
-    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    'start_date': datetime(2018, 11, 27),
+    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -23,10 +24,36 @@ default_args = {
 # Running at 1am should suffice.
 dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
 
+main_summary_all_histograms = MozDatabricksSubmitRunOperator(
+    task_id="main_summary_all_histograms",
+    job_name="Main Summary View - All Histograms",
+    execution_timeout=timedelta(hours=12),
+    instance_count=5,
+    max_instance_count=50,
+    enable_autoscale=True,
+    instance_type="c4.4xlarge",
+    spot_bid_price_percent=50,
+    ebs_volume_count=1,
+    ebs_volume_size=250,
+    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
+        options={
+            "from": "{{ ds_nodash }}",
+            "to": "{{ ds_nodash }}",
+            "bucket": "telemetry-backfill",
+            "all_histograms": "",
+            "read-mode": "aligned",
+            "input-partition-multiplier": "400",
+        },
+        dev_options={
+            "channel": "nightly",
+        }),
+    dag=dag)
+
 main_summary = EMRSparkOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    execution_timeout=timedelta(hours=14),
+    execution_timeout=timedelta(hours=9),
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
     instance_count=40,
     env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
         options={
@@ -41,6 +68,8 @@ main_summary = EMRSparkOperator(
         }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
+
+register_status(main_summary, "Main Summary", "A summary view of main pings.")
 
 main_summary_schema = EmailSchemaChangeOperator(
     task_id="main_summary_schema",
@@ -361,8 +390,6 @@ search_dashboard.set_upstream(main_summary)
 search_clients_daily.set_upstream(main_summary)
 
 taar_dynamo.set_upstream(main_summary)
-
-add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)

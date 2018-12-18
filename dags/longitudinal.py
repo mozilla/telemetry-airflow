@@ -9,7 +9,7 @@ from utils.tbv import tbv_envvar
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 6, 30),
+    'start_date': datetime(2018, 12, 16),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com', 'rharter@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -78,22 +78,6 @@ taar_locale_job = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
-taar_legacy_job = EMRSparkOperator(
-    task_id="taar_legacy_job",
-    job_name="TAAR Legacy Model",
-    owner="mlopatka@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
-    execution_timeout=timedelta(hours=1),
-    instance_count=1,
-    env=mozetl_envvar("taar_legacy", {
-          "date": "{{ ds_nodash }}",
-          "bucket": "{{ task.__class__.private_output_bucket }}",
-          "prefix": "taar/legacy/"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
 taar_lite_guidranking = EMRSparkOperator(
     task_id="taar_lite_guidranking",
     job_name="TAARlite Addon Ranking",
@@ -111,5 +95,4 @@ taar_lite_guidranking = EMRSparkOperator(
 addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
 taar_locale_job.set_upstream(longitudinal)
-taar_legacy_job.set_upstream(longitudinal)
 taar_lite_guidranking.set_upstream(longitudinal)

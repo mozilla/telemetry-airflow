@@ -5,7 +5,7 @@ from operators.emr_spark_operator import EMRSparkOperator
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 8, 12),
+    'start_date': datetime(2018, 11, 26),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -23,6 +23,6 @@ mobile_clients = EMRSparkOperator(
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     env={"date": "{{ ds_nodash }}"},
-    uri="https://raw.githubusercontent.com/mozilla/mozilla-reports/master/etl/mobile-clients.kp/orig_src/mobile-clients.ipynb",
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/mobile-clients.ipynb",
     output_visibility="public",
     dag=dag)

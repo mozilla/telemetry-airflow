@@ -246,12 +246,13 @@ class EMRSparkOperator(BaseOperator):
                 spark_log_location = self.get_spark_log_location()
 
                 raise AirflowException(
-                    'Spark job {} terminated with errors: {} - {}<br>'
+                    u'Spark job {} terminated with errors: {} - {}<br>'
                     'Cluster Stderr: {}<br>'
                     'Cluster Stdout: {}<br>'
                     'Spark Driver Log Location: {}'
                     .format(self.job_name, reason_code, reason_message,
                             step_logs['stderr'], step_logs['stdout'], spark_log_location)
+                    .encode('ascii', 'replace')
                 )
             elif status == 'TERMINATED':
                 break
