@@ -52,7 +52,8 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
 main_summary = EMRSparkOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    execution_timeout=timedelta(hours=14),
+    execution_timeout=timedelta(hours=9),
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
     instance_count=40,
     env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
         options={
