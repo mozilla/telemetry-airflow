@@ -11,7 +11,7 @@ url = get_artifact_url(slug)
 default_args = {
     'owner': 'ssuh@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2018, 6, 27),
+    'start_date': datetime(2018, 11, 26),
     'email': ['telemetry-alerts@mozilla.com', 'ssuh@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,

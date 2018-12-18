@@ -12,7 +12,7 @@ from utils.status import register_status
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2015, 11, 3),
+    'start_date': datetime(2018, 11, 27),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -39,7 +39,6 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
         options={
             "from": "{{ ds_nodash }}",
             "to": "{{ ds_nodash }}",
-            "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
             "bucket": "telemetry-backfill",
             "all_histograms": "",
             "read-mode": "aligned",
@@ -53,7 +52,8 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
 main_summary = EMRSparkOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    execution_timeout=timedelta(hours=14),
+    execution_timeout=timedelta(hours=9),
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
     instance_count=40,
     env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
         options={

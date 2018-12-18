@@ -6,7 +6,7 @@ from utils.mozetl import mozetl_envvar
 default_args = {
     'owner': 'amiyaguchi@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2016, 12, 23),
+    'start_date': datetime(2018, 12, 12),
     'email': ['telemetry-alerts@mozilla.com', 'amiyaguchi@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
