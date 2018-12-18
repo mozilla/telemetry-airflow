@@ -19,6 +19,18 @@ This app is built and deployed with
 [docker](https://docs.docker.com/) and
 [docker-compose](https://docs.docker.com/compose/).
 
+### Dependencies
+
+Most Airflow jobs are thin wrappers that spin up an EMR cluster for running
+the job. Be aware that the configuration of the created EMR clusters depends
+on finding scripts in an S3 location configured by the `SPARK_BUCKET` variable.
+Those scripts are maintained in
+[emr-bootstrap-spark](https://github.com/mozilla/emr-bootstrap-spark/)
+and are deployed independently of this repository.
+Changes in behavior of Airflow jobs not explained by changes in the source of the
+Spark jobs or by changes in this repository
+could be due to changes in the bootstrap scripts.
+
 ### Build Container
 
 An Airflow container can be built with
@@ -56,7 +68,7 @@ The logs of the task can be inspected in real-time with:
 docker logs -f telemetryairflow_scheduler_1
 ```
 
-You can task logs and see cluster status on
+You can see task logs and see cluster status on
 [the EMR console](https://us-west-2.console.aws.amazon.com/elasticmapreduce/home?region=us-west-2)
 
 By default, the results will end up in the `telemetry-test-bucket` in S3.
