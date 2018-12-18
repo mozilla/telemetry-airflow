@@ -7,7 +7,6 @@ from utils.deploy import get_artifact_url
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
-from search_rollup import add_search_rollup
 
 
 default_args = {
@@ -391,8 +390,6 @@ search_dashboard.set_upstream(main_summary)
 search_clients_daily.set_upstream(main_summary)
 
 taar_dynamo.set_upstream(main_summary)
-
-add_search_rollup(dag, "daily", 3, upstream=main_summary)
 
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
