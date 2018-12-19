@@ -68,7 +68,7 @@ taar_locale_job = EMRSparkOperator(
     owner="mlopatka@mozilla.com",
     email=["vng@mozilla.com", "mlopatka@mozilla.com"],
     execution_timeout=timedelta(hours=10),
-    instance_count=5,
+    instance_count=8,
     env=mozetl_envvar("taar_locale", {
           "date": "{{ ds_nodash }}",
           "bucket": "{{ task.__class__.private_output_bucket }}",
