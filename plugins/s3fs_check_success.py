@@ -2,7 +2,7 @@ import logging
 
 import boto3
 from airflow.exceptions import AirflowException
-from airflow.operators import BaseOperator
+from airflow.operators import BaseSensorOperator
 from airflow.plugins_manager import AirflowPlugin
 
 
@@ -19,25 +19,24 @@ def check_s3fs_success(bucket, prefix, num_partitions):
     return len(success) == num_partitions
 
 
-class S3FSCheckSuccessOperator(BaseOperator):
+class S3FSCheckSuccessSensor(BaseSensorOperator):
     template_fields = ("prefix",)
 
-    def __init__(self, bucket, prefix, num_partitions, **kwargs):
+    def __init__(self, bucket, prefix, num_partitions, *args, **kwargs):
         self.bucket = bucket
         self.prefix = prefix
         self.num_partitions = num_partitions
-        super(S3FSCheckSuccessOperator, self).__init__(**kwargs)
+        super(S3FSCheckSuccessSensor, self).__init__(*args, **kwargs)
 
-    def execute(self, context):
+    def poke(self, context):
         logging.info(
             "Running check against s3:/{}/{} with {} partitions".format(
                 self.bucket, self.prefix, self.num_partitions
             )
         )
-        if not check_s3fs_success(self.bucket, self.prefix, self.num_partitions):
-            raise AirflowException("Missing _SUCCESS")
+        return check_s3fs_success(self.bucket, self.prefix, self.num_partitions)
 
 
 class S3FSCheckSuccessPlugin(AirflowPlugin):
     name = "s3fs_check_success"
-    operators = [S3FSCheckSuccessOperator]
+    operators = [S3FSCheckSuccessSensor]

@@ -7,12 +7,12 @@ from datetime import datetime, timedelta
 import pytest
 
 import boto3
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowSensorTimeout
 from airflow.models import DAG, TaskInstance
 from airflow.settings import Session
 from airflow.utils.state import State
 from moto import mock_s3
-from plugins.s3fs_check_success import S3FSCheckSuccessOperator
+from plugins.s3fs_check_success import S3FSCheckSuccessSensor
 
 DEFAULT_DATE = datetime(2019, 1, 1)
 
@@ -33,10 +33,10 @@ def test_single_partition_contains_success():
     client.create_bucket(Bucket=bucket)
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/_SUCCESS")
 
-    operator = S3FSCheckSuccessOperator(
+    sensor = S3FSCheckSuccessSensor(
         task_id="test_success", bucket=bucket, prefix=prefix, num_partitions=1
     )
-    operator.execute(None)
+    assert sensor.poke(None)
 
 
 @mock_s3
@@ -47,11 +47,10 @@ def test_single_partition_not_contains_success():
     client = boto3.client("s3")
     client.create_bucket(Bucket=bucket)
 
-    operator = S3FSCheckSuccessOperator(
-        task_id="test_success", bucket=bucket, prefix=prefix, num_partitions=1
+    sensor = S3FSCheckSuccessSensor(
+        task_id="test_failure", bucket=bucket, prefix=prefix, num_partitions=1
     )
-    with pytest.raises(AirflowException):
-        operator.execute(None)
+    assert not sensor.poke(None)
 
 
 @mock_s3
@@ -64,25 +63,29 @@ def test_single_partition_with_templates(dag):
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=1/_SUCCESS")
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=2/garbage")
 
-    operator_success = S3FSCheckSuccessOperator(
+    sensor_success = S3FSCheckSuccessSensor(
         task_id="test_success_template",
         bucket=bucket,
         prefix="dataset/v1/submission_date={{ ds_nodash }}/part=1",
         num_partitions=1,
+        poke_interval=1,
+        timeout=2,
         dag=dag,
     )
-    operator_failure = S3FSCheckSuccessOperator(
+    sensor_failure = S3FSCheckSuccessSensor(
         task_id="test_failure_template",
         bucket=bucket,
         prefix="dataset/v1/submission_date={{ ds_nodash }}/part=2",
         num_partitions=1,
+        poke_interval=1,
+        timeout=2,
         dag=dag,
     )
 
     # execute everything for templating to work
-    operator_success.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
-    with pytest.raises(AirflowException):
-        operator_failure.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
+    sensor_success.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
+    with pytest.raises(AirflowSensorTimeout):
+        sensor_failure.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE)
 
     session = Session()
     tis = session.query(TaskInstance).filter(
@@ -113,10 +116,10 @@ def test_partitions_contain_success():
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=2/_SUCCESS")
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=3/_SUCCESS")
 
-    operator = S3FSCheckSuccessOperator(
+    sensor = S3FSCheckSuccessSensor(
         task_id="test_success", bucket=bucket, prefix=prefix, num_partitions=3
     )
-    operator.execute(None)
+    assert sensor.poke(None)
 
 
 @mock_s3
@@ -130,9 +133,7 @@ def test_partitions_contain_partial_success():
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=2/garbage")
     client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=3/_SUCCESS")
 
-    operator = S3FSCheckSuccessOperator(
-        task_id="test_success", bucket=bucket, prefix=prefix, num_partitions=3
+    sensor = S3FSCheckSuccessSensor(
+        task_id="test_failure", bucket=bucket, prefix=prefix, num_partitions=3
     )
-
-    with pytest.raises(AirflowException):
-        operator.execute(None)
+    assert not sensor.poke(None)
