@@ -150,7 +150,7 @@ def test_dag_retry_limit_causes_premature_failure():
     client.create_bucket(Bucket=bucket)
 
     dag = DAG(
-        "test_dag",
+        "test_dag_retries",
         default_args={
             "owner": "airflow",
             "start_date": DEFAULT_DATE,
