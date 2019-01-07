@@ -286,6 +286,8 @@ clients_daily_v6 = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
+register_status(clients_daily_v6, "Clients Daily", "A view of main pings with one row per client per day.")
+
 retention = EMRSparkOperator(
     task_id="retention",
     job_name="1-Day Firefox Retention",
