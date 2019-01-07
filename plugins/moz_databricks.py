@@ -62,7 +62,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param release_label: Databricks Runtime versions,
             run `databricks clusters spark-versions` for possible values.
         :param iam_role: An Amazon Resource Name (ARN) specifying an iam role
-        :param instance_type: An EC2 instance type (worker nodes and driver, if noc specified)
+        :param instance_type: An EC2 instance type (worker nodes and driver, if not specified)
         :param driver_instance_type: Driver node instance type.
             If not set, the same type is used across driver and worker nodes.
         :param owner: The e-mail address of the user owning the job.
