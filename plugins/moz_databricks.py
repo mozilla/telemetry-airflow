@@ -33,6 +33,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  release_label='4.3.x-scala2.11',
                  iam_role=environ["DATABRICKS_DEFAULT_IAM"],
                  instance_type=environ['EMR_INSTANCE_TYPE'],
+                 driver_instance_type=None,
                  owner="",
                  uri=None,
                  output_visibility=None,
@@ -61,7 +62,9 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param release_label: Databricks Runtime versions,
             run `databricks clusters spark-versions` for possible values.
         :param iam_role: An Amazon Resource Name (ARN) specifying an iam role
-        :param instance_type: An EMR instance type
+        :param instance_type: An EC2 instance type (worker nodes and driver, if not specified)
+        :param driver_instance_type: Driver node instance type.
+            If not set, the same type is used across driver and worker nodes.
         :param owner: The e-mail address of the user owning the job.
         :param uri: argument from EMRSparkOperator for compatibility
         :param output_visibility: argument from EMRSparkOperator for compatibility
@@ -120,6 +123,9 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             }
         }
 
+        if driver_instance_type is not None:
+            new_cluster["driver_node_type_id"] = driver_instance_type
+
         min_workers = dev_instance_count if is_dev else instance_count
         max_workers = dev_max_instance_count if is_dev else max_instance_count
 
@@ -161,7 +167,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                 "parameters": [env["MOZETL_COMMAND"]]
             }
 
-            # Proper pip dependencies in Databriks is only supported via pypi.
+            # Proper pip dependencies in Databricks is only supported via pypi.
             # Dependencies for source/binary distributions need to be added
             # manually.
             libraries.append({
