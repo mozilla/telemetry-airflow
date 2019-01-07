@@ -400,6 +400,7 @@ taar_similarity = MozDatabricksSubmitRunOperator(
     execution_timeout=timedelta(hours=2),
     instance_count=11,
     instance_type="i3.8xlarge",
+    driver_instance_type="i3.xlarge",
     env=mozetl_envvar("taar_similarity",
         options={
             "date": "{{ ds_nodash }}",
