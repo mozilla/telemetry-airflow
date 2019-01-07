@@ -31,3 +31,20 @@ S3FSCheckSuccessSensor(
     description="A summary view of main pings.",
     dag=dag,
 )
+
+S3FSCheckSuccessSensor(
+    task_id="check_clients_daily",
+    bucket="telemetry-parquet",
+    prefix="clients_daily/v6/submission_date_s3={{ ds_nodash }}",
+    num_partitions=1,
+    poke_interval=30 * 60,
+    timeout=8 * 60 * 60,
+    dag=dag,
+) >> DatasetStatusOperator(
+    task_id="check_clients_daily_failure",
+    trigger_rule="all_failed",
+    status="partial_outage",
+    name="Clients Daily",
+    description="A view of main pings with one row per client per day.",
+    dag=dag,
+)
