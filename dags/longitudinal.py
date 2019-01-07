@@ -62,21 +62,6 @@ game_hw_survey = EMRSparkOperator(
     output_visibility="public",
     dag=dag)
 
-taar_locale_job = EMRSparkOperator(
-    task_id="taar_locale_job",
-    job_name="TAAR Locale Model",
-    owner="mlopatka@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
-    execution_timeout=timedelta(hours=10),
-    instance_count=8,
-    env=mozetl_envvar("taar_locale", {
-          "date": "{{ ds_nodash }}",
-          "bucket": "{{ task.__class__.private_output_bucket }}",
-          "prefix": "taar/locale/"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
 
 taar_lite_guidranking = EMRSparkOperator(
     task_id="taar_lite_guidranking",
@@ -94,5 +79,4 @@ taar_lite_guidranking = EMRSparkOperator(
 
 addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
-taar_locale_job.set_upstream(longitudinal)
 taar_lite_guidranking.set_upstream(longitudinal)
