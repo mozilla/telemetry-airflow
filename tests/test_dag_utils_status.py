@@ -17,10 +17,12 @@ from airflow.utils.state import State
 
 # fix relative path errors -- ordering is important in this section
 import plugins.statuspage.operator
+import plugins.statuspage.hook
 
 # Airflow dynamically registers DAGs and plugins by overwriting the sys modules.
 # Add an entry pointing to the module in `plugins/` for testing in `dags/`
 sys.modules["airflow.operators.dataset_status"] = plugins.statuspage.operator
+sys.modules["airflow.hooks.dataset_status"] = plugins.statuspage.hook
 from dags.utils.status import register_status
 
 
@@ -54,6 +56,8 @@ def dag(mocker):
 
 @pytest.fixture
 def mock_hook(mocker):
+    mocker.patch("dags.utils.status.DatasetStatusHook")
+    # observe the interface between the operator and the hook for validation
     return mocker.patch("plugins.statuspage.operator.DatasetStatusHook")
 
 
@@ -62,6 +66,7 @@ def test_subdag_structure_default(dag, mock_hook):
     _ = register_status(operator, "test", "test description")
     assert {ti.task_id for ti in dag.topological_sort()} == {
         "test",
+        "test_register",
         "test_failure",
     }
 
@@ -71,6 +76,7 @@ def test_subdag_structure_on_success_opt_in(dag, mock_hook):
     _ = register_status(operator, "test", "test description", on_success=True)
     assert {ti.task_id for ti in dag.topological_sort()} == {
         "test",
+        "test_register",
         "test_success",
         "test_failure",
     }
@@ -105,6 +111,8 @@ def test_execute_failure(dag, mock_hook):
 
     expected = {
         "test": State.FAILED,
+        # we would otherwise register to be successful, but the job is still registered under failure conditions
+        "test_register": State.NONE,
         "test_success": State.NONE,
         "test_failure": State.SUCCESS,
     }
@@ -133,6 +141,7 @@ def test_no_execution_on_retry(dag, mock_hook):
 
     expected = {
         "test": State.UP_FOR_RETRY,
+        "test_register": State.NONE,
         "test_success": State.NONE,
         "test_failure": State.NONE,
     }
@@ -148,7 +157,9 @@ def test_execute_success_opt_in(dag, mock_hook):
     mock_conn.get_or_create.return_value = testing_component_id
 
     success_op = PythonOperator(task_id="test", python_callable=lambda: True, dag=dag)
-    _ = register_status(success_op, "Test Success", "Testing operational status", on_success=True)
+    _ = register_status(
+        success_op, "Test Success", "Testing operational status", on_success=True
+    )
 
     # run each of the operators in order
     for operator in dag.topological_sort():
@@ -164,6 +175,7 @@ def test_execute_success_opt_in(dag, mock_hook):
 
     expected = {
         "test": State.SUCCESS,
+        "test_register": State.SUCCESS,
         "test_success": State.SUCCESS,
         "test_failure": State.NONE,
     }
