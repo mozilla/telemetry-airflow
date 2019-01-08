@@ -35,12 +35,27 @@ amodump = EMRSparkOperator(
 
 amowhitelist = EMRSparkOperator(
     task_id="taar_amowhitelist",
-    job_name="Generate a whitelisted set of addons for TAAR",
+    job_name="Generate an algorithmically defined set of whitelisted addons for TAAR",
     execution_timeout=timedelta(hours=1),
     instance_count=1,
     owner="vng@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com"],
     env=mozetl_envvar("taar_amowhitelist",
+                      {},
+                      {'MOZETL_SUBMISSION_METHOD': 'spark'}),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag
+)
+
+editorial_whitelist = EMRSparkOperator(
+    task_id="taar_update_whitelist",
+    job_name="Generate a JSON blob from editorial reviewed addons for TAAR",
+    execution_timeout=timedelta(hours=1),
+    instance_count=1,
+    owner="vng@mozilla.com",
+    email=["mlopatka@mozilla.com", "vng@mozilla.com"],
+    env=mozetl_envvar("taar_update_whitelist",
                       {},
                       {'MOZETL_SUBMISSION_METHOD': 'spark'}),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
@@ -65,6 +80,10 @@ taar_lite = EMRSparkOperator(
 
 # Set a dependency on amodump from amowhitelist
 amowhitelist.set_upstream(amodump)
+
+# Set a dependency on amodump for the editorial reviewed whitelist of
+# addons
+editorial_whitelist.set_upstream(amodump)
 
 # Set a dependency on amowhitelist from taar_lite
 taar_lite.set_upstream(amowhitelist)
