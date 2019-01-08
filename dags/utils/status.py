@@ -1,4 +1,8 @@
+import logging
+
+from airflow.operators.python_operator import PythonOperator
 from airflow.operators.dataset_status import DatasetStatusOperator
+from airflow.hooks.dataset_status import DatasetStatusHook
 
 
 def register_status(operator, name, description, on_success=False):
@@ -15,6 +19,20 @@ def register_status(operator, name, description, on_success=False):
     """
 
     kwargs = {"name": name, "description": description, "dag": operator.dag}
+
+    def callable():
+        conn = DatasetStatusHook().get_conn()
+        comp_id = conn.get_or_create(name, description)
+        logging.info(
+            "Statuspage component {} is registered with {}".format(comp_id, name)
+        )
+
+    register = PythonOperator(
+        task_id="{}_register".format(operator.task_id),
+        python_callable=callable,
+        dag=operator.dag,
+    )
+    operator >> register
 
     if on_success:
         # create and operator on the success case
