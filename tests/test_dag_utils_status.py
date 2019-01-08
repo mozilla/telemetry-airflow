@@ -111,6 +111,7 @@ def test_execute_failure(dag, mock_hook):
 
     expected = {
         "test": State.FAILED,
+        # we would otherwise register to be successful, but the job is still registered under failure conditions
         "test_register": State.NONE,
         "test_success": State.NONE,
         "test_failure": State.SUCCESS,
@@ -156,7 +157,9 @@ def test_execute_success_opt_in(dag, mock_hook):
     mock_conn.get_or_create.return_value = testing_component_id
 
     success_op = PythonOperator(task_id="test", python_callable=lambda: True, dag=dag)
-    _ = register_status(success_op, "Test Success", "Testing operational status", on_success=True)
+    _ = register_status(
+        success_op, "Test Success", "Testing operational status", on_success=True
+    )
 
     # run each of the operators in order
     for operator in dag.topological_sort():
