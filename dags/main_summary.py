@@ -191,21 +191,6 @@ main_summary_experiments = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
-experiments_aggregates = EMRSparkOperator(
-    task_id="experiments_aggregates",
-    job_name="Experiments Aggregates View",
-    execution_timeout=timedelta(hours=15),
-    instance_count=20,
-    dev_instance_count=3,
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    env=tbv_envvar("com.mozilla.telemetry.views.ExperimentAnalysisView", {
-        "date": "{{ ds_nodash }}",
-        "input": "s3://{{ task.__class__.private_output_bucket }}/experiments/v1",
-        "output": "s3://{{ task.__class__.private_output_bucket }}/experiments_aggregates/v1"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
 experiments_aggregates_import = EMRSparkOperator(
     task_id="experiments_aggregates_import",
     job_name="Experiments Aggregates Import",
@@ -424,8 +409,6 @@ txp_mau_dau.set_upstream(addons)
 main_events.set_upstream(main_summary)
 
 main_summary_experiments.set_upstream(main_summary)
-experiments_aggregates.set_upstream(main_summary_experiments)
-experiments_aggregates.set_upstream(experiments_error_aggregates)
 
 experiments_aggregates_import.set_upstream(main_summary_experiments)
 search_dashboard.set_upstream(main_summary)
