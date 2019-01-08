@@ -1,6 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.operators.s3fs_check_success import S3FSCheckSuccessSensor
+from airflow.sensors.s3fs_check_success import S3FSCheckSuccessSensor
 from airflow.operators.dataset_status import DatasetStatusOperator
 
 default_args = {
