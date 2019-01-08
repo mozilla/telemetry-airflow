@@ -427,7 +427,7 @@ main_summary_experiments.set_upstream(main_summary)
 experiments_aggregates.set_upstream(main_summary_experiments)
 experiments_aggregates.set_upstream(experiments_error_aggregates)
 
-experiments_aggregates_import.set_upstream(experiments_aggregates)
+experiments_aggregates_import.set_upstream(main_summary_experiments)
 search_dashboard.set_upstream(main_summary)
 search_clients_daily.set_upstream(main_summary)
 
