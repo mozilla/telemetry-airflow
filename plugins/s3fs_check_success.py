@@ -16,7 +16,7 @@ def check_s3fs_success(bucket, prefix, num_partitions):
     objects = s3.Bucket(bucket).objects.filter(Prefix=prefix)
     success = set([obj.key for obj in objects if "_SUCCESS" in obj.key])
     logging.info("Found {n_success} files".format(n_success=len(success)))
-    return len(success) == num_partitions
+    return len(success) >= num_partitions
 
 
 class S3FSCheckSuccessOperator(BaseOperator):

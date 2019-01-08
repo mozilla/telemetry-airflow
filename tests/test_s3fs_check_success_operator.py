@@ -37,3 +37,21 @@ def test_single_partition_not_contains_success():
     )
     with pytest.raises(ValueError):
         operator.execute(None)
+
+
+@mock_s3
+def test_single_partition_contains_extra_success():
+    bucket = "test"
+    prefix = "dataset/v1/submission_date=20190101"
+
+    client = boto3.client("s3")
+    client.create_bucket(Bucket=bucket)
+    client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=1/_SUCCESS")
+    client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=2/_SUCCESS")
+    client.put_object(Bucket=bucket, Body="", Key=prefix + "/part=__extra__/_SUCCESS")
+
+
+    operator = S3FSCheckSuccessOperator(
+        task_id="test_failure", bucket=bucket, prefix=prefix, num_partitions=2
+    )
+    operator.execute(None)
