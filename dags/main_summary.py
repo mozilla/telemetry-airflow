@@ -376,6 +376,40 @@ desktop_active_dau = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
+taar_locale_job = EMRSparkOperator(
+    task_id="taar_locale_job",
+    job_name="TAAR Locale Model",
+    owner="mlopatka@mozilla.com",
+    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
+    execution_timeout=timedelta(hours=10),
+    instance_count=8,
+    env=mozetl_envvar("taar_locale", {
+          "date": "{{ ds_nodash }}",
+          "bucket": "{{ task.__class__.private_output_bucket }}",
+          "prefix": "taar/locale/"
+    }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag)
+
+taar_similarity = MozDatabricksSubmitRunOperator(
+    task_id="taar_similarity",
+    job_name="Taar Similarity model",
+    owner="akomar@mozilla.com",
+    email=["vng@mozilla.com", "mlopatka@mozilla.com", "akomar@mozilla.com"],
+    execution_timeout=timedelta(hours=2),
+    instance_count=11,
+    instance_type="i3.8xlarge",
+    driver_instance_type="i3.xlarge",
+    env=mozetl_envvar("taar_similarity",
+        options={
+            "date": "{{ ds_nodash }}",
+            "bucket": "{{ task.__class__.private_output_bucket }}",
+            "prefix": "taar/similarity/"
+        }),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
+    output_visibility="private",
+    dag=dag)
 
 main_summary_schema.set_upstream(main_summary)
 
@@ -396,6 +430,7 @@ search_dashboard.set_upstream(main_summary)
 search_clients_daily.set_upstream(main_summary)
 
 taar_dynamo.set_upstream(main_summary)
+taar_similarity.set_upstream(clients_daily_v6)
 
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
@@ -407,3 +442,5 @@ client_count_daily_view.set_upstream(main_summary)
 desktop_dau.set_upstream(client_count_daily_view)
 
 main_summary_glue.set_upstream(main_summary)
+
+taar_locale_job.set_upstream(clients_daily_v6)
