@@ -5,6 +5,7 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
+from utils.status import register_status
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -34,6 +35,8 @@ longitudinal = MozDatabricksSubmitRunOperator(
         metastore_location="s3://telemetry-parquet/longitudinal"),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
+
+register_status(longitudinal, "Longitudinal", "A 6-month longitudinal view of client history.")
 
 addon_recommender = EMRSparkOperator(
     task_id="addon_recommender",
