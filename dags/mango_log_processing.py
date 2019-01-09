@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.sensors.emr_job_flow_sensor import EmrJobFlowSensor
+from utils.status import register_status
 
 
 DEFAULT_ARGS = {
@@ -165,6 +166,8 @@ amo_logs = EmrCreateJobFlowOperator(
     emr_conn_id='emr_data_iam_mango',
     dag=amo_dag
 )
+
+register_status(amo_logs, 'AMO Logs', 'Mango Processed AMO Logs')
 
 amo_job_sensor = EmrJobFlowSensor(
     task_id='amo_check_job_flow',
