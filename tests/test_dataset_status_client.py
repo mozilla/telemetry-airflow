@@ -29,7 +29,7 @@ def mock_statuspage_client(monkeypatch):
 
 
 def call_args(mocked_def):
-    """Assert that a call argument in a mocked definition is an expected value.
+    """Create an object with dot access to call arguments from a mocked definition.
 
     This is not expected for use with partial or lambda functions.
 
