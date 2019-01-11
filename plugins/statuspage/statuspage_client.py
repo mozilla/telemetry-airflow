@@ -97,7 +97,7 @@ class StatuspageClient:
 
         data = {
             "name": name,
-            "status": status,
+            "status": incident_status,
             "body": body,
             "components": {"component_id": component_status},
             "component_ids": affected_component_ids,
