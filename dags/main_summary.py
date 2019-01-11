@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.deploy import get_artifact_url
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
@@ -82,26 +81,6 @@ main_summary_schema = EmailSchemaChangeOperator(
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     to=["bimsland@mozilla.com", "telemetry-alerts@mozilla.com"],
     key_prefix='schema/main_summary/submission_date_s3=',
-    dag=dag)
-
-experiments_error_aggregates = EMRSparkOperator(
-    task_id="experiments_error_aggregates",
-    job_name="Experiments Error Aggregates View",
-    execution_timeout=timedelta(hours=5),
-    instance_count=20,
-    owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    env=tbv_envvar("com.mozilla.telemetry.streaming.ExperimentsErrorAggregator",
-        options={
-            "from": "{{ ds_nodash }}",
-            "to": "{{ds_nodash }}",
-            "outputPath": "s3://{{ task.__class__.private_output_bucket }}",
-            "numParquetFiles": "6"
-        },
-        dev_options={"channel": "nightly"},
-        artifact_url=get_artifact_url("{{ task.__class__.telemetry_streaming_slug }}")
-    ),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 engagement_ratio = EMRSparkOperator(
