@@ -53,7 +53,6 @@ class DatasetStatus:
         :param name:                The name of the dataset.
         :component_id:              The component id of the dataset
         :param body:                The initial message, created as the first incident update.
-        :param incident_status:     The status of the incident e.g. investigating, identified, resolved
         :param component_status:    The status state to set the component.
         :returns:                   The id of the incident
         """
@@ -66,7 +65,7 @@ class DatasetStatus:
 
         return self.client.create_incident(
             name=templated_title,
-            incident_status="Investigating",
+            incident_status="Investigating",  # value derived from web-interface
             body=body or default_body,
             component_status=component_status,
             affected_component_ids=[component_id],

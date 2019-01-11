@@ -61,6 +61,7 @@ incident_request = {
         "components": {
             "type": "object",
             "description": "Map of status changes to apply to affected components",
+            # based on the example payloads in the API documentation
             "properties": {"component_id": status_type},
         },
     },

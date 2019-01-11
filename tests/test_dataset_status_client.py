@@ -24,7 +24,7 @@ def mock_statuspage_client(monkeypatch):
         "plugins.statuspage.dataset_client.StatuspageClient._request", _mock_request
     )
     monkeypatch.setattr(
-        "plugins.statuspage.dataset_client.StatuspageClient.get_id", _mock_request
+        "plugins.statuspage.dataset_client.StatuspageClient.get_id", _mock_id
     )
 
 
