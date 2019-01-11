@@ -12,8 +12,8 @@ default_args = {
 }
 
 # MainSummary can take up to 7 hours, depending on the day.
-# Set a sensor to check for the results.
-dag = DAG("dataset_alerts", default_args=default_args, schedule_interval="0 1 * * *")
+# Wait 4 hours, and then check for availability for 4 hours on a 30 minute cycle.
+dag = DAG("dataset_alerts", default_args=default_args, schedule_interval="0 5 * * *")
 
 S3FSCheckSuccessSensor(
     task_id="check_main_summary",
@@ -21,7 +21,7 @@ S3FSCheckSuccessSensor(
     prefix="main_summary/v4/submission_date_s3={{ ds_nodash }}",
     num_partitions=100,
     poke_interval=30 * 60,
-    timeout=8 * 60 * 60,
+    timeout=4 * 60 * 60,
     dag=dag,
 ) >> DatasetStatusOperator(
     task_id="check_main_summary_failure",
@@ -29,5 +29,22 @@ S3FSCheckSuccessSensor(
     status="partial_outage",
     name="Main Summary",
     description="A summary view of main pings.",
+    dag=dag,
+)
+
+S3FSCheckSuccessSensor(
+    task_id="check_clients_daily",
+    bucket="telemetry-parquet",
+    prefix="clients_daily/v6/submission_date_s3={{ ds_nodash }}",
+    num_partitions=1,
+    poke_interval=30 * 60,
+    timeout=4 * 60 * 60,
+    dag=dag,
+) >> DatasetStatusOperator(
+    task_id="check_clients_daily_failure",
+    trigger_rule="all_failed",
+    status="partial_outage",
+    name="Clients Daily",
+    description="A view of main pings with one row per client per day.",
     dag=dag,
 )
