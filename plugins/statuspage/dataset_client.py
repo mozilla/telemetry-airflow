@@ -44,3 +44,29 @@ class DatasetStatus:
         """
         patch = {"component": {"status": status}}
         return self.client.update_component(component_id, patch)
+
+    def create_incident_investigation(
+        self, name, component_id, body=None, component_status="partial_outage"
+    ):
+        """Create a new incident given a list of affected component ids.
+
+        :param name:                The name of the dataset.
+        :component_id:              The component id of the dataset
+        :param body:                The initial message, created as the first incident update.
+        :param component_status:    The status state to set the component.
+        :returns:                   The id of the incident
+        """
+        templated_title = "Investigating Errors in {name}".format(name=name)
+
+        default_body = (
+            "Automated monitoring has determined that {name} is experiencing errors. "
+            "Engineers have been notified to investigate the source of error. "
+        ).format(name=name)
+
+        return self.client.create_incident(
+            name=templated_title,
+            incident_status="Investigating",  # value derived from web-interface
+            body=body or default_body,
+            component_status=component_status,
+            affected_component_ids=[component_id],
+        )
