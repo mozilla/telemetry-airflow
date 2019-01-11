@@ -24,6 +24,8 @@ class DatasetStatusOperator(BaseOperator):
         :param description: Description of the dataset
         :param status: one of [operational, under_maintenance, degraded_performance, partial_outage, major_outage]
         :param statuspage_conn_id: Airflow connection id for credentials
+        :param create_incident: A flag to enable automated filing of Statuspage incidents
+        :param incident_body:   Optional text for describing the incident
         """
         super(DatasetStatusOperator, self).__init__(**kwargs)
         self.statuspage_conn_id = statuspage_conn_id
