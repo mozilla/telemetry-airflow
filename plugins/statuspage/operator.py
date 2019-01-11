@@ -14,6 +14,8 @@ class DatasetStatusOperator(BaseOperator):
         description,
         status,
         statuspage_conn_id="statuspage_default",
+        create_incident=False,
+        incident_body=None,
         **kwargs
     ):
         """Create and update the status of a Data Engineering Dataset.
@@ -28,6 +30,8 @@ class DatasetStatusOperator(BaseOperator):
         self.name = name
         self.description = description
         self.status = status
+        self.create_incident = create_incident
+        self.incident_body = incident_body
 
     def execute(self, context):
         conn = DatasetStatusHook(statuspage_conn_id=self.statuspage_conn_id).get_conn()
@@ -37,4 +41,10 @@ class DatasetStatusOperator(BaseOperator):
             "Setting status for {} ({}) to {}".format(self.name, comp_id, self.status)
         )
 
-	 conn.update(comp_id, self.status)
+        if self.create_incident:
+            incident_id = conn.create_incident_investigation(
+                self.name, comp_id, self.incident_body, self.status
+            )
+            self.log.info("Created incident with id {}".format(incident_id))
+        else:
+            comp_id = conn.update(comp_id, self.status)

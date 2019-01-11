@@ -5,6 +5,7 @@
 import pytest
 from plugins.statuspage.operator import DatasetStatusOperator
 from requests.exceptions import HTTPError
+from .test_dataset_status_client import call_args
 
 
 @pytest.fixture()
@@ -84,3 +85,25 @@ def test_conn_update_failure(mocker, mock_statuspage_init):
         operator.execute(None)
 
     mock_update.assert_called_once()
+
+
+def test_create_incident(mocker, mock_statuspage_init):
+    mock_incident = mocker.patch(
+        "plugins.statuspage.dataset_client.StatuspageClient.create_incident"
+    )
+
+    operator = DatasetStatusOperator(
+        task_id="test_status",
+        name="airflow",
+        description="testing status",
+        status="degraded_performance",
+        create_incident=True,
+        incident_body="investigating degraded performance",
+    )
+    operator.execute(None)
+
+    mock_incident.assert_called_once()
+    args = call_args(mock_incident)
+    assert "airflow" in args.name
+    assert args.body == "investigating degraded performance"
+    assert args.component_status == "degraded_performance"
