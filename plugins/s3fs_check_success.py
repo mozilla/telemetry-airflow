@@ -58,5 +58,4 @@ class S3FSCheckSuccessSensor(BaseSensorOperator):
 
 class S3FSCheckSuccessPlugin(AirflowPlugin):
     name = "s3fs_check_success"
-    operators = [S3FSCheckSuccessOperator]
-    sensors = [S3FSCheckSuccessSensor]
+    operators = [S3FSCheckSuccessOperator, S3FSCheckSuccessSensor]
