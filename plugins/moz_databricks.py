@@ -30,7 +30,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  on_demand_instances=1,
                  spot_bid_price_percent=75,
                  disable_on_dev=False,
-                 release_label='4.3.x-scala2.11',
+                 release_label='5.1.x-scala2.11',
                  iam_role=environ["DATABRICKS_DEFAULT_IAM"],
                  instance_type=environ['EMR_INSTANCE_TYPE'],
                  driver_instance_type=None,
