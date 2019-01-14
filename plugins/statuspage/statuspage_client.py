@@ -75,3 +75,35 @@ class StatuspageClient:
         route = "pages/{}/components/{}".format(self.page_id, component_id)
         resp = self._request("patch", route, component)
         return resp.json().get("id")
+
+    def create_incident(
+        self, name, incident_status, body, component_status, affected_component_ids
+    ):
+        """"
+        Create an incident.
+
+        See https://developer.statuspage.io/#operation/postPagesPageIdIncidents for more details.
+
+        :param name:    The title name to give the incident.
+        :param incident_status: The status of the incident e.g. investigating, identified, resolved
+        :param body:    The initial message, created as the first incident update.
+        :param component_status:    The status state to set the component.
+        :param affected_component_ids:  A list of component id's that are affected by this incident.
+        :returns: The id of the incident
+        :raises jsonschema.exceptions.ValidationError:
+        """
+        if not isinstance(affected_component_ids, list):
+            affected_component_ids = [affected_component_ids]
+
+        data = {
+            "name": name,
+            "status": incident_status,
+            "body": body,
+            "components": {"component_id": component_status},
+            "component_ids": affected_component_ids,
+        }
+        jsonschema.validate(data, schema.incident_request)
+        resp = self._request(
+            "post", "pages/{page_id}/incidents".format(page_id=self.page_id), data=data
+        )
+        return resp.json().get("id")
