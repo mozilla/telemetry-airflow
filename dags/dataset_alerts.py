@@ -29,6 +29,7 @@ S3FSCheckSuccessSensor(
     status="partial_outage",
     name="Main Summary",
     description="A summary view of main pings.",
+    create_incident=True,
     dag=dag,
 )
 
@@ -46,5 +47,6 @@ S3FSCheckSuccessSensor(
     status="partial_outage",
     name="Clients Daily",
     description="A view of main pings with one row per client per day.",
+    create_incident=True,
     dag=dag,
 )
