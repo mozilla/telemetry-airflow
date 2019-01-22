@@ -21,9 +21,9 @@ default_args = {
 dag = DAG("platform_compat", default_args=default_args, schedule_interval=None)
 
 cases = [
-    ("Databricks, Spark 2.3, Runtime 4.3", "main_summary_db_2_3", "4.3.x-scala2.11"),
-    ("Databricks, Spark 2.4, Runtime 5.1", "main_summary_db_2_4", "5.1.x-scala2.11"),
-    ("EMR, Spark 2.3, Runtime 4.3", "main_summary_emr_2_3", "emr-5.13.0"),
+    ("Databricks Spark 2.3 Runtime 4.3", "main_summary_db_2_3", "4.3.x-scala2.11"),
+    ("Databricks Spark 2.4 Runtime 5.1", "main_summary_db_2_4", "5.1.x-scala2.11"),
+    ("EMR Spark 2.3 Runtime 4.3", "main_summary_emr_2_3", "emr-5.13.0"),
 ]
 
 
@@ -55,7 +55,6 @@ for offset, case in enumerate(cases):
         ),
         execution_timeout=timedelta(hours=1),
         instance_count=3,
-        instance_type="c4.4xlarge",
         uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
         dag=dag,
     ) >> S3FSCheckSuccessSensor(
