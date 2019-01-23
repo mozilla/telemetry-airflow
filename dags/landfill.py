@@ -21,6 +21,7 @@ dag = DAG('landfill', default_args=default_args, schedule_interval='0 1 * * *')
 landfill_sampler = MozDatabricksSubmitRunOperator(
     task_id="landfill_sampler",
     job_name="Landfill Sampler",
+    retries=0,
     execution_timeout=timedelta(hours=2),
     instance_count=3,
     iam_role="arn:aws:iam::144996185633:instance-profile/databricks-ec2-landfill",
