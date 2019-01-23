@@ -72,6 +72,7 @@ main_summary = MozDatabricksSubmitRunOperator(
         dev_options={
             "channel": "nightly",   # run on smaller nightly data rather than release
         }),
+    databricks_retry_limit=20, # at a default polling rate of once every 30 seconds, this is 10 min of retries
     dag=dag)
 
 register_status(main_summary, "Main Summary", "A summary view of main pings.")
