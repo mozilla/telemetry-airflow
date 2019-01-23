@@ -23,6 +23,7 @@ dag = DAG('longitudinal', default_args=default_args, schedule_interval='@weekly'
 longitudinal = MozDatabricksSubmitRunOperator(
     task_id="longitudinal",
     job_name="Longitudinal View",
+    retries=0,
     execution_timeout=timedelta(hours=12),
     instance_count=16,
     instance_type="i3.8xlarge",
