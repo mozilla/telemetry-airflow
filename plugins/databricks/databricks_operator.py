@@ -22,7 +22,7 @@ import six
 import time
 
 from airflow.exceptions import AirflowException
-from airflow.contrib.hooks.databricks_hook import DatabricksHook
+from .databricks_hook import DatabricksHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 

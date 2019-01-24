@@ -25,7 +25,7 @@ import unittest
 from requests import exceptions as requests_exceptions
 
 from airflow import __version__
-from airflow.contrib.hooks.databricks_hook import (
+from plugins.databricks.databricks_hook import (
     DatabricksHook,
     RunState,
     SUBMIT_RUN_ENDPOINT
@@ -196,7 +196,7 @@ class DatabricksHookTest(unittest.TestCase):
                           requests_exceptions.Timeout,
                           requests_exceptions.ConnectTimeout,
                           requests_exceptions.HTTPError]:
-            with mock.patch('airflow.contrib.hooks.databricks_hook.requests') as mock_requests:
+            with mock.patch('plugins.databricks.databricks_hook.requests') as mock_requests:
                 with mock.patch.object(self.hook.log, 'error') as mock_errors:
                     setup_mock_requests(mock_requests, exception)
 
@@ -205,7 +205,7 @@ class DatabricksHookTest(unittest.TestCase):
 
                     self.assertEquals(mock_errors.call_count, self.hook.retry_limit)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_do_api_call_does_not_retry_with_non_retryable_error(self, mock_requests):
         setup_mock_requests(
             mock_requests, requests_exceptions.HTTPError, status_code=400
@@ -223,7 +223,7 @@ class DatabricksHookTest(unittest.TestCase):
                           requests_exceptions.Timeout,
                           requests_exceptions.ConnectTimeout,
                           requests_exceptions.HTTPError]:
-            with mock.patch('airflow.contrib.hooks.databricks_hook.requests') as mock_requests:
+            with mock.patch('plugins.databricks.databricks_hook.requests') as mock_requests:
                 with mock.patch.object(self.hook.log, 'error') as mock_errors:
                     setup_mock_requests(
                         mock_requests,
@@ -237,7 +237,7 @@ class DatabricksHookTest(unittest.TestCase):
                     self.assertEquals(mock_errors.call_count, 2)
                     self.assertEquals(response, {'run_id': '1'})
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.sleep')
+    @mock.patch('plugins.databricks.databricks_hook.sleep')
     def test_do_api_call_waits_between_retries(self, mock_sleep):
         retry_delay = 5
         self.hook = DatabricksHook(retry_delay=retry_delay)
@@ -247,7 +247,7 @@ class DatabricksHookTest(unittest.TestCase):
                           requests_exceptions.Timeout,
                           requests_exceptions.ConnectTimeout,
                           requests_exceptions.HTTPError]:
-            with mock.patch('airflow.contrib.hooks.databricks_hook.requests') as mock_requests:
+            with mock.patch('plugins.databricks.databricks_hook.requests') as mock_requests:
                 with mock.patch.object(self.hook.log, 'error'):
                     mock_sleep.reset_mock()
                     setup_mock_requests(mock_requests, exception)
@@ -258,7 +258,7 @@ class DatabricksHookTest(unittest.TestCase):
                     self.assertEquals(len(mock_sleep.mock_calls), self.hook.retry_limit - 1)
                     mock_sleep.assert_called_with(retry_delay)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_submit_run(self, mock_requests):
         mock_requests.post.return_value.json.return_value = {'run_id': '1'}
         json = {
@@ -278,7 +278,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_run_now(self, mock_requests):
         mock_requests.codes.ok = 200
         mock_requests.post.return_value.json.return_value = {'run_id': '1'}
@@ -304,7 +304,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_get_run_page_url(self, mock_requests):
         mock_requests.get.return_value.json.return_value = GET_RUN_RESPONSE
 
@@ -318,7 +318,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_get_run_state(self, mock_requests):
         mock_requests.get.return_value.json.return_value = GET_RUN_RESPONSE
 
@@ -335,7 +335,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_cancel_run(self, mock_requests):
         mock_requests.post.return_value.json.return_value = GET_RUN_RESPONSE
 
@@ -348,7 +348,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_start_cluster(self, mock_requests):
         mock_requests.codes.ok = 200
         mock_requests.post.return_value.json.return_value = {}
@@ -364,7 +364,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_restart_cluster(self, mock_requests):
         mock_requests.codes.ok = 200
         mock_requests.post.return_value.json.return_value = {}
@@ -380,7 +380,7 @@ class DatabricksHookTest(unittest.TestCase):
             headers=USER_AGENT_HEADER,
             timeout=self.hook.timeout_seconds)
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_terminate_cluster(self, mock_requests):
         mock_requests.codes.ok = 200
         mock_requests.post.return_value.json.return_value = {}
@@ -412,7 +412,7 @@ class DatabricksHookTokenTest(unittest.TestCase):
 
         self.hook = DatabricksHook()
 
-    @mock.patch('airflow.contrib.hooks.databricks_hook.requests')
+    @mock.patch('plugins.databricks.databricks_hook.requests')
     def test_submit_run(self, mock_requests):
         mock_requests.codes.ok = 200
         mock_requests.post.return_value.json.return_value = {'run_id': '1'}
