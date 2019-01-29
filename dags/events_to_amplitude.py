@@ -8,6 +8,7 @@ from utils.deploy import get_artifact_url
 FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
 ROCKET_ANDROID_INSTANCES = 5
+FENNEC_IOS_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -86,6 +87,23 @@ rocket_android_events_to_amplitude = EMRSparkOperator(
         "key_file": key_file("rocket_android"),
         "artifact": get_artifact_url(slug, branch="master"),
         "config_filename": "rocket_android_events_schemas.json",
+    },
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
+    dag=dag
+)
+
+fennec_ios_events_to_amplitude = EMRSparkOperator(
+    task_id="fennec_ios_events_to_amplitude",
+    job_name="Fennec iOS Events to Amplitude",
+    execution_timeout=timedelta(hours=8),
+    instance_count=FENNEC_IOS_INSTANCES,
+    email=['akomar@mozilla.com', 'telemetry-alerts@mozilla.com'],
+    env={
+        "date": "{{ ds_nodash }}",
+        "max_requests": FENNEC_IOS_INSTANCES * VCPUS_PER_INSTANCE,
+        "key_file": key_file("fennec_ios"),
+        "artifact": get_artifact_url(slug, branch="master"),
+        "config_filename": "fennec_ios_events_schemas.json",
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag
