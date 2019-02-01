@@ -2,7 +2,7 @@ from os import environ
 from pprint import pformat
 
 from airflow.plugins_manager import AirflowPlugin
-from airflow.contrib.operators.databricks_operator import DatabricksSubmitRunOperator
+from databricks.databricks_operator import DatabricksSubmitRunOperator
 
 
 class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
