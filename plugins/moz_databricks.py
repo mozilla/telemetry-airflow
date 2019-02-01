@@ -186,7 +186,12 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             "libraries": libraries
         }
         json = {k: v for k, v in json.items() if v}
-        super(MozDatabricksSubmitRunOperator, self).__init__(json, **kwargs)
+        super(MozDatabricksSubmitRunOperator, self).__init__(
+            json,
+            databricks_retry_limit=20,
+            databricks_retry_delay=30,
+            **kwargs
+        )
 
     def execute(self, context):
         self.log.info("Running {} with parameters:\n{}"
