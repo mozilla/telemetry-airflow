@@ -143,21 +143,6 @@ addon_aggregates = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
-txp_mau_dau = EMRSparkOperator(
-    task_id="txp_mau_dau",
-    job_name="Test Pilot MAU DAU",
-    execution_timeout=timedelta(hours=4),
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-    instance_count=5,
-    env={"date": "{{ ds_nodash }}",
-         "bucket": "{{ task.__class__.private_output_bucket }}",
-         "prefix": "txp_mau_dau_simple",
-         "inbucket": "{{ task.__class__.private_output_bucket }}",
-         "inprefix": "addons/v2"},
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/testpilot/txp_mau_dau.py",
-    dag=dag)
-
 main_summary_experiments = EMRSparkOperator(
     task_id="main_summary_experiments",
     job_name="Experiments Main Summary View",
@@ -386,7 +371,6 @@ engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
 addon_aggregates.set_upstream(addons)
-txp_mau_dau.set_upstream(addons)
 
 main_events.set_upstream(main_summary)
 
