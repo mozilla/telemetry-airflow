@@ -2,7 +2,7 @@
 #
 # This file has been sourced from the upstream Apache Airflow
 # project located in the following repository:
-# https://github.com/apache/airflow/blob/v1-10-stable/tests/contrib/operators/test_databricks_operator.py
+# https://github.com/apache/airflow/blob/5f8f305d17a6322817019b756b581150c436b1db/tests/contrib/operators/test_databricks_operator.py
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file

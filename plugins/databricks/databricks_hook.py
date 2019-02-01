@@ -2,7 +2,7 @@
 #
 # This file has been sourced from the upstream Apache Airflow
 # project located in the following repository:
-# https://github.com/apache/airflow/blob/v1-10-stable/airflow/contrib/hooks/databricks_hook.py
+# https://github.com/apache/airflow/blob/f177b7fbe02304eaac68a204bd90071bf634136c/airflow/contrib/hooks/databricks_hook.py
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
