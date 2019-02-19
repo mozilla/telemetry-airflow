@@ -187,7 +187,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         }
         json = {k: v for k, v in json.items() if v}
         super(MozDatabricksSubmitRunOperator, self).__init__(
-            json,
+            json=json,
             databricks_retry_limit=20,
             databricks_retry_delay=30,
             **kwargs
