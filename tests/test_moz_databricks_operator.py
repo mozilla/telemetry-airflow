@@ -6,9 +6,9 @@ import pytest
 from plugins.moz_databricks import MozDatabricksSubmitRunOperator
 
 # The environment variables required by the MozDatabricks operator must be available
-# in the environment dictionary during module import time because they are class
-# variables that are used at templating time. Monkey-patching the variables occurs
-# too late in the process, so the variables are defined in `tox.ini` instead.
+# at module import because the `os.environ` is accessed in the class scope. These
+# variables are used by Airflow to template variables. Monkeypatch occurs after import,
+# so the variables are defined in `tox.ini` instead.
 
 
 def test_missing_tbv_or_mozetl_env(mocker):
