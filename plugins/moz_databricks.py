@@ -2,7 +2,7 @@ from os import environ
 from pprint import pformat
 
 from airflow.plugins_manager import AirflowPlugin
-from airflow.contrib.operators.databricks_operator import DatabricksSubmitRunOperator
+from databricks.databricks_operator import DatabricksSubmitRunOperator
 
 
 class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
@@ -186,7 +186,12 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             "libraries": libraries
         }
         json = {k: v for k, v in json.items() if v}
-        super(MozDatabricksSubmitRunOperator, self).__init__(json, **kwargs)
+        super(MozDatabricksSubmitRunOperator, self).__init__(
+            json=json,
+            databricks_retry_limit=20,
+            databricks_retry_delay=30,
+            **kwargs
+        )
 
     def execute(self, context):
         self.log.info("Running {} with parameters:\n{}"
