@@ -11,19 +11,22 @@ from plugins.moz_databricks import MozDatabricksSubmitRunOperator
 # so the variables are defined in `tox.ini` instead.
 
 
-def test_missing_tbv_or_mozetl_env(mocker):
+@pytest.fixture()
+def mock_hook(mocker):
     mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook_instance = mock_hook.return_value
+    mock_hook_instance.submit_run.return_value = 1
+    return mock_hook_instance
+
+
+def test_missing_tbv_or_mozetl_env(mock_hook):
     with pytest.raises(ValueError):
         MozDatabricksSubmitRunOperator(
             job_name="test_databricks", env={}, instance_count=1
         )
 
 
-def test_mozetl_success(mocker):
-    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
-    mock_hook_instance = mock_hook.return_value
-    mock_hook_instance.submit_run.return_value = 1
-
+def test_mozetl_success(mock_hook):
     operator = MozDatabricksSubmitRunOperator(
         task_id="test_databricks",
         job_name="test_databricks",
@@ -31,17 +34,13 @@ def test_mozetl_success(mocker):
         instance_count=1,
     )
     operator.execute(None)
-    mock_hook_instance.submit_run.assert_called_once()
+    mock_hook.submit_run.assert_called_once()
 
-    json = mock_hook_instance.submit_run.call_args[0][0]
+    json = mock_hook.submit_run.call_args[0][0]
     assert json.get("spark_python_task") is not None
 
 
-def test_tbv_success(mocker):
-    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
-    mock_hook_instance = mock_hook.return_value
-    mock_hook_instance.submit_run.return_value = 1
-
+def test_tbv_success(mock_hook):
     operator = MozDatabricksSubmitRunOperator(
         task_id="test_databricks",
         job_name="test_databricks",
@@ -49,7 +48,7 @@ def test_tbv_success(mocker):
         instance_count=1,
     )
     operator.execute(None)
-    mock_hook_instance.submit_run.assert_called_once()
+    mock_hook.submit_run.assert_called_once()
 
-    json = mock_hook_instance.submit_run.call_args[0][0]
+    json = mock_hook.submit_run.call_args[0][0]
     assert json.get("spark_jar_task") is not None
