@@ -111,7 +111,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             aws_attributes["ebs_volume_size"] = ebs_volume_size
 
         if python_version == 3:
-            env["PYSPARK_VERSION"] = "/databricks/python3/bin/python3"
+            env["PYSPARK_PYTHON"] = "/databricks/python3/bin/python3"
 
         # Create the cluster configuration
         new_cluster = {
