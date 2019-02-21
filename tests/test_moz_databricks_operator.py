@@ -52,3 +52,34 @@ def test_tbv_success(mock_hook):
 
     json = mock_hook.submit_run.call_args[0][0]
     assert json.get("spark_jar_task") is not None
+
+
+def test_default_python_version(mock_hook):
+    # run with default
+    operator = MozDatabricksSubmitRunOperator(
+        task_id="test_databricks",
+        job_name="test_databricks",
+        env={"MOZETL_COMMAND": "test"},
+        instance_count=1,
+    )
+    operator.execute(None)
+    mock_hook.submit_run.assert_called_once()
+
+    json = mock_hook.submit_run.call_args[0][0]
+    assert (
+        json["new_cluster"]["spark_env_vars"]["PYSPARK_VERSION"]
+        == "/databricks/python3/bin/python3"
+    )
+
+    # run with python 2 specifically
+    operator = MozDatabricksSubmitRunOperator(
+        task_id="test_databricks",
+        job_name="test_databricks",
+        env={"MOZETL_COMMAND": "test"},
+        python_version=2,
+        instance_count=1,
+    )
+    operator.execute(None)
+
+    json = mock_hook.submit_run.call_args[0][0]
+    assert json["new_cluster"]["spark_env_vars"].get("PYSPARK_VERSION") is None
