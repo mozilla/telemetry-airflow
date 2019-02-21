@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from utils.mozetl import mozetl_envvar
+from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 
 default_args = {
     'owner': 'amiyaguchi@mozilla.com',
@@ -29,7 +30,7 @@ churn = EMRSparkOperator(
     output_visibility="public",
     dag=dag)
 
-churn_v2 = EMRSparkOperator(
+churn_v2 = MozDatabricksSubmitRunOperator(
     task_id="churn_v2",
     job_name="churn 7-day v2",
     execution_timeout=timedelta(hours=4),
