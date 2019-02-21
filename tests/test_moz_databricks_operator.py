@@ -67,7 +67,7 @@ def test_default_python_version(mock_hook):
 
     json = mock_hook.submit_run.call_args[0][0]
     assert (
-        json["new_cluster"]["spark_env_vars"]["PYSPARK_VERSION"]
+        json["new_cluster"]["spark_env_vars"]["PYSPARK_PYTHON"]
         == "/databricks/python3/bin/python3"
     )
 
@@ -82,4 +82,4 @@ def test_default_python_version(mock_hook):
     operator.execute(None)
 
     json = mock_hook.submit_run.call_args[0][0]
-    assert json["new_cluster"]["spark_env_vars"].get("PYSPARK_VERSION") is None
+    assert json["new_cluster"]["spark_env_vars"].get("PYSPARK_PYTHON") is None
