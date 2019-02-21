@@ -39,7 +39,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  output_visibility=None,
                  ebs_volume_count=None,
                  ebs_volume_size=None,
-                 python_version=2,
+                 python_version=3,
                  *args, **kwargs):
         """
         Generate parameters for running a job through the Databricks run-submit
