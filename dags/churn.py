@@ -41,6 +41,8 @@ churn_v2 = MozDatabricksSubmitRunOperator(
     }, other={
         "MOZETL_GIT_BRANCH": "churn-v2"
     }),
+    # the mozetl branch was forked before python 3 support
+    python_version=2,
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="public",
     dag=dag)
