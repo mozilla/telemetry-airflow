@@ -26,7 +26,6 @@ dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * 
 main_summary_all_histograms = MozDatabricksSubmitRunOperator(
     task_id="main_summary_all_histograms",
     job_name="Main Summary View - All Histograms",
-    retries=0,
     execution_timeout=timedelta(hours=12),
     instance_count=5,
     max_instance_count=50,
@@ -52,7 +51,6 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
 main_summary = MozDatabricksSubmitRunOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    retries=0,
     execution_timeout=timedelta(hours=4),
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
     instance_count=5,
@@ -350,7 +348,6 @@ taar_similarity = MozDatabricksSubmitRunOperator(
     job_name="Taar Similarity model",
     owner="akomar@mozilla.com",
     email=["vng@mozilla.com", "mlopatka@mozilla.com", "akomar@mozilla.com"],
-    retries=0,
     execution_timeout=timedelta(hours=2),
     instance_count=11,
     instance_type="i3.8xlarge",
