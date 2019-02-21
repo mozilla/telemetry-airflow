@@ -21,6 +21,9 @@ def test_missing_tbv_or_mozetl_env(mocker):
 
 def test_mozetl_success(mocker):
     mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook_instance = mock_hook.return_value
+    mock_hook_instance.submit_run.return_value = 1
+
     operator = MozDatabricksSubmitRunOperator(
         task_id="test_databricks",
         job_name="test_databricks",
@@ -28,11 +31,17 @@ def test_mozetl_success(mocker):
         instance_count=1,
     )
     operator.execute(None)
-    assert mock_hook.called
+    mock_hook_instance.submit_run.assert_called_once()
+
+    json = mock_hook_instance.submit_run.call_args[0][0]
+    assert json.get("spark_python_task") is not None
 
 
 def test_tbv_success(mocker):
     mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook_instance = mock_hook.return_value
+    mock_hook_instance.submit_run.return_value = 1
+
     operator = MozDatabricksSubmitRunOperator(
         task_id="test_databricks",
         job_name="test_databricks",
@@ -40,4 +49,7 @@ def test_tbv_success(mocker):
         instance_count=1,
     )
     operator.execute(None)
-    assert mock_hook.called
+    mock_hook_instance.submit_run.assert_called_once()
+
+    json = mock_hook_instance.submit_run.call_args[0][0]
+    assert json.get("spark_jar_task") is not None
