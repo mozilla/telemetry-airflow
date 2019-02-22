@@ -36,6 +36,9 @@ def test_mozetl_success(mock_hook):
     operator.execute(None)
     mock_hook.submit_run.assert_called_once()
 
+    # https://docs.python.org/3.3/library/unittest.mock.html#unittest.mock.Mock.call_args
+    # call_args is a tuple where the first element is a list of elements. The first element
+    # in `submit_run` is the constructed json blob.
     json = mock_hook.submit_run.call_args[0][0]
     assert json.get("spark_python_task") is not None
 
@@ -83,3 +86,12 @@ def test_default_python_version(mock_hook):
 
     json = mock_hook.submit_run.call_args[0][0]
     assert json["new_cluster"]["spark_env_vars"].get("PYSPARK_PYTHON") is None
+
+    with pytest.raises(ValueError):
+        MozDatabricksSubmitRunOperator(
+            task_id="test_databricks",
+            job_name="test_databricks",
+            env={"MOZETL_COMMAND": "test"},
+            python_version=4,
+            instance_count=1,
+        ).execute(None)
