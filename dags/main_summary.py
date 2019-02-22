@@ -362,6 +362,20 @@ taar_similarity = MozDatabricksSubmitRunOperator(
     output_visibility="private",
     dag=dag)
 
+taar_collaborative_recommender = EMRSparkOperator(
+    task_id="addon_recommender",
+    job_name="Train the Collaborative Addon Recommender",
+    execution_timeout=timedelta(hours=10),
+    instance_count=20,
+    owner="mlopatka@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"],
+    env={"date": "{{ ds_nodash }}",
+         "privateBucket": "{{ task.__class__.private_output_bucket }}",
+         "publicBucket": "{{ task.__class__.public_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
+    dag=dag)
+
+
 main_summary_schema.set_upstream(main_summary)
 
 engagement_ratio.set_upstream(main_summary)
@@ -392,3 +406,4 @@ desktop_dau.set_upstream(client_count_daily_view)
 main_summary_glue.set_upstream(main_summary)
 
 taar_locale_job.set_upstream(clients_daily_v6)
+taar_collaborative_recommender.set_upstream(clients_daily_v6)
