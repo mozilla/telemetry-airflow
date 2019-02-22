@@ -97,7 +97,7 @@ fennec_ios_events_to_amplitude = EMRSparkOperator(
     job_name="Fennec iOS Events to Amplitude",
     execution_timeout=timedelta(hours=8),
     instance_count=FENNEC_IOS_INSTANCES,
-    email=['akomar@mozilla.com', 'telemetry-alerts@mozilla.com'],
+    email=['mpopova@mozilla.com', 'akomar@mozilla.com', 'telemetry-alerts@mozilla.com'],
     env={
         "date": "{{ ds_nodash }}",
         "max_requests": FENNEC_IOS_INSTANCES * VCPUS_PER_INSTANCE,
