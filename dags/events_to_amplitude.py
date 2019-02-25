@@ -4,6 +4,7 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 from utils.tbv import tbv_envvar
 from utils.deploy import get_artifact_url
+from utils.status import register_status
 
 FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
@@ -108,6 +109,9 @@ fennec_ios_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag
 )
+
+register_status(fennec_ios_events_to_amplitude, "Firefox-iOS Amplitude events",
+                "Daily job sending Firefox iOS events to Amplitude.")
 
 devtools_release_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_release_events_to_amplitude",
