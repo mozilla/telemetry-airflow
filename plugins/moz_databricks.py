@@ -39,6 +39,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  output_visibility=None,
                  ebs_volume_count=None,
                  ebs_volume_size=None,
+                 python_version=2,
                  *args, **kwargs):
         """
         Generate parameters for running a job through the Databricks run-submit
@@ -70,9 +71,16 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param output_visibility: argument from EMRSparkOperator for compatibility
         :param ebs_volume_count: number of ebs volumes to attach to each node
         :param ebs_volume_size: size of ebs volumes attached to each node
+        :param python_version: the default python runtime on the cluster (python 3.5.2)
+            See https://docs.databricks.com/release-notes/runtime/4.3.html#system-environment
+            for more details.
 
         :param kwargs: Keyword arguments to pass to DatabricksSubmitRunOperator
         """
+        if python_version not in (2, 3):
+            raise ValueError("Only Python versions 2 or 3 allowed")
+        elif python_version == 3:
+            env["PYSPARK_PYTHON"] = "/databricks/python3/bin/python3"
 
         if enable_autoscale:
             if not max_instance_count:
@@ -107,7 +115,6 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
         if ebs_volume_size is not None:
             aws_attributes["ebs_volume_size"] = ebs_volume_size
-
 
         # Create the cluster configuration
         new_cluster = {
