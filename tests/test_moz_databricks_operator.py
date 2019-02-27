@@ -95,3 +95,33 @@ def test_default_python_version(mock_hook):
             python_version=4,
             instance_count=1,
         ).execute(None)
+
+
+def test_set_mozetl_path_and_branch(mock_hook):
+    def mocked_run_submit_args(env):
+        MozDatabricksSubmitRunOperator(
+            task_id="test_databricks",
+            job_name="test_databricks",
+            env=env,
+            instance_count=1,
+        ).execute(None)
+        return mock_hook.submit_run.call_args[0][0]
+
+    json = mocked_run_submit_args(
+        {
+            "MOZETL_COMMAND": "test",
+            "MOZETL_GIT_PATH": "https://custom.com/repo.git",
+            "MOZETL_GIT_BRANCH": "dev",
+        }
+    )
+    assert (
+        json["libraries"][0]["pypi"]["package"] == "git+https://custom.com/repo.git@dev"
+    )
+
+    json = mocked_run_submit_args(
+        {"MOZETL_COMMAND": "test", "MOZETL_GIT_BRANCH": "dev"}
+    )
+    assert (
+        json["libraries"][0]["pypi"]["package"]
+        == "git+https://github.com/mozilla/python_mozetl.git@dev"
+    )

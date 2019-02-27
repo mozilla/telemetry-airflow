@@ -177,11 +177,20 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             # Proper pip dependencies in Databricks is only supported via pypi.
             # Dependencies for source/binary distributions need to be added
             # manually.
-            libraries.append({
-                "pypi": {
-                    "package": "git+https://github.com/mozilla/python_mozetl.git"
+            path = env.get(
+                "MOZETL_GIT_PATH", "https://github.com/mozilla/python_mozetl.git"
+            )
+            branch = env.get("MOZETL_GIT_BRANCH", "master")
+
+            libraries.append(
+                {
+                    "pypi": {
+                        "package": "git+{path}@{branch}".format(
+                            path=path, branch=branch
+                        )
+                    }
                 }
-            })
+            )
         else:
             raise ValueError("Missing options for running tbv or mozetl tasks")
 
