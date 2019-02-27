@@ -27,7 +27,7 @@ jobs:
       - run: pip install tox
       - run: python -m py_compile dags/*.py
       - run: find . -name *.pyc -delete
-      - run: tox -e py27
+      - run: tox -e py27, flake8
 
 
   deploy:
