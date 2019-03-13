@@ -7,3 +7,4 @@ redis
 hiredis
 requests
 jsonschema
+pymysql
