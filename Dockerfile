@@ -13,7 +13,7 @@ RUN mkdir -p /usr/share/man/man7
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        apt-transport-https build-essential curl git libpq-dev python-mysqldb \
+        apt-transport-https build-essential curl git libpq-dev python-dev default-libmysqlclient-dev \
         postgresql-client gettext sqlite3 libffi-dev libsasl2-dev && \
     apt-get autoremove -y && \
     apt-get clean && \
