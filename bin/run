@@ -29,7 +29,7 @@ wait_for() {
 
 # Only wait for backend services in development
 # http://stackoverflow.com/a/13864829
-[ ! -z ${DEVELOPMENT+check} ] && wait_for db 5432 && wait_for redis 6379
+[ ! -z ${DEVELOPMENT+check} ] && wait_for db 3306 && wait_for redis 6379
 
 case $1 in
   flower)

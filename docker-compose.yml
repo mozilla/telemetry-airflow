@@ -2,7 +2,12 @@ version: '2'
 
 services:
   db:
-    image: postgres:9.4
+    image: mysql:5.7
+    ports:
+      - '3306:3306'
+    environment:
+       MYSQL_ROOT_PASSWORD: secret
+       MYSQL_DATABASE: airflow
 
   redis:
     image: redis:3.2
@@ -11,7 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    restart: always
+    restart: "no"
     volumes:
       - $PWD:/app
     command: "true"
@@ -19,6 +24,7 @@ services:
   web:
     extends:
       service: app
+    restart: always
     ports:
       - "8000:8000"
     depends_on:
@@ -31,6 +37,7 @@ services:
   worker:
     extends:
       service: app
+    restart: always
     mem_limit: 4294967296
     ports:
       - "8793:8793"
@@ -43,6 +50,7 @@ services:
     mem_limit: 4294967296
     extends:
       service: app
+    restart: always
     links:
       - db
       - redis
@@ -51,6 +59,7 @@ services:
   flower:
     extends:
       service: app
+    restart: always
     ports:
       - "5555:5555"
     links:
