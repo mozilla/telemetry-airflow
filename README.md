@@ -39,12 +39,6 @@ An Airflow container can be built with
 make build
 ```
 
-You should then run the database migrations to complete the container initialization with
-
-```bash
-make migrate
-```
-
 ## Testing
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
@@ -86,6 +80,8 @@ In one terminal launch the docker containers:
 ```bash
 make up
 ```
+
+Note: initializing the web container will run the airflow initdb/upgradedb
 
 In another terminal shell into the `web` container, making sure to also supply
 the environment variables, then run the `airflow test` command:
@@ -164,7 +160,7 @@ There may be issues running this particular operator directly via `make run` and
 A dev changes can be run by simply changing the `DEPLOY_TAG` environment variable
 to whichever upstream branch you've pushed your local changes to.
 
-Afterwards, you're going to need to rebuild: `make build && make migrate`
+Afterwards, you're going to need to:`make clean` and `make build` and `nohup make up &`
 
 From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the
 Dockerfile and run `make up` to get a local UI and run from there, or you can follow the
@@ -189,7 +185,7 @@ variables:
 - `PRIVATE_OUTPUT_BUCKET` -- The AWS S3 bucket where private job results are
   stored in, e.g. `telemetry-parquet`
 - `AIRFLOW_DATABASE_URL` -- The connection URI for the Airflow database, e.g.
-  `postgres://username:password@hostname:port/password`
+  `mysql://username:password@hostname:port/database`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
   `redis://hostname:6379/0`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow result backend, e.g.

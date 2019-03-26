@@ -7,10 +7,13 @@ RUN mkdir /app && \
     groupadd --gid 10001 app && \
     useradd --no-create-home --uid 10001 --gid 10001 --home-dir /app app
 
-RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7 && \
-    apt-get update && \
+# python-slim base image has missing directories required for psql install
+RUN mkdir -p /usr/share/man/man1
+RUN mkdir -p /usr/share/man/man7
+
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        apt-transport-https build-essential curl git libpq-dev \
+        apt-transport-https build-essential curl git libpq-dev python-dev libmysqlclient-dev \
         postgresql-client gettext sqlite3 libffi-dev libsasl2-dev && \
     apt-get autoremove -y && \
     apt-get clean && \
@@ -59,7 +62,7 @@ ENV AIRFLOW_HOME=/app \
     AIRFLOW_BROKER_URL=redis://redis:6379/0 \
     AIRFLOW_RESULT_URL=redis://redis:6379/0 \
     AIRFLOW_FLOWER_PORT="5555" \
-    AIRFLOW_DATABASE_URL=postgres://postgres@db/postgres \
+    AIRFLOW_DATABASE_URL=mysql://root:secret@db:3306/airflow \
     AIRFLOW__CORE__FERNET_KEY="0000000000000000000000000000000000000000000=" \
     AIRFLOW_SECRET_KEY="000000000000000000000000000000000000000000=" \
     # AIRFLOW_SMTP_HOST= \
