@@ -5,6 +5,7 @@ services:
     image: mysql:5.7
     ports:
       - '3306:3306'
+    command: ['--explicit_defaults_for_timestamp=1']
     environment:
        MYSQL_ROOT_PASSWORD: secret
        MYSQL_DATABASE: airflow
