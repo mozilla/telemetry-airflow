@@ -6,6 +6,7 @@ import sys
 from datetime import datetime, timedelta
 
 import pytest
+import pytz
 
 from airflow import configuration
 from airflow.exceptions import AirflowException
@@ -25,9 +26,9 @@ sys.modules["airflow.operators.dataset_status"] = plugins.statuspage.operator
 sys.modules["airflow.hooks.dataset_status"] = plugins.statuspage.hook
 from dags.utils.status import register_status
 
-
-DEFAULT_DATE = datetime(2016, 1, 1)
-END_DATE = datetime(2016, 1, 2)
+tz = pytz.timezone("UTC")
+DEFAULT_DATE = tz.localize(datetime(2016, 1, 1))
+END_DATE = tz.localize(datetime(2016, 1, 2))
 INTERVAL = timedelta(hours=12)
 
 
@@ -104,7 +105,7 @@ def test_execute_failure(dag, mock_hook):
     # get the dag state
     dagrun = dag.create_dagrun(
         run_id="manual__",
-        start_date=datetime.utcnow(),
+        start_date=tz.localize(datetime.utcnow()),
         execution_date=DEFAULT_DATE,
         state=State.RUNNING,
     )
@@ -168,7 +169,7 @@ def test_execute_success_opt_in(dag, mock_hook):
     # get the dag state
     dagrun = dag.create_dagrun(
         run_id="manual__",
-        start_date=datetime.utcnow(),
+        start_date=tz.localize(datetime.utcnow()),
         execution_date=DEFAULT_DATE,
         state=State.RUNNING,
     )
