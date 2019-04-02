@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from .operators.emr_spark_operator import EMRSparkOperator
+from operators.emr_spark_operator import EMRSparkOperator
 
-from .utils.status import register_status
+from utils.status import register_status
 
 
 default_args = {

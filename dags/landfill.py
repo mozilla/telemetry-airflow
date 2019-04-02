@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
-from .utils.mozetl import mozetl_envvar
+from utils.mozetl import mozetl_envvar
 
 default_args = {
     'owner': 'amiyaguchi@mozilla.com',

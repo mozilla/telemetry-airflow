@@ -1,10 +1,10 @@
 from airflow import DAG
 from airflow.operators import BashOperator
 from datetime import datetime, timedelta
-from .operators.emr_spark_operator import EMRSparkOperator
+from operators.emr_spark_operator import EMRSparkOperator
 
 from airflow.operators.dataset_status import DatasetStatusOperator
-from .operators.sleep_operator import SleepOperator
+from operators.sleep_operator import SleepOperator
 
 default_args = {
     'owner': 'example@mozilla.com',

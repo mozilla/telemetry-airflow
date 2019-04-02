@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from .operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
+from operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.sensors.emr_job_flow_sensor import EmrJobFlowSensor
-from .utils.status import register_status
+from utils.status import register_status
 
 
 DEFAULT_ARGS = {

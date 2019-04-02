@@ -27,6 +27,10 @@ WORKDIR /tmp
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Snakebite is not Python3 Compatible
+# see https://github.com/puckel/docker-airflow/issues/77
+RUN pip uninstall -y --no-cache-dir snakebite
+
 # Switch back to home directory
 WORKDIR /app
 
