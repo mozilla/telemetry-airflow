@@ -1,4 +1,4 @@
-FROM python:2-slim
+FROM python:3.6-slim-stretch
 MAINTAINER Jannis Leidel <jezdez@mozilla.com>
 
 # add a non-privileged user for installing and running the application
