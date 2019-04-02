@@ -5,7 +5,7 @@ from os import environ
 import boto3
 from io import BytesIO
 from gzip import GzipFile
-from urlparse import urlparse
+from urllib.parse import urlparse
 import requests
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -74,7 +74,7 @@ class EMRSparkOperator(BaseOperator):
     @staticmethod
     def _format_envvar(env=None):
         # use a default value if an environment dictionary isn't supplied
-        return ' '.join(['{}={}'.format(k, v) for k, v in (env or {}).items()])
+        return ' '.join(['{}={}'.format(k, v) for k, v in list((env or {}).items())])
 
     @apply_defaults
     def __init__(self, job_name, owner, uri, instance_count,
@@ -246,7 +246,7 @@ class EMRSparkOperator(BaseOperator):
                 spark_log_location = self.get_spark_log_location()
 
                 raise AirflowException(
-                    u'Spark job {} terminated with errors: {} - {}<br>'
+                    'Spark job {} terminated with errors: {} - {}<br>'
                     'Cluster Stderr: {}<br>'
                     'Cluster Stdout: {}<br>'
                     'Spark Driver Log Location: {}'

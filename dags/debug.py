@@ -1,5 +1,5 @@
 from airflow import DAG
-from operators.sleep_operator import SleepOperator
+from .operators.sleep_operator import SleepOperator
 from datetime import datetime, timedelta
 
 default_args = {

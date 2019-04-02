@@ -23,7 +23,7 @@ def mozetl_envvar(command, options, dev_options={}, other={}):
 
     prefixed_options = {
         "MOZETL_{}_{}".format(command.upper(), key.upper().replace("-", "_")): value
-        for key, value in options.iteritems()
+        for key, value in options.items()
     }
     prefixed_options["MOZETL_COMMAND"] = command
     prefixed_options.update(other)

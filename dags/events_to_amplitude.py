@@ -1,10 +1,10 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from operators.emr_spark_operator import EMRSparkOperator
-from utils.constants import DS_WEEKLY
-from utils.tbv import tbv_envvar
-from utils.deploy import get_artifact_url
-from utils.status import register_status
+from .operators.emr_spark_operator import EMRSparkOperator
+from .utils.constants import DS_WEEKLY
+from .utils.tbv import tbv_envvar
+from .utils.deploy import get_artifact_url
+from .utils.status import register_status
 
 FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10

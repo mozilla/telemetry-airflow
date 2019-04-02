@@ -1,6 +1,6 @@
 from airflow.plugins_manager import AirflowPlugin
 
-from moz_emr import EmrAddStepsOperator, EmrCreateJobFlowSelectiveTemplateOperator, \
+from .moz_emr import EmrAddStepsOperator, EmrCreateJobFlowSelectiveTemplateOperator, \
         MozEmrClusterStartSensor, MozEmrClusterEndSensor
 
 

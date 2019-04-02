@@ -1,11 +1,11 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from operators.emr_spark_operator import EMRSparkOperator
+from .operators.emr_spark_operator import EMRSparkOperator
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
-from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.mozetl import mozetl_envvar
-from utils.tbv import tbv_envvar
-from utils.status import register_status
+from .operators.email_schema_change_operator import EmailSchemaChangeOperator
+from .utils.mozetl import mozetl_envvar
+from .utils.tbv import tbv_envvar
+from .utils.status import register_status
 
 
 default_args = {

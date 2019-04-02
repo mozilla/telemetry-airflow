@@ -35,7 +35,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 try:
     from urllib import parse as urlparse
 except ImportError:
-    import urlparse
+    import urllib.parse
 
 RESTART_CLUSTER_ENDPOINT = ("POST", "api/2.0/clusters/restart")
 START_CLUSTER_ENDPOINT = ("POST", "api/2.0/clusters/start")
@@ -96,7 +96,7 @@ class DatabricksHook(BaseHook, LoggingMixin):
         host, this function is a no-op.
         >>> assert h._parse_host('xx.cloud.databricks.com') == 'xx.cloud.databricks.com'
         """
-        urlparse_host = urlparse.urlparse(host).hostname
+        urlparse_host = urllib.parse.urlparse(host).hostname
         if urlparse_host:
             # In this case, host = https://xx.cloud.databricks.com
             return urlparse_host
