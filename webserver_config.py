@@ -57,7 +57,7 @@ AUTH_TYPE = AUTH_OAUTH
 AUTH_USER_REGISTRATION = True
 
 # The default user self registration role
-AUTH_USER_REGISTRATION_ROLE = "Public"
+AUTH_USER_REGISTRATION_ROLE = "Viewer"
 
 GOOGLE_KEY = os.getenv('AIRFLOW_GOOGLE_CLIENT_ID', 'GOOGLE_KEY_NOT_SET')
 GOOGLE_SECRET = os.getenv('AIRFLOW_GOOGLE_CLIENT_SECRET', 'GOOGLE_SECRET_NOT_SET')
@@ -66,6 +66,7 @@ GOOGLE_SECRET = os.getenv('AIRFLOW_GOOGLE_CLIENT_SECRET', 'GOOGLE_SECRET_NOT_SET
 # Google OAuth example:
 OAUTH_PROVIDERS = [{
     'name':'google',
+    'whitelist': ['@mozilla.com'],
     'token_key':'access_token',
     'icon':'fa-google',
         'remote_app': {
