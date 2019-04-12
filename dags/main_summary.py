@@ -436,7 +436,7 @@ client_count_daily_view_bigquery_load = SubDagOperator(
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
         date_submission_col="submission_date",
-        reproccess=True,
+        reprocess=True,
         ),
     task_id="client_count_daily_bigquery_load",
     dag=dag)
