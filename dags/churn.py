@@ -1,8 +1,10 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.gcp import load_to_bigquery
 from utils.mozetl import mozetl_envvar
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
+from airflow.operators.subdag_operator import SubDagOperator
 
 default_args = {
     'owner': 'amiyaguchi@mozilla.com',
@@ -30,6 +32,20 @@ churn = EMRSparkOperator(
     output_visibility="public",
     dag=dag)
 
+churn_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name="churn",
+        default_args=default_args,
+        dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="churn",
+        dataset_version="v3",
+        date_submission_col="week_start",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="churn_bigquery_load",
+    dag=dag)
+
 churn_v2 = MozDatabricksSubmitRunOperator(
     task_id="churn_v2",
     job_name="churn 7-day v2",
@@ -47,6 +63,20 @@ churn_v2 = MozDatabricksSubmitRunOperator(
     output_visibility="public",
     dag=dag)
 
+churn_v2_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name="churn_v2",
+        default_args=default_args,
+        dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="churn",
+        dataset_version="v2",
+        date_submission_col="week_start",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="churn_v2_bigquery_load",
+    dag=dag)
+
 churn_to_csv = EMRSparkOperator(
     task_id="churn_to_csv",
     job_name="Convert Churn v2 to csv",
@@ -56,4 +86,7 @@ churn_to_csv = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
+churn_bigquery_load.set_upstream(churn)
+
 churn_to_csv.set_upstream(churn_v2)
+churn_v2_bigquery_load.set_upstream(churn_v2)
