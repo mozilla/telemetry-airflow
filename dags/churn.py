@@ -34,7 +34,8 @@ churn = EMRSparkOperator(
 
 churn_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name="churn",
+        parent_dag_name=dag.dag_id,
+        dag_name="churn_bigquery_load",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -65,7 +66,8 @@ churn_v2 = MozDatabricksSubmitRunOperator(
 
 churn_v2_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name="churn_v2",
+        parent_dag_name=dag.dag_id,
+        dag_name="churn_v2_bigquery_load",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
