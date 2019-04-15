@@ -5,7 +5,7 @@ from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 
 default_args = {
     'start_date': datetime.datetime(2019, 3, 1),
-    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'depends_on_past': True,
