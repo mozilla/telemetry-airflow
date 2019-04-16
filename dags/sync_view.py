@@ -34,8 +34,7 @@ sync_view = EMRSparkOperator(
 
 sync_view_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="sync_view_bigquery_load",
+        parent_dag_name="sync_view",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -61,8 +60,7 @@ sync_events_view = EMRSparkOperator(
 
 sync_events_view_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="sync_events_view_bigquery_load",
+        parent_dag_name="sync_events_view",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -87,8 +85,7 @@ sync_flat_view = EMRSparkOperator(
 
 sync_flat_view_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="sync_flat_view_bigquery_load",
+        parent_dag_name="sync_flat_view",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",

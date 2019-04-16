@@ -88,8 +88,7 @@ main_summary_schema = EmailSchemaChangeOperator(
 
 main_summary_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_summary_bigquery_load",
+        parent_dag_name="main_summary",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -131,8 +130,7 @@ addons = EMRSparkOperator(
 
 addons_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="addons_bigquery_load",
+        parent_dag_name="addons",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -159,8 +157,7 @@ main_events = EMRSparkOperator(
 
 main_events_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_events_bigquery_load",
+        parent_dag_name="main_events",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -188,8 +185,7 @@ addon_aggregates = EMRSparkOperator(
 
 addon_aggregates_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="addon_aggregates_bigquery_load",
+        parent_dag_name="addon_aggregates",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -217,8 +213,7 @@ main_summary_experiments = EMRSparkOperator(
 
 main_summary_experiments_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_summary_experiments_bigquery_load",
+        parent_dag_name="main_summary_experiments",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -264,8 +259,7 @@ search_dashboard = EMRSparkOperator(
 
 search_dashboard_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="search_dashboard_bigquery_load",
+        parent_dag_name="search_dashboard",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -298,8 +292,7 @@ search_clients_daily = EMRSparkOperator(
 
 search_clients_daily_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="search_clients_daily_bigquery_load",
+        parent_dag_name="search_clients_daily",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -348,8 +341,7 @@ register_status(clients_daily_v6, "Clients Daily", "A view of main pings with on
 
 clients_daily_v6_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="clients_daily_v6_bigquery_load",
+        parent_dag_name="clients_daily_v6",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -400,8 +392,7 @@ retention = EMRSparkOperator(
 
 retention_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="retention_bigquery_load",
+        parent_dag_name="retention",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
@@ -427,8 +418,7 @@ client_count_daily_view = EMRSparkOperator(
 
 client_count_daily_view_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="client_count_daily_bigquery_load",
+        parent_dag_name="client_count_daily",
         default_args=default_args,
         dataset_s3_bucket="{{ task.__class__.private_output_bucket }}",
         aws_conn_id="aws_dev_iam_s3",
