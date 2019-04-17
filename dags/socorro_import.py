@@ -1,6 +1,8 @@
 from airflow import DAG
+from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.gcp import load_to_bigquery
 from utils.status import register_status
 
 default_args = {
@@ -34,3 +36,20 @@ register_status(
     crash_report_parquet.job_name,
     "Convert processed crash reports into parquet for analysis",
 )
+
+crash_report_parquet_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="crash_report_parquet_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="socorro_crash",
+        dataset_version="v2",
+        date_submission_col="crash_date",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="crash_report_parquet_bigquery_load",
+    dag=dag)
+
+crash_report_parquet >> crash_report_parquet_bigquery_load

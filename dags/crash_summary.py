@@ -1,6 +1,8 @@
 from airflow import DAG
+from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from utils.gcp import load_to_bigquery
 from utils.tbv import tbv_envvar
 
 default_args = {
@@ -27,3 +29,21 @@ crash_summary_view = EMRSparkOperator(
         "outputBucket": "{{ task.__class__.private_output_bucket }}"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
+
+crash_summary_view_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="crash_summary_view_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        ds_type="ds",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="crash_summary",
+        dataset_version="v1",
+        date_submission_col="submission_date",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="crash_summary_view_bigquery_load",
+    dag=dag)
+
+crash_summary_view >> crash_summary_view_bigquery_load
