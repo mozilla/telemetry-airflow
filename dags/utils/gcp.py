@@ -24,6 +24,7 @@ def load_to_bigquery(parent_dag_name=None,
                      docker_image='docker.io/mozilla/parquet2bigquery:20190415', # noqa
                      reprocess=False,
                      p2b_concurrency='10',
+                     p2b_resume=False,
                      p2b_table_alias=None,
                      objects_prefix=None,
                      spark_gs_dataset_location=None,
@@ -54,6 +55,7 @@ def load_to_bigquery(parent_dag_name=None,
     :param str bigquery_dataset:           bigquery load destination dataset
     :param str p2b_concurrency:            number of processes for parquet2bigquery load
     :param str p2b_table_alias:            override p2b table name with alias
+    :param str p2b_resume                  allow resume support. defaults to False
     :param bool reprocess:                 enable dataset reprocessing defaults to False
     :param str objects_prefix:             custom objects_prefix to override defaults
     :param str spark_gs_dataset_location:  custom spark dataset load location to override defaults
@@ -86,11 +88,13 @@ def load_to_bigquery(parent_dag_name=None,
     }
 
     gke_args = [
-        '-R',
         '-d', bigquery_dataset,
         '-c', p2b_concurrency,
         '-b', gcs_buckets['load'],
         ]
+
+    if not p2b_resume:
+        gke_args += ['-R']
 
     if p2b_table_alias:
         gke_args += ['-a', p2b_table_alias]

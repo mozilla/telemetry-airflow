@@ -227,6 +227,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         objects_prefix='experiments/v1',
         spark_gs_dataset_location='gs://moz-fx-data-derived-datasets-parquet-tmp/experiments/v1/*/submission_date_s3={{ds_nodash}}',
         gke_cluster_name="bq-load-gke-1",
+        p2b_resume=True,
         reprocess=True,
         ),
     task_id="main_summary_experiments_bigquery_load",
