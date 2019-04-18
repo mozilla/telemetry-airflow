@@ -581,7 +581,7 @@ clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
 desktop_active_dau.set_upstream(clients_daily_v6)
 clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
-clients_last_seen.set_upstream(clients_daily_v6)
+clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 
 retention.set_upstream(main_summary)
