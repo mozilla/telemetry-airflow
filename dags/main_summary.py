@@ -374,6 +374,17 @@ clients_last_seen = BigQueryOperator(
     dag=dag,
 )
 
+clients_last_seen_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="clients_last_seen_v1",
+        arguments=["--submission-date={{ds}}"],
+        parent_dag_name=dag.dag_id,
+        dag_name="clients_last_seen_export",
+        default_args=default_args,
+        num_preemptible_workers=10),
+    task_id="clients_last_seen_export",
+    dag=dag)
+
 exact_mau_by_dimensions = BigQueryOperator(
     task_id='exact_mau_by_dimensions',
     bql='sql/firefox_desktop_exact_mau28_by_dimensions_v1.sql',
@@ -383,6 +394,16 @@ exact_mau_by_dimensions = BigQueryOperator(
     bigquery_conn_id="google_cloud_derived_datasets",
     dag=dag,
 )
+
+exact_mau_by_dimensions_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="firefox_desktop_exact_mau28_by_dimensions_v1",
+        arguments=["--submission-date={{ds}}"],
+        parent_dag_name=dag.dag_id,
+        dag_name="exact_mau_by_dimensions_export",
+        default_args=default_args),
+    task_id="exact_mau_by_dimensions_export",
+    dag=dag)
 
 retention = EMRSparkOperator(
     task_id="retention",
@@ -569,7 +590,9 @@ clients_daily_v6.set_upstream(main_summary)
 desktop_active_dau.set_upstream(clients_daily_v6)
 clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
 clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
+clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
+exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 
 retention.set_upstream(main_summary)
 retention_bigquery_load.set_upstream(retention)
