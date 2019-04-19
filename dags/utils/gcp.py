@@ -141,7 +141,7 @@ def load_to_bigquery(parent_dag_name=None,
             task_id='remove_bq_table',
             bigquery_conn_id=gcp_conn_id,
             deletion_dataset_table='{}.{}${{{{ds_nodash}}}}'.format(bigquery_dataset, bq_table_name), # noqa
-            ignore_if_missiing=True,
+            ignore_if_missing=True,
         )
 
         bulk_load = GKEPodOperator(
