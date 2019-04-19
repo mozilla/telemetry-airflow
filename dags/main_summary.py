@@ -369,6 +369,8 @@ clients_last_seen = BigQueryOperator(
     write_disposition='WRITE_TRUNCATE',
     use_legacy_sql=False,
     bigquery_conn_id="google_cloud_derived_datasets",
+    depends_on_past=True,
+    start_date=datetime(2019, 4, 15),
     dag=dag,
 )
 
