@@ -428,22 +428,6 @@ client_count_daily_view = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/client_count_daily_view.sh",
     dag=dag)
 
-client_count_daily_view_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="client_count_daily_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="client_count_daily",
-        dataset_version="v2",
-        gke_cluster_name="bq-load-gke-1",
-        date_submission_col="submission_date",
-        reprocess=True,
-        ),
-    task_id="client_count_daily_bigquery_load",
-    dag=dag)
-
 main_summary_glue = EMRSparkOperator(
     task_id="main_summary_glue",
     job_name="Main Summary Update Glue",
@@ -592,7 +576,6 @@ retention_bigquery_load.set_upstream(retention)
 
 client_count_daily_view.set_upstream(main_summary)
 desktop_dau.set_upstream(client_count_daily_view)
-client_count_daily_view_bigquery_load.set_upstream(client_count_daily_view)
 
 main_summary_glue.set_upstream(main_summary)
 
