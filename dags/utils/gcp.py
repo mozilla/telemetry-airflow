@@ -6,6 +6,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOperator, DataprocClusterDeleteOperator, DataProcSparkOperator # noqa
 from operators.gcp_container_operator import GKEPodOperator
+from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
 
@@ -107,6 +108,8 @@ def load_to_bigquery(parent_dag_name=None,
     else:
         gke_args += ['-p', _objects_prefix]
 
+    bq_table_name = p2b_table_alias or '{}_{}'.format(dataset, dataset_version)
+
     with models.DAG(_dag_name, default_args=default_args) as dag:
         s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
             task_id='s3_to_gcs',
@@ -134,6 +137,12 @@ def load_to_bigquery(parent_dag_name=None,
                 gs_dataset_location=spark_gs_dataset_location),
             task_id='reprocess_parquet')
 
+        remove_bq_table = BigQueryTableDeleteOperator(
+            bigquery_conn_id=gcp_conn_id,
+            deletion_dataset_table='{}.{}${{{{ds_nodash}}}}'.format(bigquery_dataset, bq_table_name), # noqa
+            ignore_if_missiing=True
+        )
+
         bulk_load = GKEPodOperator(
             task_id='bigquery_load',
             gcp_conn_id=gcp_conn_id,
@@ -146,7 +155,7 @@ def load_to_bigquery(parent_dag_name=None,
             arguments=gke_args,
             )
 
-        s3_to_gcs >> reprocess >> bulk_load
+        s3_to_gcs >> reprocess >> remove_bq_table >> bulk_load
 
         return dag
 
