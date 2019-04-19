@@ -3,8 +3,9 @@ from airflow.utils import trigger_rule
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.subdag_operator import SubDagOperator
 
+from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOperator, DataprocClusterDeleteOperator, DataProcSparkOperator # noqa
+from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOperator, DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator # noqa
 from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
@@ -263,5 +264,90 @@ def reprocess_parquet(parent_dag_name,
 
         else:
             DummyOperator(task_id='no_reprocess')
+
+        return dag
+
+
+def export_to_parquet(
+    table,
+    arguments=[],
+    dag_name="export_to_parquet",
+    parent_dag_name=None,
+    default_args=None,
+    aws_conn_id="aws_dev_iam_s3",
+    gcp_conn_id="google_cloud_derived_datasets",
+    dataproc_zone="us-central1-a",
+    dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
+    num_preemptible_workers=0,
+):
+
+    """ Export a BigQuery table to Parquet.
+
+    https://github.com/mozilla/bigquery-etl/blob/master/script/pyspark/export_to_parquet.py
+
+    :param str table:                             [Required] BigQuery table name
+    :param List[str] arguments:                   Additional pyspark arguments
+    :param str dag_name:                          Name of DAG
+    :param Optional[str] parent_dag_name:         Parent DAG name
+    :param Optional[Dict[str, Any]] default_args: DAG configuration
+    :param str gcp_conn_id:                       Airflow connection id for GCP access
+    :param str dataproc_storage_bucket:           Dataproc staging GCS bucket
+    :param str dataproc_zone:                     GCP zone to launch dataproc clusters
+    :param int num_preemptible_workers:           Number of Dataproc preemptible workers
+
+    :return: airflow.models.DAG
+    """
+
+    cluster_name = table.replace("_", "-") + "-{{ ds_nodash }}"
+    dag_prefix = parent_dag_name + "." if parent_dag_name else ""
+    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+    properties = {
+        "core:fx.s3a." + key: value
+        for key, value in zip(
+            ("access.key", "secret.key", "session.token"),
+            AwsHook(aws_conn_id).get_credentials(),
+        )
+        if value is not None
+    }
+
+
+    with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
+
+        create_dataproc_cluster = DataprocClusterCreateOperator(
+            task_id="create_dataproc_cluster",
+            cluster_name=cluster_name,
+            gcp_conn_id=gcp_conn_id,
+            project_id=connection.project_id,
+            properties=properties,
+            num_workers=2,
+            image_version="1.3",
+            storage_bucket=dataproc_storage_bucket,
+            zone=dataproc_zone,
+            master_machine_type="n1-standard-8",
+            worker_machine_type="n1-standard-8",
+            num_preemptible_workers=num_preemptible_workers,
+        )
+
+        run_dataproc_pyspark = DataProcPySparkOperator(
+            task_id="run_dataproc_pyspark",
+            cluster_name=cluster_name,
+            dataproc_pyspark_jars=[
+                "gs://mozilla-bigquery-etl/jars/spark-bigquery-0.5.1-beta-SNAPSHOT.jar"
+            ],
+            main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
+            "/script/pyspark/export_to_parquet.py",
+            arguments=[table] + arguments,
+            gcp_conn_id=gcp_conn_id,
+        )
+
+        delete_dataproc_cluster = DataprocClusterDeleteOperator(
+            task_id="delete_dataproc_cluster",
+            cluster_name=cluster_name,
+            gcp_conn_id=gcp_conn_id,
+            project_id=connection.project_id,
+            trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
+        )
+
+        create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
 
         return dag
