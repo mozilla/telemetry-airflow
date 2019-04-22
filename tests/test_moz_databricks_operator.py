@@ -2,13 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import boto3
 import pytest
+from moto import mock_s3
 from plugins.moz_databricks import MozDatabricksSubmitRunOperator
 
 # The environment variables required by the MozDatabricks operator must be available
 # at module import because the `os.environ` is accessed in the class scope. These
 # variables are used by Airflow to template variables. Monkeypatch occurs after import,
 # so the variables are defined in `tox.ini` instead.
+
+
+@pytest.fixture()
+def client():
+    """Create a moto generated fixture for s3. Using this fixture will put the function
+    under test in the same scope as the @mock_s3 decorator. See
+    https://github.com/spulec/moto/issues/620.
+    """
+    mock_s3().start()
+    client = boto3.resource("s3")
+    client.create_bucket(Bucket="telemetry-test-bucket")
+    client.create_bucket(Bucket="telemetry-airflow")
+    yield client
+    mock_s3().stop()
 
 
 @pytest.fixture()
@@ -26,7 +42,10 @@ def test_missing_tbv_or_mozetl_env(mock_hook):
         )
 
 
-def test_mozetl_success(mock_hook):
+def test_mozetl_success(mock_hook, client):
+    client.Object("telemetry-test-bucket", "steps/mozetl_runner.py").put(
+        Body="raise NotImplementedError"
+    )
     operator = MozDatabricksSubmitRunOperator(
         task_id="test_databricks",
         job_name="test_databricks",
@@ -57,7 +76,7 @@ def test_tbv_success(mock_hook):
     assert json.get("spark_jar_task") is not None
 
 
-def test_default_python_version(mock_hook):
+def test_default_python_version(mock_hook, client):
     # run with default
     operator = MozDatabricksSubmitRunOperator(
         task_id="test_databricks",
@@ -97,7 +116,7 @@ def test_default_python_version(mock_hook):
         ).execute(None)
 
 
-def test_set_mozetl_path_and_branch(mock_hook):
+def test_set_mozetl_path_and_branch(mock_hook, client):
     def mocked_run_submit_args(env):
         MozDatabricksSubmitRunOperator(
             task_id="test_databricks",
@@ -124,4 +143,67 @@ def test_set_mozetl_path_and_branch(mock_hook):
     assert (
         json["libraries"][0]["pypi"]["package"]
         == "git+https://github.com/mozilla/python_mozetl.git@dev"
+    )
+
+
+def test_mozetl_skips_generates_runner_if_exists(mocker, client):
+    client.Object("telemetry-test-bucket", "steps/mozetl_runner.py").put(
+        Body="raise NotImplementedError"
+    )
+    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_runner = mocker.patch("plugins.moz_databricks.generate_runner")
+
+    operator = MozDatabricksSubmitRunOperator(
+        task_id="test_databricks",
+        job_name="test_databricks",
+        env={"MOZETL_COMMAND": "test"},
+        instance_count=1,
+    )
+    operator.execute(None)
+    assert mock_hook.called
+    assert mock_runner.assert_not_called
+    assert (
+        operator.json["spark_python_task"]["python_file"]
+        == "s3://telemetry-test-bucket/steps/mozetl_runner.py"
+    )
+
+
+def test_mozetl_generates_runner_if_not_exists(mocker, client):
+    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_runner = mocker.patch("plugins.moz_databricks.generate_runner")
+
+    operator = MozDatabricksSubmitRunOperator(
+        task_id="test_databricks",
+        job_name="test_databricks",
+        env={"MOZETL_COMMAND": "test"},
+        instance_count=1,
+    )
+    operator.execute(None)
+    assert mock_hook.called
+    assert mock_runner.called
+    assert (
+        operator.json["spark_python_task"]["python_file"]
+        == "s3://telemetry-test-bucket/steps/mozetl_runner.py"
+    )
+
+
+def test_mozetl_generates_runner_for_external_module(mocker, client):
+    client.Object("telemetry-test-bucket", "steps/mozetl_runner.py").put(
+        Body="raise NotImplementedError"
+    )
+    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_runner = mocker.patch("plugins.moz_databricks.generate_runner")
+
+    operator = MozDatabricksSubmitRunOperator(
+        task_id="test_databricks",
+        job_name="test_databricks",
+        env={"MOZETL_COMMAND": "test", "MOZETL_EXTERNAL_MODULE": "custom_module"},
+        instance_count=1,
+    )
+    operator.execute(None)
+    assert mock_hook.called
+    assert mock_runner.called
+    assert (
+        operator.json["spark_python_task"]["python_file"]
+        == "s3://telemetry-test-bucket/steps/custom_module_runner.py"
     )
