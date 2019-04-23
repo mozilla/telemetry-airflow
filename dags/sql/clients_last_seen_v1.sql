@@ -1,6 +1,5 @@
 WITH _current AS (
   SELECT
-    submission_date_s3 AS last_seen_date,
     * EXCEPT (submission_date_s3),
     0 AS days_since_seen,
     -- For measuring Active MAU, where this is the days since this
@@ -15,8 +14,7 @@ WITH _current AS (
     submission_date_s3 = DATE '{{ds}}'
 ), _previous AS (
   SELECT
-    * EXCEPT (submission_date,
-      generated_time) REPLACE(
+    * EXCEPT (submission_date) REPLACE(
       -- omit values outside 28 day window
       IF(days_since_visited_5_uri < 27,
         days_since_visited_5_uri,
@@ -29,7 +27,6 @@ WITH _current AS (
 )
 SELECT
   DATE '{{ds}}' AS submission_date,
-  CURRENT_DATETIME() AS generated_time,
   IF(_current.client_id IS NOT NULL,
     _current,
     _previous).* EXCEPT (days_since_seen,
