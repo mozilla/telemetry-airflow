@@ -227,6 +227,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         objects_prefix='experiments/v1',
         spark_gs_dataset_location='gs://moz-fx-data-derived-datasets-parquet-tmp/experiments/v1/*/submission_date_s3={{ds_nodash}}',
         gke_cluster_name="bq-load-gke-1",
+        p2b_resume=True,
         reprocess=True,
         ),
     task_id="main_summary_experiments_bigquery_load",
@@ -368,6 +369,8 @@ clients_last_seen = BigQueryOperator(
     write_disposition='WRITE_TRUNCATE',
     use_legacy_sql=False,
     bigquery_conn_id="google_cloud_derived_datasets",
+    depends_on_past=True,
+    start_date=datetime(2019, 4, 15),
     dag=dag,
 )
 
@@ -423,22 +426,6 @@ client_count_daily_view = EMRSparkOperator(
     instance_count=10,
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/client_count_daily_view.sh",
-    dag=dag)
-
-client_count_daily_view_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="client_count_daily_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="client_count_daily",
-        dataset_version="v2",
-        gke_cluster_name="bq-load-gke-1",
-        date_submission_col="submission_date",
-        reprocess=True,
-        ),
-    task_id="client_count_daily_bigquery_load",
     dag=dag)
 
 main_summary_glue = EMRSparkOperator(
@@ -581,7 +568,7 @@ clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
 desktop_active_dau.set_upstream(clients_daily_v6)
 clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
-clients_last_seen.set_upstream(clients_daily_v6)
+clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 
 retention.set_upstream(main_summary)
@@ -589,7 +576,6 @@ retention_bigquery_load.set_upstream(retention)
 
 client_count_daily_view.set_upstream(main_summary)
 desktop_dau.set_upstream(client_count_daily_view)
-client_count_daily_view_bigquery_load.set_upstream(client_count_daily_view)
 
 main_summary_glue.set_upstream(main_summary)
 

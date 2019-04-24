@@ -4,6 +4,7 @@ from airflow import models
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 
 default_args = {
+    'owner': 'jklukas@mozilla.com',
     'start_date': datetime.datetime(2019, 3, 1),
     'email': ['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     'email_on_failure': True,
@@ -66,6 +67,8 @@ with models.DAG(
         task_id='fxa_users_last_seen',
         bql='sql/fxa_users_last_seen_v1.sql',
         destination_dataset_table='telemetry.fxa_users_last_seen_v1${{ds_nodash}}', ## noqa
+        depends_on_past=True,
+        start_date=datetime.datetime(2019, 4, 23),
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
         bigquery_conn_id="google_cloud_derived_datasets",

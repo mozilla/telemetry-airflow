@@ -6,6 +6,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOperator, DataprocClusterDeleteOperator, DataProcSparkOperator # noqa
 from operators.gcp_container_operator import GKEPodOperator
+from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
 
@@ -24,6 +25,7 @@ def load_to_bigquery(parent_dag_name=None,
                      docker_image='docker.io/mozilla/parquet2bigquery:20190415', # noqa
                      reprocess=False,
                      p2b_concurrency='10',
+                     p2b_resume=False,
                      p2b_table_alias=None,
                      objects_prefix=None,
                      spark_gs_dataset_location=None,
@@ -54,6 +56,7 @@ def load_to_bigquery(parent_dag_name=None,
     :param str bigquery_dataset:           bigquery load destination dataset
     :param str p2b_concurrency:            number of processes for parquet2bigquery load
     :param str p2b_table_alias:            override p2b table name with alias
+    :param str p2b_resume                  allow resume support. defaults to False
     :param bool reprocess:                 enable dataset reprocessing defaults to False
     :param str objects_prefix:             custom objects_prefix to override defaults
     :param str spark_gs_dataset_location:  custom spark dataset load location to override defaults
@@ -86,11 +89,13 @@ def load_to_bigquery(parent_dag_name=None,
     }
 
     gke_args = [
-        '-R',
         '-d', bigquery_dataset,
         '-c', p2b_concurrency,
         '-b', gcs_buckets['load'],
         ]
+
+    if not p2b_resume:
+        gke_args += ['-R']
 
     if p2b_table_alias:
         gke_args += ['-a', p2b_table_alias]
@@ -102,6 +107,8 @@ def load_to_bigquery(parent_dag_name=None,
 
     else:
         gke_args += ['-p', _objects_prefix]
+
+    bq_table_name = p2b_table_alias or '{}_{}'.format(dataset, dataset_version)
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
         s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
@@ -130,6 +137,13 @@ def load_to_bigquery(parent_dag_name=None,
                 gs_dataset_location=spark_gs_dataset_location),
             task_id='reprocess_parquet')
 
+        remove_bq_table = BigQueryTableDeleteOperator(
+            task_id='remove_bq_table',
+            bigquery_conn_id=gcp_conn_id,
+            deletion_dataset_table='{}.{}${{{{ds_nodash}}}}'.format(bigquery_dataset, bq_table_name), # noqa
+            ignore_if_missing=True,
+        )
+
         bulk_load = GKEPodOperator(
             task_id='bigquery_load',
             gcp_conn_id=gcp_conn_id,
@@ -142,7 +156,7 @@ def load_to_bigquery(parent_dag_name=None,
             arguments=gke_args,
             )
 
-        s3_to_gcs >> reprocess >> bulk_load
+        s3_to_gcs >> reprocess >> remove_bq_table >> bulk_load
 
         return dag
 
