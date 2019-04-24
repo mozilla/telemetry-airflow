@@ -68,7 +68,7 @@ with models.DAG(
         bql='sql/fxa_users_last_seen_v1.sql',
         destination_dataset_table='telemetry.fxa_users_last_seen_v1${{ds_nodash}}', ## noqa
         depends_on_past=True,
-        start_date=datetime(2019, 4, 23),
+        start_date=datetime.datetime(2019, 4, 23),
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
         bigquery_conn_id="google_cloud_derived_datasets",
