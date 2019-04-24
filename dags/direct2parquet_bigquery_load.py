@@ -90,6 +90,7 @@ with DAG(
         destination_dataset_table='telemetry.core_clients_daily_v1${{ds_nodash}}', # noqa
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
+        bigquery_conn_id='google_cloud_derived_datasets',
     )
 
     tasks['telemetry_core_parquet_bigquery_load'] >> core_clients_daily
@@ -101,6 +102,7 @@ with DAG(
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
         depends_on_past=True,
+        bigquery_conn_id='google_cloud_derived_datasets',
     )
 
     core_clients_daily >> core_clients_last_seen
@@ -111,6 +113,7 @@ with DAG(
         destination_dataset_table='telemetry.firefox_nondesktop_exact_mau28_raw_v1${{ds_nodash}}', # noqa
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
+        bigquery_conn_id='google_cloud_derived_datasets',
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
