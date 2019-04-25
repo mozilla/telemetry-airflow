@@ -301,7 +301,7 @@ def export_to_parquet(
     cluster_name = table.replace("_", "-")
     if len(cluster_name) > 43:
         if cluster_name.rsplit("-v", 1)[-1].isdigit():
-            prefix, version = table.rsplit("-v", 1)
+            prefix, version = cluster_name.rsplit("-v", 1)
             cluster_name = prefix[:41 - len(version)] + "-v" + version
         else:
             cluster_name = cluster_name[:43]
