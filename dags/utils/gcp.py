@@ -298,7 +298,15 @@ def export_to_parquet(
     :return: airflow.models.DAG
     """
 
-    cluster_name = table.replace("_", "-") + "-{{ ds_nodash }}"
+    cluster_name = table.replace("_", "-")
+    if len(cluster_name) > 43:
+        if cluster_name.rsplit("-v", 1)[-1].isdigit():
+            prefix, version = table.rsplit("-v", 1)
+            cluster_name = prefix[:41 - len(version)] + "-v" + version
+        else:
+            cluster_name = cluster_name[:43]
+    cluster_name += "-{{ ds_nodash }}"
+      
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
     properties = {
@@ -309,7 +317,6 @@ def export_to_parquet(
         )
         if value is not None
     }
-
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
