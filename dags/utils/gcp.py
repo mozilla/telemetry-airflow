@@ -298,13 +298,14 @@ def export_to_parquet(
     :return: airflow.models.DAG
     """
 
+    # limit cluster name to 42 characters then suffix with -YYYYMMDD
     cluster_name = table.replace("_", "-")
-    if len(cluster_name) > 43:
+    if len(cluster_name) > 42:
         if cluster_name.rsplit("-v", 1)[-1].isdigit():
             prefix, version = cluster_name.rsplit("-v", 1)
-            cluster_name = prefix[:41 - len(version)] + "-v" + version
+            cluster_name = prefix[:40 - len(version)] + "-v" + version
         else:
-            cluster_name = cluster_name[:43]
+            cluster_name = cluster_name[:42]
     cluster_name += "-{{ ds_nodash }}"
       
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
