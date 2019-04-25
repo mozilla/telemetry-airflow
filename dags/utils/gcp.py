@@ -302,7 +302,7 @@ def export_to_parquet(
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
     properties = {
-        "core:fx.s3a." + key: value
+        "core:fs.s3a." + key: value
         for key, value in zip(
             ("access.key", "secret.key", "session.token"),
             AwsHook(aws_conn_id).get_credentials(),
