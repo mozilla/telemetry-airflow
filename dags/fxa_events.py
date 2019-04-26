@@ -29,7 +29,7 @@ with models.DAG(
         destination_dataset_table='telemetry.fxa_auth_events_v1${{ds_nodash}}',
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
-        schema_update_options=['ALLOW_FIELD_ADDITION'],
+        schema_update_options=('ALLOW_FIELD_ADDITION',),
         bigquery_conn_id="google_cloud_derived_datasets",
     )
 
@@ -39,7 +39,7 @@ with models.DAG(
         destination_dataset_table='telemetry.fxa_auth_bounce_events_v1${{ds_nodash}}', ## noqa
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
-        schema_update_options=['ALLOW_FIELD_ADDITION'],
+        schema_update_options=('ALLOW_FIELD_ADDITION',),
         bigquery_conn_id="google_cloud_derived_datasets",
     )
 
@@ -49,7 +49,7 @@ with models.DAG(
         destination_dataset_table='telemetry.fxa_content_events_v1${{ds_nodash}}', ## noqa
         write_disposition='WRITE_TRUNCATE',
         use_legacy_sql=False,
-        schema_update_options=['ALLOW_FIELD_ADDITION'],
+        schema_update_options=('ALLOW_FIELD_ADDITION',),
         bigquery_conn_id="google_cloud_derived_datasets",
     )
 
