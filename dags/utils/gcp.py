@@ -307,7 +307,7 @@ def export_to_parquet(
         else:
             cluster_name = cluster_name[:42]
     cluster_name += "-{{ ds_nodash }}"
-      
+
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
     properties = {
@@ -359,3 +359,45 @@ def export_to_parquet(
         create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
 
         return dag
+
+
+def bigquery_etl_query(
+    destination_table,
+    parameters=("submission_date:DATE:{{ds}}",),
+    arguments=(),
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="mozilla/bigquery-etl:latest",
+    **kwargs
+):
+    """ Generate.
+
+    :param str destination_table: [Required] BigQuery destination table name
+    :param Tuple[str] parameters: Parameters passed query via --parameter
+    :param Tuple[str] arguments:  Additional bq query arguments
+    :param str gcp_conn_id:       Airflow connection id for GCP access
+    :param str gke_location:      GKE cluster location
+    :param str gke_cluster_name:  GKE cluster name
+    :param str gke_namespace:     GKE cluster namespace
+    :param str docker_image:      docker image to use
+    :param Dict[str, Any] kwargs: Addtional keyword arguments for GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    return GKEPodOperator(
+        task_id=kwargs.pop("task_id", destination_table),
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=["query"]
+        + ["--destination_table=" + destination_table + "${{ds_nodash}}"]
+        + ["--parameter=" + parameter for parameter in parameters]
+        + arguments
+        + ["sql/" + destination_table + ".sql"],
+        **kwargs
+    )
