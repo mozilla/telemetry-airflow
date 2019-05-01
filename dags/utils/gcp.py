@@ -375,7 +375,7 @@ def bigquery_etl_query(
     """ Generate.
 
     :param str destination_table: [Required] BigQuery destination table name
-    :param Tuple[str] parameters: Parameters passed query via --parameter
+    :param Tuple[str] parameters: Parameters passed to bq query via --parameter
     :param Tuple[str] arguments:  Additional bq query arguments
     :param str gcp_conn_id:       Airflow connection id for GCP access
     :param str gke_location:      GKE cluster location
