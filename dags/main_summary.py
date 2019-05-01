@@ -8,7 +8,7 @@ from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
-from utils.gcp import export_to_parquet, load_to_bigquery
+from utils.gcp import bigquery_etl_query, export_to_parquet, load_to_bigquery
 
 
 default_args = {
@@ -362,17 +362,14 @@ clients_daily_v6_bigquery_load = SubDagOperator(
     task_id="clients_daily_v6_bigquery_load",
     dag=dag)
 
-clients_last_seen = BigQueryOperator(
-    task_id='clients_last_seen',
-    bql='sql/clients_last_seen_v1.sql',
-    destination_dataset_table='telemetry.clients_last_seen_v1${{ds_nodash}}',
-    write_disposition='WRITE_TRUNCATE',
-    use_legacy_sql=False,
-    bigquery_conn_id="google_cloud_derived_datasets",
+clients_last_seen = bigquery_etl_query(
+    task_id="clients_last_seen",
+    destination_table="clients_last_seen_v1",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     depends_on_past=True,
     start_date=datetime(2019, 4, 15),
-    dag=dag,
-)
+    dag=dag)
 
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
@@ -385,15 +382,12 @@ clients_last_seen_export = SubDagOperator(
     task_id="clients_last_seen_export",
     dag=dag)
 
-exact_mau_by_dimensions = BigQueryOperator(
-    task_id='exact_mau_by_dimensions',
-    bql='sql/firefox_desktop_exact_mau28_by_dimensions_v1.sql',
-    destination_dataset_table='telemetry.firefox_desktop_exact_mau28_by_dimensions_v1${{ds_nodash}}',
-    write_disposition='WRITE_TRUNCATE',
-    use_legacy_sql=False,
-    bigquery_conn_id="google_cloud_derived_datasets",
-    dag=dag,
-)
+exact_mau_by_dimensions = bigquery_etl_query(
+    task_id="exact_mau_by_dimensions",
+    destination_table="firefox_desktop_exact_mau28_by_dimensions_v1",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    dag=dag)
 
 exact_mau_by_dimensions_export = SubDagOperator(
     subdag=export_to_parquet(
