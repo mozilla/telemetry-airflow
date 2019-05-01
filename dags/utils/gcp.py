@@ -370,6 +370,7 @@ def bigquery_etl_query(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     docker_image="mozilla/bigquery-etl:latest",
+    image_pull_policy="Always",
     **kwargs
 ):
     """ Generate.
@@ -382,6 +383,7 @@ def bigquery_etl_query(
     :param str gke_cluster_name:  GKE cluster name
     :param str gke_namespace:     GKE cluster namespace
     :param str docker_image:      docker image to use
+    :param str image_pull_policy: Kubernetes policy for when to pull docker_image
     :param Dict[str, Any] kwargs: Addtional keyword arguments for GKEPodOperator
 
     :return: GKEPodOperator
@@ -400,5 +402,6 @@ def bigquery_etl_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + ["sql/" + destination_table + ".sql"],
+        image_pull_policy=image_pull_policy,
         **kwargs
     )
