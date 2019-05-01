@@ -397,7 +397,7 @@ def bigquery_etl_query(
         arguments=["query"]
         + ["--destination_table=" + destination_table + "${{ds_nodash}}"]
         + ["--parameter=" + parameter for parameter in parameters]
-        + arguments
+        + list(arguments)
         + ["sql/" + destination_table + ".sql"],
         **kwargs
     )
