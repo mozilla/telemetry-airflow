@@ -40,6 +40,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  ebs_volume_count=None,
                  ebs_volume_size=None,
                  python_version=3,
+                 pypi_libs=None,
                  *args, **kwargs):
         """
         Generate parameters for running a job through the Databricks run-submit
@@ -191,6 +192,10 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                     }
                 }
             )
+
+            if pypi_libs is not None and len(pypi_libs) > 0:
+                libraries.extend([{"pypi": {"package": lib}} for lib in pypi_libs])
+
         else:
             raise ValueError("Missing options for running tbv or mozetl tasks")
 
