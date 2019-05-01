@@ -386,8 +386,9 @@ def bigquery_etl_query(
 
     :return: GKEPodOperator
     """
+    kwargs["task_id"] = kwargs.get("task_id", destination_table)
+    kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
     return GKEPodOperator(
-        task_id=kwargs.pop("task_id", destination_table),
         gcp_conn_id=gcp_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
         location=gke_location,
