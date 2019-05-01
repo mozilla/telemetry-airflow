@@ -1,8 +1,12 @@
+import boto3
+import botocore
+
 from os import environ
 from pprint import pformat
 
 from airflow.plugins_manager import AirflowPlugin
 from databricks.databricks_operator import DatabricksSubmitRunOperator
+from mozetl import generate_runner
 
 
 class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
@@ -169,9 +173,25 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             libraries.append({'jar': artifact_path_s3})
 
         elif env.get("MOZETL_COMMAND"):
+            # create a runner if it doesn't exist
+            s3 = boto3.resource("s3")
+            bucket = "telemetry-test-bucket" if is_dev else "telemetry-airflow"
+            prefix = "steps"
+
+            module_name = env.get("MOZETL_EXTERNAL_MODULE", "mozetl")
+            runner_name = "{}_runner.py".format(module_name)
+
+            try:
+                s3.Object(bucket, "{}/{}".format(prefix, runner_name)).load()
+            except botocore.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    generate_runner(module_name, bucket, prefix)
+                else:
+                    raise e
+
             # options are read directly from the environment via Click
             python_task = {
-                "python_file": "s3://telemetry-airflow/steps/mozetl_runner.py",
+                "python_file": "s3://{}/{}/{}".format(bucket, prefix, runner_name),
                 "parameters": [env["MOZETL_COMMAND"]]
             }
 
