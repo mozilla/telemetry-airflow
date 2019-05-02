@@ -2,6 +2,7 @@ import datetime
 
 from airflow import models
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
+from utils.gcp import bigquery_etl_query
 
 default_args = {
     'owner': 'jklukas@mozilla.com',
@@ -23,34 +24,22 @@ with models.DAG(
         schedule_interval='0 10 * * *',
         default_args=default_args) as dag:
 
-    fxa_auth_events = BigQueryOperator(
+    fxa_auth_events = bigquery_etl_query(
         task_id='fxa_auth_events',
-        bql='sql/fxa_auth_events_v1.sql',
-        destination_dataset_table='telemetry.fxa_auth_events_v1${{ds_nodash}}',
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        schema_update_options=('ALLOW_FIELD_ADDITION',),
-        bigquery_conn_id="google_cloud_derived_datasets",
+        destination_table='fxa_auth_events_v1',
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
-    fxa_auth_bounce_events = BigQueryOperator(
+    fxa_auth_bounce_events = bigquery_etl_query(
         task_id='fxa_auth_bounce_events',
-        bql='sql/fxa_auth_bounce_events_v1.sql',
-        destination_dataset_table='telemetry.fxa_auth_bounce_events_v1${{ds_nodash}}', ## noqa
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        schema_update_options=('ALLOW_FIELD_ADDITION',),
-        bigquery_conn_id="google_cloud_derived_datasets",
+        destination_table='fxa_auth_bounce_events_v1',
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
-    fxa_content_events = BigQueryOperator(
+    fxa_content_events = bigquery_etl_query(
         task_id='fxa_content_events',
-        bql='sql/fxa_content_events_v1.sql',
-        destination_dataset_table='telemetry.fxa_content_events_v1${{ds_nodash}}', ## noqa
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        schema_update_options=('ALLOW_FIELD_ADDITION',),
-        bigquery_conn_id="google_cloud_derived_datasets",
+        destination_table='fxa_content_events_v1',
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_users_daily = BigQueryOperator(
