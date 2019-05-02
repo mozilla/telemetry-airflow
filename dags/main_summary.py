@@ -564,14 +564,15 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
     ],
     instance_count=3,
     env=mozetl_envvar(
-        "bgbb_fit",
+        "bgbb_pred",
         {
             "submission-date": "{{ ds_nodash }}",
             "model-win": "120",
             "sample-ids": "[]",
-            # "model-params": "[0.825, 0.68, 0.0876, 1.385]",
-            "bucket": "{{ task.__class__.private_output_bucket }}",
-            "prefix": "wbeard/bgbb_params",
+            "param-bucket": "{{ task.__class__.private_output_bucket }}",
+            "param-prefix": "bgbb/params",
+            "pred-bucket": "{{ task.__class__.private_output_bucket }}",
+            "pred-prefix": "bgbb/active_profiles",
         },
         other={
             "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",

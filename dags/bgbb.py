@@ -35,10 +35,10 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
             "model-win": "120",
             "start-params": "[0.387, 0.912, 0.102, 1.504]",
             "sample-ids": "[42]",
-            "sample-fraction": "0.1",
+            "sample-fraction": "1.0",
             "penalizer-coef": "0.01",
             "bucket": "{{ task.__class__.private_output_bucket }}",
-            "prefix": "wbeard/bgbb_params",
+            "prefix": "bgbb/params",
         },
         other={
             "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",
