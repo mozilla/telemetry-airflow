@@ -2,6 +2,7 @@ import datetime
 
 from airflow import models
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
+from utils.gcp import bigquery_etl_query
 
 default_args = {
     'owner': 'jklukas@mozilla.com',
@@ -53,39 +54,27 @@ with models.DAG(
         bigquery_conn_id="google_cloud_derived_datasets",
     )
 
-    fxa_users_daily = BigQueryOperator(
+    fxa_users_daily = bigquery_etl_query(
         task_id='fxa_users_daily',
-        bql='sql/fxa_users_daily_v1.sql',
-        destination_dataset_table='telemetry.fxa_users_daily_v1${{ds_nodash}}',
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        bigquery_conn_id="google_cloud_derived_datasets",
+        destination_table='fxa_users_daily_v1',
     )
 
     fxa_users_daily << fxa_auth_events
     fxa_users_daily << fxa_auth_bounce_events
     fxa_users_daily << fxa_content_events
 
-    fxa_users_last_seen = BigQueryOperator(
+    fxa_users_last_seen = bigquery_etl_query(
         task_id='fxa_users_last_seen',
-        bql='sql/fxa_users_last_seen_v1.sql',
-        destination_dataset_table='telemetry.fxa_users_last_seen_v1${{ds_nodash}}', ## noqa
+        destination_table='fxa_users_last_seen_v1',
         depends_on_past=True,
         start_date=datetime.datetime(2019, 4, 23),
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        bigquery_conn_id="google_cloud_derived_datasets",
     )
 
     fxa_users_daily >> fxa_users_last_seen
 
-    firefox_accounts_exact_mau28_raw = BigQueryOperator(
+    firefox_accounts_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_accounts_exact_mau28_raw',
-        bql='sql/firefox_accounts_exact_mau28_raw_v1.sql',
-        destination_dataset_table='telemetry.firefox_accounts_exact_mau28_raw_v1${{ds_nodash}}', ## noqa
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        bigquery_conn_id="google_cloud_derived_datasets",
+        destination_table='firefox_accounts_exact_mau28_raw_v1',
     )
 
     fxa_users_last_seen >> firefox_accounts_exact_mau28_raw
