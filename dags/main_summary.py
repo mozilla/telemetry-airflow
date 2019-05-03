@@ -574,6 +574,10 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
             "pred-bucket": "{{ task.__class__.private_output_bucket }}",
             "pred-prefix": "bgbb/active_profiles",
         },
+        dev_options={
+            "model-win": "30",
+            "sample-ids": "[1]",
+        },
         other={
             "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",
             "MOZETL_EXTERNAL_MODULE": "bgbb_airflow",
@@ -627,4 +631,4 @@ main_summary_glue.set_upstream(main_summary)
 taar_locale_job.set_upstream(clients_daily_v6)
 taar_collaborative_recommender.set_upstream(clients_daily_v6)
 
-bgbb_pred.set_upstream(main_summary)
+bgbb_pred.set_upstream(clients_daily_v6)
