@@ -42,7 +42,7 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
         },
         other={
             "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",
-            "MOZETL_MODULE_NAME": "bgbb_airflow",
+            "MOZETL_EXTERNAL_MODULE": "bgbb_airflow",
         },
     ),
     dag=dag

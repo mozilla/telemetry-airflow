@@ -566,7 +566,7 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
     env=mozetl_envvar(
         "bgbb_pred",
         {
-            "submission-date": "{{ ds_nodash }}",
+            "submission-date": "{{ ds }}",
             "model-win": "120",
             "sample-ids": "[]",
             "param-bucket": "{{ task.__class__.private_output_bucket }}",
@@ -576,7 +576,7 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
         },
         other={
             "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",
-            "MOZETL_MODULE_NAME": "bgbb_airflow",
+            "MOZETL_EXTERNAL_MODULE": "bgbb_airflow",
         },
     ),
     dag=dag
