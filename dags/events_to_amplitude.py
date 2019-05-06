@@ -4,10 +4,12 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 from utils.tbv import tbv_envvar
 from utils.deploy import get_artifact_url
+from utils.status import register_status
 
 FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
 ROCKET_ANDROID_INSTANCES = 5
+FENNEC_IOS_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -90,6 +92,26 @@ rocket_android_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag
 )
+
+fennec_ios_events_to_amplitude = EMRSparkOperator(
+    task_id="fennec_ios_events_to_amplitude",
+    job_name="Fennec iOS Events to Amplitude",
+    execution_timeout=timedelta(hours=8),
+    instance_count=FENNEC_IOS_INSTANCES,
+    email=['akomar@mozilla.com', 'telemetry-alerts@mozilla.com'],
+    env={
+        "date": "{{ ds_nodash }}",
+        "max_requests": FENNEC_IOS_INSTANCES * VCPUS_PER_INSTANCE,
+        "key_file": key_file("fennec_ios"),
+        "artifact": get_artifact_url(slug, branch="master"),
+        "config_filename": "fennec_ios_events_schemas.json",
+    },
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
+    dag=dag
+)
+
+register_status(fennec_ios_events_to_amplitude, "Firefox-iOS Amplitude events",
+                "Daily job sending Firefox iOS events to Amplitude.")
 
 devtools_release_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_release_events_to_amplitude",

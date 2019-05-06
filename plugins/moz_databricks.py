@@ -1,8 +1,12 @@
+import boto3
+import botocore
+
 from os import environ
 from pprint import pformat
 
 from airflow.plugins_manager import AirflowPlugin
-from airflow.contrib.operators.databricks_operator import DatabricksSubmitRunOperator
+from databricks.databricks_operator import DatabricksSubmitRunOperator
+from mozetl import generate_runner
 
 
 class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
@@ -39,6 +43,8 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                  output_visibility=None,
                  ebs_volume_count=None,
                  ebs_volume_size=None,
+                 python_version=3,
+                 pypi_libs=None,
                  *args, **kwargs):
         """
         Generate parameters for running a job through the Databricks run-submit
@@ -70,9 +76,16 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param output_visibility: argument from EMRSparkOperator for compatibility
         :param ebs_volume_count: number of ebs volumes to attach to each node
         :param ebs_volume_size: size of ebs volumes attached to each node
+        :param python_version: the default python runtime on the cluster (python 3.5.2)
+            See https://docs.databricks.com/release-notes/runtime/4.3.html#system-environment
+            for more details.
 
         :param kwargs: Keyword arguments to pass to DatabricksSubmitRunOperator
         """
+        if python_version not in (2, 3):
+            raise ValueError("Only Python versions 2 or 3 allowed")
+        elif python_version == 3:
+            env["PYSPARK_PYTHON"] = "/databricks/python3/bin/python3"
 
         if enable_autoscale:
             if not max_instance_count:
@@ -107,7 +120,6 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
         if ebs_volume_size is not None:
             aws_attributes["ebs_volume_size"] = ebs_volume_size
-
 
         # Create the cluster configuration
         new_cluster = {
@@ -161,20 +173,49 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             libraries.append({'jar': artifact_path_s3})
 
         elif env.get("MOZETL_COMMAND"):
+            # create a runner if it doesn't exist
+            s3 = boto3.resource("s3")
+            bucket = "telemetry-test-bucket" if is_dev else "telemetry-airflow"
+            prefix = "steps"
+
+            module_name = env.get("MOZETL_EXTERNAL_MODULE", "mozetl")
+            runner_name = "{}_runner.py".format(module_name)
+
+            try:
+                s3.Object(bucket, "{}/{}".format(prefix, runner_name)).load()
+            except botocore.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    generate_runner(module_name, bucket, prefix)
+                else:
+                    raise e
+
             # options are read directly from the environment via Click
             python_task = {
-                "python_file": "s3://telemetry-airflow/steps/mozetl_runner.py",
+                "python_file": "s3://{}/{}/{}".format(bucket, prefix, runner_name),
                 "parameters": [env["MOZETL_COMMAND"]]
             }
 
             # Proper pip dependencies in Databricks is only supported via pypi.
             # Dependencies for source/binary distributions need to be added
             # manually.
-            libraries.append({
-                "pypi": {
-                    "package": "git+https://github.com/mozilla/python_mozetl.git"
+            path = env.get(
+                "MOZETL_GIT_PATH", "https://github.com/mozilla/python_mozetl.git"
+            )
+            branch = env.get("MOZETL_GIT_BRANCH", "master")
+
+            libraries.append(
+                {
+                    "pypi": {
+                        "package": "git+{path}@{branch}".format(
+                            path=path, branch=branch
+                        )
+                    }
                 }
-            })
+            )
+
+            if pypi_libs is not None and len(pypi_libs) > 0:
+                libraries.extend([{"pypi": {"package": lib}} for lib in pypi_libs])
+
         else:
             raise ValueError("Missing options for running tbv or mozetl tasks")
 
@@ -186,7 +227,12 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             "libraries": libraries
         }
         json = {k: v for k, v in json.items() if v}
-        super(MozDatabricksSubmitRunOperator, self).__init__(json, **kwargs)
+        super(MozDatabricksSubmitRunOperator, self).__init__(
+            json=json,
+            databricks_retry_limit=20,
+            databricks_retry_delay=30,
+            **kwargs
+        )
 
     def execute(self, context):
         self.log.info("Running {} with parameters:\n{}"

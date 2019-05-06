@@ -2,14 +2,20 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
+from operators.gcp_container_operator import GKEPodOperator
+
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 from airflow.contrib.sensors.emr_job_flow_sensor import EmrJobFlowSensor
+
+from utils.status import register_status
 
 
 DEFAULT_ARGS = {
     'owner': 'jthomas@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 26),
-    'email': ['jthomas@mozilla.com', 'dataops+alerts@mozilla.com'],
+    'email': ['jthomas@mozilla.com', 'hwoo@mozilla.com', 'dataops+alerts@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -149,7 +155,58 @@ blp_job_sensor = EmrJobFlowSensor(
         end_date=context['execution_date']),
 )
 
+gcp_conn_id = "google_cloud_derived_datasets"
+connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+
+gcstj_object_conditions = {
+    'includePrefixes':  'blpadi/{{ ds }}'
+}
+
+gcstj_transfer_options = {
+    'deleteObjectsUniqueInSink': True
+}
+
+bq_args = [
+    'bq',
+    '--location=US',
+    'load',
+    '--source_format=CSV',
+    '--skip_leading_rows=0',
+    '--replace',
+    "--field_delimiter=\001",
+    'blpadi.adi_dimensional_by_date${{ ds_nodash }}',
+    'gs://moz-fx-data-derived-datasets-blpadi/blpadi/{{ ds }}/*',
+]
+
+s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
+    task_id='s3_to_gcs',
+    s3_bucket='net-mozaws-data-us-west-2-data-analysis',
+    gcs_bucket='moz-fx-data-derived-datasets-blpadi',
+    description='blpadi copy from s3 to gcs',
+    aws_conn_id='aws_data_iam_blpadi',
+    gcp_conn_id=gcp_conn_id,
+    project_id=connection.project_id,
+    object_conditions=gcstj_object_conditions,
+    transfer_options=gcstj_transfer_options,
+    dag=blp_dag
+)
+
+load_blpadi_to_bq = GKEPodOperator(
+    task_id='bigquery_load',
+    gcp_conn_id=gcp_conn_id,
+    project_id=connection.project_id,
+    location='us-central1-a',
+    cluster_name='bq-load-gke-1',
+    name='load-blpadi-to-bq',
+    namespace='default',
+    image='google/cloud-sdk:242.0.0-alpine',
+    arguments=bq_args,
+    dag=blp_dag
+)
+
 blp_logs.set_downstream(blp_job_sensor)
+blp_job_sensor.set_downstream(s3_to_gcs)
+s3_to_gcs.set_downstream(load_blpadi_to_bq)
 
 amo_dag = DAG(
     'mango_log_processing_amo',
@@ -165,6 +222,8 @@ amo_logs = EmrCreateJobFlowOperator(
     emr_conn_id='emr_data_iam_mango',
     dag=amo_dag
 )
+
+register_status(amo_logs, 'AMO Logs', 'Mango Processed AMO Logs')
 
 amo_job_sensor = EmrJobFlowSensor(
     task_id='amo_check_job_flow',

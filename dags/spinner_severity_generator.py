@@ -1,6 +1,7 @@
 from airflow import DAG
+from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from datetime import datetime, timedelta
-from operators.emr_spark_operator import EMRSparkOperator
+from utils.mozetl import mozetl_envvar
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -15,12 +16,13 @@ default_args = {
 
 dag = DAG('tab_spinner_severity', default_args=default_args, schedule_interval='@daily')
 
-update_tab_spinner_severity = EMRSparkOperator(
+update_tab_spinner_severity = MozDatabricksSubmitRunOperator(
     task_id="update_tab_spinner_severity",
     job_name="Tab Spinner Severity Job",
     execution_timeout=timedelta(hours=12),
     instance_count=12,
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/run-severity-generator.sh",
+    env=mozetl_envvar("long_tab_spinners", {}),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag
 )
 
