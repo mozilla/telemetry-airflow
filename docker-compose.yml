@@ -21,6 +21,18 @@ services:
     volumes:
       - $PWD:/app
     command: "true"
+    # Environment variables, exports, and substitution:
+    #   https://docs.docker.com/compose/environment-variables/
+    # Setting connection strings from environment variables:
+    #   https://airflow.apache.org/howto/connection/index.html#creating-a-connection-with-environment-variables
+    # Non-intuitive quoting behavior in docker-compose due to list syntax and yaml parsing:
+    #   https://github.com/docker/compose/issues/2854#issuecomment-433592364
+    environment:
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_ACCESS_KEY_ID
+      # https://docs.databricks.com/api/latest/authentication.html#generate-a-token
+      - "AIRFLOW_CONN_DATABRICKS_DEFAULT=databricks://:@dbc-caf9527b-e073.cloud.databricks.com:443?token=${DB_TOKEN}"
+      - "AIRFLOW_CONN_GOOGLE_CLOUD_DERIVED_DATASETS=google_cloud_platform://:@:"
 
   web:
     extends:
