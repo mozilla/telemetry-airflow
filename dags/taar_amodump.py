@@ -56,7 +56,7 @@ editorial_whitelist = EMRSparkOperator(
     owner="vng@mozilla.com",
     email=["mlopatka@mozilla.com", "vng@mozilla.com"],
     env=mozetl_envvar("taar_update_whitelist",
-                      {},
+                      {"date": "{{ ds_nodash }}"},
                       {'MOZETL_SUBMISSION_METHOD': 'spark'}),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
