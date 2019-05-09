@@ -29,22 +29,22 @@ wait_for() {
 
 # Only wait for backend services in development
 # http://stackoverflow.com/a/13864829
-[ ! -z ${DEVELOPMENT+check} ] && wait_for db 5432 && wait_for redis 6379
+[ ! -z ${DEVELOPMENT+check} ] && wait_for db 3306 && wait_for redis 6379
 
 case $1 in
   flower)
-    exec newrelic-admin run-program airflow flower
+    exec airflow flower
     ;;
   web)
-    newrelic-admin run-program airflow initdb
-    newrelic-admin run-program airflow upgradedb
-    exec newrelic-admin run-program airflow webserver -p ${PORT} --workers 4
+    airflow initdb
+    airflow upgradedb
+    exec airflow webserver -p ${PORT} --workers 4
     ;;
   worker)
-    exec newrelic-admin run-program airflow worker
+    exec airflow worker
     ;;
   scheduler)
-    exec newrelic-admin run-program airflow scheduler
+    exec airflow scheduler
     ;;
   *)
     exec "$@"

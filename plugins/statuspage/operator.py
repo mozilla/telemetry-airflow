@@ -14,6 +14,8 @@ class DatasetStatusOperator(BaseOperator):
         description,
         status,
         statuspage_conn_id="statuspage_default",
+        create_incident=False,
+        incident_body=None,
         **kwargs
     ):
         """Create and update the status of a Data Engineering Dataset.
@@ -22,24 +24,29 @@ class DatasetStatusOperator(BaseOperator):
         :param description: Description of the dataset
         :param status: one of [operational, under_maintenance, degraded_performance, partial_outage, major_outage]
         :param statuspage_conn_id: Airflow connection id for credentials
+        :param create_incident: A flag to enable automated filing of Statuspage incidents
+        :param incident_body:   Optional text for describing the incident
         """
         super(DatasetStatusOperator, self).__init__(**kwargs)
         self.statuspage_conn_id = statuspage_conn_id
         self.name = name
         self.description = description
         self.status = status
+        self.create_incident = create_incident
+        self.incident_body = incident_body
 
     def execute(self, context):
         conn = DatasetStatusHook(statuspage_conn_id=self.statuspage_conn_id).get_conn()
         comp_id = conn.get_or_create(self.name, self.description)
 
-        if not comp_id:
-            raise AirflowException("Failed to create or fetch component")
-
         self.log.info(
             "Setting status for {} ({}) to {}".format(self.name, comp_id, self.status)
         )
 
-        comp_id = conn.update(comp_id, self.status)
-        if not comp_id:
-            raise AirflowException("Failed to update component")
+        if self.create_incident:
+            incident_id = conn.create_incident_investigation(
+                self.name, comp_id, self.incident_body, self.status
+            )
+            self.log.info("Created incident with id {}".format(incident_id))
+        else:
+            comp_id = conn.update(comp_id, self.status)

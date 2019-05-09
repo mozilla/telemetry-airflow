@@ -2,11 +2,13 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
+from airflow.operators.subdag_operator import SubDagOperator
+from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.deploy import get_artifact_url
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
+from utils.gcp import bigquery_etl_query, export_to_parquet, load_to_bigquery
 
 
 default_args = {
@@ -84,24 +86,18 @@ main_summary_schema = EmailSchemaChangeOperator(
     key_prefix='schema/main_summary/submission_date_s3=',
     dag=dag)
 
-experiments_error_aggregates = EMRSparkOperator(
-    task_id="experiments_error_aggregates",
-    job_name="Experiments Error Aggregates View",
-    execution_timeout=timedelta(hours=5),
-    instance_count=20,
-    owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    env=tbv_envvar("com.mozilla.telemetry.streaming.ExperimentsErrorAggregator",
-        options={
-            "from": "{{ ds_nodash }}",
-            "to": "{{ds_nodash }}",
-            "outputPath": "s3://{{ task.__class__.private_output_bucket }}",
-            "numParquetFiles": "6"
-        },
-        dev_options={"channel": "nightly"},
-        artifact_url=get_artifact_url("{{ task.__class__.telemetry_streaming_slug }}")
-    ),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+main_summary_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="main_summary_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="main_summary",
+        dataset_version="v4",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="main_summary_bigquery_load",
     dag=dag)
 
 engagement_ratio = EMRSparkOperator(
@@ -133,6 +129,20 @@ addons = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
+addons_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="addons_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="addons",
+        dataset_version="v2",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="addons_bigquery_load",
+    dag=dag)
+
 main_events = EMRSparkOperator(
     task_id="main_events",
     job_name="Main Events View",
@@ -145,6 +155,20 @@ main_events = EMRSparkOperator(
         "to": "{{ ds_nodash }}",
         "bucket": "{{ task.__class__.private_output_bucket }}"}),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    dag=dag)
+
+main_events_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="main_events_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="events",
+        dataset_version="v1",
+        gke_cluster_name="bq-load-gke-1",
+        ),
+    task_id="main_events_bigquery_load",
     dag=dag)
 
 addon_aggregates = EMRSparkOperator(
@@ -162,19 +186,19 @@ addon_aggregates = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
-txp_mau_dau = EMRSparkOperator(
-    task_id="txp_mau_dau",
-    job_name="Test Pilot MAU DAU",
-    execution_timeout=timedelta(hours=4),
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-    instance_count=5,
-    env={"date": "{{ ds_nodash }}",
-         "bucket": "{{ task.__class__.private_output_bucket }}",
-         "prefix": "txp_mau_dau_simple",
-         "inbucket": "{{ task.__class__.private_output_bucket }}",
-         "inprefix": "addons/v2"},
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/testpilot/txp_mau_dau.py",
+addon_aggregates_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="addon_aggregates_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="addons/agg",
+        dataset_version="v2",
+        gke_cluster_name="bq-load-gke-1",
+        p2b_table_alias="addons_aggregates_v2",
+        ),
+    task_id="addon_aggregates_bigquery_load",
     dag=dag)
 
 main_summary_experiments = EMRSparkOperator(
@@ -191,19 +215,22 @@ main_summary_experiments = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
-experiments_aggregates = EMRSparkOperator(
-    task_id="experiments_aggregates",
-    job_name="Experiments Aggregates View",
-    execution_timeout=timedelta(hours=15),
-    instance_count=20,
-    dev_instance_count=3,
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    env=tbv_envvar("com.mozilla.telemetry.views.ExperimentAnalysisView", {
-        "date": "{{ ds_nodash }}",
-        "input": "s3://{{ task.__class__.private_output_bucket }}/experiments/v1",
-        "output": "s3://{{ task.__class__.private_output_bucket }}/experiments_aggregates/v1"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+main_summary_experiments_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="main_summary_experiments_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="experiments",
+        dataset_version="v1",
+        objects_prefix='experiments/v1',
+        spark_gs_dataset_location='gs://moz-fx-data-derived-datasets-parquet-tmp/experiments/v1/*/submission_date_s3={{ds_nodash}}',
+        gke_cluster_name="bq-load-gke-1",
+        p2b_resume=True,
+        reprocess=True,
+        ),
+    task_id="main_summary_experiments_bigquery_load",
     dag=dag)
 
 experiments_aggregates_import = EMRSparkOperator(
@@ -236,6 +263,22 @@ search_dashboard = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
+search_dashboard_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="search_dashboard_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="harter/searchdb",
+        dataset_version="v4",
+        bigquery_dataset="search",
+        gke_cluster_name="bq-load-gke-1",
+        p2b_table_alias="search_aggregates_v4",
+        ),
+    task_id="search_dashboard_bigquery_load",
+    dag=dag)
+
 search_clients_daily = EMRSparkOperator(
     task_id="search_clients_daily",
     job_name="Search Clients Daily",
@@ -252,6 +295,22 @@ search_clients_daily = EMRSparkOperator(
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
+    dag=dag)
+
+search_clients_daily_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="search_clients_daily_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="search_clients_daily",
+        dataset_version="v4",
+        bigquery_dataset="search",
+        gke_cluster_name="bq-load-gke-1",
+        reprocess=True,
+        ),
+    task_id="search_clients_daily_bigquery_load",
     dag=dag)
 
 clients_daily = EMRSparkOperator(
@@ -286,6 +345,60 @@ clients_daily_v6 = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
+register_status(clients_daily_v6, "Clients Daily", "A view of main pings with one row per client per day.")
+
+clients_daily_v6_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="clients_daily_v6_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="clients_daily",
+        dataset_version="v6",
+        gke_cluster_name="bq-load-gke-1",
+        reprocess=True,
+        ),
+    task_id="clients_daily_v6_bigquery_load",
+    dag=dag)
+
+clients_last_seen = bigquery_etl_query(
+    task_id="clients_last_seen",
+    destination_table="clients_last_seen_v1",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    depends_on_past=True,
+    start_date=datetime(2019, 4, 15),
+    dag=dag)
+
+clients_last_seen_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="clients_last_seen_v1",
+        arguments=["--submission-date={{ds}}"],
+        parent_dag_name=dag.dag_id,
+        dag_name="clients_last_seen_export",
+        default_args=default_args,
+        num_preemptible_workers=10),
+    task_id="clients_last_seen_export",
+    dag=dag)
+
+exact_mau_by_dimensions = bigquery_etl_query(
+    task_id="exact_mau_by_dimensions",
+    destination_table="firefox_desktop_exact_mau28_by_dimensions_v1",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    dag=dag)
+
+exact_mau_by_dimensions_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="firefox_desktop_exact_mau28_by_dimensions_v1",
+        arguments=["--submission-date={{ds}}"],
+        parent_dag_name=dag.dag_id,
+        dag_name="exact_mau_by_dimensions_export",
+        default_args=default_args),
+    task_id="exact_mau_by_dimensions_export",
+    dag=dag)
+
 retention = EMRSparkOperator(
     task_id="retention",
     job_name="1-Day Firefox Retention",
@@ -302,6 +415,22 @@ retention = EMRSparkOperator(
     }),
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/retention.sh",
     dag=dag)
+
+retention_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="retention_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="retention",
+        dataset_version="v1",
+        gke_cluster_name="bq-load-gke-1",
+        date_submission_col="start_date",
+        ),
+    task_id="retention_bigquery_load",
+    dag=dag)
+
 
 client_count_daily_view = EMRSparkOperator(
     task_id="client_count_daily_view",
@@ -411,23 +540,41 @@ taar_similarity = MozDatabricksSubmitRunOperator(
     output_visibility="private",
     dag=dag)
 
+taar_collaborative_recommender = EMRSparkOperator(
+    task_id="addon_recommender",
+    job_name="Train the Collaborative Addon Recommender",
+    execution_timeout=timedelta(hours=10),
+    instance_count=20,
+    owner="mlopatka@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"],
+    env={"date": "{{ ds_nodash }}",
+         "privateBucket": "{{ task.__class__.private_output_bucket }}",
+         "publicBucket": "{{ task.__class__.public_output_bucket }}"},
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
+    dag=dag)
+
+
 main_summary_schema.set_upstream(main_summary)
+main_summary_bigquery_load.set_upstream(main_summary)
 
 engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
+addons_bigquery_load.set_upstream(addons)
 addon_aggregates.set_upstream(addons)
-txp_mau_dau.set_upstream(addons)
+addon_aggregates_bigquery_load.set_upstream(addon_aggregates)
 
 main_events.set_upstream(main_summary)
+main_events_bigquery_load.set_upstream(main_events)
 
 main_summary_experiments.set_upstream(main_summary)
-experiments_aggregates.set_upstream(main_summary_experiments)
-experiments_aggregates.set_upstream(experiments_error_aggregates)
+main_summary_experiments_bigquery_load.set_upstream(main_summary_experiments)
 
-experiments_aggregates_import.set_upstream(experiments_aggregates)
+experiments_aggregates_import.set_upstream(main_summary_experiments)
 search_dashboard.set_upstream(main_summary)
+search_dashboard_bigquery_load.set_upstream(search_dashboard)
 search_clients_daily.set_upstream(main_summary)
+search_clients_daily_bigquery_load.set_upstream(search_clients_daily)
 
 taar_dynamo.set_upstream(main_summary)
 taar_similarity.set_upstream(clients_daily_v6)
@@ -435,8 +582,14 @@ taar_similarity.set_upstream(clients_daily_v6)
 clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
 desktop_active_dau.set_upstream(clients_daily_v6)
+clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
+clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
+clients_last_seen_export.set_upstream(clients_last_seen)
+exact_mau_by_dimensions.set_upstream(clients_last_seen)
+exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 
 retention.set_upstream(main_summary)
+retention_bigquery_load.set_upstream(retention)
 
 client_count_daily_view.set_upstream(main_summary)
 desktop_dau.set_upstream(client_count_daily_view)
@@ -444,3 +597,4 @@ desktop_dau.set_upstream(client_count_daily_view)
 main_summary_glue.set_upstream(main_summary)
 
 taar_locale_job.set_upstream(clients_daily_v6)
+taar_collaborative_recommender.set_upstream(clients_daily_v6)

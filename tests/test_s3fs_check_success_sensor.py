@@ -5,6 +5,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+import pytz
 
 import boto3
 from airflow.exceptions import AirflowSensorTimeout
@@ -14,7 +15,8 @@ from airflow.utils.state import State
 from moto import mock_s3
 from plugins.s3fs_check_success import S3FSCheckSuccessSensor
 
-DEFAULT_DATE = datetime(2019, 1, 1)
+tz = pytz.timezone("UTC")
+DEFAULT_DATE = tz.localize(datetime(2019, 1, 1))
 
 
 @mock_s3

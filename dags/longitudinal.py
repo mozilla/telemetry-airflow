@@ -5,6 +5,7 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.constants import DS_WEEKLY
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
+from utils.status import register_status
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -35,18 +36,8 @@ longitudinal = MozDatabricksSubmitRunOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
-addon_recommender = EMRSparkOperator(
-    task_id="addon_recommender",
-    job_name="Train the Addon Recommender",
-    execution_timeout=timedelta(hours=10),
-    instance_count=20,
-    owner="mlopatka@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"],
-    env={"date": DS_WEEKLY,
-         "privateBucket": "{{ task.__class__.private_output_bucket }}",
-         "publicBucket": "{{ task.__class__.public_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
-    dag=dag)
+register_status(longitudinal, "Longitudinal", "A 6-month longitudinal view of client history.")
+
 
 game_hw_survey = EMRSparkOperator(
     task_id="game_hw_survey",
@@ -77,6 +68,5 @@ taar_lite_guidranking = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
-addon_recommender.set_upstream(longitudinal)
 game_hw_survey.set_upstream(longitudinal)
 taar_lite_guidranking.set_upstream(longitudinal)
