@@ -1,7 +1,6 @@
 import datetime
 
 from airflow import models
-from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 from utils.gcp import bigquery_etl_query
 
 default_args = {
