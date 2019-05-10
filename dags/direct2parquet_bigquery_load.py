@@ -1,8 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.subdag_operator import SubDagOperator
-from airflow.contrib.operators.bigquery_operator import BigQueryOperator
-from utils.gcp import load_to_bigquery
+from utils.gcp import bigquery_etl_query, load_to_bigquery
 
 default_args = {
     'owner': 'jthomas@mozilla.com',
@@ -84,36 +83,24 @@ with DAG(
                             subdag=load_to_bigquery(**kwargs),
                             task_id=task_name)
 
-    core_clients_daily = BigQueryOperator(
+    core_clients_daily = bigquery_etl_query(
         task_id='core_clients_daily',
-        bql='sql/core_clients_daily_v1.sql',
-        destination_dataset_table='telemetry.core_clients_daily_v1${{ds_nodash}}', # noqa
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        bigquery_conn_id='google_cloud_derived_datasets',
+        destination_table='core_clients_daily_v1',
     )
 
     tasks['telemetry_core_parquet_bigquery_load'] >> core_clients_daily
 
-    core_clients_last_seen = BigQueryOperator(
+    core_clients_last_seen = bigquery_etl_query(
         task_id='core_clients_last_seen',
-        bql='sql/core_clients_last_seen_v1.sql',
-        destination_dataset_table='telemetry.core_clients_last_seen_v1${{ds_nodash}}', # noqa
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
+        destination_table='core_clients_last_seen_v1',
         depends_on_past=True,
-        bigquery_conn_id='google_cloud_derived_datasets',
     )
 
     core_clients_daily >> core_clients_last_seen
 
-    firefox_nondesktop_exact_mau28_raw = BigQueryOperator(
+    firefox_nondesktop_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_raw',
-        bql='sql/firefox_nondesktop_exact_mau28_raw_v1.sql',
-        destination_dataset_table='telemetry.firefox_nondesktop_exact_mau28_raw_v1${{ds_nodash}}', # noqa
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-        bigquery_conn_id='google_cloud_derived_datasets',
+        destination_table='firefox_nondesktop_exact_mau28_raw_v1',
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
