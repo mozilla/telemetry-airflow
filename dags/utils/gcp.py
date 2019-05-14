@@ -376,17 +376,21 @@ def bigquery_etl_query(
 ):
     """ Generate.
 
-    :param str destination_table: [Required] BigQuery destination table name
-    :param Tuple[str] parameters: Parameters passed to bq query via --parameter
-    :param Tuple[str] arguments:  Additional bq query arguments
-    :param str gcp_conn_id:       Airflow connection id for GCP access
-    :param str gke_location:      GKE cluster location
-    :param str gke_cluster_name:  GKE cluster name
-    :param str gke_namespace:     GKE cluster namespace
-    :param str docker_image:      docker image to use
-    :param str image_pull_policy: Kubernetes policy for when to pull docker_image
-    :param bool partitioned:      Destination should be partition rather than whole table
-    :param Dict[str, Any] kwargs: Addtional keyword arguments for GKEPodOperator
+    :param str destination_table:                  [Required] BigQuery destination table
+    :param Tuple[str] parameters:                  Parameters passed to bq query
+    :param Tuple[str] arguments:                   Additional bq query arguments
+    :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_location:                       GKE cluster location
+    :param str gke_cluster_name:                   GKE cluster name
+    :param str gke_namespace:                      GKE cluster namespace
+    :param str docker_image:                       docker image to use
+    :param str image_pull_policy:                  Kubernetes policy for when to pull
+                                                   docker_image
+    :param Optional[str] date_partition_parameter: Name of parameter to specify for
+                                                   for generating date partition in
+                                                   destination rather than whole table
+    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
+                                                   GKEPodOperator
 
     :return: GKEPodOperator
     """
