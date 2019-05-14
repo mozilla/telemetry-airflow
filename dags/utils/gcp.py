@@ -363,7 +363,7 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
-    parameters=None,
+    parameters=(),
     arguments=(),
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
@@ -371,7 +371,7 @@ def bigquery_etl_query(
     gke_namespace="default",
     docker_image="mozilla/bigquery-etl:latest",
     image_pull_policy="Always",
-    partitioned=True,
+    date_partition_parameter="submission_date",
     **kwargs
 ):
     """ Generate.
@@ -392,10 +392,9 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    if partitioned:
+    if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
-        if parameters is None:
-            parameters = ("submission_date:DATE:{{ds}}",)
+        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
