@@ -363,7 +363,7 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
-    parameters=None,
+    parameters=(),
     arguments=(),
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
@@ -371,31 +371,35 @@ def bigquery_etl_query(
     gke_namespace="default",
     docker_image="mozilla/bigquery-etl:latest",
     image_pull_policy="Always",
-    partitioned=True,
+    date_partition_parameter="submission_date",
     **kwargs
 ):
     """ Generate.
 
-    :param str destination_table: [Required] BigQuery destination table name
-    :param Tuple[str] parameters: Parameters passed to bq query via --parameter
-    :param Tuple[str] arguments:  Additional bq query arguments
-    :param str gcp_conn_id:       Airflow connection id for GCP access
-    :param str gke_location:      GKE cluster location
-    :param str gke_cluster_name:  GKE cluster name
-    :param str gke_namespace:     GKE cluster namespace
-    :param str docker_image:      docker image to use
-    :param str image_pull_policy: Kubernetes policy for when to pull docker_image
-    :param bool partitioned:      Destination should be partition rather than whole table
-    :param Dict[str, Any] kwargs: Addtional keyword arguments for GKEPodOperator
+    :param str destination_table:                  [Required] BigQuery destination table
+    :param Tuple[str] parameters:                  Parameters passed to bq query
+    :param Tuple[str] arguments:                   Additional bq query arguments
+    :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_location:                       GKE cluster location
+    :param str gke_cluster_name:                   GKE cluster name
+    :param str gke_namespace:                      GKE cluster namespace
+    :param str docker_image:                       docker image to use
+    :param str image_pull_policy:                  Kubernetes policy for when to pull
+                                                   docker_image
+    :param Optional[str] date_partition_parameter: Parameter for indicating destination
+                                                   partition to generate, if None
+                                                   destination should be whole table
+                                                   rather than partition
+    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
+                                                   GKEPodOperator
 
     :return: GKEPodOperator
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    if partitioned:
+    if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
-        if parameters is None:
-            parameters = ("submission_date:DATE:{{ds}}",)
+        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
