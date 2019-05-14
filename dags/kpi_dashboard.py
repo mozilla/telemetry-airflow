@@ -24,7 +24,6 @@ with models.DAG(
         default_args=default_args) as dag:
 
     kpi_dashboard = bigquery_etl_query(
-        task_id='kpi_dashboard',
         destination_table='firefox_kpi_dashboard_v1',
         date_partition_parameter=None,
     )
