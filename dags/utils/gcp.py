@@ -386,9 +386,10 @@ def bigquery_etl_query(
     :param str docker_image:                       docker image to use
     :param str image_pull_policy:                  Kubernetes policy for when to pull
                                                    docker_image
-    :param Optional[str] date_partition_parameter: Name of parameter to specify for
-                                                   for generating date partition in
-                                                   destination rather than whole table
+    :param Optional[str] date_partition_parameter: Parameter for indicating destination
+                                                   partition to generate, if None
+                                                   destination should be whole table
+                                                   rather than partition
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
 
