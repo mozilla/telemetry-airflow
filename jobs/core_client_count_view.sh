@@ -35,7 +35,7 @@ spark-submit --master yarn \
              --class com.mozilla.telemetry.views.GenericCountView \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
              --to $date \
-             --files "s3://net-mozaws-prod-us-west-2-pipeline-data/telemetry-core-parquet/v2" \
+             --files "s3://net-mozaws-prod-us-west-2-pipeline-data/telemetry-core-parquet/v3" \
              --count-column "client_id" \
              --select "$select" \
              --grouping-columns "$group" \
