@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from utils.mozetl import mozetl_envvar
 
@@ -19,19 +20,24 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-# run on the 8th hour of the 1st day of the month
+# run on the 8th hour of the 1st day of the month so it runs after clients_daily
 dag = DAG("bgbb_fit", default_args=default_args, schedule_interval="0 8 1 * *")
 
+clients_daily_v6_dummy = DummyOperator(
+    task_id="clients_daily_v6_dummy",
+    job_name="A placeholder for the implicit clients daily dependency",
+    dag=dag,
+)
 
 bgbb_fit = MozDatabricksSubmitRunOperator(
     task_id="bgbb_fit",
-    job_name="Fit BGBB parameters",
+    job_name="Fit parameters for a BGBB model to determine active profiles",
     execution_timeout=timedelta(hours=2),
     instance_count=3,
     env=mozetl_envvar(
         "bgbb_fit",
         {
-            "submission-date": "{{ ds }}",
+            "submission-date": "{{ ds_next }}",
             "model-win": "120",
             "start-params": "[0.387, 0.912, 0.102, 1.504]",
             "sample-ids": "[42]",
@@ -48,3 +54,5 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
     ),
     dag=dag,
 )
+
+clients_daily_v6_dummy >> bgbb_fit
