@@ -552,6 +552,38 @@ taar_collaborative_recommender = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
     dag=dag)
 
+bgbb_pred = MozDatabricksSubmitRunOperator(
+    task_id="bgbb_pred",
+    job_name="Predict retention from a BGBB model",
+    execution_timeout=timedelta(hours=2),
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "wbeard@mozilla.com",
+        "amiyaguchi@mozilla.com",
+    ],
+    instance_count=3,
+    env=mozetl_envvar(
+        "bgbb_pred",
+        {
+            "submission-date": "{{ ds }}",
+            "model-win": "120",
+            "sample-ids": "[]",
+            "param-bucket": "{{ task.__class__.private_output_bucket }}",
+            "param-prefix": "bgbb/params",
+            "pred-bucket": "{{ task.__class__.private_output_bucket }}",
+            "pred-prefix": "bgbb/active_profiles",
+        },
+        dev_options={
+            "model-win": "30",
+            "sample-ids": "[1]",
+        },
+        other={
+            "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",
+            "MOZETL_EXTERNAL_MODULE": "bgbb_airflow",
+        },
+    ),
+    dag=dag
+)
 
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
@@ -597,3 +629,5 @@ main_summary_glue.set_upstream(main_summary)
 
 taar_locale_job.set_upstream(clients_daily_v6)
 taar_collaborative_recommender.set_upstream(clients_daily_v6)
+
+bgbb_pred.set_upstream(clients_daily_v6)

@@ -141,17 +141,21 @@ sed -i "s/10001/$(id -u)/g" Dockerfile.dev
 
 ### Testing Databricks Jobs
 
-There are a few caveats when using the `MozDatabricksRunSubmit` operator.
-For local testing, the token-based authentication requires setting json in the connection's `Extra` field.
+To run a job running on Databricks, run `make up` in the background. Follow
+[this guide on generating a
+token](https://docs.databricks.com/api/latest/authentication.html#generate-a-token)
+and save this to a secure location. Export the token to a an environment
+variable:
 
-Read through [this comment](https://github.com/mozilla/telemetry-airflow/pull/337#issuecomment-413383009) for context and modify the script for your application.
-The instructions will do the following:
+```bash
+export DB_TOKEN=<TOKEN>
+```
 
-1. Set up a single local instance of Airflow
-2. Set the connection string with the host and token
-3. Execute the job
+Finally, run the testing command using docker-compose directly:
 
-There may be issues running this particular operator directly via `make run` and the underlying `docker-compose run`.
+```bash
+docker-compose exec web airflow test example spark 20180101
+```
 
 ### Testing Dev Changes
 
