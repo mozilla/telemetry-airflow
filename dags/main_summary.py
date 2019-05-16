@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
-from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
