@@ -37,7 +37,7 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
     env=mozetl_envvar(
         "bgbb_fit",
         {
-            "submission-date": "{{ ds_next }}",
+            "submission-date": "{{ next_ds }}",
             "model-win": "120",
             "start-params": "[0.387, 0.912, 0.102, 1.504]",
             "sample-ids": "[42]",
