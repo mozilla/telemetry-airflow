@@ -39,6 +39,19 @@ An Airflow container can be built with
 make build
 ```
 
+### Export Credentials
+
+For now, DAGs that use the Databricks operator won't parse until the following environment variables are set (see issue #501):
+```
+AWS_SECRET_ACCESS_KEY
+AWS_ACCESS_KEY_ID
+DB_TOKEN
+```
+
+### Migrate Database
+
+Airflow database migration is no longer a separate step for dev but is run by the web container if necessary on first run. That means, however, that you should run the web container (and the database container, of course) and wait for the database migrations to complete before running individual test commands per below. The easiest way to do this is to run `make up` and let it run until the migrations complete.
+
 ## Testing
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
