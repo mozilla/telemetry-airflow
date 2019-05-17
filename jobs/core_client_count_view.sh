@@ -9,7 +9,7 @@ git clone https://github.com/mozilla/telemetry-batch-view.git
 cd telemetry-batch-view
 sbt assembly
 
-base="channel,"
+base="metadata.normalized_channel as channel,"
 base+="default_search," # 143 values
 base+="locale,"
 base+="app_name,"
