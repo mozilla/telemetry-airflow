@@ -200,11 +200,15 @@ addon_aggregates_bigquery_load = SubDagOperator(
     task_id="addon_aggregates_bigquery_load",
     dag=dag)
 
-main_summary_experiments = EMRSparkOperator(
+main_summary_experiments = MozDatabricksSubmitRunOperator(
     task_id="main_summary_experiments",
     job_name="Experiments Main Summary View",
     execution_timeout=timedelta(hours=10),
-    instance_count=10,
+    instance_count=5,
+    max_instance_count=40,
+    enable_autoscale=True,
+    instance_type="i3.2xlarge",
+    spot_bid_price_percent=50,
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
     env=tbv_envvar("com.mozilla.telemetry.views.ExperimentSummaryView", {
