@@ -9,8 +9,7 @@ git clone https://github.com/mozilla/telemetry-batch-view.git
 cd telemetry-batch-view
 sbt assembly
 
-base="metadata.normalized_channel as channel,"
-base+="default_search," # 143 values
+base="default_search," # 143 values
 base+="locale,"
 base+="app_name,"
 base+="os,"
@@ -24,10 +23,12 @@ next_year=$(($year + 1))
 
 select="regexp_extract(created, '(($prev_year|$year|$next_year)-[0-9]{2}-[0-9]{2})', 1) as created_date,"
 select+="metadata.geo_country as geo_country," # 247 values
+select+="metadata.normalized_channel as channel,"
 select+=$base
 
 group="created_date,"
 group+="geo_country,"
+group+="channel,"
 group+=$base
 
 spark-submit --master yarn \
