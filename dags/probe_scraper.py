@@ -1,7 +1,9 @@
 from airflow import DAG
 from datetime import timedelta, datetime
-from operators.emr_spark_operator import EMRSparkOperaton
-from airflow.contrib.operators import kubernetes_pod_operator
+from operators.emr_spark_operator import EMRSparkOperator
+from operators.gcp_container_operator import GKEPodOperator
+
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
 
 default_args = {
@@ -16,8 +18,8 @@ default_args = {
 }
 
 with DAG('probe_scraper',
-                default_args=default_args,
-                schedule_interval='@daily') as dag:
+         default_args=default_args,
+         schedule_interval='@daily') as dag:
 
     probe_scraper = EMRSparkOperator(
         task_id="probe_scraper",
@@ -30,22 +32,19 @@ with DAG('probe_scraper',
         output_visibility="public",
         dag=dag)
 
-    schema_generator = kubernetes_pod_operator.KubernetesPodOperator(
-        # The ID specified for the task.
-        task_id='mozilla-schema-generator',
-        # Name of task you want to run, used to generate Pod ID.
-        name='generate-schemas',
-        # The namespace to run within Kubernetes, default namespace is
-        # `default`. There is the potential for the resource starvation of
-        # Airflow workers and scheduler within the Cloud Composer environment,
-        # the recommended solution is to increase the amount of nodes in order
-        # to satisfy the computing requirements. Alternatively, launching pods
-        # into a custom namespace will stop fighting over resources.
+    gcp_conn_id = "google_cloud_derived_datasets"
+    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+
+    schema_generator = GKEPodOperator(
+        task_id='mozilla_schema_generator',
+        gcp_conn_id=gcp_conn_id,
+        project_id=connection.project_id,
+        location='us-central1-a',
+        cluster_name='mozilla_schema_generator_1',
+        name='schema-generator-1',
         namespace='default',
-        # Docker image specified. Defaults to hub.docker.com, but any fully
-        # qualified URLs will point to a custom repository. Supports private
-        # gcr.io images if the Composer Environment is under the same
-        # project-id as the gcr.io images.
-        image='mozilla/mozilla-schema-generator')
+        image='mozilla/mozilla-schema-generator',
+        env_vars={"MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}"},
+        dag=dag)
 
     schema_generator.set_upstream(probe_scraper)
