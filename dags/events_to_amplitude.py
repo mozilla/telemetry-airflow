@@ -10,6 +10,7 @@ FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
 ROCKET_ANDROID_INSTANCES = 5
 FENNEC_IOS_INSTANCES = 10
+FIRE_TV_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -142,3 +143,21 @@ devtools_release_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     start_date=datetime(2018, 12, 4),
     dag=dag)
+
+rocket_android_events_to_amplitude = EMRSparkOperator(
+    owner='frank@mozilla.com',
+    task_id="fire_tv_events_to_amplitude",
+    job_name="Fire TV Events to Amplitude",
+    execution_timeout=timedelta(hours=8),
+    instance_count=FIRE_TV_INSTANCES,
+    email=['frank@mozilla.com'],
+    env={
+        "date": "{{ ds_nodash }}",
+        "max_requests": FIRE_TV_INSTANCES * VCPUS_PER_INSTANCE,
+        "key_file": key_file("fire_tv"),
+        "artifact": get_artifact_url(slug, branch="fire_tv"),
+        "config_filename": "fire_tv_events_schemas.json",
+    },
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
+    dag=dag
+)
