@@ -144,7 +144,7 @@ devtools_release_events_to_amplitude = EMRSparkOperator(
     start_date=datetime(2018, 12, 4),
     dag=dag)
 
-rocket_android_events_to_amplitude = EMRSparkOperator(
+fire_tv_events_to_amplitude = EMRSparkOperator(
     owner='frank@mozilla.com',
     task_id="fire_tv_events_to_amplitude",
     job_name="Fire TV Events to Amplitude",
@@ -155,7 +155,7 @@ rocket_android_events_to_amplitude = EMRSparkOperator(
         "date": "{{ ds_nodash }}",
         "max_requests": FIRE_TV_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file("fire_tv"),
-        "artifact": get_artifact_url(slug, branch="fire_tv"),
+        "artifact": get_artifact_url(slug, branch="master"),
         "config_filename": "fire_tv_events_schemas.json",
     },
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
