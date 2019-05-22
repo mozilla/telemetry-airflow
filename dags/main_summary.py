@@ -377,7 +377,15 @@ clients_last_seen = bigquery_etl_query(
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
         table="clients_last_seen_raw_v1",
-        arguments=["--submission-date={{ds}}"],
+        arguments=[
+            "--submission-date={{ds}}",
+            "--destination-table=clients_last_seen_v1",
+            "--select",
+            "ifnull(cast(log2(days_seen_bits & -days_seen_bits) as integer), 0) as days_since_seen",
+            "ifnull(cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as integer), 0) as days_since_visited_5_uri",
+            "ifnull(cast(log2(days_opened_dev_tools_bits & -days_opened_dev_tools_bits) as integer), 0) as days_since_opened_dev_tools",
+            "ifnull(cast(log2(days_created_profile_bits & -days_created_profile_bits) as integer), 0) as days_since_created_profile",
+        ],
         parent_dag_name=dag.dag_id,
         dag_name="clients_last_seen_export",
         default_args=default_args,
