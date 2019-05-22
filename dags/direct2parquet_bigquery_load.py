@@ -92,7 +92,7 @@ with DAG(
 
     core_clients_last_seen = bigquery_etl_query(
         task_id='core_clients_last_seen',
-        destination_table='core_clients_last_seen_v1',
+        destination_table='core_clients_last_seen_raw_v1',
         depends_on_past=True,
     )
 
