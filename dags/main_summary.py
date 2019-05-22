@@ -367,16 +367,16 @@ clients_daily_v6_bigquery_load = SubDagOperator(
 
 clients_last_seen = bigquery_etl_query(
     task_id="clients_last_seen",
-    destination_table="clients_last_seen_v1",
+    destination_table="clients_last_seen_raw_v1",
     owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     depends_on_past=True,
     start_date=datetime(2019, 4, 15),
     dag=dag)
 
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="clients_last_seen_v1",
+        table="clients_last_seen_raw_v1",
         arguments=["--submission-date={{ds}}"],
         parent_dag_name=dag.dag_id,
         dag_name="clients_last_seen_export",
