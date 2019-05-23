@@ -274,10 +274,10 @@ search_dashboard_bigquery_load = SubDagOperator(
         dataset_s3_bucket="telemetry-parquet",
         aws_conn_id="aws_dev_iam_s3",
         dataset="harter/searchdb",
-        dataset_version="v4",
+        dataset_version="v5",
         bigquery_dataset="search",
         gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="search_aggregates_v4",
+        p2b_table_alias="search_aggregates_v5",
         ),
     task_id="search_dashboard_bigquery_load",
     dag=dag)
@@ -308,7 +308,7 @@ search_clients_daily_bigquery_load = SubDagOperator(
         dataset_s3_bucket="telemetry-parquet",
         aws_conn_id="aws_dev_iam_s3",
         dataset="search_clients_daily",
-        dataset_version="v4",
+        dataset_version="v5",
         bigquery_dataset="search",
         gke_cluster_name="bq-load-gke-1",
         reprocess=True,
@@ -367,17 +367,25 @@ clients_daily_v6_bigquery_load = SubDagOperator(
 
 clients_last_seen = bigquery_etl_query(
     task_id="clients_last_seen",
-    destination_table="clients_last_seen_v1",
+    destination_table="clients_last_seen_raw_v1",
     owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     depends_on_past=True,
     start_date=datetime(2019, 4, 15),
     dag=dag)
 
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="clients_last_seen_v1",
-        arguments=["--submission-date={{ds}}"],
+        table="clients_last_seen_raw_v1",
+        arguments=[
+            "--submission-date={{ds}}",
+            "--destination-table=clients_last_seen_v1",
+            "--select",
+            "ifnull(cast(log2(days_seen_bits & -days_seen_bits) as integer), 0) as days_since_seen",
+            "ifnull(cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as integer), 0) as days_since_visited_5_uri",
+            "ifnull(cast(log2(days_opened_dev_tools_bits & -days_opened_dev_tools_bits) as integer), 0) as days_since_opened_dev_tools",
+            "ifnull(cast(log2(days_created_profile_bits & -days_created_profile_bits) as integer), 0) as days_since_created_profile",
+        ],
         parent_dag_name=dag.dag_id,
         dag_name="clients_last_seen_export",
         default_args=default_args,
