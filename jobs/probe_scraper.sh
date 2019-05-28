@@ -4,6 +4,7 @@
 set -x
 
 BUCKET="net-mozaws-prod-us-west-2-data-pitmo"
+CACHE_BUCKET="telemetry-airflow"
 CACHE_DIR="probe_cache"
 OUTPUT_DIR="probe_data"
 
@@ -26,8 +27,12 @@ cd probe-scraper
 python3 setup.py bdist_egg
 python3 -m pip install -r requirements.txt
 
-# Create the output and cache directories.
-mkdir $CACHE_DIR $OUTPUT_DIR
+# Create the output directory.
+mkdir $OUTPUT_DIR
+
+# Sync the cache directory
+CACHE_LOC="s3://$CACHE_BUCKET/cache/probe-scraper/"
+aws s3 sync $CACHE_LOC $CACHE_DIR
 
 # Finally run the scraper.
 # Using -m allows for relative imports in runner.py
@@ -45,4 +50,7 @@ else
            --content-type 'application/json' \
            --cache-control 'max-age=28800' \
            --acl public-read
+
+    # Sync cache data
+    aws s3 sync $CACHE_DIR $CACHE_LOC
 fi
