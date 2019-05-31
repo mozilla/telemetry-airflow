@@ -79,7 +79,7 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
         :param python_version: the default python runtime on the cluster (python 3.5.2)
             See https://docs.databricks.com/release-notes/runtime/4.3.html#system-environment
             for more details.
-
+        :param pypi_libs: PyPI libraries to install. ex: "['pylib1==0.1', 'pylib2==3.1']"
         :param kwargs: Keyword arguments to pass to DatabricksSubmitRunOperator
         """
         if python_version not in (2, 3):
