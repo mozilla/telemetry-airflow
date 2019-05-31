@@ -23,10 +23,10 @@ dag_weekly = DAG(
     "weekly_main_summary", default_args=default_args_weekly, schedule_interval="@weekly"
 )
 
-wait_for_main_summary = ExternalTaskSensor(
-    task_id='wait_for_main_summary',
-    external_dag_id='main_summary',
-    external_task_id='main_summary',
+wait_for_clients_daily = ExternalTaskSensor(
+    task_id='clients_daily',
+    external_dag_id='clients_daily',
+    external_task_id='clients_daily',
     execution_delta=timedelta(days=-7, hours=-1), # main_summary waits one hour, execution date is beginning of the week
     dag=dag)
 
@@ -55,4 +55,4 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
 )
 
 
-taar_ensemble.set_upstream(wait_for_main_summary)
+taar_ensemble.set_upstream(wait_for_clients_daily)
