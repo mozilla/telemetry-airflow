@@ -2,6 +2,7 @@
 This configures a weekly DAG to run the TAAR Ensemble job off.
 """
 from airflow import DAG
+from airflow.operators.sensors import ExternalTaskSensor
 from datetime import datetime, timedelta
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 
@@ -21,6 +22,14 @@ default_args_weekly = {
 dag_weekly = DAG(
     "weekly_main_summary", default_args=default_args_weekly, schedule_interval="@weekly"
 )
+
+wait_for_main_summary = ExternalTaskSensor(
+    task_id='wait_for_main_summary',
+    external_dag_id='main_summary',
+    external_task_id='main_summary',
+    execution_delta=timedelta(days=-7, hours=-1), # main_summary waits one hour, execution date is beginning of the week
+    dag=dag)
+
 
 taar_ensemble = MozDatabricksSubmitRunOperator(
     task_id="taar_ensemble_job",
@@ -42,7 +51,8 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
     ),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.sh",
     output_visibility="private",
+    dag=dag_weekly,
 )
 
 
-taar_ensemble.set_upstream(dag_weekly)
+taar_ensemble.set_upstream(wait_for_main_summary)
