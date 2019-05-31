@@ -43,7 +43,7 @@ with DAG('probe_scraper',
         cluster_name='bq-load-gke-1',
         name='schema-generator-1',
         namespace='default',
-        image='mozilla/mozilla-schema-generator',
+        image='mozilla/mozilla-schema-generator:latest',
         env_vars={"MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}"},
         dag=dag)
 
