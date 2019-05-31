@@ -2,7 +2,11 @@ import os
 import subprocess
 import tempfile
 
-from airflow.contrib.operators.gcp_container_operator import GKEPodOperator
+from airflow import AirflowException
+
+from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
+
+from airflow.contrib.operators.gcp_container_operator import GKEPodOperator, GKEClusterCreateOperator, GKEClusterDeleteOperator
 
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
@@ -78,3 +82,48 @@ class GKEPodOperator(GKEPodOperator):
             os.environ[G_APP_CRED] = service_key.name
             os.environ[GCLOUD_APP_CRED] = service_key.name
             service_key.close()
+
+class GKEClusterCreateOperator(GKEClusterCreateOperator):
+    """
+    We override methods to fix https://issues.apache.org/jira/browse/AIRFLOW-4518
+    The GKEClusterHook constructor call wasn't updated to reflect a code change
+
+    """
+    def _check_input(self):
+        if all([self.gcp_conn_id, self.project_id, self.location, self.body]):
+            if isinstance(self.body, dict) and 'name' in self.body:
+                # Don't throw error
+                return
+            # If not dict, then must
+            elif self.body.name and self.body.initial_node_count:
+                return
+
+        self.log.error(
+            'One of (gcp_conn_id, project_id, location, body, body[\'name\'], '
+            'body[\'initial_node_count\']) is missing or incorrect')
+        raise AirflowException('Operator has incorrect or missing input.')
+
+    def execute(self, context):
+        self._check_input()
+        hook = GKEClusterHook(gcp_conn_id=self.gcp_conn_id, location=self.location)
+        create_op = hook.create_cluster(cluster=self.body)
+        return create_op
+
+class GKEClusterDeleteOperator(GKEClusterDeleteOperator):
+    """
+    We override methods to fix https://issues.apache.org/jira/browse/AIRFLOW-4518
+    The GKEClusterHook constructor call wasn't updated to reflect a code change
+
+    """
+    def _check_input(self):
+        if not all([self.gcp_conn_id, self.project_id, self.name, self.location]):
+            self.log.error(
+                'One of (gcp_conn_id, project_id, name, location) is missing or incorrect')
+            raise AirflowException('Operator has incorrect or missing input.')
+
+
+    def execute(self, context):
+        self._check_input()
+        hook = GKEClusterHook(gcp_conn_id=self.gcp_conn_id, location=self.location)
+        delete_result = hook.delete_cluster(name=self.name)
+        return delete_result
