@@ -19,20 +19,20 @@ default_args_weekly = {
 
 
 
-dag_weekly = DAG(
-    "weekly_main_summary", default_args=default_args_weekly, schedule_interval="@weekly"
+taar_weekly = DAG(
+    "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly"
 )
 
 wait_for_clients_daily = ExternalTaskSensor(
     task_id='clients_daily',
-    external_dag_id='clients_daily',
+    external_dag_id='main_summary',
     external_task_id='clients_daily',
     execution_delta=timedelta(days=-7, hours=-1), # main_summary waits one hour, execution date is beginning of the week
-    dag=dag)
+    dag=taar_weekly)
 
 
 taar_ensemble = MozDatabricksSubmitRunOperator(
-    task_id="taar_ensemble_job",
+    task_id="taar_ensemble",
     job_name="TAAR Ensemble Model",
     owner="vng@mozilla.com",
     email=["vng@mozilla.com", "mlopatka@mozilla.com"],
@@ -51,7 +51,6 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
     ),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.sh",
     output_visibility="private",
-    dag=dag_weekly,
 )
 
 
