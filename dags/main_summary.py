@@ -598,8 +598,16 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
     dag=dag
 )
 
+remote_content_uptake = bigquery_etl_query(
+    destination_table="remote_content_uptake_v1",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    start_date=datetime(2019, 6, 1),
+    dag=dag)
+
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
+remote_content_uptake.set_upstream(main_summary_bigquery_load)
 
 engagement_ratio.set_upstream(main_summary)
 
