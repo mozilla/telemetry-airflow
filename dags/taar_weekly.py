@@ -8,10 +8,10 @@ from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from utils.mozetl import mozetl_envvar
 
 default_args_weekly = {
-    "owner": "frank@mozilla.com",
+    "owner": "vng@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 5, 31),
-    "email": ["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
