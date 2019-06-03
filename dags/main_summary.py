@@ -582,9 +582,9 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
             "model-win": "120",
             "sample-ids": "[]",
             "param-bucket": "{{ task.__class__.private_output_bucket }}",
-            "param-prefix": "bgbb/params",
+            "param-prefix": "bgbb/params/v1",
             "pred-bucket": "{{ task.__class__.private_output_bucket }}",
-            "pred-prefix": "bgbb/active_profiles",
+            "pred-prefix": "bgbb/active_profiles/v1",
         },
         dev_options={
             "model-win": "30",
