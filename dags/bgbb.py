@@ -44,7 +44,7 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
             "sample-fraction": "1.0",
             "penalizer-coef": "0.01",
             "bucket": "{{ task.__class__.private_output_bucket }}",
-            "prefix": "bgbb/params",
+            "prefix": "bgbb/params/v1",
         },
         dev_options={"model-win": "30"},
         other={
