@@ -44,6 +44,7 @@ with DAG('probe_scraper',
         name='schema-generator-1',
         namespace='default',
         image='mozilla/mozilla-schema-generator:latest',
+        image_pull_policy='Always',
         env_vars={"MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}"},
         dag=dag)
 
