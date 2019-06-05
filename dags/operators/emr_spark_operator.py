@@ -208,6 +208,18 @@ class EMRSparkOperator(BaseOperator):
                  'Value': 'telemetry-analysis-worker-instance'},
                 {'Key': 'Environment',
                  'Value': EMRSparkOperator.deploy_environment},
+                {'Key': 'app',
+                 'Value': 'airflow-emr-spark'},
+                {'Key': 'env',
+                 'Value': EMRSparkOperator.deploy_environment},
+                {'Key': 'realm',
+                 'Value': EMRSparkOperator.deploy_environment},
+                {'Key': 'program_name',
+                 'Value': 'data'},
+                {'Key': 'program_code',
+                 'Value': 'data'},
+                {'Key': 'cost_center',
+                 'Value': '5650'},
             ],
             Steps=self.steps
         )
