@@ -38,7 +38,7 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
         "bgbb_fit",
         {
             "submission-date": "{{ next_ds }}",
-            "model-win": "120",
+            "model-win": "90",
             "start-params": "[0.387, 0.912, 0.102, 1.504]",
             "sample-ids": "[42]",
             "sample-fraction": "1.0",
