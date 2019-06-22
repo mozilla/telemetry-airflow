@@ -46,14 +46,14 @@ addons_daily = MozDatabricksSubmitRunOperator(
         "dthorn@mozilla.com",
     ],
     env=mozetl_envvar(
-        "addons_daily",
+        "addons_report",
         {
             "date": "{{ ds_nodash }}",
             "deploy_environment": "{{ task.__class__.deploy_environment }}",
         },
         other={
             "MOZETL_GIT_PATH": "https://github.com/mozilla/addons_daily.git",
-            "MOZETL_EXTERNAL_MODULE": "addons_daily.addons_report",
+            "MOZETL_EXTERNAL_MODULE": "addons_daily",
         },
     ),
     dag=dag,
