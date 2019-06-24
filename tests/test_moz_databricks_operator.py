@@ -29,7 +29,7 @@ def client():
 
 @pytest.fixture()
 def mock_hook(mocker):
-    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook = mocker.patch("airflow.contrib.operators.databricks_operator.DatabricksHook")
     mock_hook_instance = mock_hook.return_value
     mock_hook_instance.submit_run.return_value = 1
     return mock_hook_instance
@@ -150,7 +150,7 @@ def test_mozetl_skips_generates_runner_if_exists(mocker, client):
     client.Object("telemetry-test-bucket", "steps/mozetl_runner.py").put(
         Body="raise NotImplementedError"
     )
-    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook = mocker.patch("airflow.contrib.operators.databricks_operator.DatabricksHook")
     mock_runner = mocker.patch("plugins.moz_databricks.generate_runner")
 
     operator = MozDatabricksSubmitRunOperator(
@@ -169,7 +169,7 @@ def test_mozetl_skips_generates_runner_if_exists(mocker, client):
 
 
 def test_mozetl_generates_runner_if_not_exists(mocker, client):
-    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook = mocker.patch("airflow.contrib.operators.databricks_operator.DatabricksHook")
     mock_runner = mocker.patch("plugins.moz_databricks.generate_runner")
 
     operator = MozDatabricksSubmitRunOperator(
@@ -191,7 +191,7 @@ def test_mozetl_generates_runner_for_external_module(mocker, client):
     client.Object("telemetry-test-bucket", "steps/mozetl_runner.py").put(
         Body="raise NotImplementedError"
     )
-    mock_hook = mocker.patch("plugins.databricks.databricks_operator.DatabricksHook")
+    mock_hook = mocker.patch("airflow.contrib.operators.databricks_operator.DatabricksHook")
     mock_runner = mocker.patch("plugins.moz_databricks.generate_runner")
 
     operator = MozDatabricksSubmitRunOperator(
