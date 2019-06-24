@@ -39,7 +39,7 @@ crash_summary_view_bigquery_load = SubDagOperator(
         ds_type="ds",
         aws_conn_id="aws_dev_iam_s3",
         dataset="crash_summary",
-        dataset_version="v1",
+        dataset_version="v2",
         date_submission_col="submission_date",
         gke_cluster_name="bq-load-gke-1",
         ),

@@ -574,12 +574,12 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
         "wbeard@mozilla.com",
         "amiyaguchi@mozilla.com",
     ],
-    instance_count=3,
+    instance_count=10,
     env=mozetl_envvar(
         "bgbb_pred",
         {
             "submission-date": "{{ ds }}",
-            "model-win": "120",
+            "model-win": "90",
             "sample-ids": "[]",
             "param-bucket": "{{ task.__class__.private_output_bucket }}",
             "param-prefix": "bgbb/params/v1",
