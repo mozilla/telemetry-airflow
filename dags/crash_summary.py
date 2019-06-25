@@ -1,7 +1,7 @@
 from airflow import DAG
+from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
-from operators.emr_spark_operator import EMRSparkOperator
 from utils.gcp import load_to_bigquery
 from utils.tbv import tbv_envvar
 
@@ -18,10 +18,16 @@ default_args = {
 
 dag = DAG('crash_summary', default_args=default_args, schedule_interval='@daily')
 
-crash_summary_view = EMRSparkOperator(
+crash_summary_view = MozDatabricksSubmitRunOperator(
     task_id="crash_summary_view",
     job_name="Crash Summary View",
-    instance_count=20,
+    instance_count=5,
+    max_instance_count=40,
+    enable_autoscale=True,
+    instance_type="c4.4xlarge",
+    spot_bid_price_percent=50,
+    ebs_volume_count=1,
+    ebs_volume_size=250,
     execution_timeout=timedelta(hours=4),
     env = tbv_envvar("com.mozilla.telemetry.views.CrashSummaryView", {
         "from": "{{ ds_nodash }}",
