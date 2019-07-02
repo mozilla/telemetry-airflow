@@ -83,6 +83,9 @@ with DAG(
                             subdag=load_to_bigquery(**kwargs),
                             task_id=task_name)
 
+
+    # Daily and last seen views on top of core pings.
+
     core_clients_daily = bigquery_etl_query(
         task_id='core_clients_daily',
         destination_table='core_clients_daily_v1',
@@ -98,9 +101,31 @@ with DAG(
 
     core_clients_daily >> core_clients_last_seen
 
+
+    # Daily and last seen views on top of glean pings.
+
+    glean_clients_daily = bigquery_etl_query(
+        task_id='glean_clients_daily',
+        destination_table='glean_clients_daily_v1',
+        start_date=datetime(2019, 7, 1),
+    )
+
+    glean_clients_last_seen = bigquery_etl_query(
+        task_id='glean_clients_last_seen',
+        destination_table='glean_clients_last_seen_raw_v1',
+        start_date=datetime(2019, 7, 1),
+        depends_on_past=True,
+    )
+
+    glean_clients_daily >> glean_clients_last_seen
+
+
+    # Overall nondesktop exact MAU view.
+
     firefox_nondesktop_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_raw',
         destination_table='firefox_nondesktop_exact_mau28_raw_v1',
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
+    glean_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
