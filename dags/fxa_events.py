@@ -52,7 +52,7 @@ with models.DAG(
 
     fxa_users_last_seen = bigquery_etl_query(
         task_id='fxa_users_last_seen',
-        destination_table='fxa_users_last_seen_v1',
+        destination_table='fxa_users_last_seen_raw_v1',
         depends_on_past=True,
         start_date=datetime.datetime(2019, 4, 23),
     )
