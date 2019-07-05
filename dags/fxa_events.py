@@ -65,3 +65,10 @@ with models.DAG(
     )
 
     fxa_users_last_seen >> firefox_accounts_exact_mau28_raw
+
+    smoot_usage_fxa_raw = bigquery_etl_query(
+        task_id='smoot_usage_fxa_raw',
+        destination_table='smoot_usage_fxa_raw_v1',
+    )
+
+    fxa_users_last_seen >> smoot_usage_fxa_raw
