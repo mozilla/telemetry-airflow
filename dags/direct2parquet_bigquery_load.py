@@ -120,7 +120,7 @@ with DAG(
     glean_clients_daily >> glean_clients_last_seen
 
 
-    # Overall nondesktop exact MAU view.
+    # Aggregated nondesktop tables.
 
     firefox_nondesktop_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_raw',
@@ -129,3 +129,11 @@ with DAG(
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
     glean_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
+
+    smoot_usage_nondesktop_raw = bigquery_etl_query(
+        task_id='smoot_usage_nondesktop_raw',
+        destination_table='smoot_usage_nondesktop_raw_v1',
+    )
+
+    core_clients_last_seen >> smoot_usage_nondesktop_raw
+    glean_clients_last_seen >> smoot_usage_nondesktop_raw

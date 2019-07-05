@@ -411,6 +411,13 @@ exact_mau_by_dimensions_export = SubDagOperator(
     task_id="exact_mau_by_dimensions_export",
     dag=dag)
 
+smoot_usage_desktop_raw = bigquery_etl_query(
+    task_id='smoot_usage_desktop_raw',
+    destination_table='smoot_usage_desktop_raw_v1',
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    dag=dag)
+
 retention = EMRSparkOperator(
     task_id="retention",
     job_name="1-Day Firefox Retention",
@@ -631,6 +638,7 @@ clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
+smoot_usage_desktop_raw.set_upstream(clients_last_seen)
 
 retention.set_upstream(main_summary)
 retention_bigquery_load.set_upstream(retention)
