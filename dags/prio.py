@@ -19,21 +19,9 @@ DEFAULT_ARGS = {
     "email": ["hwoo@mozilla.com", "dataops+alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 2,
+    "retries": 0,
     "retry_delay": timedelta(minutes=15),
 }
-
-
-# prio-runner-b@moz-fx-priotest-project-b.iam.gserviceaccount.com
-# gke-prio-b
-# google_cloud_prio_b
-
-create_prio_date(
-    server_id="a",
-    cluster_name="gke-prio-a",
-    gcp_conn_id="google_cloud_prio_a",
-    service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
-)
 
 
 def create_prio_dag(
@@ -43,13 +31,6 @@ def create_prio_dag(
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
-    cluster_def = create_gke_config(
-        name=cluster_name,
-        service_account=service_account,
-        owner_label="hwoo",
-        team_label="dataops",
-    )
-
     gke_dag = DAG(
         "gke_prio_{}".format(server_id),
         default_args=DEFAULT_ARGS,
@@ -57,38 +38,52 @@ def create_prio_dag(
         schedule_interval="@weekly",
     )
 
+    shared_config = {
+        "project_id": connection.project_id,
+        "location": "us-west1-b",
+        "gcp_conn_id": gcp_conn_id,
+        "dag": gke_dag,
+    }
+
     create_gke_cluster = GKEClusterCreateOperator(
         task_id="create_gke_cluster",
-        project_id=connection.project_id,
-        location="us-west1-b",
-        gcp_conn_id=gcp_conn_id,
-        body=cluster_def,
-        dag=gke_dag,
+        body=create_gke_config(
+            name=cluster_name,
+            service_account=service_account,
+            owner_label="hwoo",
+            team_label="dataops",
+        ),
+        **shared_config
     )
 
     run_prio = GKEPodOperator(
         task_id="run_prio_{}".format(server_id),
-        gcp_conn_id=gcp_conn_id,
-        project_id=connection.project_id,
-        location="us-west1-b",
         cluster_name=cluster_name,
         name="run-prio-project-{}".format(server_id),
         namespace="default",
         image="mozilla/prio-processor:latest",
         arguments=["scripts/test-cli-integration"],
-        dag=gke_dag,
+        **shared_config
     )
 
     delete_gke_cluster = GKEClusterDeleteOperator(
-        task_id="delete_gke_cluster",
-        project_id=connection.project_id,
-        location="us-west1-b",
-        name=cluster_name,
-        gcp_conn_id=gcp_conn_id,
-        dag=gke_dag,
+        task_id="delete_gke_cluster", name=cluster_name, **shared_config
     )
 
-    create_gke_cluster.set_downstream(run_prio)
-    run_prio.set_downstream(delete_gke_cluster)
-
+    create_gke_cluster >> run_prio >> delete_gke_cluster
     return gke_dag
+
+
+prio_a = create_prio_dag(
+    server_id="a",
+    cluster_name="gke-prio-a",
+    gcp_conn_id="google_cloud_prio_a",
+    service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
+)
+
+prio_b = create_prio_dag(
+    server_id="b",
+    cluster_name="gke-prio-b",
+    gcp_conn_id="google_cloud_prio_b",
+    service_account="prio-runner-a@moz-fx-priotest-project-b.iam.gserviceaccount.com",
+)
