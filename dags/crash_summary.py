@@ -18,14 +18,14 @@ default_args = {
 
 dag = DAG('crash_summary', default_args=default_args, schedule_interval='@daily')
 
+# we deliberately do not autoscale this job, as it seems that the bottleneck is not
+# the CPU
 crash_summary_view = MozDatabricksSubmitRunOperator(
     task_id="crash_summary_view",
     job_name="Crash Summary View",
-    instance_count=5,
-    max_instance_count=40,
-    enable_autoscale=True,
+    dev_instance_count=1,
+    instance_count=1,
     instance_type="c4.4xlarge",
-    spot_bid_price_percent=50,
     ebs_volume_count=1,
     ebs_volume_size=250,
     execution_timeout=timedelta(hours=4),
