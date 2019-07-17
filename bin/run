@@ -62,7 +62,9 @@ case $1 in
   web)
     airflow initdb
     airflow upgradedb
-    init_connections
+
+    # Only init connections in dev
+    [ ! -z ${DEVELOPMENT+check} ] && init_connections
 
     exec airflow webserver -p ${PORT} --workers 4
     ;;
