@@ -12,7 +12,7 @@ default_args = {
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
-    'depends_on_past': False,
+    'depends_on_past': True,
     'retries': 2,
     'retry_delay': datetime.timedelta(minutes=10),
 }
