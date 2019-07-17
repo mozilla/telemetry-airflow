@@ -30,11 +30,6 @@ services:
     environment:
       - AWS_SECRET_ACCESS_KEY
       - AWS_ACCESS_KEY_ID
-      # https://docs.databricks.com/api/latest/authentication.html#generate-a-token
-      - "AIRFLOW_CONN_DATABRICKS_DEFAULT=databricks://:@dbc-caf9527b-e073.cloud.databricks.com:443?token=${DB_TOKEN}"
-      - "AIRFLOW_CONN_GOOGLE_CLOUD_DERIVED_DATASETS=google_cloud_platform://:@:"
-      - "AIRFLOW_CONN_GOOGLE_CLOUD_PRIO_A=google_cloud_platform://:@:"
-      - "AIRFLOW_CONN_GOOGLE_CLOUD_PRIO_B=google_cloud_platform://:@:"
 
   web:
     extends:

@@ -25,6 +25,30 @@ wait_for() {
   done
 }
 
+init_connections() {
+    airflow connections --add \
+        --conn_id databricks_default \
+        --conn_type databricks \
+        --conn_host dbc-caf9527b-e073.cloud.databricks.com:443 \
+        --conn_extra token=${DB_TOKEN}
+
+    airflow connections --add \
+        --conn_id google_cloud_prio_a \
+        --conn_type google_cloud_platform
+
+    airflow connections --add \
+        --conn_id google_cloud_prio_b \
+        --conn_type google_cloud_platform
+
+    airflow connections --add \
+        --conn_id google_cloud_derived_datasets \
+        --conn_type google_cloud_platform
+
+    airflow connections --add \
+        --conn_id amplitude_s3_conn \
+        --conn_type s3
+}
+
 [ $# -lt 1 ] && usage
 
 # Only wait for backend services in development
@@ -38,6 +62,8 @@ case $1 in
   web)
     airflow initdb
     airflow upgradedb
+    init_connections
+
     exec airflow webserver -p ${PORT} --workers 4
     ;;
   worker)
