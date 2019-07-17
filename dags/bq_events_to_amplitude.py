@@ -39,7 +39,6 @@ with models.DAG(
     # Overwrite the table with yesterday's data
     table_name = 'fenix_events_amplitude_v1'
     table_creation = bigquery_etl_query(
-        gke_cluster_name='bq-load-gke-2',
         destination_table=table_name,
         date_partition_parameter=None,
         parameters=('submission_date' + ':DATE:{{ds}}',)
