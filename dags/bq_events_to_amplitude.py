@@ -46,7 +46,7 @@ with models.DAG(
 
     project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
 
-    gcs_bucket = 'moz-fx-data-amplitude-export'
+    gcs_bucket = 'moz-fx-data-derived-datasets-amplitude-export'
     directory = '{env}/fenix/{{ ds_nodash }}/'.format(env=environment)
     extension = '.tsv.gz'
 
