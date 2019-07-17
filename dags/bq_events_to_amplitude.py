@@ -17,6 +17,8 @@ default_args = {
     'retry_delay': datetime.timedelta(minutes=10),
 }
 
+environment = '{{ task.__class__.deploy_environment }}'
+
 dag_name = 'bq_events_to_amplitude'
 
 # This connection needs access to both BQ and GCS
@@ -40,13 +42,13 @@ with models.DAG(
         gke_cluster_name='bq-load-gke-2',
         destination_table=table_name,
         date_partition_parameter=None,
-        parameters=('submission_date' + ":DATE:{{ds}}",)
+        parameters=('submission_date' + ':DATE:{{ds}}',)
     )
 
     project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
 
-    gcs_bucket = "moz-fx-data-amplitude-export"
-    directory = 'fenix/{{ ds_nodash }}/'
+    gcs_bucket = 'moz-fx-data-amplitude-export'
+    directory = '{env}/fenix/{{ ds_nodash }}/'.format(env=environment)
     extension = '.tsv.gz'
 
     # Export from bq to gcs
