@@ -71,7 +71,7 @@ with models.DAG(
         delimiter=extension,
         google_cloud_storage_conn_id=gcp_conn_id,
         dest_aws_conn_id=amplitude_s3_conn,
-        dest_s3_key='s3://{bucket}/{dir}'.format(bucket=amplitude_s3_bucket, dir=directory),
+        dest_s3_key='s3://{bucket}'.format(bucket=amplitude_s3_bucket),
         replace=True
     )
 
