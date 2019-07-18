@@ -238,6 +238,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         gke_cluster_name="bq-load-gke-1",
         p2b_resume=True,
         reprocess=True,
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="main_summary_experiments_bigquery_load",
     dag=dag)
