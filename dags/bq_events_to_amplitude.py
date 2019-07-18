@@ -5,6 +5,7 @@ from utils.gcp import bigquery_etl_query
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from os import environ
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -17,8 +18,7 @@ default_args = {
     'retry_delay': datetime.timedelta(minutes=10),
 }
 
-environment = '{{ task.__class__.deploy_environment }}'
-
+environment = environ['DEPLOY_ENVIRONMENT']
 dag_name = 'bq_events_to_amplitude'
 
 # This connection needs access to both BQ and GCS
@@ -41,13 +41,13 @@ with models.DAG(
     table_creation = bigquery_etl_query(
         destination_table=table_name,
         date_partition_parameter=None,
-        parameters=('submission_date' + ':DATE:{{ds}}',)
+        parameters=('submission_date' + ':DATE:{{ ds }}',)
     )
 
     project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
 
     gcs_bucket = 'moz-fx-data-derived-datasets-amplitude-export'
-    directory = '{env}/fenix/{{ ds_nodash }}/'.format(env=environment)
+    directory = environment + '/fenix/{{ ds_nodash }}/'
     extension = '.tsv.gz'
 
     # Export from bq to gcs
@@ -72,7 +72,7 @@ with models.DAG(
         delimiter=extension,
         google_cloud_storage_conn_id=gcp_conn_id,
         dest_aws_conn_id=amplitude_s3_conn,
-        dest_s3_key='s3://{bucket}'.format(bucket=amplitude_s3_bucket),
+        dest_s3_key='s3://{bucket}/'.format(bucket=amplitude_s3_bucket),
         replace=True
     )
 
