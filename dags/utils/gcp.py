@@ -23,7 +23,7 @@ def load_to_bigquery(parent_dag_name=None,
                      dag_name='load_to_bigquery',
                      gke_location='us-central1-a',
                      gke_namespace='default',
-                     docker_image='docker.io/mozilla/parquet2bigquery:20190530', # noqa
+                     docker_image='docker.io/mozilla/parquet2bigquery:20190717', # noqa
                      reprocess=False,
                      p2b_concurrency='10',
                      p2b_resume=False,
@@ -32,7 +32,10 @@ def load_to_bigquery(parent_dag_name=None,
                      spark_gs_dataset_location=None,
                      bigquery_dataset='telemetry',
                      dataset_gcs_bucket='moz-fx-data-derived-datasets-parquet',
-                     gcp_conn_id='google_cloud_derived_datasets'):
+                     gcp_conn_id='google_cloud_derived_datasets',
+                     cluster_by=(),
+                     drop=(),
+                     replace=()):
 
     """ Load Parquet data into BigQuery. Used with SubDagOperator.
 
@@ -61,6 +64,9 @@ def load_to_bigquery(parent_dag_name=None,
     :param bool reprocess:                 enable dataset reprocessing defaults to False
     :param str objects_prefix:             custom objects_prefix to override defaults
     :param str spark_gs_dataset_location:  custom spark dataset load location to override defaults
+    :param List[str] cluster_by:           top level fields to cluster by when creating destination table
+    :param List[str] drop:                 top level fields to exclude from destination table
+    :param List[str] replace:              top level field replacement expressions
 
     :return airflow.models.DAG
     """
@@ -108,6 +114,15 @@ def load_to_bigquery(parent_dag_name=None,
 
     else:
         gke_args += ['-p', _objects_prefix]
+
+    if cluster_by:
+        gke_args += ['--cluster-by'] + cluster_by
+
+    if drop:
+        gke_args += ['--drop'] + drop
+
+    if replace:
+        gke_args += ['--replace'] + replace
 
     bq_table_name = p2b_table_alias or '{}_{}'.format(dataset, dataset_version)
 

@@ -95,7 +95,13 @@ main_summary_bigquery_load = SubDagOperator(
         dataset="main_summary",
         dataset_version="v4",
         gke_cluster_name="bq-load-gke-1",
-        ),
+        bigquery_dataset="telemetry_raw",
+        cluster_by=["sample_id"],
+        drop=["submission_date_s3"],
+        replace=[
+            "submission_date_s3 AS submission_date",
+            "SAFE_CAST(sample_id AS INT64) AS sample_id",
+        ]),
     task_id="main_summary_bigquery_load",
     dag=dag)
 
@@ -232,6 +238,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         gke_cluster_name="bq-load-gke-1",
         p2b_resume=True,
         reprocess=True,
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="main_summary_experiments_bigquery_load",
     dag=dag)
