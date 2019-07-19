@@ -54,6 +54,7 @@ with DAG(
             },
         'firefox-installer-install-parquet': {
             'dataset_version': 'v1',
+            'bigquery_dataset': 'telemetry',
             },
     }
 
@@ -70,14 +71,11 @@ with DAG(
             'dataset_s3_bucket': 'net-mozaws-prod-us-west-2-pipeline-data',
             'aws_conn_id': 'aws_prod_iam_s3',
             'dataset': dataset,
-            'dataset_version': values['dataset_version'],
             'gke_cluster_name': 'bq-load-gke-1',
+            'bigquery_dataset': 'telemetry_raw',
         }
 
-        try:
-            kwargs['date_submission_col'] = values['date_submission_col']
-        except KeyError:
-            pass
+        kwargs.update(values)
 
         tasks[task_name] = SubDagOperator(
                             subdag=load_to_bigquery(**kwargs),
