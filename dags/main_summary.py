@@ -144,6 +144,7 @@ addons_bigquery_load = SubDagOperator(
         dataset="addons",
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="addons_bigquery_load",
     dag=dag)
@@ -172,6 +173,7 @@ main_events_bigquery_load = SubDagOperator(
         dataset="events",
         dataset_version="v1",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="main_events_bigquery_load",
     dag=dag)
@@ -202,6 +204,7 @@ addon_aggregates_bigquery_load = SubDagOperator(
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
         p2b_table_alias="addons_aggregates_v2",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="addon_aggregates_bigquery_load",
     dag=dag)
@@ -368,6 +371,7 @@ clients_daily_v6_bigquery_load = SubDagOperator(
         dataset_version="v6",
         gke_cluster_name="bq-load-gke-1",
         reprocess=True,
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="clients_daily_v6_bigquery_load",
     dag=dag)

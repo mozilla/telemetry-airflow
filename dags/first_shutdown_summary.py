@@ -46,6 +46,7 @@ first_shutdown_summary_bigquery_load = SubDagOperator(
         dataset="first_shutdown_summary",
         dataset_version="v4",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="first_shutdown_summary_bigquery_load",
     dag=dag)
