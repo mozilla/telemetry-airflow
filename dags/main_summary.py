@@ -378,7 +378,7 @@ clients_daily_v6_bigquery_load = SubDagOperator(
 
 clients_last_seen = bigquery_etl_query(
     task_id="clients_last_seen",
-    parameters=("--dataset_id", "telemetry_raw"),
+    arguments=("--dataset_id", "telemetry_raw"),
     destination_table="clients_last_seen_raw_v1",
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
