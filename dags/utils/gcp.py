@@ -124,7 +124,7 @@ def load_to_bigquery(parent_dag_name=None,
         gke_args += ['--drop'] + drop
 
     if rename:
-        gke_args += ['--rename'] + [k + "=" + v for k, v in replace.items()]
+        gke_args += ['--rename'] + [k + "=" + v for k, v in rename.items()]
 
     if replace:
         gke_args += ['--replace'] + replace
