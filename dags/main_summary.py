@@ -144,6 +144,7 @@ addons_bigquery_load = SubDagOperator(
         dataset="addons",
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="addons_bigquery_load",
     dag=dag)
@@ -172,6 +173,7 @@ main_events_bigquery_load = SubDagOperator(
         dataset="events",
         dataset_version="v1",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="main_events_bigquery_load",
     dag=dag)
@@ -202,6 +204,7 @@ addon_aggregates_bigquery_load = SubDagOperator(
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
         p2b_table_alias="addons_aggregates_v2",
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="addon_aggregates_bigquery_load",
     dag=dag)
@@ -368,12 +371,14 @@ clients_daily_v6_bigquery_load = SubDagOperator(
         dataset_version="v6",
         gke_cluster_name="bq-load-gke-1",
         reprocess=True,
+        bigquery_dataset="telemetry_raw",
         ),
     task_id="clients_daily_v6_bigquery_load",
     dag=dag)
 
 clients_last_seen = bigquery_etl_query(
     task_id="clients_last_seen",
+    arguments=("--dataset_id", "telemetry_raw"),
     destination_table="clients_last_seen_raw_v1",
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
@@ -385,6 +390,7 @@ clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
         table="clients_last_seen_raw_v1",
         arguments=[
+            "--dataset=telemetry_raw",
             "--submission-date={{ds}}",
             "--destination-table=clients_last_seen_v1",
             "--select",
