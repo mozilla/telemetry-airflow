@@ -24,10 +24,12 @@ with DAG(
 
     datasets = {
         'telemetry-core-parquet': {
-            'dataset_version': 'v3'
+            'dataset_version': 'v3',
+            'cluster_by': ['app_name', 'os'],
+            'rename': {'submission_date_s3': 'submission_date'},
             },
         'telemetry-anonymous-parquet': {
-            'dataset_version': 'v1'
+            'dataset_version': 'v1',
             },
         'telemetry-shield-study-parquet': {
             'dataset_version': 'v1',
@@ -35,16 +37,20 @@ with DAG(
             },
         'telemetry-new-profile-parquet': {
             'dataset_version': 'v2',
-            'date_submission_col': 'submission'
+            'date_submission_col': 'submission',
             },
         'telemetry-mobile-event-parquet': {
             'dataset_version': 'v2',
+            'cluster_by': ['app_name', 'os'],
+            'rename': {'submission_date_s3': 'submission_date'},
             },
         'telemetry-heartbeat-parquet': {
             'dataset_version': 'v1',
             },
         'telemetry-focus-event-parquet': {
             'dataset_version': 'v1',
+            'cluster_by': ['channel'],
+            'rename': {'submission_date_s3': 'submission_date'},
             },
         'eng-workflow-hgpush-parquet': {
             'dataset_version': 'v1',
