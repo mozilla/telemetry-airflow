@@ -23,7 +23,7 @@ def load_to_bigquery(parent_dag_name=None,
                      dag_name='load_to_bigquery',
                      gke_location='us-central1-a',
                      gke_namespace='default',
-                     docker_image='docker.io/mozilla/parquet2bigquery:20190717', # noqa
+                     docker_image='docker.io/mozilla/parquet2bigquery:20190722', # noqa
                      reprocess=False,
                      p2b_concurrency='10',
                      p2b_resume=False,
@@ -35,6 +35,7 @@ def load_to_bigquery(parent_dag_name=None,
                      gcp_conn_id='google_cloud_derived_datasets',
                      cluster_by=(),
                      drop=(),
+                     rename={},
                      replace=()):
 
     """ Load Parquet data into BigQuery. Used with SubDagOperator.
@@ -66,6 +67,7 @@ def load_to_bigquery(parent_dag_name=None,
     :param str spark_gs_dataset_location:  custom spark dataset load location to override defaults
     :param List[str] cluster_by:           top level fields to cluster by when creating destination table
     :param List[str] drop:                 top level fields to exclude from destination table
+    :param Dict[str, str] rename:          top level fields to rename in destination table
     :param List[str] replace:              top level field replacement expressions
 
     :return airflow.models.DAG
@@ -120,6 +122,9 @@ def load_to_bigquery(parent_dag_name=None,
 
     if drop:
         gke_args += ['--drop'] + drop
+
+    if rename:
+        gke_args += ['--rename'] + [k + "=" + v for k, v in replace.items()]
 
     if replace:
         gke_args += ['--replace'] + replace

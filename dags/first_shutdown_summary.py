@@ -47,6 +47,10 @@ first_shutdown_summary_bigquery_load = SubDagOperator(
         dataset_version="v4",
         gke_cluster_name="bq-load-gke-1",
         bigquery_dataset="telemetry_raw",
+        cluster_by=["sample_id"],
+        drop=["submission_date"],
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="first_shutdown_summary_bigquery_load",
     dag=dag)
