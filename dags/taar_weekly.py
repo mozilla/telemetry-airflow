@@ -51,7 +51,7 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
             "date": "{{ ds_nodash }}",
         },
     ),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.sh",
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.py",
     output_visibility="private",
 )
 
