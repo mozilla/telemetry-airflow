@@ -97,11 +97,10 @@ main_summary_bigquery_load = SubDagOperator(
         gke_cluster_name="bq-load-gke-1",
         bigquery_dataset="telemetry_raw",
         cluster_by=["sample_id"],
-        drop=["submission_date_s3"],
-        replace=[
-            "submission_date_s3 AS submission_date",
-            "SAFE_CAST(sample_id AS INT64) AS sample_id",
-        ]),
+        drop=["submission_date"],
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
+        ),
     task_id="main_summary_bigquery_load",
     dag=dag)
 
@@ -145,6 +144,8 @@ addons_bigquery_load = SubDagOperator(
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
         bigquery_dataset="telemetry_raw",
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="addons_bigquery_load",
     dag=dag)
@@ -174,6 +175,8 @@ main_events_bigquery_load = SubDagOperator(
         dataset_version="v1",
         gke_cluster_name="bq-load-gke-1",
         bigquery_dataset="telemetry_raw",
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="main_events_bigquery_load",
     dag=dag)
@@ -205,6 +208,8 @@ addon_aggregates_bigquery_load = SubDagOperator(
         gke_cluster_name="bq-load-gke-1",
         p2b_table_alias="addons_aggregates_v2",
         bigquery_dataset="telemetry_raw",
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="addon_aggregates_bigquery_load",
     dag=dag)
@@ -372,6 +377,8 @@ clients_daily_v6_bigquery_load = SubDagOperator(
         gke_cluster_name="bq-load-gke-1",
         reprocess=True,
         bigquery_dataset="telemetry_raw",
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="clients_daily_v6_bigquery_load",
     dag=dag)
