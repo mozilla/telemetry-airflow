@@ -25,7 +25,7 @@ DEFAULT_ARGS = {
 
 
 def create_prio_dag(
-    server_id, cluster_name, gcp_conn_id, service_account, *args, **kwargs
+    server_id, cluster_name, gcp_conn_id, service_account, env_vars, *args, **kwargs
 ):
     assert server_id in ["a", "b"]
 
@@ -63,6 +63,7 @@ def create_prio_dag(
         namespace="default",
         image="mozilla/prio-processor:latest",
         arguments=["scripts/test-cli-integration"],
+        env_vars=env_vars,
         **shared_config
     )
 
@@ -79,11 +80,40 @@ prio_a = create_prio_dag(
     cluster_name="gke-prio-a",
     gcp_conn_id="google_cloud_prio_a",
     service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
+    env_vars={
+        "DATA_CONFIG": "/app/processor/config",
+        "SERVER_ID": "A",
+        "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
+        # TODO: this is the built-in testing key
+        "PRIVATE_KEY_HEX": "624BFDF22F729BBFD762B3D61930B876F3711B200A10F620FEAC6FD792A2BD08",
+        "PUBLIC_KEY_HEX_INTERNAL": "AB0008BDE17581D3C45CA8CEACB3F7CE6FB48FEF98AA78597A6955633F54D628",
+        "PUBLIC_KEY_HEX_EXTERNAL": "68499CBDCAE6B06CAC0C86D255A609B6AFF66A56087803CFE4BD998C7E20220C",
+        "BUCKET_INTERNAL_PRIVATE": "project-a-private",
+        "BUCKET_INTERNAL_SHARED": "project-a-shared",
+        "BUCKET_EXTERNAL_SHARED": "project-b-shared",
+        "RETRY_LIMIT": "5",
+        "RETRY_DELAY": "3",
+        "RETRY_BACKOFF_EXPONENT": "2",
+    },
 )
 
 prio_b = create_prio_dag(
     server_id="b",
     cluster_name="gke-prio-b",
     gcp_conn_id="google_cloud_prio_b",
-    service_account="prio-runner-a@moz-fx-priotest-project-b.iam.gserviceaccount.com",
+    service_account="prio-runner-b@moz-fx-priotest-project-b.iam.gserviceaccount.com",
+    env_vars={
+        "DATA_CONFIG": "/app/processor/config",
+        "SERVER_ID": "B",
+        "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
+        "PRIVATE_KEY_HEX": "86EBA021A49C18B1D2885BCAE8C1985D14082F4A130F4862FD3E77DDD0518D3D",
+        "PUBLIC_KEY_HEX_INTERNAL": "68499CBDCAE6B06CAC0C86D255A609B6AFF66A56087803CFE4BD998C7E20220C",
+        "PUBLIC_KEY_HEX_EXTERNAL": "AB0008BDE17581D3C45CA8CEACB3F7CE6FB48FEF98AA78597A6955633F54D628",
+        "BUCKET_INTERNAL_PRIVATE": "project-b-private",
+        "BUCKET_INTERNAL_SHARED": "project-b-shared",
+        "BUCKET_EXTERNAL_SHARED": "project-a-shared",
+        "RETRY_LIMIT": "5",
+        "RETRY_DELAY": "3",
+        "RETRY_BACKOFF_EXPONENT": "2",
+    },
 )
