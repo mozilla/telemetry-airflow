@@ -250,6 +250,9 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         p2b_resume=True,
         reprocess=True,
         bigquery_dataset="telemetry_raw",
+        cluster_by=["experiment_id"],
+        drop=["submission_date"],
+        rename={"submission_date_s3": "submission_date"},
         ),
     task_id="main_summary_experiments_bigquery_load",
     dag=dag)
