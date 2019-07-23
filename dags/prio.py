@@ -62,7 +62,7 @@ def create_prio_dag(
         name="run-prio-project-{}".format(server_id),
         namespace="default",
         image="mozilla/prio-processor:latest",
-        arguments=["scripts/test-cli-integration"],
+        arguments=["processor/bin/process"],
         env_vars=env_vars,
         **shared_config
     )
