@@ -10,7 +10,7 @@ from utils.mozetl import mozetl_envvar
 default_args_weekly = {
     "owner": "vng@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2019, 7, 27),
+    "start_date": datetime(2019, 7, 14),
     "email": ["telemetry-alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -45,7 +45,6 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
     spot_bid_price_percent=100,
     max_instance_count=60,
     enable_autoscale=True,
-    start_date=datetime(2019, 7, 27),
     pypi_libs=[
         "mozilla-taar3==0.4.5",
         "mozilla-srgutil==0.1.10",
