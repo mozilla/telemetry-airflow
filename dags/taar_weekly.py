@@ -51,6 +51,7 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
         "python-decouple==3.1",
     ],
     env=mozetl_envvar("taar_ensemble", {"date": "{{ ds_nodash }}"}),
+    start_date=datetime(2019, 7, 14),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.py",
     output_visibility="private",
 )
