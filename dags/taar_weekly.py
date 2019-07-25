@@ -43,7 +43,6 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
     spot_bid_price_percent=100,
     max_instance_count=60,
     enable_autoscale=True,
-    start_date='20190527',
     pypi_libs=['mozilla-taar3==0.4.5', 'mozilla-srgutil==0.1.10', 'python-decouple==3.1'],
     env=mozetl_envvar(
         "taar_ensemble",
