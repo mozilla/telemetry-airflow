@@ -24,11 +24,14 @@ taar_weekly = DAG(
 )
 
 wait_for_clients_daily = ExternalTaskSensor(
-    task_id='clients_daily',
-    external_dag_id='main_summary',
-    external_task_id='clients_daily',
-    execution_delta=timedelta(days=-7, hours=-1),  # main_summary waits one hour, execution date is beginning of the week
-    dag=taar_weekly)
+    task_id="clients_daily",
+    external_dag_id="main_summary",
+    external_task_id="clients_daily",
+    execution_delta=timedelta(
+        days=-7, hours=-1
+    ),  # main_summary waits one hour, execution date is beginning of the week
+    dag=taar_weekly,
+)
 
 
 taar_ensemble = MozDatabricksSubmitRunOperator(
@@ -43,13 +46,12 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
     max_instance_count=60,
     enable_autoscale=True,
     start_date=datetime(2019, 7, 27),
-    pypi_libs=['mozilla-taar3==0.4.5', 'mozilla-srgutil==0.1.10', 'python-decouple==3.1'],
-    env=mozetl_envvar(
-        "taar_ensemble",
-        {
-            "date": "{{ ds_nodash }}",
-        },
-    ),
+    pypi_libs=[
+        "mozilla-taar3==0.4.5",
+        "mozilla-srgutil==0.1.10",
+        "python-decouple==3.1",
+    ],
+    env=mozetl_envvar("taar_ensemble", {"date": "{{ ds_nodash }}"}),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.py",
     output_visibility="private",
 )
