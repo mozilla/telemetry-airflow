@@ -447,3 +447,60 @@ def bigquery_etl_query(
         image_pull_policy=image_pull_policy,
         **kwargs
     )
+
+
+def bigquery_etl_copy_deduplicate(
+    task_id,
+    target_project_id,
+    only_tables=None,
+    except_tables=None,
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="mozilla/bigquery-etl:latest",
+    image_pull_policy="Always",
+    **kwargs
+):
+    """ Copy a day's data from live ping tables to stable ping tables,
+    deduplicating on document_id.
+
+    :param str task_id:              [Required] ID for the task
+    :param str target_project_id:    [Required] ID of project where target tables live
+    :param Tuple[str] only_tables:   Only process the given tables of form 'telemetry_live.main_v4'
+    :param Tuple[str] except_tables: Process all except the given tables of form 'telemetry_live.main_v4'
+    :param str gcp_conn_id:          Airflow connection id for GCP access
+    :param str gke_location:         GKE cluster location
+    :param str gke_cluster_name:     GKE cluster name
+    :param str gke_namespace:        GKE cluster namespace
+    :param str docker_image:         docker image to use
+    :param str image_pull_policy:    Kubernetes policy for when to pull
+                                     docker_image
+    :param Dict[str, Any] kwargs:    Additional keyword arguments for
+                                     GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    table_qualifiers = []
+    if only_tables:
+        table_qualifiers.append('--only')
+        table_qualifiers += only_tables
+    if except_tables:
+        table_qualifiers.append('--except')
+        table_qualifiers += except_tables
+    return GKEPodOperator(
+        task_id=task_id,
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=["copy_deduplicate"]
+        + ["--project_id=" + target_project_id]
+        + ["--date={{ds}}"]
+        + table_qualifiers,
+        image_pull_policy=image_pull_policy,
+        **kwargs
+    )
