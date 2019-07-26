@@ -7,7 +7,8 @@ from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
-from utils.gcp import bigquery_etl_query, export_to_parquet, load_to_bigquery
+from utils.gcp import bigquery_etl_query, bigquery_etl_copy_deduplicate
+from utils.gcp import export_to_parquet, load_to_bigquery
 
 
 default_args = {
@@ -24,6 +25,18 @@ default_args = {
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
 dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
+
+# We copy yesterday's main pings from telemetry_live to telemetry_stable
+# at the root of this DAG because telemetry_stable.main_v4 will become
+# the source for main_summary, etc. once we are comfortable retiring parquet
+# data imports.
+copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
+    task_id='copy_deduplicate_main_ping',
+    target_project_id='moz-fx-data-shared-prod',
+    only_tables=['telemetry_live.main_v4'],
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
+    dag=dag)
 
 main_summary_all_histograms = MozDatabricksSubmitRunOperator(
     task_id="main_summary_all_histograms",
