@@ -292,10 +292,10 @@ search_dashboard_bigquery_load = SubDagOperator(
         dataset_s3_bucket="telemetry-parquet",
         aws_conn_id="aws_dev_iam_s3",
         dataset="harter/searchdb",
-        dataset_version="v6",
+        dataset_version="v7",
         bigquery_dataset="search",
         gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="search_aggregates_v6",
+        p2b_table_alias="search_aggregates_v7",
         ),
     task_id="search_dashboard_bigquery_load",
     dag=dag)
