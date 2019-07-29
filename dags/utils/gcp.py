@@ -467,8 +467,8 @@ def bigquery_etl_copy_deduplicate(
 
     :param str task_id:              [Required] ID for the task
     :param str target_project_id:    [Required] ID of project where target tables live
-    :param Tuple[str] only_tables:   Only process the given tables of form 'telemetry_live.main_v4'
-    :param Tuple[str] except_tables: Process all except the given tables of form 'telemetry_live.main_v4'
+    :param Tuple[str] only_tables:   Only process tables matching the given globs of form 'telemetry_live.main_v*'
+    :param Tuple[str] except_tables: Process all tables except those matching the given globs
     :param str gcp_conn_id:          Airflow connection id for GCP access
     :param str gke_location:         GKE cluster location
     :param str gke_cluster_name:     GKE cluster name
@@ -497,7 +497,7 @@ def bigquery_etl_copy_deduplicate(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["copy_deduplicate"]
+        arguments=["script/copy_deduplicate"]
         + ["--project_id=" + target_project_id]
         + ["--date={{ds}}"]
         + table_qualifiers,
