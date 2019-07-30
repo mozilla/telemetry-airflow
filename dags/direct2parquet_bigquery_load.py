@@ -78,7 +78,7 @@ with DAG(
             'aws_conn_id': 'aws_prod_iam_s3',
             'dataset': dataset,
             'gke_cluster_name': 'bq-load-gke-1',
-            'bigquery_dataset': 'telemetry_raw',
+            'bigquery_dataset': 'telemetry_derived',
         }
 
         kwargs.update(values)
