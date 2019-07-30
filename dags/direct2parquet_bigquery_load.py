@@ -78,7 +78,7 @@ with DAG(
             'aws_conn_id': 'aws_prod_iam_s3',
             'dataset': dataset,
             'gke_cluster_name': 'bq-load-gke-1',
-            'bigquery_dataset': 'telemetry_raw',
+            'bigquery_dataset': 'telemetry_derived',
         }
 
         kwargs.update(values)
@@ -93,6 +93,7 @@ with DAG(
     core_clients_daily = bigquery_etl_query(
         task_id='core_clients_daily',
         destination_table='core_clients_daily_v1',
+        dataset_id='telemetry',
     )
 
     tasks['telemetry_core_parquet_bigquery_load'] >> core_clients_daily
@@ -100,6 +101,7 @@ with DAG(
     core_clients_last_seen = bigquery_etl_query(
         task_id='core_clients_last_seen',
         destination_table='core_clients_last_seen_raw_v1',
+        dataset_id='telemetry',
         depends_on_past=True,
     )
 
@@ -111,12 +113,14 @@ with DAG(
     glean_clients_daily = bigquery_etl_query(
         task_id='glean_clients_daily',
         destination_table='glean_clients_daily_v1',
+        dataset_id='telemetry',
         start_date=datetime(2019, 7, 1),
     )
 
     glean_clients_last_seen = bigquery_etl_query(
         task_id='glean_clients_last_seen',
         destination_table='glean_clients_last_seen_raw_v1',
+        dataset_id='telemetry',
         start_date=datetime(2019, 7, 1),
         depends_on_past=True,
     )
@@ -129,6 +133,7 @@ with DAG(
     firefox_nondesktop_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_raw',
         destination_table='firefox_nondesktop_exact_mau28_raw_v1',
+        dataset_id='telemetry',
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
@@ -137,6 +142,7 @@ with DAG(
     smoot_usage_nondesktop_raw = bigquery_etl_query(
         task_id='smoot_usage_nondesktop_raw',
         destination_table='smoot_usage_nondesktop_raw_v1',
+        dataset_id='telemetry',
     )
 
     core_clients_last_seen >> smoot_usage_nondesktop_raw

@@ -48,7 +48,7 @@ crash_summary_view_bigquery_load = SubDagOperator(
         dataset_version="v2",
         date_submission_col="submission_date",
         gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         ),
     task_id="crash_summary_view_bigquery_load",
     dag=dag)

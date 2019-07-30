@@ -10,6 +10,8 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+import re
+
 
 def load_to_bigquery(parent_dag_name=None,
                      default_args=None,
@@ -383,8 +385,11 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
+    dataset_id,
     parameters=(),
     arguments=(),
+    project_id=None,
+    sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
@@ -397,8 +402,12 @@ def bigquery_etl_query(
     """ Generate.
 
     :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Optional[str] project_id:               BigQuery default project id
+    :param Optional[str] sql_file_path:            Optional override for path to the
+                                                   SQL query file to run
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
@@ -417,7 +426,6 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    sql_file_path = "sql/{}.sql".format(destination_table)
     if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
@@ -430,9 +438,11 @@ def bigquery_etl_query(
         image=docker_image,
         arguments=["query"]
         + ["--destination_table=" + destination_table]
+        + ["--dataset_id=" + dataset_id]
+        + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
-        + [sql_file_path],
+        + [sql_file_path or "sql/{}/{}.sql".format(dataset_id, destination_table)],
         image_pull_policy=image_pull_policy,
         **kwargs
     )

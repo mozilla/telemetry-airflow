@@ -40,6 +40,7 @@ with models.DAG(
     table_name = 'fenix_events_amplitude_v1'
     table_creation = bigquery_etl_query(
         destination_table=table_name,
+        dataset_id='telemetry',
         date_partition_parameter=None,
         parameters=('submission_date' + ':DATE:{{ ds }}',)
     )
@@ -53,7 +54,7 @@ with models.DAG(
     # Export from bq to gcs
     # Docs: https://github.com/apache/airflow/blob/master/airflow/contrib/operators/bigquery_to_gcs.py#L28
     table_extract = BigQueryToCloudStorageOperator(
-        task_id='bq_to_gcs', 
+        task_id='bq_to_gcs',
         source_project_dataset_table='{project}.telemetry.{table}'.format(project=project_id, table=table_name),
         destination_cloud_storage_uris=['gs://{bucket}/{dir}*{ext}'.format(bucket=gcs_bucket, dir=directory, ext=extension)],
         bigquery_conn_id=gcp_conn_id,
