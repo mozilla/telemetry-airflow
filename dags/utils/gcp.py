@@ -385,9 +385,9 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
+    dataset_id,
     parameters=(),
     arguments=(),
-    dataset_id="telemetry",
     project_id=None,
     sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
@@ -402,9 +402,9 @@ def bigquery_etl_query(
     """ Generate.
 
     :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
-    :param str dataset_id:                         BigQuery default dataset id
     :param Optional[str] project_id:               BigQuery default project id
     :param Optional[str] sql_file_path:            Optional override for path to the
                                                    SQL query file to run
