@@ -14,10 +14,14 @@ from airflow.operators.subdag_operator import SubDagOperator
 from utils.gke import create_gke_config
 
 DEFAULT_ARGS = {
-    "owner": "hwoo@mozilla.com",
+    "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 5, 24),
-    "email": ["hwoo@mozilla.com", "dataops+alerts@mozilla.com"],
+    "email": [
+        "amiyaguchi@mozilla.com",
+        "hwoo@mozilla.com",
+        "dataops+alerts@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 0,
