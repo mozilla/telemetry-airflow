@@ -642,6 +642,7 @@ bgbb_pred_bigquery_load = SubDagOperator(
         dataset_version="v1",
         p2b_table_alias="active_profiles_v1",
         bigquery_dataset="telemetry_derived",
+        ds_type="ds",
         gke_cluster_name="bq-load-gke-1",
         cluster_by=["sample_id"],
         rename={"submission_date_s3": "submission_date"},
