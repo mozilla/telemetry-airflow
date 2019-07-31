@@ -30,9 +30,16 @@ DEFAULT_ARGS = {
 
 
 def create_prio_dag(
-    server_id, cluster_name, gcp_conn_id, service_account, env_vars, *args, **kwargs
+    server_id,
+    cluster_name,
+    gcp_conn_id,
+    service_account,
+    env_vars,
+    arguments,
+    *args,
+    **kwargs
 ):
-    assert server_id in ["a", "b"]
+    assert server_id in ["a", "b", "admin"]
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
@@ -68,7 +75,7 @@ def create_prio_dag(
         name="run-prio-project-{}".format(server_id),
         namespace="default",
         image="mozilla/prio-processor:latest",
-        arguments=["processor/bin/process"],
+        arguments=arguments,
         env_vars=env_vars,
         **shared_config
     )
@@ -91,12 +98,31 @@ main_dag = DAG(
     schedule_interval="@weekly",
 )
 
+
+admin_bootstrap = SubDagOperator(
+    subdag=create_prio_dag(
+        server_id="admin",
+        cluster_name="gke-prio-admin",
+        gcp_conn_id="google_cloud_prio_admin",
+        service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
+        arguments=[
+            "bash",
+            "-c",
+            "cd processor; prio-processor --output gs://moz-fx-data-prio-bootstrap",
+        ],
+        env_vars={},
+    ),
+    task_id="gke_prio_admin",
+    dag=main_dag,
+)
+
 prio_a = SubDagOperator(
     subdag=create_prio_dag(
         server_id="a",
         cluster_name="gke-prio-a",
         gcp_conn_id="google_cloud_prio_a",
         service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
+        arguments=["processor/bin/process"],
         env_vars={
             "DATA_CONFIG": "/app/processor/config",
             "SERVER_ID": "A",
@@ -124,6 +150,7 @@ prio_b = SubDagOperator(
         cluster_name="gke-prio-b",
         gcp_conn_id="google_cloud_prio_b",
         service_account="prio-runner-b@moz-fx-priotest-project-b.iam.gserviceaccount.com",
+        arguments=["processor/bin/process"],
         env_vars={
             "DATA_CONFIG": "/app/processor/config",
             "SERVER_ID": "B",
@@ -142,3 +169,6 @@ prio_b = SubDagOperator(
     task_id="gke_prio_b",
     dag=main_dag,
 )
+
+admin_bootstrap >> prio_a
+admin_bootstrap >> prio_b
