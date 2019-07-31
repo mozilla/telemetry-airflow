@@ -8,6 +8,7 @@ CACHE_BUCKET="telemetry-airflow"
 CACHE_DIR="probe_cache"
 OUTPUT_DIR="probe_data"
 
+# Install miniconda for the Python dependencies
 ANACONDA_PATH=/mnt/miniconda3
 ANACONDA_SCRIPT=Miniconda3-4.5.12-Linux-x86_64.sh
 
@@ -20,6 +21,20 @@ rm /mnt/$ANACONDA_SCRIPT
 
 # Just to ensure, when looking at logs, we are using the correct python binary
 echo $(which python3)
+
+# Install the Android SDK, so we can determine the dependencies of Android
+# applications.
+# Put Gradle's working directory on local storage, or it will be **really** slow
+GRADLE_USER_HOME=/mnt/gradle
+ANDROID_SDK_ROOT=/mnt/android-sdk
+
+mkdir /mnt/android-sdk
+wget --no-clobber --no-verbose -P /mnt/android-sdk https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
+pushd /mnt/android-sdk
+unzip sdk-tools-linux-4333796.zip
+popd
+# Accept all of the licenses for the Android SDK
+yes | /mnt/android-sdk/tools/bin/sdkmanager --licenses
 
 # Clone and setup the scraper
 git clone https://github.com/mozilla/probe-scraper.git
