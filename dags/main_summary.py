@@ -643,7 +643,6 @@ bgbb_pred_bigquery_load = SubDagOperator(
         p2b_table_alias="active_profiles_v1",
         bigquery_dataset="telemetry_derived",
         gke_cluster_name="bq-load-gke-1",
-        date_submission_col="start_date",
         ),
     task_id="bgbb_pred_bigquery_load",
     dag=dag)
