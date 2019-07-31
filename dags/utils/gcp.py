@@ -426,6 +426,7 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
+    sql_file_path = sql_file_pathor or "sql/{}/{}.sql".format(dataset_id, destination_table)
     if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
@@ -442,7 +443,7 @@ def bigquery_etl_query(
         + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
-        + [sql_file_path or "sql/{}/{}.sql".format(dataset_id, destination_table)],
+        + [sql_file_path],
         image_pull_policy=image_pull_policy,
         **kwargs
     )
