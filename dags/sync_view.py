@@ -42,6 +42,7 @@ sync_view_bigquery_load = SubDagOperator(
         dataset="sync_summary",
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_derived",
         ),
     task_id="sync_view_bigquery_load",
     dag=dag)
@@ -69,6 +70,7 @@ sync_events_view_bigquery_load = SubDagOperator(
         dataset="sync_events",
         dataset_version="v1",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_derived",
         ),
     task_id="sync_events_view_bigquery_load",
     dag=dag)
@@ -95,6 +97,7 @@ sync_flat_view_bigquery_load = SubDagOperator(
         dataset="sync_flat_summary",
         dataset_version="v1",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_derived",
         ),
     task_id="sync_flat_view_bigquery_load",
     dag=dag)

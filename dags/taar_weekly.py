@@ -10,7 +10,7 @@ from utils.mozetl import mozetl_envvar
 default_args_weekly = {
     "owner": "vng@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2019, 5, 31),
+    "start_date": datetime(2019, 7, 14),
     "email": ["telemetry-alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -19,17 +19,19 @@ default_args_weekly = {
 }
 
 
-
 taar_weekly = DAG(
     "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly"
 )
 
 wait_for_clients_daily = ExternalTaskSensor(
-    task_id='clients_daily',
-    external_dag_id='main_summary',
-    external_task_id='clients_daily',
-    execution_delta=timedelta(days=-7, hours=-1), # main_summary waits one hour, execution date is beginning of the week
-    dag=taar_weekly)
+    task_id="clients_daily",
+    external_dag_id="main_summary",
+    external_task_id="clients_daily",
+    execution_delta=timedelta(
+        days=-7, hours=-1
+    ),  # main_summary waits one hour, execution date is beginning of the week
+    dag=taar_weekly,
+)
 
 
 taar_ensemble = MozDatabricksSubmitRunOperator(
@@ -43,15 +45,14 @@ taar_ensemble = MozDatabricksSubmitRunOperator(
     spot_bid_price_percent=100,
     max_instance_count=60,
     enable_autoscale=True,
-    start_date='20190527',
-    pypi_libs=['mozilla-taar3==0.4.5', 'mozilla-srgutil==0.1.10', 'python-decouple==3.1'],
-    env=mozetl_envvar(
-        "taar_ensemble",
-        {
-            "date": "{{ ds_nodash }}",
-        },
-    ),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.sh",
+    pypi_libs=[
+        "mozilla-taar3==0.4.5",
+        "mozilla-srgutil==0.1.10",
+        "python-decouple==3.1",
+    ],
+    env=mozetl_envvar("taar_ensemble", {"date": "{{ ds_nodash }}"}),
+    start_date=datetime(2019, 7, 14),
+    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.py",
     output_visibility="private",
 )
 

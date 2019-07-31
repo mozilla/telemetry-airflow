@@ -24,10 +24,12 @@ with DAG(
 
     datasets = {
         'telemetry-core-parquet': {
-            'dataset_version': 'v3'
+            'dataset_version': 'v3',
+            'cluster_by': ['app_name', 'os'],
+            'rename': {'submission_date_s3': 'submission_date'},
             },
         'telemetry-anonymous-parquet': {
-            'dataset_version': 'v1'
+            'dataset_version': 'v1',
             },
         'telemetry-shield-study-parquet': {
             'dataset_version': 'v1',
@@ -35,16 +37,20 @@ with DAG(
             },
         'telemetry-new-profile-parquet': {
             'dataset_version': 'v2',
-            'date_submission_col': 'submission'
+            'date_submission_col': 'submission',
             },
         'telemetry-mobile-event-parquet': {
             'dataset_version': 'v2',
+            'cluster_by': ['app_name', 'os'],
+            'rename': {'submission_date_s3': 'submission_date'},
             },
         'telemetry-heartbeat-parquet': {
             'dataset_version': 'v1',
             },
         'telemetry-focus-event-parquet': {
             'dataset_version': 'v1',
+            'cluster_by': ['channel'],
+            'rename': {'submission_date_s3': 'submission_date'},
             },
         'eng-workflow-hgpush-parquet': {
             'dataset_version': 'v1',
@@ -54,6 +60,7 @@ with DAG(
             },
         'firefox-installer-install-parquet': {
             'dataset_version': 'v1',
+            'bigquery_dataset': 'telemetry',
             },
     }
 
@@ -70,14 +77,11 @@ with DAG(
             'dataset_s3_bucket': 'net-mozaws-prod-us-west-2-pipeline-data',
             'aws_conn_id': 'aws_prod_iam_s3',
             'dataset': dataset,
-            'dataset_version': values['dataset_version'],
             'gke_cluster_name': 'bq-load-gke-1',
+            'bigquery_dataset': 'telemetry_derived',
         }
 
-        try:
-            kwargs['date_submission_col'] = values['date_submission_col']
-        except KeyError:
-            pass
+        kwargs.update(values)
 
         tasks[task_name] = SubDagOperator(
                             subdag=load_to_bigquery(**kwargs),
@@ -89,6 +93,7 @@ with DAG(
     core_clients_daily = bigquery_etl_query(
         task_id='core_clients_daily',
         destination_table='core_clients_daily_v1',
+        dataset_id='telemetry',
     )
 
     tasks['telemetry_core_parquet_bigquery_load'] >> core_clients_daily
@@ -96,6 +101,7 @@ with DAG(
     core_clients_last_seen = bigquery_etl_query(
         task_id='core_clients_last_seen',
         destination_table='core_clients_last_seen_raw_v1',
+        dataset_id='telemetry',
         depends_on_past=True,
     )
 
@@ -107,12 +113,14 @@ with DAG(
     glean_clients_daily = bigquery_etl_query(
         task_id='glean_clients_daily',
         destination_table='glean_clients_daily_v1',
+        dataset_id='telemetry',
         start_date=datetime(2019, 7, 1),
     )
 
     glean_clients_last_seen = bigquery_etl_query(
         task_id='glean_clients_last_seen',
         destination_table='glean_clients_last_seen_raw_v1',
+        dataset_id='telemetry',
         start_date=datetime(2019, 7, 1),
         depends_on_past=True,
     )
@@ -125,6 +133,7 @@ with DAG(
     firefox_nondesktop_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_raw',
         destination_table='firefox_nondesktop_exact_mau28_raw_v1',
+        dataset_id='telemetry',
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
@@ -133,6 +142,7 @@ with DAG(
     smoot_usage_nondesktop_raw = bigquery_etl_query(
         task_id='smoot_usage_nondesktop_raw',
         destination_table='smoot_usage_nondesktop_raw_v1',
+        dataset_id='telemetry',
     )
 
     core_clients_last_seen >> smoot_usage_nondesktop_raw

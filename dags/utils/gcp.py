@@ -10,6 +10,8 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+import re
+
 
 def load_to_bigquery(parent_dag_name=None,
                      default_args=None,
@@ -23,7 +25,7 @@ def load_to_bigquery(parent_dag_name=None,
                      dag_name='load_to_bigquery',
                      gke_location='us-central1-a',
                      gke_namespace='default',
-                     docker_image='docker.io/mozilla/parquet2bigquery:20190530', # noqa
+                     docker_image='docker.io/mozilla/parquet2bigquery:20190722', # noqa
                      reprocess=False,
                      p2b_concurrency='10',
                      p2b_resume=False,
@@ -32,7 +34,11 @@ def load_to_bigquery(parent_dag_name=None,
                      spark_gs_dataset_location=None,
                      bigquery_dataset='telemetry',
                      dataset_gcs_bucket='moz-fx-data-derived-datasets-parquet',
-                     gcp_conn_id='google_cloud_derived_datasets'):
+                     gcp_conn_id='google_cloud_derived_datasets',
+                     cluster_by=(),
+                     drop=(),
+                     rename={},
+                     replace=()):
 
     """ Load Parquet data into BigQuery. Used with SubDagOperator.
 
@@ -61,6 +67,10 @@ def load_to_bigquery(parent_dag_name=None,
     :param bool reprocess:                 enable dataset reprocessing defaults to False
     :param str objects_prefix:             custom objects_prefix to override defaults
     :param str spark_gs_dataset_location:  custom spark dataset load location to override defaults
+    :param List[str] cluster_by:           top level fields to cluster by when creating destination table
+    :param List[str] drop:                 top level fields to exclude from destination table
+    :param Dict[str, str] rename:          top level fields to rename in destination table
+    :param List[str] replace:              top level field replacement expressions
 
     :return airflow.models.DAG
     """
@@ -108,6 +118,18 @@ def load_to_bigquery(parent_dag_name=None,
 
     else:
         gke_args += ['-p', _objects_prefix]
+
+    if cluster_by:
+        gke_args += ['--cluster-by'] + cluster_by
+
+    if drop:
+        gke_args += ['--drop'] + drop
+
+    if rename:
+        gke_args += ['--rename'] + [k + "=" + v for k, v in rename.items()]
+
+    if replace:
+        gke_args += ['--replace'] + replace
 
     bq_table_name = p2b_table_alias or '{}_{}'.format(dataset, dataset_version)
 
@@ -363,8 +385,11 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
+    dataset_id,
     parameters=(),
     arguments=(),
+    project_id=None,
+    sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
@@ -377,8 +402,12 @@ def bigquery_etl_query(
     """ Generate.
 
     :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Optional[str] project_id:               BigQuery default project id
+    :param Optional[str] sql_file_path:            Optional override for path to the
+                                                   SQL query file to run
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
@@ -397,7 +426,7 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    sql_file_path = "sql/{}.sql".format(destination_table)
+    sql_file_path = sql_file_path or "sql/{}/{}.sql".format(dataset_id, destination_table)
     if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
@@ -410,6 +439,8 @@ def bigquery_etl_query(
         image=docker_image,
         arguments=["query"]
         + ["--destination_table=" + destination_table]
+        + ["--dataset_id=" + dataset_id]
+        + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [sql_file_path],

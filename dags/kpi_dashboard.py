@@ -25,10 +25,12 @@ with models.DAG(
 
     kpi_dashboard = bigquery_etl_query(
         destination_table='firefox_kpi_dashboard_v1',
+        dataset_id='telemetry',
         date_partition_parameter=None,
     )
 
     smoot_usage_all_mtr = bigquery_etl_query(
         destination_table='smoot_usage_all_mtr_v1',
+        dataset_id='telemetry',
         date_partition_parameter=None,
     )

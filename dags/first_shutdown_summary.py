@@ -1,6 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from operators.emr_spark_operator import EMRSparkOperator
+from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.gcp import load_to_bigquery
 from utils.tbv import tbv_envvar
@@ -20,11 +20,11 @@ default_args = {
 # Running at 1am should suffice.
 dag = DAG('first_shutdown_summary', default_args=default_args, schedule_interval='0 1 * * *')
 
-first_shutdown_summary = EMRSparkOperator(
+first_shutdown_summary = MozDatabricksSubmitRunOperator(
     task_id="first_shutdown_summary",
     job_name="First Shutdown Summary View",
-    execution_timeout=timedelta(hours=1),
-    instance_count=1,
+    execution_timeout=timedelta(hours=4),
+    instance_count=5,
     env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView", {
         "from": "{{ ds_nodash }}",
         "to": "{{ ds_nodash }}",
@@ -46,6 +46,11 @@ first_shutdown_summary_bigquery_load = SubDagOperator(
         dataset="first_shutdown_summary",
         dataset_version="v4",
         gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="telemetry_derived",
+        cluster_by=["sample_id"],
+        drop=["submission_date"],
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="first_shutdown_summary_bigquery_load",
     dag=dag)

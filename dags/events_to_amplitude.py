@@ -8,6 +8,7 @@ from utils.status import register_status
 
 FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
+DEVTOOLS_PRERELEASE_INSTANCES = 20
 ROCKET_ANDROID_INSTANCES = 5
 FENNEC_IOS_INSTANCES = 10
 FIRE_TV_INSTANCES = 10
@@ -63,12 +64,12 @@ devtools_prerelease_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_prerelease_events_to_amplitude",
     job_name="DevTools Prerelease Events to Amplitude",
     execution_timeout=timedelta(hours=8),
-    instance_count=DEVTOOLS_INSTANCES,
+    instance_count=DEVTOOLS_PRERELEASE_INSTANCES,
     email=['ssuh@mozilla.com', 'telemetry-alerts@mozilla.com'],
     owner='ssuh@mozilla.com',
     env={
         "date": "{{ ds_nodash }}",
-        "max_requests": DEVTOOLS_INSTANCES * VCPUS_PER_INSTANCE,
+        "max_requests": DEVTOOLS_PRERELEASE_INSTANCES * VCPUS_PER_INSTANCE,
         "key_file": key_file("devtools"),
         "artifact": get_artifact_url(slug, branch="master"),
         "config_filename": "devtools_prerelease_schemas.json",

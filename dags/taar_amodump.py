@@ -6,10 +6,10 @@ from operators.emr_spark_operator import EMRSparkOperator
 from utils.mozetl import mozetl_envvar
 
 default_args = {
-    'owner': 'mreid@mozilla.com',
+    'owner': 'amiyaguchi@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 26),
-    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'amiyaguchi@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 3,
