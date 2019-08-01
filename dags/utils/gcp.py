@@ -500,7 +500,7 @@ def bigquery_etl_copy_deduplicate(
         namespace=gke_namespace,
         image=docker_image,
         arguments=["script/copy_deduplicate"]
-        + ["--project_id=" + target_project_id]
+        + ["--project-id=" + target_project_id]
         + ["--date={{ds}}"]
         + ["--parallelism={}".format(parallelism)]
         + table_qualifiers,
