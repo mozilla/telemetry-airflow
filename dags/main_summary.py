@@ -647,6 +647,27 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
     dag=dag
 )
 
+bgbb_pred_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="bgbb_pred_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="bgbb/active_profiles",
+        dataset_version="v1",
+        p2b_table_alias="active_profiles_v1",
+        bigquery_dataset="telemetry_derived",
+        ds_type="ds",
+        gke_cluster_name="bq-load-gke-1",
+        cluster_by=["sample_id"],
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
+        ),
+    task_id="bgbb_pred_bigquery_load",
+    dag=dag)
+
+
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
 
@@ -694,3 +715,4 @@ taar_locale_job.set_upstream(clients_daily_v6)
 taar_collaborative_recommender.set_upstream(clients_daily_v6)
 
 bgbb_pred.set_upstream(clients_daily_v6)
+bgbb_pred_bigquery_load.set_upstream(bgbb_pred)
