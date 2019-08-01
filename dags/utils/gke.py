@@ -9,6 +9,7 @@ def create_gke_config(
     disk_type="pd-standard",
     location="us-west1-b",
     subnetwork="default",
+    is_dev=False,
 ):
 
     """
@@ -22,7 +23,7 @@ def create_gke_config(
 
     cluster_def_dict = {
         "name": name,
-        "masterAuthorizedNetworksConfig": {"enabled": True},
+        "masterAuthorizedNetworksConfig": {"enabled": not is_dev},
         "nodePools": [
             {
                 "name": name,
