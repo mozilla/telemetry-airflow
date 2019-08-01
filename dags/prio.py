@@ -1,23 +1,23 @@
 from datetime import datetime, timedelta
+from os import environ
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.s3_to_gcs_transfer_operator import (
-    S3ToGoogleCloudStorageTransferOperator,
-)
-from operators.gcp_container_operator import (
-    GKEClusterCreateOperator,
-    GKEClusterDeleteOperator,
-    GKEPodOperator,
-)
-from airflow.operators.subdag_operator import SubDagOperator
 from airflow.contrib.operators.dataproc_operator import (
     DataprocClusterCreateOperator,
     DataprocClusterDeleteOperator,
     DataProcPySparkOperator,
 )
+from airflow.contrib.operators.gcs_to_gcs import (
+    GoogleCloudStorageToGoogleCloudStorageOperator,
+)
+from airflow.operators.subdag_operator import SubDagOperator
+from operators.gcp_container_operator import (
+    GKEClusterCreateOperator,
+    GKEClusterDeleteOperator,
+    GKEPodOperator,
+)
 from utils.gke import create_gke_config
-from os import environ
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
@@ -188,6 +188,27 @@ prio_staging = SubDagOperator(
     dag=main_dag,
 )
 
+# See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
+copy_staging_data_to_server_a = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="copy_staging_data_to_server_a",
+    source_bucket="moz-fx-data-prio-data",
+    source_object="staging/submission_date={{ ds }}/server_id=a/*",
+    destination_bucket="project-a-private",
+    destination_object="raw/submission_date={{ ds }}",
+    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    dag=main_dag,
+)
+
+copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="copy_staging_data_to_server_b",
+    source_bucket="moz-fx-data-prio-data",
+    source_object="staging/submission_date={{ ds }}/server_id=b/*",
+    destination_bucket="project-b-private",
+    destination_object="raw/submission_date={{ ds }}",
+    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    dag=main_dag,
+)
+
 prio_a = SubDagOperator(
     subdag=create_prio_dag(
         server_id="a",
@@ -243,5 +264,5 @@ prio_b = SubDagOperator(
 )
 
 prio_staging_bootstrap >> prio_staging
-prio_staging >> prio_a
-prio_staging >> prio_b
+prio_staging >> copy_staging_data_to_server_a >> prio_a
+prio_staging >> copy_staging_data_to_server_b >> prio_b
