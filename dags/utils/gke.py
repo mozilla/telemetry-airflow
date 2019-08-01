@@ -8,6 +8,7 @@ def create_gke_config(
     preemptible=True,
     disk_type="pd-standard",
     location="us-west1-b",
+    subnetwork="default",
 ):
 
     """
@@ -47,7 +48,7 @@ def create_gke_config(
         ],
         "locations": [location],
         "network": "default",
-        "subnetwork": "gke-subnet",
+        "subnetwork": subnetwork,
     }
 
     return cluster_def_dict
