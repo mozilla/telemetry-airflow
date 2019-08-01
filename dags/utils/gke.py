@@ -7,7 +7,8 @@ def create_gke_config(
     disk_size_gb=100,
     preemptible=True,
     disk_type="pd-standard",
-    location="us-west1-b"):
+    location="us-west1-b",
+):
 
     """
     Helper function to create gke cluster definition dict.
@@ -17,13 +18,10 @@ def create_gke_config(
     underscores, and dashes. E.g. owner_label='hwoo', team_label='dataops'
 
     """
-    
+
     cluster_def_dict = {
         "name": name,
-        "masterAuthorizedNetworksConfig":
-            {
-            "enabled": True,
-            },
+        "masterAuthorizedNetworksConfig": {"enabled": True},
         "nodePools": [
             {
                 "name": name,
@@ -39,26 +37,17 @@ def create_gke_config(
                         "https://www.googleapis.com/auth/trace.append",
                     ],
                     "serviceAccount": service_account,
-                    "labels": {
-                        "owner": owner_label,
-                        "team": team_label
-                    },
+                    "labels": {"owner": owner_label, "team": team_label},
                     "preemptible": preemptible,
-                    "diskType": disk_type
+                    "diskType": disk_type,
                 },
                 "initialNodeCount": 1,
-                "autoscaling": {
-                    "enabled" : True,
-                    "minNodeCount": 1,
-                    "maxNodeCount": 5
-                }
+                "autoscaling": {"enabled": True, "minNodeCount": 1, "maxNodeCount": 5},
             }
         ],
-        "locations": [
-            location
-        ],
+        "locations": [location],
         "network": "default",
-        "subnetwork": "gke-subnet"
+        "subnetwork": "gke-subnet",
     }
 
     return cluster_def_dict
