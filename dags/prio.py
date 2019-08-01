@@ -92,7 +92,7 @@ def create_prio_dag(
     delete_gke_cluster = GKEClusterDeleteOperator(
         task_id="delete_gke_cluster",
         name=cluster_name,
-        trigger_rule="one_failed",
+        trigger_rule="all_done",
         **shared_config
     )
 
@@ -108,7 +108,7 @@ def prio_staging(
     num_preemptible_workers=10,
 ):
     shared_config = {
-        "cluster_name": "prio_staging",
+        "cluster_name": "prio-staging",
         "gcp_conn_id": "google_cloud_prio_admin",
         "project_id": "moz-fx-prio-admin",
     }
@@ -119,11 +119,15 @@ def prio_staging(
         create_dataproc_cluster = DataprocClusterCreateOperator(
             task_id="create_dataproc_cluster",
             num_workers=2,
-            image_version="1.3",
+            image_version="1.4",
             zone=dataproc_zone,
             master_machine_type="n1-standard-8",
             worker_machine_type="n1-standard-8",
             num_preemptible_workers=num_preemptible_workers,
+            metadata={"PIP_PACKAGES": "click"},
+            init_actions_uris=[
+                "gs://dataproc-initialization-actions/python/pip-install.sh"
+            ],
             **shared_config
         )
 
@@ -143,9 +147,7 @@ def prio_staging(
         )
 
         delete_dataproc_cluster = DataprocClusterDeleteOperator(
-            task_id="delete_dataproc_cluster",
-            trigger_rule="one_failed",
-            **shared_config
+            task_id="delete_dataproc_cluster", trigger_rule="all_done", **shared_config
         )
         create_dataproc_cluster >> run_dataproc_spark >> delete_dataproc_cluster
         return dag
@@ -177,7 +179,11 @@ prio_staging_bootstrap = SubDagOperator(
 )
 
 prio_staging = SubDagOperator(
-    subdag=prio_staging(parent_dag_name=main_dag.dag_id, default_args=DEFAULT_ARGS),
+    subdag=prio_staging(
+        parent_dag_name=main_dag.dag_id,
+        default_args=DEFAULT_ARGS,
+        num_preemptible_workers=2,
+    ),
     task_id="prio_staging",
     dag=main_dag,
 )
