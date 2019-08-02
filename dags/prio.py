@@ -35,7 +35,7 @@ DEFAULT_ARGS = {
 }
 
 
-def create_prio_dag(
+def prio_processor(
     server_id,
     cluster_name,
     gcp_conn_id,
@@ -163,7 +163,7 @@ main_dag = DAG(
 
 
 prio_staging_bootstrap = SubDagOperator(
-    subdag=create_prio_dag(
+    subdag=prio_processor(
         server_id="admin",
         cluster_name="gke-prio-admin",
         gcp_conn_id="google_cloud_prio_admin",
@@ -211,7 +211,7 @@ copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
 )
 
 prio_a = SubDagOperator(
-    subdag=create_prio_dag(
+    subdag=prio_processor(
         server_id="a",
         cluster_name="gke-prio-a",
         gcp_conn_id="google_cloud_prio_a",
@@ -239,7 +239,7 @@ prio_a = SubDagOperator(
 )
 
 prio_b = SubDagOperator(
-    subdag=create_prio_dag(
+    subdag=prio_processor(
         server_id="b",
         cluster_name="gke-prio-b",
         gcp_conn_id="google_cloud_prio_b",
