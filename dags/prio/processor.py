@@ -87,8 +87,8 @@ prio_staging = SubDagOperator(
 )
 
 # See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
-copy_staging_data_to_server_a = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="copy_staging_data_to_server_a",
+load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="load_processor_a",
     source_bucket="moz-fx-data-prio-data",
     source_object="staging/submission_date={{ ds }}/server_id=a/*",
     destination_bucket="project-a-private",
@@ -97,8 +97,8 @@ copy_staging_data_to_server_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     dag=dag,
 )
 
-copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="copy_staging_data_to_server_b",
+load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="load_processor_b",
     source_bucket="moz-fx-data-prio-data",
     source_object="staging/submission_date={{ ds }}/server_id=b/*",
     destination_bucket="project-b-private",
@@ -107,7 +107,7 @@ copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     dag=dag,
 )
 
-prio_a = SubDagOperator(
+processor_a = SubDagOperator(
     subdag=processing.prio_processor_subdag(
         parent_dag_name=dag.dag_id,
         child_dag_name="processor_a",
@@ -137,7 +137,7 @@ prio_a = SubDagOperator(
     dag=dag,
 )
 
-prio_b = SubDagOperator(
+processor_b = SubDagOperator(
     subdag=processing.prio_processor_subdag(
         parent_dag_name=dag.dag_id,
         child_dag_name="processor_b",
@@ -166,5 +166,5 @@ prio_b = SubDagOperator(
 )
 
 prio_staging_bootstrap >> prio_staging
-prio_staging >> copy_staging_data_to_server_a >> prio_a
-prio_staging >> copy_staging_data_to_server_b >> prio_b
+prio_staging >> load_processor_a >> processor_a
+prio_staging >> load_processor_b >> processor_b
