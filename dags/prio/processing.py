@@ -15,30 +15,27 @@ def prio_processor_subdag(
     parent_dag_name,
     child_dag_name,
     default_args,
-    server_id,
     gcp_conn_id,
     service_account,
+    server_id,
     env_vars,
     arguments,
-    *args,
-    **kwargs
+    location="us-west1-b",
 ):
     assert server_id in ["a", "b", "admin"]
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
+    shared_config = {
+        "cluster_name": "gke-prio-{}".format(server_id),
+        "project_id": connection.project_id,
+        "gcp_conn_id": gcp_conn_id,
+        "location": location,
+    }
+
     with DAG(
         "{}.{}".format(parent_dag_name, child_dag_name), default_args=default_args
     ) as dag:
-
-        shared_config = {
-            "project_id": connection.project_id,
-            "location": "us-west1-b",
-            "gcp_conn_id": gcp_conn_id,
-            "cluster_name": "gke-prio-{}".format(server_id),
-            "dag": dag,
-        }
-
         create_gke_cluster = GKEClusterCreateOperator(
             task_id="create_gke_cluster",
             body=create_gke_config(

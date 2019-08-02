@@ -1,4 +1,5 @@
 from airflow import DAG
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import (
     DataprocClusterCreateOperator,
     DataprocClusterDeleteOperator,
@@ -10,13 +11,18 @@ def prio_processor_staging_subdag(
     parent_dag_name,
     child_dag_name,
     default_args,
+    gcp_conn_id,
+    service_account,
     dataproc_zone="us-central1-a",
     num_preemptible_workers=10,
 ):
+
+    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+
     shared_config = {
         "cluster_name": "prio-staging",
-        "gcp_conn_id": "google_cloud_prio_admin",
-        "project_id": "moz-fx-prio-admin",
+        "gcp_conn_id": gcp_conn_id,
+        "project_id": connection.project_id,
     }
 
     with DAG(
