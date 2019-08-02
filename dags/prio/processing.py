@@ -21,7 +21,27 @@ def prio_processor_subdag(
     env_vars,
     arguments,
     location="us-west1-b",
+    owner_label="hwoo",
+    team_label="dataops",
 ):
+    """Run a command on an ephemeral container running the
+    `mozilla/prio-processor:latest` image.
+
+    :param str parent_dag_name:         Name of the parent DAG.
+    :param str child_dag_name:          Name of the child DAG.
+    :param Dict[str, Any] default_args: Default arguments for the child DAG.
+    :param str gcp_conn_id:             Name of the connection string.
+    :param str service_account:         The address of the service account.
+    :param str server_id:               The identifier for the Prio processor
+    :param Dict[str, str] env_vars:     Environment variables for configuring
+                                        the processor.
+    :param List[str] arguments:         The command to run after loading the
+                                        image.
+    :param str location:                The region of the GKE cluster.
+    :param str owner_label:             Label for associating the owner
+    :param str team_label:              Label for associating the team
+    :return: DAG
+    """
     assert server_id in ["a", "b", "admin"]
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
@@ -41,8 +61,8 @@ def prio_processor_subdag(
             body=create_gke_config(
                 name=shared_config["cluster_name"],
                 service_account=service_account,
-                owner_label="hwoo",
-                team_label="dataops",
+                owner_label=owner_label,
+                team_label=team_label,
                 # DataProc clusters require VPC with auto-created subnets
                 subnetwork="default" if server_id == "admin" else "gke-subnet",
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",

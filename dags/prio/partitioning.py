@@ -16,6 +16,18 @@ def prio_processor_staging_subdag(
     dataproc_zone="us-central1-a",
     num_preemptible_workers=10,
 ):
+    """Run the PySpark job for unnesting and range-partitioning Prio pings from
+    the ingestion service.
+
+    :param str parent_dag_name:         Name of the parent DAG.
+    :param str child_dag_name:          Name of the child DAG.
+    :param Dict[str, Any] default_args: Default arguments for the child DAG.
+    :param str gcp_conn_id:             Name of the connection string.
+    :param str service_account:         The address of the service account.
+    :param str dataproc_zone:           The region of the DataProc cluster.
+    :param int num_preemptible_workers: The number of preemptible workers.
+    :return: DAG
+    """
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
@@ -33,7 +45,7 @@ def prio_processor_staging_subdag(
             num_workers=2,
             image_version="1.4",
             zone=dataproc_zone,
-            service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
+            service_account=service_account,
             master_machine_type="n1-standard-8",
             worker_machine_type="n1-standard-8",
             num_preemptible_workers=num_preemptible_workers,
