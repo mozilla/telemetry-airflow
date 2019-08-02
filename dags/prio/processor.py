@@ -53,6 +53,10 @@ DEFAULT_ARGS = {
 dag = DAG(dag_id="prio_processor", default_args=DEFAULT_ARGS)
 
 
+# Copy the dependencies necessary for running the `prio-processor staging` job
+# into the relevant GCS locations. This includes the runner and the egg
+# containing the bundled dependencies.
+
 prio_staging_bootstrap = SubDagOperator(
     subdag=processing.prio_processor_subdag(
         parent_dag_name=dag.dag_id,
@@ -72,6 +76,7 @@ prio_staging_bootstrap = SubDagOperator(
     dag=dag,
 )
 
+# Run the PySpark job for range-partioning Prio pings.
 prio_staging = SubDagOperator(
     subdag=partitioning.prio_processor_staging_subdag(
         parent_dag_name=dag.dag_id,
@@ -86,7 +91,12 @@ prio_staging = SubDagOperator(
     dag=dag,
 )
 
+# Copy the partitioned data from the staging bucket into the corresponding
+# receiving buckets in each processor. The job then submits a `_SUCCESS` file
+# which indicates the data is ready for processing.
+#
 # See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
+
 load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="load_processor_a",
     source_bucket="moz-fx-data-prio-data",
@@ -106,6 +116,12 @@ load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=dag,
 )
+
+# Initiate the processors by spinning up GKE clusters and running the main
+# processing loop. These SubDags are coordinated by a higher level graph, but
+# they can be decoupled and instead run on the same schedule. This structure is
+# done for convenience, since both processors are running on the same
+# infrastructure (but partitioned along project boundaries).
 
 processor_a = SubDagOperator(
     subdag=processing.prio_processor_subdag(
@@ -165,6 +181,7 @@ processor_b = SubDagOperator(
     dag=dag,
 )
 
+# Stitch the operators together into a directed acyclic graph.
 prio_staging_bootstrap >> prio_staging
 prio_staging >> load_processor_a >> processor_a
 prio_staging >> load_processor_b >> processor_b
