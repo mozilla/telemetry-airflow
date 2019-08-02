@@ -1,7 +1,4 @@
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.operators.subdag_operator import SubDagOperator
-
 from airflow.contrib.operators.dataproc_operator import (
     DataprocClusterCreateOperator,
     DataprocClusterDeleteOperator,
@@ -9,7 +6,7 @@ from airflow.contrib.operators.dataproc_operator import (
 )
 
 
-def prio_staging(
+def create_prio_staging(
     parent_dag_name,
     default_args,
     dataproc_zone="us-central1-a",

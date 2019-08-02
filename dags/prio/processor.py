@@ -24,16 +24,13 @@ usually resolved by rerunning the individual SubDag, which should clean-up
 properly.
 """
 from datetime import datetime, timedelta
-from os import environ
 
 from airflow import DAG
-from airflow.operators.subdag_operator import SubDagOperator
 from airflow.contrib.operators.gcs_to_gcs import (
     GoogleCloudStorageToGoogleCloudStorageOperator,
 )
-
-from partitioning import prio_staging
-from processing import prio_processor
+from airflow.operators.subdag_operator import SubDagOperator
+from prio import partitioning, processing
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
@@ -51,7 +48,7 @@ DEFAULT_ARGS = {
 }
 
 
-main_dag = DAG(
+prio_dag = DAG(
     dag_id="prio",
     default_args=DEFAULT_ARGS,
     dagrun_timeout=timedelta(hours=6),
@@ -60,7 +57,8 @@ main_dag = DAG(
 
 
 prio_staging_bootstrap = SubDagOperator(
-    subdag=prio_processor(
+    subdag=processing.create_prio_processor(
+        default_args=DEFAULT_ARGS,
         server_id="admin",
         cluster_name="gke-prio-admin",
         gcp_conn_id="google_cloud_prio_admin",
@@ -73,17 +71,17 @@ prio_staging_bootstrap = SubDagOperator(
         env_vars={},
     ),
     task_id="gke_prio_admin",
-    dag=main_dag,
+    dag=prio_dag,
 )
 
 prio_staging = SubDagOperator(
-    subdag=prio_staging(
-        parent_dag_name=main_dag.dag_id,
+    subdag=partitioning.create_prio_staging(
+        parent_dag_name=prio_dag.dag_id,
         default_args=DEFAULT_ARGS,
         num_preemptible_workers=2,
     ),
     task_id="prio_staging",
-    dag=main_dag,
+    dag=prio_dag,
 )
 
 # See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
@@ -94,7 +92,7 @@ copy_staging_data_to_server_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     destination_bucket="project-a-private",
     destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
-    dag=main_dag,
+    dag=prio_dag,
 )
 
 copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
@@ -104,11 +102,12 @@ copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     destination_bucket="project-b-private",
     destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
-    dag=main_dag,
+    dag=prio_dag,
 )
 
 prio_a = SubDagOperator(
-    subdag=prio_processor(
+    subdag=processing.create_prio_processor(
+        default_args=DEFAULT_ARGS,
         server_id="a",
         cluster_name="gke-prio-a",
         gcp_conn_id="google_cloud_prio_a",
@@ -132,11 +131,12 @@ prio_a = SubDagOperator(
     ),
     # TODO: refactor to avoid hardcoding name here
     task_id="gke_prio_a",
-    dag=main_dag,
+    dag=prio_dag,
 )
 
 prio_b = SubDagOperator(
-    subdag=prio_processor(
+    subdag=processing.create_prio_processor(
+        default_args=DEFAULT_ARGS,
         server_id="b",
         cluster_name="gke-prio-b",
         gcp_conn_id="google_cloud_prio_b",
@@ -158,5 +158,9 @@ prio_b = SubDagOperator(
         },
     ),
     task_id="gke_prio_b",
-    dag=main_dag,
+    dag=prio_dag,
 )
+
+prio_staging_bootstrap >> prio_staging
+prio_staging >> copy_staging_data_to_server_a >> prio_a
+prio_staging >> copy_staging_data_to_server_b >> prio_b
