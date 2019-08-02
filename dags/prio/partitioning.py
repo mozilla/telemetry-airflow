@@ -6,11 +6,11 @@ from airflow.contrib.operators.dataproc_operator import (
 )
 
 
-def create_prio_staging(
+def prio_processor_staging_subdag(
     parent_dag_name,
+    child_dag_name,
     default_args,
     dataproc_zone="us-central1-a",
-    dag_name="prio_staging",
     num_preemptible_workers=10,
 ):
     shared_config = {
@@ -20,7 +20,7 @@ def create_prio_staging(
     }
 
     with DAG(
-        "{}.{}".format(parent_dag_name, dag_name), default_args=default_args
+        "{}.{}".format(parent_dag_name, child_dag_name), default_args=default_args
     ) as dag:
         create_dataproc_cluster = DataprocClusterCreateOperator(
             task_id="create_dataproc_cluster",

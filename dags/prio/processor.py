@@ -45,22 +45,20 @@ DEFAULT_ARGS = {
     "email_on_retry": True,
     "retries": 0,
     "retry_delay": timedelta(minutes=15),
+    "schedule_interval": "@weekly",
+    "dagrun_timeout": timedelta(hours=2),
 }
 
 
-prio_dag = DAG(
-    dag_id="prio",
-    default_args=DEFAULT_ARGS,
-    dagrun_timeout=timedelta(hours=6),
-    schedule_interval="@weekly",
-)
+dag = DAG(dag_id="prio_processor", default_args=DEFAULT_ARGS)
 
 
 prio_staging_bootstrap = SubDagOperator(
-    subdag=processing.create_prio_processor(
+    subdag=processing.prio_processor_subdag(
+        parent_dag_name=dag.dag_id,
+        child_dag_name="bootstrap",
         default_args=DEFAULT_ARGS,
         server_id="admin",
-        cluster_name="gke-prio-admin",
         gcp_conn_id="google_cloud_prio_admin",
         service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
         arguments=[
@@ -70,18 +68,20 @@ prio_staging_bootstrap = SubDagOperator(
         ],
         env_vars={},
     ),
-    task_id="gke_prio_admin",
-    dag=prio_dag,
+    task_id="bootstrap",
+    dag=dag,
 )
 
 prio_staging = SubDagOperator(
-    subdag=partitioning.create_prio_staging(
-        parent_dag_name=prio_dag.dag_id,
+    subdag=partitioning.prio_processor_staging_subdag(
+        parent_dag_name=dag.dag_id,
+        child_dag_name="staging",
         default_args=DEFAULT_ARGS,
         num_preemptible_workers=2,
     ),
-    task_id="prio_staging",
-    dag=prio_dag,
+    task_id="staging",
+    default_args=DEFAULT_ARGS,
+    dag=dag,
 )
 
 # See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
@@ -92,7 +92,7 @@ copy_staging_data_to_server_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     destination_bucket="project-a-private",
     destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
-    dag=prio_dag,
+    dag=dag,
 )
 
 copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
@@ -102,14 +102,15 @@ copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     destination_bucket="project-b-private",
     destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
-    dag=prio_dag,
+    dag=dag,
 )
 
 prio_a = SubDagOperator(
-    subdag=processing.create_prio_processor(
+    subdag=processing.prio_processor_subdag(
+        parent_dag_name=dag.dag_id,
+        child_dag_name="processor_a",
         default_args=DEFAULT_ARGS,
         server_id="a",
-        cluster_name="gke-prio-a",
         gcp_conn_id="google_cloud_prio_a",
         service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
         arguments=["processor/bin/process"],
@@ -130,12 +131,14 @@ prio_a = SubDagOperator(
         },
     ),
     # TODO: refactor to avoid hardcoding name here
-    task_id="gke_prio_a",
-    dag=prio_dag,
+    task_id="processor_a",
+    dag=dag,
 )
 
 prio_b = SubDagOperator(
-    subdag=processing.create_prio_processor(
+    subdag=processing.prio_processor_subdag(
+        parent_dag_name=dag.dag_id,
+        child_dag_name="processor_b",
         default_args=DEFAULT_ARGS,
         server_id="b",
         cluster_name="gke-prio-b",
@@ -157,8 +160,8 @@ prio_b = SubDagOperator(
             "RETRY_BACKOFF_EXPONENT": "2",
         },
     ),
-    task_id="gke_prio_b",
-    dag=prio_dag,
+    task_id="processor_b",
+    dag=dag,
 )
 
 prio_staging_bootstrap >> prio_staging
