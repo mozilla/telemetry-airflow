@@ -121,6 +121,7 @@ def prio_staging(
             num_workers=2,
             image_version="1.4",
             zone=dataproc_zone,
+            service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
             master_machine_type="n1-standard-8",
             worker_machine_type="n1-standard-8",
             num_preemptible_workers=num_preemptible_workers,
@@ -194,7 +195,7 @@ copy_staging_data_to_server_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_bucket="moz-fx-data-prio-data",
     source_object="staging/submission_date={{ ds }}/server_id=a/*",
     destination_bucket="project-a-private",
-    destination_object="raw/submission_date={{ ds }}",
+    destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=main_dag,
 )
@@ -204,7 +205,7 @@ copy_staging_data_to_server_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_bucket="moz-fx-data-prio-data",
     source_object="staging/submission_date={{ ds }}/server_id=b/*",
     destination_bucket="project-b-private",
-    destination_object="raw/submission_date={{ ds }}",
+    destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=main_dag,
 )
