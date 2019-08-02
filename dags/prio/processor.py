@@ -27,22 +27,13 @@ from datetime import datetime, timedelta
 from os import environ
 
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.dataproc_operator import (
-    DataprocClusterCreateOperator,
-    DataprocClusterDeleteOperator,
-    DataProcPySparkOperator,
-)
+from airflow.operators.subdag_operator import SubDagOperator
 from airflow.contrib.operators.gcs_to_gcs import (
     GoogleCloudStorageToGoogleCloudStorageOperator,
 )
-from airflow.operators.subdag_operator import SubDagOperator
-from operators.gcp_container_operator import (
-    GKEClusterCreateOperator,
-    GKEClusterDeleteOperator,
-    GKEPodOperator,
-)
-from utils.gke import create_gke_config
+
+from partitioning import prio_staging
+from processing import prio_processor
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
@@ -58,125 +49,6 @@ DEFAULT_ARGS = {
     "retries": 0,
     "retry_delay": timedelta(minutes=15),
 }
-
-
-def prio_processor(
-    server_id,
-    cluster_name,
-    gcp_conn_id,
-    service_account,
-    env_vars,
-    arguments,
-    *args,
-    **kwargs
-):
-    assert server_id in ["a", "b", "admin"]
-
-    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
-
-    gke_dag = DAG(
-        "prio.gke_prio_{}".format(server_id),
-        # TODO: refactor to inherit from the main_dag
-        default_args=DEFAULT_ARGS,
-        dagrun_timeout=timedelta(hours=6),
-        schedule_interval="@weekly",
-    )
-
-    shared_config = {
-        "project_id": connection.project_id,
-        "location": "us-west1-b",
-        "gcp_conn_id": gcp_conn_id,
-        "dag": gke_dag,
-    }
-
-    create_gke_cluster = GKEClusterCreateOperator(
-        task_id="create_gke_cluster",
-        body=create_gke_config(
-            name=cluster_name,
-            service_account=service_account,
-            owner_label="hwoo",
-            team_label="dataops",
-            # DataProc clusters require VPC with auto-created subnets
-            subnetwork="default" if server_id == "admin" else "gke-subnet",
-            is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
-        ),
-        **shared_config
-    )
-
-    run_prio = GKEPodOperator(
-        task_id="run_prio_{}".format(server_id),
-        cluster_name=cluster_name,
-        name="run-prio-project-{}".format(server_id),
-        namespace="default",
-        image="mozilla/prio-processor:latest",
-        arguments=arguments,
-        env_vars=env_vars,
-        **shared_config
-    )
-
-    delete_gke_cluster = GKEClusterDeleteOperator(
-        task_id="delete_gke_cluster",
-        name=cluster_name,
-        trigger_rule="all_done",
-        **shared_config
-    )
-
-    create_gke_cluster >> run_prio >> delete_gke_cluster
-    return gke_dag
-
-
-def prio_staging(
-    parent_dag_name,
-    default_args,
-    dataproc_zone="us-central1-a",
-    dag_name="prio_staging",
-    num_preemptible_workers=10,
-):
-    shared_config = {
-        "cluster_name": "prio-staging",
-        "gcp_conn_id": "google_cloud_prio_admin",
-        "project_id": "moz-fx-prio-admin",
-    }
-
-    with DAG(
-        "{}.{}".format(parent_dag_name, dag_name), default_args=default_args
-    ) as dag:
-        create_dataproc_cluster = DataprocClusterCreateOperator(
-            task_id="create_dataproc_cluster",
-            num_workers=2,
-            image_version="1.4",
-            zone=dataproc_zone,
-            service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
-            master_machine_type="n1-standard-8",
-            worker_machine_type="n1-standard-8",
-            num_preemptible_workers=num_preemptible_workers,
-            metadata={"PIP_PACKAGES": "click"},
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            **shared_config
-        )
-
-        run_dataproc_spark = DataProcPySparkOperator(
-            task_id="run_dataproc_spark",
-            main="gs://moz-fx-data-prio-bootstrap/runner.py",
-            pyfiles=["gs://moz-fx-data-prio-bootstrap/prio_processor.egg"],
-            arguments=[
-                "--date",
-                "{{ ds }}",
-                "--input",
-                "gs://moz-fx-data-stage-data/telemetry-decoded_gcs-sink-doctype_prio/output",
-                "--output",
-                "gs://moz-fx-data-prio-data/staging/",
-            ],
-            **shared_config
-        )
-
-        delete_dataproc_cluster = DataprocClusterDeleteOperator(
-            task_id="delete_dataproc_cluster", trigger_rule="all_done", **shared_config
-        )
-        create_dataproc_cluster >> run_dataproc_spark >> delete_dataproc_cluster
-        return dag
 
 
 main_dag = DAG(
@@ -288,7 +160,3 @@ prio_b = SubDagOperator(
     task_id="gke_prio_b",
     dag=main_dag,
 )
-
-prio_staging_bootstrap >> prio_staging
-prio_staging >> copy_staging_data_to_server_a >> prio_a
-prio_staging >> copy_staging_data_to_server_b >> prio_b
