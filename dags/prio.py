@@ -72,7 +72,7 @@ def prio_processor(
             owner_label="hwoo",
             team_label="dataops",
             # DataProc clusters require VPC with auto-created subnets
-            subnetwork="default" if "admin" else "gke-subnet",
+            subnetwork="default" if server_id == "admin" else "gke-subnet",
             is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
         ),
         **shared_config
