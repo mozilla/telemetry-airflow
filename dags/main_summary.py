@@ -460,39 +460,6 @@ smoot_usage_desktop_raw = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
-retention = EMRSparkOperator(
-    task_id="retention",
-    job_name="1-Day Firefox Retention",
-    owner="amiyaguchi@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
-    execution_timeout=timedelta(hours=4),
-    instance_count=10,
-    dev_instance_count=3,
-    env=mozetl_envvar("retention", {
-        "start_date": "{{ ds_nodash }}",
-        "input_bucket": "{{ task.__class__.private_output_bucket }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-        "slack": 4
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/retention.sh",
-    dag=dag)
-
-retention_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="retention_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="retention",
-        dataset_version="v1",
-        gke_cluster_name="bq-load-gke-1",
-        date_submission_col="start_date",
-        ),
-    task_id="retention_bigquery_load",
-    dag=dag)
-
-
 client_count_daily_view = EMRSparkOperator(
     task_id="client_count_daily_view",
     job_name="Client Count Daily View",
@@ -702,9 +669,6 @@ clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 smoot_usage_desktop_raw.set_upstream(clients_last_seen)
-
-retention.set_upstream(main_summary)
-retention_bigquery_load.set_upstream(retention)
 
 client_count_daily_view.set_upstream(main_summary)
 desktop_dau.set_upstream(client_count_daily_view)
