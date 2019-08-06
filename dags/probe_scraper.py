@@ -7,10 +7,9 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
 
 default_args = {
-    'owner': 'gfritzsche@mozilla.com',
+    'owner': 'frank@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 26),
-    'email': ['telemetry-client-dev@mozilla.com', 'gfritzsche@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -26,7 +25,7 @@ with DAG('probe_scraper',
         job_name="Probe Scraper",
         execution_timeout=timedelta(hours=4),
         instance_count=1,
-        email=['telemetry-client-dev@mozilla.com', 'gfritzsche@mozilla.com', 'aplacitelli@mozilla.com', 'frank@mozilla.com'],
+        email=['telemetry-client-dev@mozilla.com', 'aplacitelli@mozilla.com', 'frank@mozilla.com'],
         env={},
         uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/probe_scraper.sh",
         output_visibility="public",
@@ -36,6 +35,7 @@ with DAG('probe_scraper',
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
     schema_generator = GKEPodOperator(
+        email=['frank@mozilla.com'],
         task_id='mozilla_schema_generator',
         gcp_conn_id=gcp_conn_id,
         project_id=connection.project_id,
