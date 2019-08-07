@@ -22,6 +22,16 @@ The SubDag operator simplifies the definition of each phase. The clusters are
 ephemeral -- there are situations where clusters can become orphaned. These are
 usually resolved by rerunning the individual SubDag, which should clean-up
 properly.
+
+The following Airflow variables should be set:
+
+    prio_private_key_hex_internal
+    prio_public_key_hex_internal
+    prio_private_key_hex_external
+    prio_public_key_hex_external
+
+These variables are encrypted and passed into the prio-processor container via
+the environment.
 """
 from datetime import datetime, timedelta
 
@@ -137,9 +147,9 @@ processor_a = SubDagOperator(
             "SERVER_ID": "A",
             "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
             # TODO: this is the built-in testing key
-            "PRIVATE_KEY_HEX": "624BFDF22F729BBFD762B3D61930B876F3711B200A10F620FEAC6FD792A2BD08",
-            "PUBLIC_KEY_HEX_INTERNAL": "AB0008BDE17581D3C45CA8CEACB3F7CE6FB48FEF98AA78597A6955633F54D628",
-            "PUBLIC_KEY_HEX_EXTERNAL": "68499CBDCAE6B06CAC0C86D255A609B6AFF66A56087803CFE4BD998C7E20220C",
+            "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
+            "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
+            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
             "BUCKET_INTERNAL_PRIVATE": "project-a-private",
             "BUCKET_INTERNAL_SHARED": "project-a-shared",
             "BUCKET_EXTERNAL_SHARED": "project-b-shared",
@@ -166,9 +176,9 @@ processor_b = SubDagOperator(
             "DATA_CONFIG": "/app/processor/config",
             "SERVER_ID": "B",
             "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
-            "PRIVATE_KEY_HEX": "86EBA021A49C18B1D2885BCAE8C1985D14082F4A130F4862FD3E77DDD0518D3D",
-            "PUBLIC_KEY_HEX_INTERNAL": "68499CBDCAE6B06CAC0C86D255A609B6AFF66A56087803CFE4BD998C7E20220C",
-            "PUBLIC_KEY_HEX_EXTERNAL": "AB0008BDE17581D3C45CA8CEACB3F7CE6FB48FEF98AA78597A6955633F54D628",
+            "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
+            "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
+            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
             "BUCKET_INTERNAL_PRIVATE": "project-b-private",
             "BUCKET_INTERNAL_SHARED": "project-b-shared",
             "BUCKET_EXTERNAL_SHARED": "project-a-shared",
