@@ -46,8 +46,9 @@ def prio_processor_subdag(
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
+    cluster_name = "gke-prio-{}".format(server_id)
+
     shared_config = {
-        "cluster_name": "gke-prio-{}".format(server_id),
         "project_id": connection.project_id,
         "gcp_conn_id": gcp_conn_id,
         "location": location,
@@ -59,7 +60,7 @@ def prio_processor_subdag(
         create_gke_cluster = GKEClusterCreateOperator(
             task_id="create_gke_cluster",
             body=create_gke_config(
-                name=shared_config["cluster_name"],
+                name=cluster_name,
                 service_account=service_account,
                 owner_label=owner_label,
                 team_label=team_label,
@@ -73,6 +74,7 @@ def prio_processor_subdag(
         run_prio = GKEPodOperator(
             task_id="processor_{}".format(server_id),
             name="run-prio-project-{}".format(server_id),
+            cluster_name=cluster_name,
             namespace="default",
             image="mozilla/prio-processor:latest",
             arguments=arguments,
@@ -82,7 +84,7 @@ def prio_processor_subdag(
 
         delete_gke_cluster = GKEClusterDeleteOperator(
             task_id="delete_gke_cluster",
-            name="delete_gke_cluster",
+            name=cluster_name,
             trigger_rule="all_done",
             **shared_config
         )

@@ -36,15 +36,17 @@ the environment.
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
 from airflow.contrib.operators.gcs_to_gcs import (
     GoogleCloudStorageToGoogleCloudStorageOperator,
 )
+from airflow.operators import PythonOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from prio import partitioning, processing
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
-    "depends_on_past": False,
+    "depends_on_past": True,
     "start_date": datetime(2019, 5, 24),
     "email": [
         "amiyaguchi@mozilla.com",
@@ -55,7 +57,7 @@ DEFAULT_ARGS = {
     "email_on_retry": True,
     "retries": 0,
     "retry_delay": timedelta(minutes=15),
-    "schedule_interval": "@weekly",
+    "schedule_interval": "@daily",
     "dagrun_timeout": timedelta(hours=2),
 }
 
@@ -107,6 +109,45 @@ prio_staging = SubDagOperator(
 #
 # See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
 
+# NOTE: GoogleCloudStorageDeleteOperator does not exist in v1.10.2
+def clean_buckets(google_cloud_storage_conn_id, private_bucket, shared_bucket):
+    import logging
+
+    hook = GoogleCloudStorageHook(google_cloud_storage_conn_id)
+    total = 0
+
+    raw = [(private_bucket, name) for name in hook.list(private_bucket, prefix="raw")]
+    shared = [(shared_bucket, name) for name in hook.list(shared_bucket)]
+
+    for bucket_name, object_name in raw + shared:
+        logging.info("Deleting gs://{}/{}".format(bucket_name, object_name))
+        hook.delete(bucket_name, object_name)
+        total += 1
+    logging.info("Deleted {} objects".format(total))
+
+
+clean_processor_a = PythonOperator(
+    task_id="clean_processor_a",
+    python_callable=clean_buckets,
+    op_kwargs={
+        "private_bucket": "project-a-private",
+        "shared_bucket": "project-a-shared",
+        "google_cloud_storage_conn_id": "google_cloud_prio_a",
+    },
+    dag=dag,
+)
+
+clean_processor_b = PythonOperator(
+    task_id="clean_processor_b",
+    python_callable=clean_buckets,
+    op_kwargs={
+        "private_bucket": "project-b-private",
+        "shared_bucket": "project-b-shared",
+        "google_cloud_storage_conn_id": "google_cloud_prio_b",
+    },
+    dag=dag,
+)
+
 load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="load_processor_a",
     source_bucket="moz-fx-data-prio-data",
@@ -127,6 +168,26 @@ load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     dag=dag,
 )
 
+trigger_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="trigger_processor_a",
+    source_bucket="moz-fx-data-prio-data",
+    source_object="staging/_SUCCESS",
+    destination_bucket="project-a-private",
+    destination_object="raw/_SUCCESS",
+    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    dag=dag,
+)
+
+trigger_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="trigger_processor_b",
+    source_bucket="moz-fx-data-prio-data",
+    source_object="staging/_SUCCESS",
+    destination_bucket="project-b-private",
+    destination_object="raw/_SUCCESS",
+    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    dag=dag,
+)
+
 # Initiate the processors by spinning up GKE clusters and running the main
 # processing loop. These SubDags are coordinated by a higher level graph, but
 # they can be decoupled and instead run on the same schedule. This structure is
@@ -143,7 +204,7 @@ processor_a = SubDagOperator(
         service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
         arguments=["processor/bin/process"],
         env_vars={
-            "DATA_CONFIG": "/app/processor/config",
+            "DATA_CONFIG": "/app/processor/config/content.json",
             "SERVER_ID": "A",
             "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
             # TODO: this is the built-in testing key
@@ -173,7 +234,7 @@ processor_b = SubDagOperator(
         service_account="prio-runner-b@moz-fx-priotest-project-b.iam.gserviceaccount.com",
         arguments=["processor/bin/process"],
         env_vars={
-            "DATA_CONFIG": "/app/processor/config",
+            "DATA_CONFIG": "/app/processor/config/content.json",
             "SERVER_ID": "B",
             "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
@@ -191,7 +252,8 @@ processor_b = SubDagOperator(
     dag=dag,
 )
 
+
 # Stitch the operators together into a directed acyclic graph.
 prio_staging_bootstrap >> prio_staging
-prio_staging >> load_processor_a >> processor_a
-prio_staging >> load_processor_b >> processor_b
+prio_staging >> clean_processor_a >> load_processor_a >> trigger_processor_a >> processor_a
+prio_staging >> clean_processor_b >> load_processor_b >> trigger_processor_b >> processor_b
