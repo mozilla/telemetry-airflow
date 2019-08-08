@@ -7,8 +7,12 @@ from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
-from utils.gcp import bigquery_etl_query, export_to_parquet, load_to_bigquery
-
+from utils.gcp import (
+    bigquery_etl_query,
+    bigquery_etl_copy_deduplicate,
+    export_to_parquet,
+    load_to_bigquery
+)
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -24,6 +28,18 @@ default_args = {
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
 dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
+
+# We copy yesterday's main pings from telemetry_live to telemetry_stable
+# at the root of this DAG because telemetry_stable.main_v4 will become
+# the source for main_summary, etc. once we are comfortable retiring parquet
+# data imports.
+copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
+    task_id="copy_deduplicate_main_ping",
+    target_project_id="moz-fx-data-shared-prod",
+    only_tables=["telemetry_live.main_v4"],
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
+    dag=dag)
 
 main_summary_all_histograms = MozDatabricksSubmitRunOperator(
     task_id="main_summary_all_histograms",
@@ -95,7 +111,7 @@ main_summary_bigquery_load = SubDagOperator(
         dataset="main_summary",
         dataset_version="v4",
         gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         cluster_by=["sample_id"],
         drop=["submission_date"],
         rename={"submission_date_s3": "submission_date"},
@@ -143,7 +159,7 @@ addons_bigquery_load = SubDagOperator(
         dataset="addons",
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         cluster_by=["sample_id"],
         rename={"submission_date_s3": "submission_date"},
         replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
@@ -175,7 +191,7 @@ main_events_bigquery_load = SubDagOperator(
         dataset="events",
         dataset_version="v1",
         gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         cluster_by=["sample_id"],
         rename={"submission_date_s3": "submission_date"},
         replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
@@ -209,7 +225,7 @@ addon_aggregates_bigquery_load = SubDagOperator(
         dataset_version="v2",
         gke_cluster_name="bq-load-gke-1",
         p2b_table_alias="addons_aggregates_v2",
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         cluster_by=["sample_id"],
         rename={"submission_date_s3": "submission_date"},
         replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
@@ -249,7 +265,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         gke_cluster_name="bq-load-gke-1",
         p2b_resume=True,
         reprocess=True,
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         ),
     task_id="main_summary_experiments_bigquery_load",
     dag=dag)
@@ -292,10 +308,10 @@ search_dashboard_bigquery_load = SubDagOperator(
         dataset_s3_bucket="telemetry-parquet",
         aws_conn_id="aws_dev_iam_s3",
         dataset="harter/searchdb",
-        dataset_version="v6",
+        dataset_version="v7",
         bigquery_dataset="search",
         gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="search_aggregates_v6",
+        p2b_table_alias="search_aggregates_v7",
         ),
     task_id="search_dashboard_bigquery_load",
     dag=dag)
@@ -326,7 +342,7 @@ search_clients_daily_bigquery_load = SubDagOperator(
         dataset_s3_bucket="telemetry-parquet",
         aws_conn_id="aws_dev_iam_s3",
         dataset="search_clients_daily",
-        dataset_version="v6",
+        dataset_version="v7",
         bigquery_dataset="search",
         gke_cluster_name="bq-load-gke-1",
         reprocess=True,
@@ -379,7 +395,7 @@ clients_daily_v6_bigquery_load = SubDagOperator(
         dataset_version="v6",
         gke_cluster_name="bq-load-gke-1",
         reprocess=True,
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         cluster_by=["sample_id"],
         rename={"submission_date_s3": "submission_date"},
         replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
@@ -389,8 +405,8 @@ clients_daily_v6_bigquery_load = SubDagOperator(
 
 clients_last_seen = bigquery_etl_query(
     task_id="clients_last_seen",
-    arguments=("--dataset_id", "telemetry_raw"),
-    destination_table="clients_last_seen_raw_v1",
+    destination_table="clients_last_seen_v1",
+    dataset_id="telemetry_derived",
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     depends_on_past=True,
@@ -399,9 +415,9 @@ clients_last_seen = bigquery_etl_query(
 
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="clients_last_seen_raw_v1",
+        table="clients_last_seen_v1",
         arguments=[
-            "--dataset=telemetry_raw",
+            "--dataset=telemetry_derived",
             "--submission-date={{ds}}",
             "--destination-table=clients_last_seen_v1",
             "--select",
@@ -421,6 +437,7 @@ clients_last_seen_export = SubDagOperator(
 exact_mau_by_dimensions = bigquery_etl_query(
     task_id="exact_mau_by_dimensions",
     destination_table="firefox_desktop_exact_mau28_by_dimensions_v1",
+    dataset_id="telemetry",
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     dag=dag)
@@ -438,6 +455,7 @@ exact_mau_by_dimensions_export = SubDagOperator(
 smoot_usage_desktop_raw = bigquery_etl_query(
     task_id='smoot_usage_desktop_raw',
     destination_table='smoot_usage_desktop_raw_v1',
+    dataset_id='telemetry',
     owner="jklukas@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
@@ -629,6 +647,27 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
     dag=dag
 )
 
+bgbb_pred_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="bgbb_pred_bigquery_load",
+        default_args=default_args,
+        dataset_s3_bucket="telemetry-parquet",
+        aws_conn_id="aws_dev_iam_s3",
+        dataset="bgbb/active_profiles",
+        dataset_version="v1",
+        p2b_table_alias="active_profiles_v1",
+        bigquery_dataset="telemetry_derived",
+        ds_type="ds",
+        gke_cluster_name="bq-load-gke-1",
+        cluster_by=["sample_id"],
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
+        ),
+    task_id="bgbb_pred_bigquery_load",
+    dag=dag)
+
+
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
 
@@ -676,3 +715,4 @@ taar_locale_job.set_upstream(clients_daily_v6)
 taar_collaborative_recommender.set_upstream(clients_daily_v6)
 
 bgbb_pred.set_upstream(clients_daily_v6)
+bgbb_pred_bigquery_load.set_upstream(bgbb_pred)

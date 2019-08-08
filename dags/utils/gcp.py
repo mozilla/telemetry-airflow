@@ -10,6 +10,8 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+import re
+
 
 def load_to_bigquery(parent_dag_name=None,
                      default_args=None,
@@ -383,8 +385,11 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
+    dataset_id,
     parameters=(),
     arguments=(),
+    project_id=None,
+    sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
@@ -397,8 +402,12 @@ def bigquery_etl_query(
     """ Generate.
 
     :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Optional[str] project_id:               BigQuery default project id
+    :param Optional[str] sql_file_path:            Optional override for path to the
+                                                   SQL query file to run
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
@@ -417,7 +426,7 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    sql_file_path = "sql/{}.sql".format(destination_table)
+    sql_file_path = sql_file_path or "sql/{}/{}.sql".format(dataset_id, destination_table)
     if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
@@ -430,9 +439,71 @@ def bigquery_etl_query(
         image=docker_image,
         arguments=["query"]
         + ["--destination_table=" + destination_table]
+        + ["--dataset_id=" + dataset_id]
+        + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [sql_file_path],
+        image_pull_policy=image_pull_policy,
+        **kwargs
+    )
+
+
+def bigquery_etl_copy_deduplicate(
+    task_id,
+    target_project_id,
+    only_tables=None,
+    except_tables=None,
+    parallelism=4,
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="mozilla/bigquery-etl:latest",
+    image_pull_policy="Always",
+    **kwargs
+):
+    """ Copy a day's data from live ping tables to stable ping tables,
+    deduplicating on document_id.
+
+    :param str task_id:              [Required] ID for the task
+    :param str target_project_id:    [Required] ID of project where target tables live
+    :param Tuple[str] only_tables:   Only process tables matching the given globs of form 'telemetry_live.main_v*'
+    :param Tuple[str] except_tables: Process all tables except those matching the given globs
+    :param int parallelism:          Maximum number of queries to execute concurrently
+    :param str gcp_conn_id:          Airflow connection id for GCP access
+    :param str gke_location:         GKE cluster location
+    :param str gke_cluster_name:     GKE cluster name
+    :param str gke_namespace:        GKE cluster namespace
+    :param str docker_image:         docker image to use
+    :param str image_pull_policy:    Kubernetes policy for when to pull
+                                     docker_image
+    :param Dict[str, Any] kwargs:    Additional keyword arguments for
+                                     GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    table_qualifiers = []
+    if only_tables:
+        table_qualifiers.append('--only')
+        table_qualifiers += only_tables
+    if except_tables:
+        table_qualifiers.append('--except')
+        table_qualifiers += except_tables
+    return GKEPodOperator(
+        task_id=task_id,
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=["script/copy_deduplicate"]
+        + ["--project-id=" + target_project_id]
+        + ["--date={{ds}}"]
+        + ["--parallelism={}".format(parallelism)]
+        + table_qualifiers,
         image_pull_policy=image_pull_policy,
         **kwargs
     )

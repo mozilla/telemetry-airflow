@@ -11,7 +11,7 @@ def create_gke_config(
 
     """
     Helper function to create gke cluster definition dict.
-    See https://google-cloud-python.readthedocs.io/en/latest/container/gapic/v1/types.html#google.cloud.container_v1.types.Cluster
+    See https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters#Cluster
 
     owner and team labels  can contain only lowercase letters, numeric characters,
     underscores, and dashes. E.g. owner_label='hwoo', team_label='dataops'
@@ -20,6 +20,10 @@ def create_gke_config(
     
     cluster_def_dict = {
         "name": name,
+        "masterAuthorizedNetworksConfig":
+            {
+            "enabled": True,
+            },
         "nodePools": [
             {
                 "name": name,
@@ -27,7 +31,7 @@ def create_gke_config(
                     "machineType": machine_type,
                     "diskSizeGb": disk_size_gb,
                     "oauthScopes": [
-                        "https://www.googleapis.com/auth/devstorage.read_only",
+                        "https://www.googleapis.com/auth/devstorage.read_write",
                         "https://www.googleapis.com/auth/logging.write",
                         "https://www.googleapis.com/auth/monitoring",
                         "https://www.googleapis.com/auth/service.management.readonly",
@@ -48,8 +52,8 @@ def create_gke_config(
                     "minNodeCount": 1,
                     "maxNodeCount": 5
                 }
-                }
-            ],
+            }
+        ],
         "locations": [
             location
         ],
