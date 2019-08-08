@@ -5,7 +5,7 @@ if [[ -z "$bucket" || -z "$date" || -z "$deploy_environment" ]]; then
 fi
 
 pip install py4j --upgrade
-pip install pandas --upgrade
+pip install pandas==0.24 --upgrade
 
 git clone https://www.github.com/mozilla/Fx_Usage_Report.git
 cd Fx_Usage_Report
