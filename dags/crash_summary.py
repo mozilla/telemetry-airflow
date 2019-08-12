@@ -6,10 +6,10 @@ from utils.gcp import load_to_bigquery
 from utils.tbv import tbv_envvar
 
 default_args = {
-    'owner': 'mreid@mozilla.com',
+    'owner': 'wlachance@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 20),
-    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'wlachance@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 3,
