@@ -253,7 +253,24 @@ processor_b = SubDagOperator(
 )
 
 
+# copy the data back into the admin project for loading into bigquery
+copy_aggregates = GoogleCloudStorageToGoogleCloudStorageOperator(
+    task_id="copy_aggregates",
+    source_bucket="project-a-private",
+    source_object="processed/submission_date={{ ds }}/*",
+    destination_bucket="moz-fx-data-prio-data",
+    destination_object="processed/submission_date={{ ds }}/",
+    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    dag=dag,
+)
+
+
 # Stitch the operators together into a directed acyclic graph.
 prio_staging_bootstrap >> prio_staging
 prio_staging >> clean_processor_a >> load_processor_a >> trigger_processor_a >> processor_a
 prio_staging >> clean_processor_b >> load_processor_b >> trigger_processor_b >> processor_b
+
+# Wait for both parents to finish (though only a dependency on processor a is
+# technically necessary)
+processor_a >> copy_aggregates
+processor_b >> copy_aggregates
