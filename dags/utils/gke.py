@@ -23,6 +23,9 @@ def create_gke_config(
 
     cluster_def_dict = {
         "name": name,
+        # Setting `{"enabled": true}` will open the GKE cluster to the world.
+        # This is config is disabled when run locally, otherwise job submissions
+        # will fail.
         "masterAuthorizedNetworksConfig": {"enabled": not is_dev},
         "nodePools": [
             {
