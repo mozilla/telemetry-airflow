@@ -29,6 +29,7 @@ The following Airflow variables should be set:
     prio_public_key_hex_internal
     prio_private_key_hex_external
     prio_public_key_hex_external
+    prio_shared_secret
 
 These variables are encrypted and passed into the prio-processor container via
 the environment.
@@ -206,8 +207,7 @@ processor_a = SubDagOperator(
         env_vars={
             "DATA_CONFIG": "/app/processor/config/content.json",
             "SERVER_ID": "A",
-            "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
-            # TODO: this is the built-in testing key
+            "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
             "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
             "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
@@ -219,7 +219,6 @@ processor_a = SubDagOperator(
             "RETRY_BACKOFF_EXPONENT": "2",
         },
     ),
-    # TODO: refactor to avoid hardcoding name here
     task_id="processor_a",
     dag=dag,
 )
@@ -236,7 +235,7 @@ processor_b = SubDagOperator(
         env_vars={
             "DATA_CONFIG": "/app/processor/config/content.json",
             "SERVER_ID": "B",
-            "SHARED_SECRET": "m/AqDal/ZSA9597GwMM+VA==",
+            "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
             "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
             "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
