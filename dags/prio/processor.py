@@ -62,6 +62,18 @@ DEFAULT_ARGS = {
     "dagrun_timeout": timedelta(hours=2),
 }
 
+SERVICE_ACCOUNT_ADMIN = (
+    "prio-admin-runner@moz-fx-prio-admin-prod-098j.iam.gserviceaccount.com"
+)
+SERVICE_ACCOUNT_A = "prio-runner-a-prod@moz-fx-prio-a-prod-kju7.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_B = "prio-runner-b-prod@moz-fx-prio-b-prod-a67n.iam.gserviceaccount.com"
+
+BUCKET_PRIVATE_A = "moz-fx-prio-a-prod-private"
+BUCKET_PRIVATE_B = "moz-fx-prio-b-prod-private"
+BUCKET_SHARED_A = "moz-fx-prio-a-prod-shared"
+BUCKET_SHARED_B = "moz-fx-prio-b-prod-shared"
+BUCKET_DATA_ADMIN = "moz-fx-data-prod-prio-data"
+BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-prod-prio-bootstrap"
 
 dag = DAG(dag_id="prio_processor", default_args=DEFAULT_ARGS)
 
@@ -77,11 +89,13 @@ prio_staging_bootstrap = SubDagOperator(
         default_args=DEFAULT_ARGS,
         server_id="admin",
         gcp_conn_id="google_cloud_prio_admin",
-        service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
+        service_account=SERVICE_ACCOUNT_ADMIN,
         arguments=[
             "bash",
             "-c",
-            "cd processor; prio-processor bootstrap --output gs://moz-fx-data-prio-bootstrap",
+            "cd processor; prio-processor bootstrap --output gs://{}".format(
+                BUCKET_BOOTSTRAP_ADMIN
+            ),
         ],
         env_vars={},
     ),
@@ -96,7 +110,7 @@ prio_staging = SubDagOperator(
         child_dag_name="staging",
         default_args=DEFAULT_ARGS,
         gcp_conn_id="google_cloud_prio_admin",
-        service_account="prio-admin-runner@moz-fx-prio-admin.iam.gserviceaccount.com",
+        service_account=SERVICE_ACCOUNT_ADMIN,
         num_preemptible_workers=2,
     ),
     task_id="staging",
@@ -131,8 +145,8 @@ clean_processor_a = PythonOperator(
     task_id="clean_processor_a",
     python_callable=clean_buckets,
     op_kwargs={
-        "private_bucket": "project-a-private",
-        "shared_bucket": "project-a-shared",
+        "private_bucket": BUCKET_PRIVATE_A,
+        "shared_bucket": BUCKET_SHARED_A,
         "google_cloud_storage_conn_id": "google_cloud_prio_a",
     },
     dag=dag,
@@ -142,8 +156,8 @@ clean_processor_b = PythonOperator(
     task_id="clean_processor_b",
     python_callable=clean_buckets,
     op_kwargs={
-        "private_bucket": "project-b-private",
-        "shared_bucket": "project-b-shared",
+        "private_bucket": BUCKET_PRIVATE_B,
+        "shared_bucket": BUCKET_SHARED_B,
         "google_cloud_storage_conn_id": "google_cloud_prio_b",
     },
     dag=dag,
@@ -151,9 +165,9 @@ clean_processor_b = PythonOperator(
 
 load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="load_processor_a",
-    source_bucket="moz-fx-data-prio-data",
+    source_bucket=BUCKET_DATA_ADMIN,
     source_object="staging/submission_date={{ ds }}/server_id=a/*",
-    destination_bucket="project-a-private",
+    destination_bucket=BUCKET_PRIVATE_A,
     destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=dag,
@@ -161,9 +175,9 @@ load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
 
 load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="load_processor_b",
-    source_bucket="moz-fx-data-prio-data",
+    source_bucket=BUCKET_DATA_ADMIN,
     source_object="staging/submission_date={{ ds }}/server_id=b/*",
-    destination_bucket="project-b-private",
+    destination_bucket=BUCKET_PRIVATE_B,
     destination_object="raw/submission_date={{ ds }}/",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=dag,
@@ -171,9 +185,9 @@ load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
 
 trigger_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="trigger_processor_a",
-    source_bucket="moz-fx-data-prio-data",
+    source_bucket=BUCKET_DATA_ADMIN,
     source_object="staging/_SUCCESS",
-    destination_bucket="project-a-private",
+    destination_bucket=BUCKET_PRIVATE_A,
     destination_object="raw/_SUCCESS",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=dag,
@@ -181,9 +195,9 @@ trigger_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
 
 trigger_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="trigger_processor_b",
-    source_bucket="moz-fx-data-prio-data",
+    source_bucket=BUCKET_DATA_ADMIN,
     source_object="staging/_SUCCESS",
-    destination_bucket="project-b-private",
+    destination_bucket=BUCKET_PRIVATE_B,
     destination_object="raw/_SUCCESS",
     google_cloud_storage_conn_id="google_cloud_prio_admin",
     dag=dag,
@@ -202,7 +216,7 @@ processor_a = SubDagOperator(
         default_args=DEFAULT_ARGS,
         server_id="a",
         gcp_conn_id="google_cloud_prio_a",
-        service_account="prio-runner-a@moz-fx-priotest-project-a.iam.gserviceaccount.com",
+        service_account=SERVICE_ACCOUNT_A,
         arguments=["processor/bin/process"],
         env_vars={
             "DATA_CONFIG": "/app/processor/config/content.json",
@@ -211,9 +225,9 @@ processor_a = SubDagOperator(
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
             "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
             "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-            "BUCKET_INTERNAL_PRIVATE": "project-a-private",
-            "BUCKET_INTERNAL_SHARED": "project-a-shared",
-            "BUCKET_EXTERNAL_SHARED": "project-b-shared",
+            "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_A,
+            "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_A,
+            "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_B,
             "RETRY_LIMIT": "5",
             "RETRY_DELAY": "3",
             "RETRY_BACKOFF_EXPONENT": "2",
@@ -230,7 +244,7 @@ processor_b = SubDagOperator(
         default_args=DEFAULT_ARGS,
         server_id="b",
         gcp_conn_id="google_cloud_prio_b",
-        service_account="prio-runner-b@moz-fx-priotest-project-b.iam.gserviceaccount.com",
+        service_account=SERVICE_ACCOUNT_B,
         arguments=["processor/bin/process"],
         env_vars={
             "DATA_CONFIG": "/app/processor/config/content.json",
@@ -239,9 +253,9 @@ processor_b = SubDagOperator(
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
             "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
             "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
-            "BUCKET_INTERNAL_PRIVATE": "project-b-private",
-            "BUCKET_INTERNAL_SHARED": "project-b-shared",
-            "BUCKET_EXTERNAL_SHARED": "project-a-shared",
+            "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_B,
+            "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_B,
+            "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_A,
             "RETRY_LIMIT": "5",
             "RETRY_DELAY": "3",
             "RETRY_BACKOFF_EXPONENT": "2",
