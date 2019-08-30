@@ -13,6 +13,9 @@ def prio_processor_staging_subdag(
     default_args,
     gcp_conn_id,
     service_account,
+    main,
+    pyfiles,
+    arguments,
     dataproc_zone="us-central1-a",
     num_preemptible_workers=10,
 ):
@@ -25,6 +28,9 @@ def prio_processor_staging_subdag(
     :param str gcp_conn_id:             Name of the connection string.
     :param str service_account:         The address of the service account.
     :param str dataproc_zone:           The region of the DataProc cluster.
+    :param str main:
+    :param List[str] pyfiles:
+    :param List[str] arguments:
     :param int num_preemptible_workers: The number of preemptible workers.
     :return: DAG
     """
@@ -58,16 +64,9 @@ def prio_processor_staging_subdag(
 
         run_dataproc_spark = DataProcPySparkOperator(
             task_id="run_dataproc_spark",
-            main="gs://moz-fx-data-prio-bootstrap/runner.py",
-            pyfiles=["gs://moz-fx-data-prio-bootstrap/prio_processor.egg"],
-            arguments=[
-                "--date",
-                "{{ ds }}",
-                "--input",
-                "gs://moz-fx-data-stage-data/telemetry-decoded_gcs-sink-doctype_prio/output",
-                "--output",
-                "gs://moz-fx-data-prio-data/staging/",
-            ],
+            main=main,
+            pyfiles=pyfiles,
+            arguments=arguments,
             **shared_config
         )
 
