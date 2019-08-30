@@ -64,7 +64,9 @@ DEFAULT_ARGS = {
 }
 
 # use a less than desirable method of generating the service account name
-ENVIRONMENT = "nonprod" if environ.get("DEPLOY_ENVIRONMENT") == "dev" else "prod"
+IS_DEV = environ.get("DEPLOY_ENVIRONMENT") == "dev"
+REALM = "nonprod" if IS_DEV else "prod"
+ENVIRONMENT = "dev" if IS_DEV else "prod"
 
 PROJECT_ADMIN = GoogleCloudStorageHook("google_cloud_prio_admin").project_id
 PROJECT_A = GoogleCloudStorageHook("google_cloud_prio_a").project_id
@@ -74,10 +76,10 @@ SERVICE_ACCOUNT_ADMIN = "prio-admin-runner@{}.iam.gserviceaccount.com".format(
     PROJECT_ADMIN
 )
 SERVICE_ACCOUNT_A = "prio-runner-a-{}@{}.iam.gserviceaccount.com".format(
-    ENVIRONMENT, PROJECT_A
+    REALM, PROJECT_A
 )
 SERVICE_ACCOUNT_B = "prio-runner-b-{}@{}.iam.gserviceaccount.com".format(
-    ENVIRONMENT, PROJECT_B
+    REALM, PROJECT_B
 )
 
 BUCKET_PRIVATE_A = "moz-fx-prio-a-{}-private".format(ENVIRONMENT)
