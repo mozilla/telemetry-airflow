@@ -35,6 +35,7 @@ These variables are encrypted and passed into the prio-processor container via
 the environment.
 """
 from datetime import datetime, timedelta
+from os import environ
 
 from airflow import DAG
 from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
@@ -62,18 +63,29 @@ DEFAULT_ARGS = {
     "dagrun_timeout": timedelta(hours=2),
 }
 
-SERVICE_ACCOUNT_ADMIN = (
-    "prio-admin-runner@moz-fx-prio-admin-prod-098j.iam.gserviceaccount.com"
-)
-SERVICE_ACCOUNT_A = "prio-runner-a-prod@moz-fx-prio-a-prod-kju7.iam.gserviceaccount.com"
-SERVICE_ACCOUNT_B = "prio-runner-b-prod@moz-fx-prio-b-prod-a67n.iam.gserviceaccount.com"
+# use a less than desirable method of generating the service account name
+ENVIRONMENT = "nonprod" if environ.get("DEPLOY_ENVIRONMENT") == "dev" else "prod"
 
-BUCKET_PRIVATE_A = "moz-fx-prio-a-prod-private"
-BUCKET_PRIVATE_B = "moz-fx-prio-b-prod-private"
-BUCKET_SHARED_A = "moz-fx-prio-a-prod-shared"
-BUCKET_SHARED_B = "moz-fx-prio-b-prod-shared"
-BUCKET_DATA_ADMIN = "moz-fx-data-prod-prio-data"
-BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-prod-prio-bootstrap"
+PROJECT_ADMIN = GoogleCloudStorageHook("google_cloud_prio_admin").project_id
+PROJECT_A = GoogleCloudStorageHook("google_cloud_prio_a").project_id
+PROJECT_B = GoogleCloudStorageHook("google_cloud_prio_b").project_id
+
+SERVICE_ACCOUNT_ADMIN = "prio-admin-runner@{}.iam.gserviceaccount.com".format(
+    PROJECT_ADMIN
+)
+SERVICE_ACCOUNT_A = "prio-runner-a-{}@{}.iam.gserviceaccount.com".format(
+    ENVIRONMENT, PROJECT_A
+)
+SERVICE_ACCOUNT_B = "prio-runner-b-{}@{}.iam.gserviceaccount.com".format(
+    ENVIRONMENT, PROJECT_B
+)
+
+BUCKET_PRIVATE_A = "moz-fx-prio-a-{}-private".format(ENVIRONMENT)
+BUCKET_PRIVATE_B = "moz-fx-prio-b-{}-private".format(ENVIRONMENT)
+BUCKET_SHARED_A = "moz-fx-prio-a-{}-shared".format(ENVIRONMENT)
+BUCKET_SHARED_B = "moz-fx-prio-b-{}-shared".format(ENVIRONMENT)
+BUCKET_DATA_ADMIN = "moz-fx-data-{}-prio-data".format(ENVIRONMENT)
+BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
 
 dag = DAG(dag_id="prio_processor", default_args=DEFAULT_ARGS)
 
