@@ -1,4 +1,5 @@
 from airflow import DAG
+from airflow.operators.sensors import ExternalTaskSensor
 from datetime import datetime, timedelta
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.gcp import bigquery_etl_query, load_to_bigquery
@@ -110,22 +111,31 @@ with DAG(
 
     # Daily and last seen views on top of glean pings.
 
-    glean_clients_daily = bigquery_etl_query(
-        task_id='glean_clients_daily',
-        destination_table='glean_clients_daily_v1',
-        dataset_id='telemetry',
-        start_date=datetime(2019, 7, 1),
+    wait_for_copy_deduplicate = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate",
+        external_dag_id="copy_deduplicate",
+        external_task_id="copy_deduplicate_all",
+        dag=dag,
     )
 
-    glean_clients_last_seen = bigquery_etl_query(
-        task_id='glean_clients_last_seen',
-        destination_table='glean_clients_last_seen_raw_v1',
-        dataset_id='telemetry',
-        start_date=datetime(2019, 7, 1),
+    fenix_clients_daily = bigquery_etl_query(
+        task_id='fenix_clients_daily',
+        destination_table='clients_daily_v1',
+        dataset_id='org_mozilla_fenix_derived',
+        start_date=datetime(2019, 9, 5),
+    )
+
+    fenix_clients_daily << wait_for_copy_deduplicate
+
+    fenix_clients_last_seen = bigquery_etl_query(
+        task_id='fenix_clients_last_seen',
+        destination_table='clients_last_seen_v1',
+        dataset_id='org_mozilla_fenix_derived',
+        start_date=datetime(2019, 9, 5),
         depends_on_past=True,
     )
 
-    glean_clients_daily >> glean_clients_last_seen
+    fenix_clients_daily >> fenix_clients_last_seen
 
 
     # Aggregated nondesktop tables.
@@ -137,7 +147,7 @@ with DAG(
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
-    glean_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
+    fenix_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
 
     smoot_usage_nondesktop_raw = bigquery_etl_query(
         task_id='smoot_usage_nondesktop_raw',
@@ -146,7 +156,7 @@ with DAG(
     )
 
     core_clients_last_seen >> smoot_usage_nondesktop_raw
-    glean_clients_last_seen >> smoot_usage_nondesktop_raw
+    fenix_clients_last_seen >> smoot_usage_nondesktop_raw
 
     smoot_usage_nondesktop_v2 = bigquery_etl_query(
         task_id='smoot_usage_nondesktop_v2',
@@ -156,4 +166,4 @@ with DAG(
     )
 
     core_clients_last_seen >> smoot_usage_nondesktop_v2
-    glean_clients_last_seen >> smoot_usage_nondesktop_v2
+    fenix_clients_last_seen >> smoot_usage_nondesktop_v2
