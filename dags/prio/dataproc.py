@@ -7,7 +7,7 @@ from airflow.contrib.operators.dataproc_operator import (
 )
 
 
-def prio_processor_staging_subdag(
+def spark_subdag(
     parent_dag_name,
     child_dag_name,
     default_args,
@@ -55,7 +55,7 @@ def prio_processor_staging_subdag(
             master_machine_type="n1-standard-8",
             worker_machine_type="n1-standard-8",
             num_preemptible_workers=num_preemptible_workers,
-            metadata={"PIP_PACKAGES": "click"},
+            metadata={"PIP_PACKAGES": "click jsonschema gcsfs==0.2.3"},
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
@@ -65,6 +65,9 @@ def prio_processor_staging_subdag(
         run_dataproc_spark = DataProcPySparkOperator(
             task_id="run_dataproc_spark",
             main=main,
+            dataproc_pyspark_jars=[
+                "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+            ],
             pyfiles=pyfiles,
             arguments=arguments,
             **shared_config

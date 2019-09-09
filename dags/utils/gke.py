@@ -34,6 +34,7 @@ def create_gke_config(
                     "machineType": machine_type,
                     "diskSizeGb": disk_size_gb,
                     "oauthScopes": [
+                        "https://www.googleapis.com/auth/bigquery",
                         "https://www.googleapis.com/auth/devstorage.read_write",
                         "https://www.googleapis.com/auth/logging.write",
                         "https://www.googleapis.com/auth/monitoring",

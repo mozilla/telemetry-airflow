@@ -44,11 +44,12 @@ from airflow.contrib.operators.gcs_to_gcs import (
 )
 from airflow.operators import PythonOperator
 from airflow.operators.subdag_operator import SubDagOperator
-from prio import partitioning, processing
+from prio import dataproc, kubernetes
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": True,
+    "wait_for_downstream": True,
     "start_date": datetime(2019, 5, 24),
     "email": [
         "amiyaguchi@mozilla.com",
@@ -65,7 +66,6 @@ DEFAULT_ARGS = {
 
 # use a less than desirable method of generating the service account name
 IS_DEV = environ.get("DEPLOY_ENVIRONMENT") == "dev"
-REALM = "nonprod" if IS_DEV else "prod"
 ENVIRONMENT = "dev" if IS_DEV else "prod"
 
 PROJECT_ADMIN = GoogleCloudStorageHook("google_cloud_prio_admin").project_id
@@ -75,17 +75,17 @@ PROJECT_B = GoogleCloudStorageHook("google_cloud_prio_b").project_id
 SERVICE_ACCOUNT_ADMIN = "prio-admin-runner@{}.iam.gserviceaccount.com".format(
     PROJECT_ADMIN
 )
-SERVICE_ACCOUNT_A = "prio-runner-a-{}@{}.iam.gserviceaccount.com".format(
-    REALM, PROJECT_A
+SERVICE_ACCOUNT_A = "prio-runner-{}-a@{}.iam.gserviceaccount.com".format(
+    ENVIRONMENT, PROJECT_A
 )
-SERVICE_ACCOUNT_B = "prio-runner-b-{}@{}.iam.gserviceaccount.com".format(
-    REALM, PROJECT_B
+SERVICE_ACCOUNT_B = "prio-runner-{}-b@{}.iam.gserviceaccount.com".format(
+    ENVIRONMENT, PROJECT_B
 )
 
-BUCKET_PRIVATE_A = "moz-fx-prio-a-{}-private".format(ENVIRONMENT)
-BUCKET_PRIVATE_B = "moz-fx-prio-b-{}-private".format(ENVIRONMENT)
-BUCKET_SHARED_A = "moz-fx-prio-a-{}-shared".format(ENVIRONMENT)
-BUCKET_SHARED_B = "moz-fx-prio-b-{}-shared".format(ENVIRONMENT)
+BUCKET_PRIVATE_A = "moz-fx-prio-{}-a-private".format(ENVIRONMENT)
+BUCKET_PRIVATE_B = "moz-fx-prio-{}-b-private".format(ENVIRONMENT)
+BUCKET_SHARED_A = "moz-fx-prio-{}-a-shared".format(ENVIRONMENT)
+BUCKET_SHARED_B = "moz-fx-prio-{}-b-shared".format(ENVIRONMENT)
 BUCKET_DATA_ADMIN = "moz-fx-data-{}-prio-data".format(ENVIRONMENT)
 BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
 
@@ -97,7 +97,7 @@ dag = DAG(dag_id="prio_processor", default_args=DEFAULT_ARGS)
 # containing the bundled dependencies.
 
 prio_staging_bootstrap = SubDagOperator(
-    subdag=processing.prio_processor_subdag(
+    subdag=kubernetes.container_subdag(
         parent_dag_name=dag.dag_id,
         child_dag_name="bootstrap",
         default_args=DEFAULT_ARGS,
@@ -119,7 +119,7 @@ prio_staging_bootstrap = SubDagOperator(
 
 # Run the PySpark job for range-partioning Prio pings.
 prio_staging = SubDagOperator(
-    subdag=partitioning.prio_processor_staging_subdag(
+    subdag=dataproc.spark_subdag(
         parent_dag_name=dag.dag_id,
         child_dag_name="staging",
         default_args=DEFAULT_ARGS,
@@ -128,10 +128,13 @@ prio_staging = SubDagOperator(
         main="gs://{}/runner.py".format(BUCKET_BOOTSTRAP_ADMIN),
         pyfiles=["gs://{}/prio_processor.egg".format(BUCKET_BOOTSTRAP_ADMIN)],
         arguments=[
+            "staging",
             "--date",
             "{{ ds }}",
+            "--source",
+            "bigquery",
             "--input",
-            "gs://moz-fx-data-stage-data/telemetry-decoded_gcs-sink-doctype_prio/output",
+            "moz-fx-data-shared-prod.payload_bytes_decoded.telemetry_telemetry__prio_v4",
             "--output",
             "gs://{}/staging/".format(BUCKET_DATA_ADMIN),
         ],
@@ -234,7 +237,7 @@ trigger_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
 # infrastructure (but partitioned along project boundaries).
 
 processor_a = SubDagOperator(
-    subdag=processing.prio_processor_subdag(
+    subdag=kubernetes.container_subdag(
         parent_dag_name=dag.dag_id,
         child_dag_name="processor_a",
         default_args=DEFAULT_ARGS,
@@ -262,7 +265,7 @@ processor_a = SubDagOperator(
 )
 
 processor_b = SubDagOperator(
-    subdag=processing.prio_processor_subdag(
+    subdag=kubernetes.container_subdag(
         parent_dag_name=dag.dag_id,
         child_dag_name="processor_b",
         default_args=DEFAULT_ARGS,
@@ -290,14 +293,26 @@ processor_b = SubDagOperator(
 )
 
 
-# copy the data back into the admin project for loading into bigquery
-copy_aggregates = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="copy_aggregates",
-    source_bucket="project-a-private",
-    source_object="processed/submission_date={{ ds }}/*",
-    destination_bucket="moz-fx-data-prio-data",
-    destination_object="processed/submission_date={{ ds }}/",
-    google_cloud_storage_conn_id="google_cloud_prio_admin",
+insert_into_bigquery = SubDagOperator(
+    subdag=kubernetes.container_subdag(
+        parent_dag_name=dag.dag_id,
+        child_dag_name="insert_into_bigquery",
+        default_args=DEFAULT_ARGS,
+        server_id="admin",
+        gcp_conn_id="google_cloud_prio_admin",
+        service_account=SERVICE_ACCOUNT_ADMIN,
+        arguments=["bash", "-c", "cd processor; bin/insert"],
+        env_vars={
+            "DATA_CONFIG": "/app/processor/config/content.json",
+            "ORIGIN_CONFIG": "/app/processor/config/telemetry_origin_data_inc.json",
+            "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_A,
+            "DATASET": "telemetry",
+            "TABLE": "origin_content_blocking",
+            "BQ_REPLACE": "false",
+            "GOOGLE_APPLICATION_CREDENTIALS": "",
+        },
+    ),
+    task_id="insert_into_bigquery",
     dag=dag,
 )
 
@@ -309,5 +324,5 @@ prio_staging >> clean_processor_b >> load_processor_b >> trigger_processor_b >> 
 
 # Wait for both parents to finish (though only a dependency on processor a is
 # technically necessary)
-processor_a >> copy_aggregates
-processor_b >> copy_aggregates
+processor_a >> insert_into_bigquery
+processor_b >> insert_into_bigquery

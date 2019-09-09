@@ -11,7 +11,7 @@ from operators.gcp_container_operator import (
 from utils.gke import create_gke_config
 
 
-def prio_processor_subdag(
+def container_subdag(
     parent_dag_name,
     child_dag_name,
     default_args,
