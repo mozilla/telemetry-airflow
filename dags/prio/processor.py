@@ -3,13 +3,13 @@
 The prio-processor docs details the internals of the containerized application.
 It contains storage and processing scripts that are coordinated by Airflow.
 
-The graph has three phases: partitioning, publishing, and processing.
-Partitioning reads batched prio pings and range-partitions across date,
-batch-id, and share-id. The partitioned data sets are published to all
-subscribed servers. Each of the servers runs a Kubernetes cluster running from
-the `mozilla/prio-processor:latest` image. A container runs the processing
-pipeline, starting with input at `{private-bucket}/raw/` and resulting in output
-at `{private-bucket}/processed/`.
+The graph has three phases: staging, publishing, and processing. Staging reads
+batched prio pings and range-partitions across date, batch-id, and share-id. The
+partitioned data sets are published to all subscribed servers. Each of the
+servers runs a Kubernetes cluster running from the
+`mozilla/prio-processor:latest` image. A container runs the processing pipeline,
+starting with input at `{private-bucket}/raw/` and resulting in output at
+`{private-bucket}/processed/`.
 
 There are two sets of servers that run in Google Kubernetes Engine (GKE) under
 Data Operations. The servers are assigned service accounts with access to a
@@ -19,9 +19,9 @@ including a process and transfer job from Firefox Telemetry into a receiving
 bucket located in each server's project.
 
 The SubDag operator simplifies the definition of each phase. The clusters are
-ephemeral -- there are situations where clusters can become orphaned. These are
-usually resolved by rerunning the individual SubDag, which should clean-up
-properly.
+ephemeral -- there are situations where clusters can become orphaned such as an
+unclean shutdown of Airflow. These are usually resolved by rerunning the
+individual SubDag, which should clean-up properly.
 
 The following Airflow variables should be set:
 
@@ -295,7 +295,10 @@ processor_b = SubDagOperator(
     dag=dag,
 )
 
-
+# Take the resulting aggregates and insert them into a BigQuery table. This
+# table is effectively append-only, so rerunning the dag will cause duplicate
+# results. In practice, rerunning the DAG is problematic when operation is
+# distributed.
 insert_into_bigquery = SubDagOperator(
     subdag=kubernetes.container_subdag(
         parent_dag_name=dag.dag_id,
