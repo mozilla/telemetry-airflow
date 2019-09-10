@@ -65,12 +65,16 @@ DEFAULT_ARGS = {
 }
 
 # use a less than desirable method of generating the service account name
-IS_DEV = environ.get("DEPLOY_ENVIRONMENT") == "dev"
+IS_DEV = environ.get("DEPLOY_ENVIRONMENT") != "prod"
 ENVIRONMENT = "dev" if IS_DEV else "prod"
 
-PROJECT_ADMIN = GoogleCloudStorageHook("google_cloud_prio_admin").project_id
-PROJECT_A = GoogleCloudStorageHook("google_cloud_prio_a").project_id
-PROJECT_B = GoogleCloudStorageHook("google_cloud_prio_b").project_id
+PRIO_ADMIN_CONN = "google_cloud_prio_admin"
+PRIO_A_CONN = "google_cloud_prio_a"
+PRIO_B_CONN = "google_cloud_prio_b"
+
+PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
+PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
+PROJECT_B = GoogleCloudStorageHook(PRIO_B_CONN).project_id
 
 SERVICE_ACCOUNT_ADMIN = "prio-admin-runner@{}.iam.gserviceaccount.com".format(
     PROJECT_ADMIN
@@ -102,7 +106,7 @@ prio_staging_bootstrap = SubDagOperator(
         child_dag_name="bootstrap",
         default_args=DEFAULT_ARGS,
         server_id="admin",
-        gcp_conn_id="google_cloud_prio_admin",
+        gcp_conn_id=PRIO_ADMIN_CONN,
         service_account=SERVICE_ACCOUNT_ADMIN,
         arguments=[
             "bash",
@@ -122,7 +126,7 @@ prio_staging = SubDagOperator(
         parent_dag_name=dag.dag_id,
         child_dag_name="staging",
         default_args=DEFAULT_ARGS,
-        gcp_conn_id="google_cloud_prio_admin",
+        gcp_conn_id=PRIO_ADMIN_CONN,
         service_account=SERVICE_ACCOUNT_ADMIN,
         main="gs://{}/runner.py".format(BUCKET_BOOTSTRAP_ADMIN),
         pyfiles=["gs://{}/prio_processor.egg".format(BUCKET_BOOTSTRAP_ADMIN)],
@@ -174,7 +178,7 @@ clean_processor_a = PythonOperator(
     op_kwargs={
         "private_bucket": BUCKET_PRIVATE_A,
         "shared_bucket": BUCKET_SHARED_A,
-        "google_cloud_storage_conn_id": "google_cloud_prio_a",
+        "google_cloud_storage_conn_id": PRIO_A_CONN,
     },
     dag=dag,
 )
@@ -185,7 +189,7 @@ clean_processor_b = PythonOperator(
     op_kwargs={
         "private_bucket": BUCKET_PRIVATE_B,
         "shared_bucket": BUCKET_SHARED_B,
-        "google_cloud_storage_conn_id": "google_cloud_prio_b",
+        "google_cloud_storage_conn_id": PRIO_B_CONN,
     },
     dag=dag,
 )
@@ -196,7 +200,7 @@ load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_object="staging/submission_date={{ ds }}/server_id=a/*",
     destination_bucket=BUCKET_PRIVATE_A,
     destination_object="raw/submission_date={{ ds }}/",
-    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
     dag=dag,
 )
 
@@ -206,7 +210,7 @@ load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_object="staging/submission_date={{ ds }}/server_id=b/*",
     destination_bucket=BUCKET_PRIVATE_B,
     destination_object="raw/submission_date={{ ds }}/",
-    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
     dag=dag,
 )
 
@@ -216,7 +220,7 @@ trigger_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_object="staging/_SUCCESS",
     destination_bucket=BUCKET_PRIVATE_A,
     destination_object="raw/_SUCCESS",
-    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
     dag=dag,
 )
 
@@ -226,7 +230,7 @@ trigger_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_object="staging/_SUCCESS",
     destination_bucket=BUCKET_PRIVATE_B,
     destination_object="raw/_SUCCESS",
-    google_cloud_storage_conn_id="google_cloud_prio_admin",
+    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
     dag=dag,
 )
 
@@ -242,7 +246,7 @@ processor_a = SubDagOperator(
         child_dag_name="processor_a",
         default_args=DEFAULT_ARGS,
         server_id="a",
-        gcp_conn_id="google_cloud_prio_a",
+        gcp_conn_id=PRIO_A_CONN,
         service_account=SERVICE_ACCOUNT_A,
         arguments=["processor/bin/process"],
         env_vars={
@@ -271,7 +275,7 @@ processor_b = SubDagOperator(
         child_dag_name="processor_b",
         default_args=DEFAULT_ARGS,
         server_id="b",
-        gcp_conn_id="google_cloud_prio_b",
+        gcp_conn_id=PRIO_B_CONN,
         service_account=SERVICE_ACCOUNT_B,
         arguments=["processor/bin/process"],
         env_vars={
@@ -304,7 +308,7 @@ insert_into_bigquery = SubDagOperator(
         child_dag_name="insert_into_bigquery",
         default_args=DEFAULT_ARGS,
         server_id="admin",
-        gcp_conn_id="google_cloud_prio_admin",
+        gcp_conn_id=PRIO_ADMIN_CONN,
         service_account=SERVICE_ACCOUNT_ADMIN,
         arguments=["bash", "-c", "cd processor; bin/insert"],
         env_vars={
