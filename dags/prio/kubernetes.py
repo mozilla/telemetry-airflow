@@ -24,8 +24,8 @@ def container_subdag(
     machine_type="n1-standard-1",
     image="mozilla/prio-processor:latest",
     location="us-west1-b",
-    owner_label="hwoo",
-    team_label="dataops",
+    owner_label="amiyaguchi",
+    team_label="dataeng",
 ):
     """Run a command on an ephemeral container running the
     `mozilla/prio-processor:latest` image.
