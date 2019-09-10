@@ -158,10 +158,11 @@ def clean_buckets(google_cloud_storage_conn_id, private_bucket, shared_bucket):
     hook = GoogleCloudStorageHook(google_cloud_storage_conn_id)
     total = 0
 
-    raw = [(private_bucket, name) for name in hook.list(private_bucket, prefix="raw")]
+    # clean the entire bucket
+    private = [(private_bucket, name) for name in hook.list(private_bucket)]
     shared = [(shared_bucket, name) for name in hook.list(shared_bucket)]
 
-    for bucket_name, object_name in raw + shared:
+    for bucket_name, object_name in private + shared:
         logging.info("Deleting gs://{}/{}".format(bucket_name, object_name))
         hook.delete(bucket_name, object_name)
         total += 1
