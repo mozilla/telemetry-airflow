@@ -111,7 +111,6 @@ prio_staging_bootstrap = SubDagOperator(
                 BUCKET_BOOTSTRAP_ADMIN
             ),
         ],
-        env_vars={},
     ),
     task_id="bootstrap",
     dag=dag,
