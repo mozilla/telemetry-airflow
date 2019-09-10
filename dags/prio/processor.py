@@ -59,7 +59,7 @@ DEFAULT_ARGS = {
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 0,
-    "retry_delay": timedelta(minutes=15),
+    "retry_delay": timedelta(minutes=5),
     "schedule_interval": "@daily",
     "dagrun_timeout": timedelta(hours=2),
 }
@@ -255,8 +255,8 @@ processor_a = SubDagOperator(
             "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_A,
             "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_A,
             "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_B,
-            # 10 minutes of timeout
-            "RETRY_LIMIT": "60",
+            # 15 minutes of timeout
+            "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
             "RETRY_BACKOFF_EXPONENT": "1",
         },
@@ -284,8 +284,8 @@ processor_b = SubDagOperator(
             "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_B,
             "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_B,
             "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_A,
-            # 10 minutes of time-out
-            "RETRY_LIMIT": "60",
+            # 15 minutes of time-out
+            "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
             "RETRY_BACKOFF_EXPONENT": "1",
         },
