@@ -65,9 +65,7 @@ def spark_subdag(
         run_dataproc_spark = DataProcPySparkOperator(
             task_id="run_dataproc_spark",
             main=main,
-            dataproc_pyspark_jars=[
-                "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
-            ],
+            dataproc_pyspark_jars=["gs://spark-lib/bigquery/spark-bigquery-latest.jar"],
             pyfiles=pyfiles,
             arguments=arguments,
             **shared_config

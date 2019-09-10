@@ -9,6 +9,7 @@ from operators.gcp_container_operator import (
     GKEPodOperator,
 )
 from utils.gke import create_gke_config
+from airflow.operators.bash_operator import BashOperator
 
 
 def container_subdag(
@@ -20,6 +21,7 @@ def container_subdag(
     server_id,
     env_vars,
     arguments,
+    image="mozilla/prio-processor:latest",
     location="us-west1-b",
     owner_label="hwoo",
     team_label="dataops",
@@ -37,6 +39,7 @@ def container_subdag(
                                         the processor.
     :param List[str] arguments:         The command to run after loading the
                                         image.
+    :param str image:                   Dockerhub image
     :param str location:                The region of the GKE cluster.
     :param str owner_label:             Label for associating the owner
     :param str team_label:              Label for associating the team
@@ -71,12 +74,22 @@ def container_subdag(
             **shared_config
         )
 
+        # Running the pod without any time in-between will cause the scope-based
+        # authentication in Google Cloud Platform to fail. For example:
+        #
+        # `ServiceException: 401 Anonymous caller does not have
+        # storage.objects.get access to moz-fx-prio-dev-a-private/processed/`
+        #
+        # Sleeping by a small amount solves this problem. This issue was first
+        # noticed intermittently on 2019-09-09.
+        sleep = BashOperator(task_id="sleep", bash_command="sleep 15", dag=dag)
+
         run_prio = GKEPodOperator(
             task_id="processor_{}".format(server_id),
             name="run-prio-project-{}".format(server_id),
             cluster_name=cluster_name,
             namespace="default",
-            image="mozilla/prio-processor:latest",
+            image=image,
             arguments=arguments,
             env_vars=env_vars,
             **shared_config
@@ -89,5 +102,5 @@ def container_subdag(
             **shared_config
         )
 
-        create_gke_cluster >> run_prio >> delete_gke_cluster
+        create_gke_cluster >> sleep >> run_prio >> delete_gke_cluster
         return dag
