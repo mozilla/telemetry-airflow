@@ -21,6 +21,7 @@ def container_subdag(
     server_id,
     env_vars,
     arguments,
+    machine_type="n1-standard-1",
     image="mozilla/prio-processor:latest",
     location="us-west1-b",
     owner_label="hwoo",
@@ -39,6 +40,7 @@ def container_subdag(
                                         the processor.
     :param List[str] arguments:         The command to run after loading the
                                         image.
+    :param str machine_type:            The machine type for running the image.
     :param str image:                   Dockerhub image
     :param str location:                The region of the GKE cluster.
     :param str owner_label:             Label for associating the owner
@@ -67,6 +69,7 @@ def container_subdag(
                 service_account=service_account,
                 owner_label=owner_label,
                 team_label=team_label,
+                machine_type=machine_type,
                 # DataProc clusters require VPC with auto-created subnets
                 subnetwork="default" if server_id == "admin" else "gke-subnet",
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
