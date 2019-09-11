@@ -4,6 +4,10 @@
 # DOCKER_USER
 # DOCKER_PASS
 #
+# GCLOUD_SERVICE_KEY - key for gsutil rsync bootstrap and jobs with gcs
+# GOOGLE_PROJECT_ID - airflow-dataproc
+# GOOGLE_COMPUTE_ZONE - us-west1-b
+#
 
 version: 2
 jobs:
@@ -28,7 +32,6 @@ jobs:
       - run: python -m py_compile dags/*.py
       - run: find . -name *.pyc -delete
       - run: tox -e py27
-
 
   deploy:
     docker:
@@ -57,6 +60,16 @@ jobs:
               docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
             fi
 
+  sync_gcs:
+    docker:
+      - image: google/cloud-sdk
+    working_directory: ~/mozilla/telemetry-airflow
+    steps:
+      - checkout
+      - run: |
+          gsutil rsync -d -r dataproc_bootstrap gs://moz-fx-data-prod-airflow-dataproc-artifacts/bootstrap
+          gsutil rsync -d -r jobs gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs
+
 
 workflows:
   version: 2
@@ -73,6 +86,15 @@ workflows:
               only: /.*/
 
       - deploy:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: master
+
+      - sync_gcs:
           requires:
             - test
           filters:

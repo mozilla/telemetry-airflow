@@ -1,5 +1,4 @@
 #!/bin/bash
-# To be copied to gs://moz-fx-data-prod-airflow-dataproc-artifacts
 
 set -exo pipefail
 
