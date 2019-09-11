@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# to be copied to gs://moz-fx-data-prod-airflow-dataproc-artifacts/airflow_gcp.sh
 
 set -exo pipefail
 
