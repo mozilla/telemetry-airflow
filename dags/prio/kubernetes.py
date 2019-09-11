@@ -74,6 +74,7 @@ def container_subdag(
                 subnetwork="default" if server_id == "admin" else "gke-subnet",
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
             ),
+            dag=dag,
             **shared_config
         )
 
@@ -85,7 +86,7 @@ def container_subdag(
         #
         # Sleeping by a small amount solves this problem. This issue was first
         # noticed intermittently on 2019-09-09.
-        sleep = BashOperator(task_id="sleep", bash_command="sleep 15", dag=dag)
+        sleep = BashOperator(task_id="sleep", bash_command="sleep 60", dag=dag)
 
         run_prio = GKEPodOperator(
             task_id="processor_{}".format(server_id),
@@ -95,6 +96,7 @@ def container_subdag(
             image=image,
             arguments=arguments,
             env_vars=env_vars,
+            dag=dag,
             **shared_config
         )
 
@@ -102,6 +104,7 @@ def container_subdag(
             task_id="delete_gke_cluster",
             name=cluster_name,
             trigger_rule="all_done",
+            dag=dag,
             **shared_config
         )
 

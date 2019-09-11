@@ -16,7 +16,7 @@ def spark_subdag(
     main,
     pyfiles,
     arguments,
-    dataproc_zone="us-central1-a",
+    dataproc_zone="us-west1-a",
     num_preemptible_workers=10,
 ):
     """Run the PySpark job for unnesting and range-partitioning Prio pings from
@@ -59,6 +59,7 @@ def spark_subdag(
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
+            dag=dag,
             **shared_config
         )
 
@@ -68,11 +69,15 @@ def spark_subdag(
             dataproc_pyspark_jars=["gs://spark-lib/bigquery/spark-bigquery-latest.jar"],
             pyfiles=pyfiles,
             arguments=arguments,
+            dag=dag,
             **shared_config
         )
 
         delete_dataproc_cluster = DataprocClusterDeleteOperator(
-            task_id="delete_dataproc_cluster", trigger_rule="all_done", **shared_config
+            task_id="delete_dataproc_cluster",
+            trigger_rule="all_done",
+            dag=dag,
+            **shared_config
         )
         create_dataproc_cluster >> run_dataproc_spark >> delete_dataproc_cluster
         return dag

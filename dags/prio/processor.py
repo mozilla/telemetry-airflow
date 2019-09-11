@@ -49,7 +49,6 @@ from prio import dataproc, kubernetes
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": True,
-    "wait_for_downstream": True,
     "start_date": datetime(2019, 8, 22),
     "email": [
         "amiyaguchi@mozilla.com",
@@ -61,7 +60,7 @@ DEFAULT_ARGS = {
     "retries": 0,
     "retry_delay": timedelta(minutes=5),
     "schedule_interval": "@daily",
-    "dagrun_timeout": timedelta(hours=2),
+    "dagrun_timeout": timedelta(hours=4),
 }
 
 # use a less than desirable method of generating the service account name
@@ -93,7 +92,7 @@ BUCKET_SHARED_B = "moz-fx-prio-{}-b-shared".format(ENVIRONMENT)
 BUCKET_DATA_ADMIN = "moz-fx-data-{}-prio-data".format(ENVIRONMENT)
 BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
 
-dag = DAG(dag_id="prio_processor", default_args=DEFAULT_ARGS)
+dag = DAG(dag_id="prio_processor", max_active_runs=1, default_args=DEFAULT_ARGS)
 
 
 # Copy the dependencies necessary for running the `prio-processor staging` job
