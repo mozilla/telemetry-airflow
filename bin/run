@@ -33,6 +33,10 @@ init_connections() {
         --conn_extra token=${DB_TOKEN}
 
     airflow connections --add \
+        --conn_id google_cloud_prio_admin \
+        --conn_type google_cloud_platform
+
+    airflow connections --add \
         --conn_id google_cloud_prio_a \
         --conn_type google_cloud_platform
 
