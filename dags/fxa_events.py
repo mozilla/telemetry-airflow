@@ -79,3 +79,12 @@ with models.DAG(
     )
 
     fxa_users_last_seen >> smoot_usage_fxa_raw
+
+    smoot_usage_fxa_v2 = bigquery_etl_query(
+        task_id='smoot_usage_fxa_v2',
+        destination_table='smoot_usage_fxa_v2',
+        dataset_id='telemetry_derived',
+        target_project_id='moz-fx-data-shared-prod',
+    )
+
+    fxa_users_last_seen >> smoot_usage_fxa_v2
