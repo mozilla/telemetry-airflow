@@ -10,6 +10,8 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+import re
+
 
 def load_to_bigquery(parent_dag_name=None,
                      default_args=None,
@@ -129,7 +131,8 @@ def load_to_bigquery(parent_dag_name=None,
     if replace:
         gke_args += ['--replace'] + replace
 
-    bq_table_name = p2b_table_alias or '{}_{}'.format(dataset, dataset_version)
+    bq_table_name = p2b_table_alias or normalize_table_id('_'.join([dataset,
+                                                                   dataset_version]))
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
         s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
@@ -505,3 +508,17 @@ def bigquery_etl_copy_deduplicate(
         image_pull_policy=image_pull_policy,
         **kwargs
     )
+
+
+def normalize_table_id(table_name):
+    """
+    Normalize table name for use with BigQuery.
+    * Contain up to 1,024 characters
+    * Contain letters (upper or lower case), numbers, and underscores
+    We intentionally lower case the table_name.
+    https://cloud.google.com/bigquery/docs/tables
+    """
+    if len(table_name) > 1024:
+        raise ValueError('table_name cannot contain more than 1024 characters')
+    else:
+        return re.sub('\W+', '_', table_name).lower()
