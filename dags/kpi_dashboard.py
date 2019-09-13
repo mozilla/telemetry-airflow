@@ -38,5 +38,5 @@ with models.DAG(
     smoot_usage_new_profiles_v2 = bigquery_etl_query(
         destination_table='smoot_usage_new_profiles_v2',
         dataset_id='telemetry_derived',
-        target_project_id='moz-fx-data-shared-prod',
+        project_id='moz-fx-data-shared-prod',
     )
