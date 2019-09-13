@@ -462,9 +462,8 @@ smoot_usage_desktop_raw = bigquery_etl_query(
 
 smoot_usage_desktop_v2 = bigquery_etl_query(
     task_id='smoot_usage_desktop_v2',
-    destination_table='smoot_usage_desktop_v2',
+    destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_desktop_v2',
     dataset_id='telemetry_derived',
-    project_id='moz-fx-data-shared-prod',
     owner="jklukas@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
