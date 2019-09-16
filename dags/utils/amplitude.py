@@ -20,7 +20,7 @@ def export_to_amplitude(
         amplitude_s3_conn='amplitude_s3_conn',
         amplitude_s3_bucket='com-amplitude-vacuum-mozilla-vacuum-wup'):
 
-    """ Export a bigquery table or view to Amplitude.
+    """Export a bigquery table or view to Amplitude.
 
     This uses the BigQueryToCloudStorage operator to export the
     partition to GCS, then pushes that data to S3. It operates
