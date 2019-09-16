@@ -1,7 +1,11 @@
 from airflow import models
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.dataproc_operator import DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator
+from airflow.contrib.operators.dataproc_operator import (
+    DataprocClusterDeleteOperator,
+    DataProcSparkOperator,
+    DataProcPySparkOperator,
+)
 from airflow.exceptions import AirflowException
 
 # Our own dataproc operator used to install optional components and component gateway
@@ -12,27 +16,30 @@ Note: We are currently deployed on v1.10.2, and when we upgrade, the functionali
 for the DataProcPySparkOperator and DataProcSparkOperator will change.
 """
 
+
 class DataProcHelper:
     """
     This is a helper class for creating/deleting dataproc clusters.
     """
 
-    def __init__(self,
-                 cluster_name=None,
-                 num_workers=2,
-                 image_version='1.4',
-                 zone='us-west1-b',
-                 idle_delete_ttl='14400',
-                 auto_delete_ttl='28800',
-                 master_machine_type='n1-standard-8',
-                 worker_machine_type='n1-standard-4',
-                 num_preemptible_workers=0,
-                 service_account=None,
-                 artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
-                 optional_components=['ANACONDA'],
-                 install_component_gateway=True,
-                 aws_conn_id=None,
-                 gcp_conn_id='google_cloud_airflow_dataproc'):
+    def __init__(
+        self,
+        cluster_name=None,
+        num_workers=2,
+        image_version="1.4",
+        zone="us-west1-b",
+        idle_delete_ttl="14400",
+        auto_delete_ttl="28800",
+        master_machine_type="n1-standard-8",
+        worker_machine_type="n1-standard-4",
+        num_preemptible_workers=0,
+        service_account=None,
+        artifact_bucket="moz-fx-data-prod-airflow-dataproc-artifacts",
+        optional_components=["ANACONDA"],
+        install_component_gateway=True,
+        aws_conn_id=None,
+        gcp_conn_id="google_cloud_airflow_dataproc",
+    ):
 
         self.cluster_name = cluster_name
         self.num_workers = num_workers
@@ -65,6 +72,11 @@ class DataProcHelper:
             ):
                 if value is not None:
                     properties["core:fs.s3a." + key] = value
+                    # For older spark versions we need to set the properties differently
+                    if key == "access.key":
+                        properties["core:fs.s3.awsAccessKeyId"] = value
+                    elif key == "secret.key":
+                        properties["core:fs.s3.awsSecretAccessKey"] = value
 
         init_actions_uris = []
         if self.artifact_bucket:
@@ -73,12 +85,12 @@ class DataProcHelper:
             )
 
         return DataprocClusterCreateOperator(
-            task_id='create_dataproc_cluster',
+            task_id="create_dataproc_cluster",
             cluster_name=self.cluster_name,
             gcp_conn_id=self.gcp_conn_id,
             service_account=self.service_account,
             project_id=self.connection.project_id,
-            storage_bucket='moz-fx-data-prod-dataproc-scratch',
+            storage_bucket="moz-fx-data-prod-dataproc-scratch",
             num_workers=self.num_workers,
             image_version=self.image_version,
             properties=properties,
@@ -92,8 +104,8 @@ class DataProcHelper:
             install_component_gateway = self.install_component_gateway,
             init_actions_uris=init_actions_uris,
             metadata={
-                'gcs-connector-version': '1.9.16',
-                'bigquery-connector-version': '0.13.6'
+                "gcs-connector-version": "1.9.16",
+                "bigquery-connector-version": "0.13.6",
             },
         )
 
@@ -102,33 +114,37 @@ class DataProcHelper:
         Returns a DataprocClusterDeleteOperator
         """
         return DataprocClusterDeleteOperator(
-            task_id='delete_dataproc_cluster',
+            task_id="delete_dataproc_cluster",
             cluster_name=self.cluster_name,
             gcp_conn_id=self.gcp_conn_id,
-            project_id=self.connection.project_id)
+            project_id=self.connection.project_id,
+        )
 
 
-def moz_dataproc_pyspark_runner(parent_dag_name=None,
-                                dag_name='run_pyspark_on_dataproc',
-                                default_args=None,
-                                cluster_name=None,
-                                num_workers=2,
-                                image_version='1.4',
-                                zone='us-west1-b',
-                                idle_delete_ttl='10800',
-                                auto_delete_ttl='21600',
-                                master_machine_type='n1-standard-8',
-                                worker_machine_type='n1-standard-4',
-                                num_preemptible_workers=0,
-                                service_account=None,
-                                optional_components=['ANACONDA'],
-                                install_component_gateway=True,
-                                python_driver_code=None,
-                                py_args=None,
-                                job_name=None,
-                                artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
-                                aws_conn_id=None,
-                                gcp_conn_id='google_cloud_airflow_dataproc'):
+def moz_dataproc_pyspark_runner(
+    parent_dag_name=None,
+    dag_name="run_pyspark_on_dataproc",
+    default_args=None,
+    cluster_name=None,
+    num_workers=2,
+    image_version="1.4",
+    zone="us-west1-b",
+    idle_delete_ttl="10800",
+    auto_delete_ttl="21600",
+    master_machine_type="n1-standard-8",
+    worker_machine_type="n1-standard-4",
+    num_preemptible_workers=0,
+    service_account=None,
+    optional_components=["ANACONDA"],
+    install_component_gateway=True,
+    python_driver_code=None,
+    py_args=None,
+    job_name=None,
+    artifact_bucket="moz-fx-data-prod-airflow-dataproc-artifacts",
+    aws_conn_id=None,
+    gcp_conn_id="google_cloud_airflow_dataproc",
+    env_vars=None,
+):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -167,7 +183,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     ---
     :param str cluster_name:              The name of the dataproc cluster.
     :param int num_workers:               The number of spark workers.
-    :param str image_version:             The image version of software to use for dataproc 
+    :param str image_version:             The image version of software to use for dataproc
                                           cluster.
     :param str zone:                      The zone where the dataproc cluster will be located.
     :param str idle_delete_ttl:           The duration in seconds to keep idle cluster alive.
@@ -182,7 +198,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param str job_name:                  Name of the spark job to run.
     :param str artifact_bucket:           The bucket with script-runner.jar and airflow_gcp.sh.
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
-    :param str gcp_conn_id:               The connection ID to use connecting to GCP. 
+    :param str gcp_conn_id:               The connection ID to use connecting to GCP.
     :param list optional_components:      List of optional components to install on cluster
                                           Defaults to ['ANACONDA'] for now since JUPYTER is broken.
     :param str install_component_gateway: Enable alpha feature component gateway.
@@ -196,31 +212,33 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     """
 
     if cluster_name is None or python_driver_code is None:
-        raise AirflowException('Please specify cluster_name and/or python_driver_code.')
+        raise AirflowException("Please specify cluster_name and/or python_driver_code.")
 
-    dataproc_helper = DataProcHelper(cluster_name=cluster_name,
-                                     num_workers=num_workers,
-                                     image_version=image_version,
-                                     zone=zone,
-                                     idle_delete_ttl=idle_delete_ttl,
-                                     auto_delete_ttl=auto_delete_ttl,
-                                     master_machine_type=master_machine_type,
-                                     worker_machine_type=worker_machine_type,
-                                     num_preemptible_workers=num_preemptible_workers,
-                                     service_account=service_account,
-                                     optional_components=optional_components,
-                                     install_component_gateway=install_component_gateway,
-                                     artifact_bucket=artifact_bucket,
-                                     aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+    dataproc_helper = DataProcHelper(
+        cluster_name=cluster_name,
+        num_workers=num_workers,
+        image_version=image_version,
+        zone=zone,
+        idle_delete_ttl=idle_delete_ttl,
+        auto_delete_ttl=auto_delete_ttl,
+        master_machine_type=master_machine_type,
+        worker_machine_type=worker_machine_type,
+        num_preemptible_workers=num_preemptible_workers,
+        service_account=service_account,
+        optional_components=optional_components,
+        install_component_gateway=install_component_gateway,
+        artifact_bucket=artifact_bucket,
+        aws_conn_id=aws_conn_id,
+        gcp_conn_id=gcp_conn_id,
+    )
 
-    _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
+    _dag_name = "{}.{}".format(parent_dag_name, dag_name)
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         run_pyspark_on_dataproc = DataProcPySparkOperator(
-            task_id='run_dataproc_pyspark',
+            task_id="run_dataproc_pyspark",
             job_name=job_name,
             cluster_name=cluster_name,
             main=python_driver_code,
@@ -232,31 +250,35 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
 
         create_dataproc_cluster >> run_pyspark_on_dataproc >> delete_dataproc_cluster
         return dag
+
+
 # End moz_dataproc_pyspark_runner
 
 
-def moz_dataproc_jar_runner(parent_dag_name=None,
-                            dag_name='run_script_on_dataproc',
-                            default_args=None,
-                            cluster_name=None,
-                            num_workers=2,
-                            image_version='1.4',
-                            zone='us-west1-b',
-                            idle_delete_ttl='14400',
-                            auto_delete_ttl='28800',
-                            master_machine_type='n1-standard-8',
-                            worker_machine_type='n1-standard-4',
-                            num_preemptible_workers=0,
-                            service_account=None,
-                            optional_components=['ANACONDA'],
-                            install_component_gateway=True,
-                            jar_urls=None,
-                            main_class=None,
-                            jar_args=None,
-                            job_name=None,
-                            artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
-                            aws_conn_id=None,
-                            gcp_conn_id='google_cloud_airflow_dataproc'):
+def moz_dataproc_jar_runner(
+    parent_dag_name=None,
+    dag_name="run_script_on_dataproc",
+    default_args=None,
+    cluster_name=None,
+    num_workers=2,
+    image_version="1.4",
+    zone="us-west1-b",
+    idle_delete_ttl="14400",
+    auto_delete_ttl="28800",
+    master_machine_type="n1-standard-8",
+    worker_machine_type="n1-standard-4",
+    num_preemptible_workers=0,
+    service_account=None,
+    optional_components=["ANACONDA"],
+    install_component_gateway=True,
+    jar_urls=None,
+    main_class=None,
+    jar_args=None,
+    job_name=None,
+    artifact_bucket="moz-fx-data-prod-airflow-dataproc-artifacts",
+    aws_conn_id=None,
+    gcp_conn_id="google_cloud_airflow_dataproc",
+):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -304,25 +326,29 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
     """
 
     if cluster_name is None or jar_urls is None or main_class is None:
-        raise AirflowException('Please specify cluster_name, jar_urls, and/or main_class.')
+        raise AirflowException(
+            "Please specify cluster_name, jar_urls, and/or main_class."
+        )
 
-    dataproc_helper = DataProcHelper(cluster_name=cluster_name,
-                                     num_workers=num_workers,
-                                     image_version=image_version,
-                                     zone=zone,
-                                     idle_delete_ttl=idle_delete_ttl,
-                                     auto_delete_ttl=auto_delete_ttl,
-                                     master_machine_type=master_machine_type,
-                                     worker_machine_type=worker_machine_type,
-                                     num_preemptible_workers=num_preemptible_workers,
-                                     service_account=service_account,
-                                     optional_components=optional_components,
-                                     install_component_gateway=install_component_gateway,
-                                     artifact_bucket=artifact_bucket,
-                                     aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+    dataproc_helper = DataProcHelper(
+        cluster_name=cluster_name,
+        num_workers=num_workers,
+        image_version=image_version,
+        zone=zone,
+        idle_delete_ttl=idle_delete_ttl,
+        auto_delete_ttl=auto_delete_ttl,
+        master_machine_type=master_machine_type,
+        worker_machine_type=worker_machine_type,
+        num_preemptible_workers=num_preemptible_workers,
+        service_account=service_account,
+        optional_components=optional_components,
+        install_component_gateway=install_component_gateway,
+        artifact_bucket=artifact_bucket,
+        aws_conn_id=aws_conn_id,
+        gcp_conn_id=gcp_conn_id,
+    )
 
-    _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
+    _dag_name = "{}.{}".format(parent_dag_name, dag_name)
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
@@ -332,46 +358,52 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
         # remove arguments main_class and dataproc_spark_jars.
         run_jar_on_dataproc = DataProcSparkOperator(
             cluster_name=cluster_name,
-            task_id='run_jar_on_dataproc',
+            task_id="run_jar_on_dataproc",
             job_name=job_name,
             dataproc_spark_jars=jar_urls,
             main_class=main_class,
             arguments=jar_args,
-            gcp_conn_id=gcp_conn_id)
+            gcp_conn_id=gcp_conn_id,
+        )
 
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
         create_dataproc_cluster >> run_jar_on_dataproc >> delete_dataproc_cluster
         return dag
+
+
 # End moz_dataproc_jar_runner
 
 
 def _format_envvar(env=None):
     # Use a default value if an environment dictionary isn't supplied
-    return ' '.join(['{}={}'.format(k, v) for k, v in (env or {}).items()])
+    return " ".join(["{}={}".format(k, v) for k, v in (env or {}).items()])
 
-def moz_dataproc_scriptrunner(parent_dag_name=None,
-                              dag_name='run_script_on_dataproc',
-                              default_args=None,
-                              cluster_name=None,
-                              num_workers=2,
-                              image_version='1.4',
-                              zone='us-west1-b',
-                              idle_delete_ttl='14400',
-                              auto_delete_ttl='28800',
-                              master_machine_type='n1-standard-8',
-                              worker_machine_type='n1-standard-4',
-                              num_preemptible_workers=0,
-                              service_account=None,
-                              optional_components=['ANACONDA'],
-                              install_component_gateway=True,
-                              uri=None,
-                              env=None,
-                              arguments=None,
-                              artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
-                              job_name=None,
-                              aws_conn_id=None,
-                              gcp_conn_id='google_cloud_airflow_dataproc'):
+
+def moz_dataproc_scriptrunner(
+    parent_dag_name=None,
+    dag_name="run_script_on_dataproc",
+    default_args=None,
+    cluster_name=None,
+    num_workers=2,
+    image_version="1.4",
+    zone="us-west1-b",
+    idle_delete_ttl="14400",
+    auto_delete_ttl="28800",
+    master_machine_type="n1-standard-8",
+    worker_machine_type="n1-standard-4",
+    num_preemptible_workers=0,
+    service_account=None,
+    optional_components=["ANACONDA"],
+    install_component_gateway=True,
+    uri=None,
+    env=None,
+    arguments=None,
+    artifact_bucket="moz-fx-data-prod-airflow-dataproc-artifacts",
+    job_name=None,
+    aws_conn_id=None,
+    gcp_conn_id="google_cloud_airflow_dataproc",
+):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -419,46 +451,51 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                         via the airflow_gcp.sh entrypoint. Ipynb is no longer
                                         supported.
     :param dict env:                    If env is not None, it must be a mapping that defines
-                                        the environment variables for the new process 
+                                        the environment variables for the new process
                                         (templated).
-    :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string 
+    :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string
                                         of space separated args.
     :param str artifact_bucket:         The bucket with script-runner.jar and airflow_gcp.sh.
 
     """
 
     if job_name is None or uri is None or cluster_name is None:
-        raise AirflowException('Please specify job_name, uri, and cluster_name.')
+        raise AirflowException("Please specify job_name, uri, and cluster_name.")
 
-    dataproc_helper = DataProcHelper(cluster_name=cluster_name,
-                                     num_workers=num_workers,
-                                     image_version=image_version,
-                                     zone=zone,
-                                     idle_delete_ttl=idle_delete_ttl,
-                                     auto_delete_ttl=auto_delete_ttl,
-                                     master_machine_type=master_machine_type,
-                                     worker_machine_type=worker_machine_type,
-                                     num_preemptible_workers=num_preemptible_workers,
-                                     service_account=service_account,
-                                     optional_components=optional_components,
-                                     install_component_gateway=install_component_gateway,
-                                     artifact_bucket=artifact_bucket,
-                                     aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+    dataproc_helper = DataProcHelper(
+        cluster_name=cluster_name,
+        num_workers=num_workers,
+        image_version=image_version,
+        zone=zone,
+        idle_delete_ttl=idle_delete_ttl,
+        auto_delete_ttl=auto_delete_ttl,
+        master_machine_type=master_machine_type,
+        worker_machine_type=worker_machine_type,
+        num_preemptible_workers=num_preemptible_workers,
+        service_account=service_account,
+        optional_components=optional_components,
+        install_component_gateway=install_component_gateway,
+        artifact_bucket=artifact_bucket,
+        aws_conn_id=aws_conn_id,
+        gcp_conn_id=gcp_conn_id,
+    )
 
-    _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
+    _dag_name = "{}.{}".format(parent_dag_name, dag_name)
     environment = _format_envvar(env)
-    jar_url = 'gs://{}/bin/script-runner.jar'.format(artifact_bucket)
+    jar_url = "gs://{}/bin/script-runner.jar".format(artifact_bucket)
 
     args = [
-        'gs://{}/bootstrap/airflow_gcp.sh'.format(artifact_bucket),
-        '--job-name', job_name,
-        '--uri', uri,
-        '--environment', environment
+        "gs://{}/bootstrap/airflow_gcp.sh".format(artifact_bucket),
+        "--job-name",
+        job_name,
+        "--uri",
+        uri,
+        "--environment",
+        environment,
     ]
 
     if arguments:
-        args += ['--arguments', arguments]
+        args += ["--arguments", arguments]
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
@@ -469,15 +506,18 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
         # remove arguments main_class and dataproc_spark_jars.
         run_script_on_dataproc = DataProcSparkOperator(
             cluster_name=cluster_name,
-            task_id='run_script_on_dataproc',
+            task_id="run_script_on_dataproc",
             job_name=job_name,
             dataproc_spark_jars=[jar_url],
-            main_class='com.amazon.elasticmapreduce.scriptrunner.ScriptRunner',
+            main_class="com.amazon.elasticmapreduce.scriptrunner.ScriptRunner",
             arguments=args,
-            gcp_conn_id=gcp_conn_id)
+            gcp_conn_id=gcp_conn_id,
+        )
 
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
         create_dataproc_cluster >> run_script_on_dataproc >> delete_dataproc_cluster
         return dag
+
+
 # End moz_dataproc_scriptrunner
