@@ -30,7 +30,6 @@ with models.DAG(
             dataset='telemetry',
             table_or_view='fenix_events_v1',
             s3_prefix='fenix',
-            amplitude_s3_bucket=amplitude_s3_bucket,
         ),
         task_id=task_id
     )
