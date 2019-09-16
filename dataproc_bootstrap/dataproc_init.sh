@@ -1,12 +1,11 @@
 #!/bin/bash
-# To be copied to gs://moz-fx-data-prod-airflow-artifacts
 
 set -exo pipefail
 
 # Logs will be available on the dataproc nodes at /var/log/dataproc-initialization-script-X.log
 # or via the GCP Dataproc UI
 
-ARTIFACTS_BUCKET=gs://moz-fx-data-prod-airflow-artifacts
+ARTIFACTS_BUCKET=gs://moz-fx-data-prod-airflow-dataproc-artifacts
 
 ROLE=$(/usr/share/google/get_metadata_value attributes/dataproc-role)
 if [[ "${ROLE}" == 'Master' ]]; then

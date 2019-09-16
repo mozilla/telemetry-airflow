@@ -34,3 +34,10 @@ with models.DAG(
         dataset_id='telemetry',
         date_partition_parameter=None,
     )
+
+    smoot_usage_new_profiles_v2 = bigquery_etl_query(
+        task_id='smoot_usage_new_profiles_v2',
+        destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_new_profiles_v2',
+        sql_file_path='sql/telemetry_derived/smoot_usage_new_profiles_v2/query.sql',
+        dataset_id='telemetry_derived',
+    )

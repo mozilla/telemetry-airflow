@@ -460,6 +460,15 @@ smoot_usage_desktop_raw = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
+smoot_usage_desktop_v2 = bigquery_etl_query(
+    task_id='smoot_usage_desktop_v2',
+    destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_desktop_v2',
+    sql_file_path='sql/telemetry_derived/smoot_usage_desktop_v2/query.sql',
+    dataset_id='telemetry_derived',
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    dag=dag)
+
 client_count_daily_view = EMRSparkOperator(
     task_id="client_count_daily_view",
     job_name="Client Count Daily View",
@@ -669,6 +678,7 @@ clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 smoot_usage_desktop_raw.set_upstream(clients_last_seen)
+smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 
 client_count_daily_view.set_upstream(main_summary)
 desktop_dau.set_upstream(client_count_daily_view)
