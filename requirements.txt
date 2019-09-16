@@ -9,3 +9,4 @@ requests
 jsonschema
 Flask-OAuthlib
 pytz
+kombu==4.6.3
