@@ -185,7 +185,7 @@ testing instructions above and use `make run`.
 
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
-For now, follow the steps outlined here: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559.
+For now, follow the steps outlined here: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
 
 In the future we will enhance these testing capabilities.
 
