@@ -29,6 +29,7 @@ class DataProcHelper:
                  num_preemptible_workers=0,
                  service_account=None,
                  artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
+                 init_actions_uris=None,
                  optional_components=['ANACONDA'],
                  install_component_gateway=True,
                  aws_conn_id=None,
@@ -45,6 +46,12 @@ class DataProcHelper:
         self.num_preemptible_workers = num_preemptible_workers
         self.service_account = service_account
         self.artifact_bucket = artifact_bucket
+
+        if init_actions_uris is None:
+            self.init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)]
+        else:
+            self.init_actions_uris=init_actions_uris
+
         self.optional_components = optional_components
         self.install_component_gateway = install_component_gateway
         self.aws_conn_id = aws_conn_id
@@ -65,6 +72,11 @@ class DataProcHelper:
             ):
                 if value is not None:
                     properties["core:fs.s3a." + key] = value
+                    # For older spark versions we need to set the properties differently
+                    if key == "access.key":
+                        properties["core:fs.s3.awsAccessKeyId"] = value
+                    elif key == "secret.key":
+                        properties["core:fs.s3.awsSecretAccessKey"] = value
 
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
@@ -84,7 +96,7 @@ class DataProcHelper:
             num_preemptible_workers=self.num_preemptible_workers,
             optional_components = self.optional_components,
             install_component_gateway = self.install_component_gateway,
-            init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)],
+            init_actions_uris=self.init_actions_uris,
             metadata={
                 'gcs-connector-version': '1.9.16',
                 'bigquery-connector-version': '0.13.6'
@@ -115,6 +127,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 worker_machine_type='n1-standard-4',
                                 num_preemptible_workers=0,
                                 service_account=None,
+                                init_actions_uris=None,
                                 optional_components=['ANACONDA'],
                                 install_component_gateway=True,
                                 python_driver_code=None,
@@ -173,6 +186,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                           if cross project access is needed. Note that this svc
                                           account needs the following permissions:
                                           roles/logging.logWriter and roles/storage.objectAdmin.
+    :param list init_actions_uris:        List of GCS uri's containing dataproc init scripts.
     :param str job_name:                  Name of the spark job to run.
     :param str artifact_bucket:           The bucket with script-runner.jar and airflow_gcp.sh.
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
@@ -202,6 +216,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      worker_machine_type=worker_machine_type,
                                      num_preemptible_workers=num_preemptible_workers,
                                      service_account=service_account,
+                                     init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      artifact_bucket=artifact_bucket,
@@ -242,6 +257,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             worker_machine_type='n1-standard-4',
                             num_preemptible_workers=0,
                             service_account=None,
+                            init_actions_uris=None,
                             optional_components=['ANACONDA'],
                             install_component_gateway=True,
                             jar_urls=None,
@@ -310,6 +326,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      worker_machine_type=worker_machine_type,
                                      num_preemptible_workers=num_preemptible_workers,
                                      service_account=service_account,
+                                     init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      artifact_bucket=artifact_bucket,
@@ -357,6 +374,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               worker_machine_type='n1-standard-4',
                               num_preemptible_workers=0,
                               service_account=None,
+                              init_actions_uris=None,
                               optional_components=['ANACONDA'],
                               install_component_gateway=True,
                               uri=None,
@@ -434,6 +452,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      worker_machine_type=worker_machine_type,
                                      num_preemptible_workers=num_preemptible_workers,
                                      service_account=service_account,
+                                     init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      artifact_bucket=artifact_bucket,

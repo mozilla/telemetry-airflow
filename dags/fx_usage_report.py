@@ -12,7 +12,7 @@ from utils.dataproc import moz_dataproc_scriptrunner
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': True,
-    'start_date': datetime(2019, 9, 25),
+    'start_date': datetime(2019, 9, 16),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -35,18 +35,20 @@ wait_for_main_summary = ExternalTaskSensor(
 
 """
 
-cluster_name = 'fx-usage-report-dataproc-cluster'
+# TODO - name this something good
+cluster_name = 'fx-usage-report-dataproc-cluster-1'
 gcp_conn_id = 'google_cloud_airflow_dataproc'
 
 # AWS credentials to read/write from output bucket
 aws_conn_id = 'aws_prod_fx_usage_report'
-aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
 
+# TODO - change this back to prod bucket by removing -hwoo
 output_bucket = 'net-mozaws-prod-us-west-2-data-public-hwoo'
 
 usage_report = SubDagOperator(
     task_id="fx_usage_report",
     dag=dag,
+    # TODO - do we want to modify this to use pyspark runner bc this one will output aws creds on log line
     subdag = moz_dataproc_scriptrunner(
         parent_dag_name=dag.dag_id,
         dag_name='fx_usage_report',
@@ -55,14 +57,18 @@ usage_report = SubDagOperator(
         job_name="Fx_Usage_Report",
         uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/fx_usage_report.sh",
         env={"date": DS_WEEKLY,
-             "AWS_ACCESS_KEY_ID": aws_access_key,
-             "AWS_SECRET_ACCESS_KEY": aws_secret_key,
              "bucket": output_bucket,
+             "PYTHONPATH": "/usr/lib/spark/python/lib/pyspark.zip",
              "deploy_environment": "{{ task.__class__.deploy_environment }}"
         },
         gcp_conn_id=gcp_conn_id,
+        # This should be sufficient to set the s3a configs for read/write to s3
         aws_conn_id=aws_conn_id,
         num_workers=8,
+        # TODO - is this the right version since we want pyspark 2.2.2
+        image_version='1.3',
+        # TODO - add circleci piece for custom init script either in this repo or in fx usage report
+        init_actions_uris=['gs://moz-fx-data-prod-airflow-dataproc-artifacts/custom_bootstrap/fx_usage_init.sh'],
     )
 )
 
