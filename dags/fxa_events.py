@@ -44,6 +44,13 @@ with models.DAG(
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
+    fxa_oauth_events = bigquery_etl_query(
+        task_id='fxa_oauth_events',
+        destination_table='fxa_oauth_events_v1',
+        dataset_id='telemetry',
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
+    )
+
     fxa_users_daily = bigquery_etl_query(
         task_id='fxa_users_daily',
         destination_table='fxa_users_daily_v1',
@@ -53,6 +60,7 @@ with models.DAG(
     fxa_users_daily << fxa_auth_events
     fxa_users_daily << fxa_auth_bounce_events
     fxa_users_daily << fxa_content_events
+    fxa_users_daily << fxa_oauth_events
 
     fxa_users_last_seen = bigquery_etl_query(
         task_id='fxa_users_last_seen',
