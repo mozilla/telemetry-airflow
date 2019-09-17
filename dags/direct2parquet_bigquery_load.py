@@ -62,6 +62,21 @@ with DAG(
             'dataset_version': 'v1',
             'bigquery_dataset': 'telemetry',
             },
+        'coverage-coverage-parquet': {
+            'dataset_version': 'v1',
+            },
+        'firefox-launcher-process-launcher-process-failure-parquet': {
+            'dataset_version': 'v1',
+            },
+        'pocket-fire-tv-events-parquet': {
+            'dataset_version': 'v1',
+            },
+        'webpagetest-webpagetest-run-parquet': {
+            'dataset_version': 'v1',
+            },
+        'telemetry-ip-privacy-parquet': {
+            'dataset_version': 'v1',
+            },
     }
 
     tasks = {}
