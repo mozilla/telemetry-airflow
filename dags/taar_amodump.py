@@ -5,14 +5,7 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from operators.gcp_container_operator import GKEPodOperator
 
 # Unsalted cluster name so subsequent runs fail if the cluster name exists
-cluster_name = "taarlite-dataproc-cluster"
-
-# We use an application-specific gcs bucket since the copy operator can't set the destination
-# bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead
-# of having the dataset name come first
-gcs_data_bucket = "moz-fx-data-prod-taarlite-data"
-
-dataset = "taarlite_guidranking"
+cluster_name = 'bq-load-gke-1'
 
 # Defined in Airflow's UI -> Admin -> Connections
 gcp_conn_id = "google_cloud_derived_datasets_2"
