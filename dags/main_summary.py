@@ -4,6 +4,7 @@ from operators.emr_spark_operator import EMRSparkOperator
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
+from utils.dataproc import moz_dataproc_jar_runner
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
@@ -11,7 +12,8 @@ from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
     export_to_parquet,
-    load_to_bigquery
+    load_to_bigquery,
+    gke_command,
 )
 
 default_args = {
@@ -42,6 +44,94 @@ copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
     owner="jklukas@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
+
+gcloud_docker_image = "google/cloud-sdk:263.0.0-slim"
+main_summary_dataproc_bucket = "gs://moz-fx-data-derived-datasets-parquet-tmp"
+main_ping_bigquery_export_prefix = main_summary_dataproc_bucket + "/export"
+main_ping_bigquery_export_dest = main_ping_bigquery_export_prefix + "/submission_date={{ds}}/document_namespace=telemetry/document_type=main/document_version=4/*.avro"  # noqa
+main_ping_bigquery_export = gke_command(
+    task_id="main_ping_bigquery_extract",
+    command=[
+        "bq",
+        "extract",
+        "--destination_format=AVRO",
+        "moz-fx-data-shared-prod.payload_bytes_decoded.telemetry_telemetry__main_v4${{ds_nodash}}",
+        main_ping_bigquery_export_dest,
+    ],
+    docker_image=gcloud_docker_image,
+)
+
+main_summary_dataproc = SubDagOperator(
+    subdag=moz_dataproc_jar_runner(
+        parent_dag_name="main_summary",
+        dag_name="main_summary_dataproc",
+        default_args=default_args,
+        cluster_name="main-summary-{{ds}}",
+        image_version="1.3",
+        idle_delete_ttl="600",
+        worker_machine_type="n1-standard-8",
+        num_preemptible_workers=40,
+        optional_components=[],
+        install_component_gateway=False,
+        jar_urls=[
+            "s3a://net-mozaws-data-us-west-2-ops-ci-artifacts/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
+        ],
+        main_class="com.mozilla.telemetry.views.MainSummaryView",
+        jar_args=[
+            "--from={{ds_nodash}}",
+            "--to={{ds_nodash}}",
+            "--bucket=" + main_summary_dataproc_bucket,
+            "--export-path=" + main_ping_bigquery_export_prefix,
+        ],
+        artifact_bucket=None,
+        gcp_conn_id="google_cloud_airflow_dataproc",
+    ),
+    task_id="main_summary_dataproc",
+    dag=dag,
+)
+
+main_summary_dataproc_bigquery_load = SubDagOperator(
+    subdag=load_to_bigquery(
+        parent_dag_name=dag.dag_id,
+        dag_name="main_summary_dataproc_bigquery_load",
+        default_args=default_args,
+        dataset_gcs_bucket=main_summary_dataproc_bucket.replace("gs://", ""),
+        dataset="main_summary",
+        dataset_version="v4",
+        gke_cluster_name="bq-load-gke-1",
+        bigquery_dataset="backfill",
+        cluster_by=["sample_id"],
+        drop=["submission_date"],
+        rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
+    ),
+    task_id="main_summary_dataproc_bigquery_load",
+    dag=dag,
+)
+
+main_ping_bigquery_export_delete = gke_command(
+    task_id="main_ping_bigquery_export_delete",
+    command=[
+        "gsutil",
+        "-m",
+        "rm",
+        main_ping_bigquery_export_dest,
+    ],
+    docker_image=gcloud_docker_image,
+)
+
+main_summary_dataproc_s3_copy = gke_command(
+    task_id="main_summary_dataproc_s3_copy",
+    command=[
+        "gsutil",
+        "-m",
+        "rsync",
+        main_summary_dataproc_bucket + "/main_summary/v4/submission_date_s3={{ds_nodash}}",
+        "s3://telemetry-parquet/main_summary_dataproc/v4/submission_date_s3={{ds_nodash}}",
+    ],
+    docker_image=gcloud_docker_image,
+    aws_conn_id="aws_dev_iam_s3",
+)
 
 main_summary_all_histograms = MozDatabricksSubmitRunOperator(
     task_id="main_summary_all_histograms",
@@ -665,6 +755,11 @@ search_aggregates_bigquery = bigquery_etl_query(
 
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
+
+main_summary_dataproc.set_upstream(main_ping_bigquery_export)
+main_ping_bigquery_export_delete.set_upstream(main_summary_dataproc)
+main_summary_dataproc_bigquery_load.set_upstream(main_summary_dataproc)
+main_summary_dataproc_s3_copy.set_upstream(main_summary_dataproc)
 
 engagement_ratio.set_upstream(main_summary)
 

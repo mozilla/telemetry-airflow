@@ -66,6 +66,12 @@ class DataProcHelper:
                 if value is not None:
                     properties["core:fs.s3a." + key] = value
 
+        init_actions_uris = []
+        if self.artifact_bucket:
+            init_actions_uris.append(
+                'gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)
+            )
+
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
             cluster_name=self.cluster_name,
@@ -84,7 +90,7 @@ class DataProcHelper:
             num_preemptible_workers=self.num_preemptible_workers,
             optional_components = self.optional_components,
             install_component_gateway = self.install_component_gateway,
-            init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)],
+            init_actions_uris=init_actions_uris,
             metadata={
                 'gcs-connector-version': '1.9.16',
                 'bigquery-connector-version': '0.13.6'
