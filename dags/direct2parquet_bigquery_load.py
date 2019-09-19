@@ -120,7 +120,8 @@ with DAG(
 
     fenix_clients_daily = bigquery_etl_query(
         task_id='fenix_clients_daily',
-        destination_table='clients_daily_v1',
+        destination_table='moz-fx-data-shared-prod:org_mozilla_fenix_derived.clients_daily_v1',
+        sql_file_path='sql/org_mozilla_fenix_derived/clients_daily_v1/query.sql',
         dataset_id='org_mozilla_fenix_derived',
         start_date=datetime(2019, 9, 5),
     )
@@ -129,7 +130,8 @@ with DAG(
 
     fenix_clients_last_seen = bigquery_etl_query(
         task_id='fenix_clients_last_seen',
-        destination_table='clients_last_seen_v1',
+        destination_table='moz-fx-data-shared-prod:org_mozilla_fenix_derived.clients_last_seen_v1',
+        sql_file_path='sql/org_mozilla_fenix_derived/clients_last_seen_v1/query.sql',
         dataset_id='org_mozilla_fenix_derived',
         start_date=datetime(2019, 9, 5),
         depends_on_past=True,
