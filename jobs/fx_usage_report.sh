@@ -18,3 +18,4 @@ python usage_report/usage_report.py \
     --sample 10 \
     --output-bucket $bucket \
     --output-prefix "$deploy_environment/usage_report_data"
+    --spark-provider 'dataproc'

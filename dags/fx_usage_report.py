@@ -55,7 +55,9 @@ usage_report = SubDagOperator(
         default_args=default_args,
         cluster_name=cluster_name,
         job_name="Fx_Usage_Report",
-        uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/fx_usage_report.sh",
+        # TODO - this will only work after this PR merges. Until then, use a gcs path
+        #uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/fx_usage_report.sh",
+        uri='gs://temp-hwoo-removemelater/fx_usage_report.sh',
         env={"date": DS_WEEKLY,
              "bucket": output_bucket,
              "PYTHONPATH": "/usr/lib/spark/python/lib/pyspark.zip",
@@ -65,7 +67,7 @@ usage_report = SubDagOperator(
         # This should be sufficient to set the s3a configs for read/write to s3
         aws_conn_id=aws_conn_id,
         num_workers=8,
-        # TODO - is this the right version since we want pyspark 2.2.2
+        # TODO - is this the right version since we want pyspark 2.2.2 --> Yes
         image_version='1.3',
         # TODO - add circleci piece for custom init script either in this repo or in fx usage report
         init_actions_uris=['gs://moz-fx-data-prod-airflow-dataproc-artifacts/custom_bootstrap/fx_usage_init.sh'],
