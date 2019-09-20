@@ -645,6 +645,23 @@ bgbb_pred_bigquery_load = SubDagOperator(
     task_id="bgbb_pred_bigquery_load",
     dag=dag)
 
+search_clients_daily_bigquery = bigquery_etl_query(
+    task_id="search_clients_daily_bigquery",
+    destination_table="search_clients_daily_v8",
+    dataset_id="search_staging",
+    owner="bewu@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
+    sql_file_path='sql/search/search_clients_daily_v8/query.sql',
+)
+
+search_aggregates_bigquery = bigquery_etl_query(
+    task_id="search_aggregates_bigquery",
+    destination_table="search_aggregates_v8",
+    dataset_id="search_staging",
+    owner="bewu@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
+    sql_file_path='sql/search/search_aggregates_v8/query.sql',
+)
 
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
@@ -692,3 +709,6 @@ taar_collaborative_recommender.set_upstream(clients_daily_v6)
 
 bgbb_pred.set_upstream(clients_daily_v6)
 bgbb_pred_bigquery_load.set_upstream(bgbb_pred)
+
+search_clients_daily_bigquery.set_upstream(main_summary_bigquery_load)
+search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
