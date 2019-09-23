@@ -456,6 +456,8 @@ def bigquery_etl_copy_deduplicate(
     only_tables=None,
     except_tables=None,
     parallelism=4,
+    priority="INTERACTIVE",
+    hourly=False,
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
@@ -472,6 +474,8 @@ def bigquery_etl_copy_deduplicate(
     :param Tuple[str] only_tables:   Only process tables matching the given globs of form 'telemetry_live.main_v*'
     :param Tuple[str] except_tables: Process all tables except those matching the given globs
     :param int parallelism:          Maximum number of queries to execute concurrently
+    :param str priority:             BigQuery query priority to use, must be BATCH or INTERACTIVE
+    :param bool hourly:              Deduplicate one hour at a time, rather than for whole days at once
     :param str gcp_conn_id:          Airflow connection id for GCP access
     :param str gke_location:         GKE cluster location
     :param str gke_cluster_name:     GKE cluster name
@@ -504,6 +508,8 @@ def bigquery_etl_copy_deduplicate(
         + ["--project-id=" + target_project_id]
         + ["--date={{ds}}"]
         + ["--parallelism={}".format(parallelism)]
+        + ["--priority={}".format(priority)]
+        + (["--hourly"] if hourly else [])
         + table_qualifiers,
         image_pull_policy=image_pull_policy,
         **kwargs
