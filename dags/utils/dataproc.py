@@ -28,7 +28,7 @@ class DataProcHelper:
                  worker_machine_type='n1-standard-4',
                  num_preemptible_workers=0,
                  service_account=None,
-                 artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
+                 init_actions_uris=None,
                  optional_components=['ANACONDA'],
                  install_component_gateway=True,
                  aws_conn_id=None,
@@ -44,7 +44,14 @@ class DataProcHelper:
         self.worker_machine_type = worker_machine_type
         self.num_preemptible_workers = num_preemptible_workers
         self.service_account = service_account
-        self.artifact_bucket = artifact_bucket
+        # The bucket with a default dataproc init script
+        self.artifact_bucket = 'moz-fx-data-prod-airflow-dataproc-artifacts'
+
+        if init_actions_uris is None:
+            self.init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)]
+        else:
+            self.init_actions_uris=init_actions_uris
+
         self.optional_components = optional_components
         self.install_component_gateway = install_component_gateway
         self.aws_conn_id = aws_conn_id
@@ -56,8 +63,12 @@ class DataProcHelper:
         """
         Returns a DataprocClusterCreateOperator
         """
-        # Set hadoop properties to access s3 from dataproc
         properties = {}
+
+        # Google cloud storage requires object.create permission when reading from pyspark
+        properties["core:fs.gs.implicit.dir.repair.enable"] = "false"
+
+        # Set hadoop properties to access s3 from dataproc
         if self.aws_conn_id:
             for key, value in zip(
                 ("access.key", "secret.key", "session.token"),
@@ -65,12 +76,11 @@ class DataProcHelper:
             ):
                 if value is not None:
                     properties["core:fs.s3a." + key] = value
-
-        init_actions_uris = []
-        if self.artifact_bucket:
-            init_actions_uris.append(
-                'gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)
-            )
+                    # For older spark versions we need to set the properties differently
+                    if key == "access.key":
+                        properties["core:fs.s3.awsAccessKeyId"] = value
+                    elif key == "secret.key":
+                        properties["core:fs.s3.awsSecretAccessKey"] = value
 
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
@@ -90,7 +100,7 @@ class DataProcHelper:
             num_preemptible_workers=self.num_preemptible_workers,
             optional_components = self.optional_components,
             install_component_gateway = self.install_component_gateway,
-            init_actions_uris=init_actions_uris,
+            init_actions_uris=self.init_actions_uris,
             metadata={
                 'gcs-connector-version': '1.9.16',
                 'bigquery-connector-version': '0.13.6'
@@ -121,12 +131,12 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 worker_machine_type='n1-standard-4',
                                 num_preemptible_workers=0,
                                 service_account=None,
+                                init_actions_uris=None,
                                 optional_components=['ANACONDA'],
                                 install_component_gateway=True,
                                 python_driver_code=None,
                                 py_args=None,
                                 job_name=None,
-                                artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                                 aws_conn_id=None,
                                 gcp_conn_id='google_cloud_airflow_dataproc'):
 
@@ -179,8 +189,9 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                           if cross project access is needed. Note that this svc
                                           account needs the following permissions:
                                           roles/logging.logWriter and roles/storage.objectAdmin.
+    :param list init_actions_uris:        List of GCS uri's containing dataproc init scripts.
     :param str job_name:                  Name of the spark job to run.
-    :param str artifact_bucket:           The bucket with script-runner.jar and airflow_gcp.sh.
+
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
     :param str gcp_conn_id:               The connection ID to use connecting to GCP. 
     :param list optional_components:      List of optional components to install on cluster
@@ -208,9 +219,9 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      worker_machine_type=worker_machine_type,
                                      num_preemptible_workers=num_preemptible_workers,
                                      service_account=service_account,
+                                     init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
-                                     artifact_bucket=artifact_bucket,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id)
 
@@ -248,13 +259,13 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             worker_machine_type='n1-standard-4',
                             num_preemptible_workers=0,
                             service_account=None,
+                            init_actions_uris=None,
                             optional_components=['ANACONDA'],
                             install_component_gateway=True,
                             jar_urls=None,
                             main_class=None,
                             jar_args=None,
                             job_name=None,
-                            artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                             aws_conn_id=None,
                             gcp_conn_id='google_cloud_airflow_dataproc'):
 
@@ -316,9 +327,9 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      worker_machine_type=worker_machine_type,
                                      num_preemptible_workers=num_preemptible_workers,
                                      service_account=service_account,
+                                     init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
-                                     artifact_bucket=artifact_bucket,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id)
 
@@ -363,12 +374,12 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               worker_machine_type='n1-standard-4',
                               num_preemptible_workers=0,
                               service_account=None,
+                              init_actions_uris=None,
                               optional_components=['ANACONDA'],
                               install_component_gateway=True,
                               uri=None,
                               env=None,
                               arguments=None,
-                              artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                               job_name=None,
                               aws_conn_id=None,
                               gcp_conn_id='google_cloud_airflow_dataproc'):
@@ -423,7 +434,6 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                         (templated).
     :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string 
                                         of space separated args.
-    :param str artifact_bucket:         The bucket with script-runner.jar and airflow_gcp.sh.
 
     """
 
@@ -440,18 +450,20 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      worker_machine_type=worker_machine_type,
                                      num_preemptible_workers=num_preemptible_workers,
                                      service_account=service_account,
+                                     init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
-                                     artifact_bucket=artifact_bucket,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id)
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
     environment = _format_envvar(env)
-    jar_url = 'gs://{}/bin/script-runner.jar'.format(artifact_bucket)
+
+    script_bucket = 'moz-fx-data-prod-airflow-dataproc-artifacts'
+    jar_url = 'gs://{}/bin/script-runner.jar'.format(script_bucket)
 
     args = [
-        'gs://{}/bootstrap/airflow_gcp.sh'.format(artifact_bucket),
+        'gs://{}/bootstrap/airflow_gcp.sh'.format(script_bucket),
         '--job-name', job_name,
         '--uri', uri,
         '--environment', environment
