@@ -135,17 +135,20 @@ def load_to_bigquery(parent_dag_name=None,
                                                                    dataset_version]))
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
-        s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
-            task_id='s3_to_gcs',
-            s3_bucket=dataset_s3_bucket,
-            gcs_bucket=gcs_buckets['transfer'],
-            description=_objects_prefix,
-            aws_conn_id=aws_conn_id,
-            gcp_conn_id=gcp_conn_id,
-            project_id=connection.project_id,
-            object_conditions=gcstj_object_conditions,
-            transfer_options=gcstj_transfer_options
+        if dataset_s3_bucket is not None:
+            s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
+                task_id='s3_to_gcs',
+                s3_bucket=dataset_s3_bucket,
+                gcs_bucket=gcs_buckets['transfer'],
+                description=_objects_prefix,
+                aws_conn_id=aws_conn_id,
+                gcp_conn_id=gcp_conn_id,
+                project_id=connection.project_id,
+                object_conditions=gcstj_object_conditions,
+                transfer_options=gcstj_transfer_options,
             )
+        else:
+            s3_to_gcs = DummyOperator(task_id='no_s3_to_gcs')
 
         reprocess = SubDagOperator(
             subdag=reprocess_parquet(
@@ -528,3 +531,55 @@ def normalize_table_id(table_name):
         raise ValueError('table_name cannot contain more than 1024 characters')
     else:
         return re.sub('\W+', '_', table_name).lower()
+
+
+def gke_command(
+    task_id,
+    command,
+    docker_image,
+    aws_conn_id="aws_dev_iam_s3",
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    image_pull_policy="Always",
+    **kwargs
+):
+    """ Run a docker command on GKE
+
+    :param str task_id:            [Required] ID for the task
+    :param List[str] command:      [Required] Command to run
+    :param str docker_image:       [Required] docker image to use
+    :param str aws_conn_id:        Airflow connection id for AWS access
+    :param str gcp_conn_id:        Airflow connection id for GCP access
+    :param str gke_location:       GKE cluster location
+    :param str gke_cluster_name:   GKE cluster name
+    :param str gke_namespace:      GKE cluster namespace
+    :param str image_pull_policy:  Kubernetes policy for when to pull
+                                   docker_image
+    :param Dict[str, Any] kwargs:  Additional keyword arguments for
+                                   GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    return GKEPodOperator(
+        task_id=task_id,
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=command,
+        env_vars={
+            key: value
+            for key, value in zip(
+                ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
+                AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
+            )
+            if value is not None
+        },
+        image_pull_policy=image_pull_policy,
+        **kwargs
+    )
