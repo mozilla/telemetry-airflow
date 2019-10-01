@@ -59,6 +59,7 @@ main_ping_bigquery_export = gke_command(
         main_ping_bigquery_export_dest,
     ],
     docker_image=gcloud_docker_image,
+    dag=dag,
 )
 
 main_summary_dataproc = SubDagOperator(
@@ -118,6 +119,7 @@ main_ping_bigquery_export_delete = gke_command(
         main_ping_bigquery_export_dest,
     ],
     docker_image=gcloud_docker_image,
+    dag=dag,
 )
 
 main_summary_dataproc_s3_copy = gke_command(
@@ -131,6 +133,7 @@ main_summary_dataproc_s3_copy = gke_command(
     ],
     docker_image=gcloud_docker_image,
     aws_conn_id="aws_dev_iam_s3",
+    dag=dag,
 )
 
 main_summary_all_histograms = MozDatabricksSubmitRunOperator(
