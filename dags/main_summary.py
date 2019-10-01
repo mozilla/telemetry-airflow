@@ -742,7 +742,7 @@ search_clients_daily_bigquery = bigquery_etl_query(
     owner="bewu@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
     sql_file_path='sql/search/search_clients_daily_v8/query.sql',
-)
+    dag=dag)
 
 search_aggregates_bigquery = bigquery_etl_query(
     task_id="search_aggregates_bigquery",
@@ -751,7 +751,7 @@ search_aggregates_bigquery = bigquery_etl_query(
     owner="bewu@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
     sql_file_path='sql/search/search_aggregates_v8/query.sql',
-)
+    dag=dag)
 
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
