@@ -84,6 +84,7 @@ main_summary_dataproc = SubDagOperator(
             "--bucket=" + main_summary_dataproc_bucket,
             "--export-path=" + main_ping_bigquery_export_prefix,
         ],
+        job_name="Main Summary View",
         artifact_bucket=None,
         gcp_conn_id="google_cloud_airflow_dataproc",
     ),
