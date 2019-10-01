@@ -75,7 +75,7 @@ main_summary_dataproc = SubDagOperator(
         optional_components=[],
         install_component_gateway=False,
         jar_urls=[
-            "s3a://net-mozaws-data-us-west-2-ops-ci-artifacts/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
+            "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
         ],
         main_class="com.mozilla.telemetry.views.MainSummaryView",
         jar_args=[
