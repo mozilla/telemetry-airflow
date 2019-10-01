@@ -55,7 +55,7 @@ main_ping_bigquery_export = gke_command(
         "bq",
         "extract",
         "--destination_format=AVRO",
-        "moz-fx-data-shared-prod.payload_bytes_decoded.telemetry_telemetry__main_v4${{ds_nodash}}",
+        "moz-fx-data-shared-prod:payload_bytes_decoded.telemetry_telemetry__main_v4${{ds_nodash}}",
         main_ping_bigquery_export_dest,
     ],
     docker_image=gcloud_docker_image,
