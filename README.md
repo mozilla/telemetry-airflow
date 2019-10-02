@@ -183,6 +183,12 @@ From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KE
 Dockerfile and run `make up` to get a local UI and run from there, or you can follow the
 testing instructions above and use `make run`.
 
+### Testing GKE Jobs (including BigQuery-etl changes)
+
+For now, follow the steps outlined here: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
+
+In the future we will enhance these testing capabilities.
+
 ### Production Setup
 
 Note: the canonical reference for production environment variables lives

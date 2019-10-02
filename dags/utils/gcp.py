@@ -10,6 +10,8 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+import re
+
 
 def load_to_bigquery(parent_dag_name=None,
                      default_args=None,
@@ -23,7 +25,7 @@ def load_to_bigquery(parent_dag_name=None,
                      dag_name='load_to_bigquery',
                      gke_location='us-central1-a',
                      gke_namespace='default',
-                     docker_image='docker.io/mozilla/parquet2bigquery:20190722', # noqa
+                     docker_image='docker.io/mozilla/parquet2bigquery:20190910', # noqa
                      reprocess=False,
                      p2b_concurrency='10',
                      p2b_resume=False,
@@ -124,25 +126,29 @@ def load_to_bigquery(parent_dag_name=None,
         gke_args += ['--drop'] + drop
 
     if rename:
-        gke_args += ['--rename'] + [k + "=" + v for k, v in replace.items()]
+        gke_args += ['--rename'] + [k + "=" + v for k, v in rename.items()]
 
     if replace:
         gke_args += ['--replace'] + replace
 
-    bq_table_name = p2b_table_alias or '{}_{}'.format(dataset, dataset_version)
+    bq_table_name = p2b_table_alias or normalize_table_id('_'.join([dataset,
+                                                                   dataset_version]))
 
     with models.DAG(_dag_name, default_args=default_args) as dag:
-        s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
-            task_id='s3_to_gcs',
-            s3_bucket=dataset_s3_bucket,
-            gcs_bucket=gcs_buckets['transfer'],
-            description=_objects_prefix,
-            aws_conn_id=aws_conn_id,
-            gcp_conn_id=gcp_conn_id,
-            project_id=connection.project_id,
-            object_conditions=gcstj_object_conditions,
-            transfer_options=gcstj_transfer_options
+        if dataset_s3_bucket is not None:
+            s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
+                task_id='s3_to_gcs',
+                s3_bucket=dataset_s3_bucket,
+                gcs_bucket=gcs_buckets['transfer'],
+                description=_objects_prefix,
+                aws_conn_id=aws_conn_id,
+                gcp_conn_id=gcp_conn_id,
+                project_id=connection.project_id,
+                object_conditions=gcstj_object_conditions,
+                transfer_options=gcstj_transfer_options,
             )
+        else:
+            s3_to_gcs = DummyOperator(task_id='no_s3_to_gcs')
 
         reprocess = SubDagOperator(
             subdag=reprocess_parquet(
@@ -383,8 +389,11 @@ def export_to_parquet(
 
 def bigquery_etl_query(
     destination_table,
+    dataset_id,
     parameters=(),
     arguments=(),
+    project_id=None,
+    sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
@@ -397,8 +406,12 @@ def bigquery_etl_query(
     """ Generate.
 
     :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Optional[str] project_id:               BigQuery default project id
+    :param Optional[str] sql_file_path:            Optional override for path to the
+                                                   SQL query file to run
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
@@ -417,7 +430,7 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    sql_file_path = "sql/{}.sql".format(destination_table)
+    sql_file_path = sql_file_path or "sql/{}/{}/query.sql".format(dataset_id, destination_table)
     if date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
@@ -430,9 +443,146 @@ def bigquery_etl_query(
         image=docker_image,
         arguments=["query"]
         + ["--destination_table=" + destination_table]
+        + ["--dataset_id=" + dataset_id]
+        + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [sql_file_path],
+        image_pull_policy=image_pull_policy,
+        **kwargs
+    )
+
+
+def bigquery_etl_copy_deduplicate(
+    task_id,
+    target_project_id,
+    only_tables=None,
+    except_tables=None,
+    parallelism=4,
+    priority="INTERACTIVE",
+    hourly=False,
+    slices=None,
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="mozilla/bigquery-etl:latest",
+    image_pull_policy="Always",
+    **kwargs
+):
+    """ Copy a day's data from live ping tables to stable ping tables,
+    deduplicating on document_id.
+
+    :param str task_id:              [Required] ID for the task
+    :param str target_project_id:    [Required] ID of project where target tables live
+    :param Tuple[str] only_tables:   Only process tables matching the given globs of form 'telemetry_live.main_v*'
+    :param Tuple[str] except_tables: Process all tables except those matching the given globs
+    :param int parallelism:          Maximum number of queries to execute concurrently
+    :param str priority:             BigQuery query priority to use, must be BATCH or INTERACTIVE
+    :param bool hourly:              Alias for --slices=24
+    :param int slices:               Number of time-based slices to deduplicate in, rather than for whole days at once
+    :param str gcp_conn_id:          Airflow connection id for GCP access
+    :param str gke_location:         GKE cluster location
+    :param str gke_cluster_name:     GKE cluster name
+    :param str gke_namespace:        GKE cluster namespace
+    :param str docker_image:         docker image to use
+    :param str image_pull_policy:    Kubernetes policy for when to pull
+                                     docker_image
+    :param Dict[str, Any] kwargs:    Additional keyword arguments for
+                                     GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    table_qualifiers = []
+    if only_tables:
+        table_qualifiers.append('--only')
+        table_qualifiers += only_tables
+    if except_tables:
+        table_qualifiers.append('--except')
+        table_qualifiers += except_tables
+    return GKEPodOperator(
+        task_id=task_id,
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=["script/copy_deduplicate"]
+        + ["--project-id=" + target_project_id]
+        + ["--date={{ds}}"]
+        + ["--parallelism={}".format(parallelism)]
+        + ["--priority={}".format(priority)]
+        + (["--hourly"] if hourly else [])
+        + (["--slices={}".format(slices)] if slices is not None else [])
+        + table_qualifiers,
+        image_pull_policy=image_pull_policy,
+        **kwargs
+    )
+
+
+def normalize_table_id(table_name):
+    """
+    Normalize table name for use with BigQuery.
+    * Contain up to 1,024 characters
+    * Contain letters (upper or lower case), numbers, and underscores
+    We intentionally lower case the table_name.
+    https://cloud.google.com/bigquery/docs/tables
+    """
+    if len(table_name) > 1024:
+        raise ValueError('table_name cannot contain more than 1024 characters')
+    else:
+        return re.sub('\W+', '_', table_name).lower()
+
+
+def gke_command(
+    task_id,
+    command,
+    docker_image,
+    aws_conn_id="aws_dev_iam_s3",
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    image_pull_policy="Always",
+    **kwargs
+):
+    """ Run a docker command on GKE
+
+    :param str task_id:            [Required] ID for the task
+    :param List[str] command:      [Required] Command to run
+    :param str docker_image:       [Required] docker image to use
+    :param str aws_conn_id:        Airflow connection id for AWS access
+    :param str gcp_conn_id:        Airflow connection id for GCP access
+    :param str gke_location:       GKE cluster location
+    :param str gke_cluster_name:   GKE cluster name
+    :param str gke_namespace:      GKE cluster namespace
+    :param str image_pull_policy:  Kubernetes policy for when to pull
+                                   docker_image
+    :param Dict[str, Any] kwargs:  Additional keyword arguments for
+                                   GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    return GKEPodOperator(
+        task_id=task_id,
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=command,
+        env_vars={
+            key: value
+            for key, value in zip(
+                ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
+                AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
+            )
+            if value is not None
+        },
         image_pull_policy=image_pull_policy,
         **kwargs
     )

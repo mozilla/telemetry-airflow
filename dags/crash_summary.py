@@ -6,10 +6,10 @@ from utils.gcp import load_to_bigquery
 from utils.tbv import tbv_envvar
 
 default_args = {
-    'owner': 'mreid@mozilla.com',
+    'owner': 'wlachance@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 20),
-    'email': ['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'wlachance@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 3,
@@ -48,7 +48,7 @@ crash_summary_view_bigquery_load = SubDagOperator(
         dataset_version="v2",
         date_submission_col="submission_date",
         gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_raw",
+        bigquery_dataset="telemetry_derived",
         ),
     task_id="crash_summary_view_bigquery_load",
     dag=dag)
