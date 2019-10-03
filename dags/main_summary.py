@@ -129,6 +129,7 @@ main_summary_dataproc_s3_copy = gke_command(
         "gsutil",
         "-m",
         "rsync",
+        "-r",
         main_summary_dataproc_bucket + "/main_summary/v4/submission_date_s3={{ds_nodash}}",
         "s3://telemetry-parquet/main_summary_dataproc/v4/submission_date_s3={{ds_nodash}}",
     ],
