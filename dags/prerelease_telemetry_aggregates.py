@@ -25,7 +25,8 @@ prerelease_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
     job_name="Prerelease Telemetry Aggregate View",
     instance_count=10,
     execution_timeout=timedelta(hours=12),
-    env=mozetl_ennvvar(
+    python_version=2,
+    env=mozetl_envvar(
         "aggregator",
         {
             "date": "{{ ds_nodash }}",
@@ -34,6 +35,7 @@ prerelease_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
             "credentials-prefix": "aggregator_database_envvars.json",
             "num-partitions": 10*32,
         },
+        dev_options={"credentials-prefix": "aggregator_dev_database_envvars.json"},
         other={
             "MOZETL_GIT_PATH": "https://github.com/mozilla/python_mozaggregator.git",
             "MOZETL_EXTERNAL_MODULE": "mozaggregator",

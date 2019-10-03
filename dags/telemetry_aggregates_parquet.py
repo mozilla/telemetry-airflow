@@ -29,6 +29,7 @@ telemetry_aggregate_parquet_view = MozDatabricksSubmitRunOperator(
     job_name="Telemetry Aggregate Parquet View",
     instance_count=5,
     execution_timeout=timedelta(hours=12),
+    python_version=2,
     env=mozetl_envvar(
         "parquet",
         {
