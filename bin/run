@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -eo pipefail
+set -x
 
 # default variables
 : "${PORT:=8000}"
@@ -26,11 +27,13 @@ wait_for() {
 }
 
 init_connections() {
+    airflow connections --delete --conn_id databricks_default
+
     airflow connections --add \
         --conn_id databricks_default \
         --conn_type databricks \
-        --conn_host dbc-caf9527b-e073.cloud.databricks.com:443 \
-        --conn_extra token=${DB_TOKEN}
+        --conn_host https://dbc-caf9527b-e073.cloud.databricks.com \
+        --conn_extra "{\"token\":\"${DB_TOKEN}\"}"
 
     airflow connections --add \
         --conn_id google_cloud_prio_admin \
