@@ -96,3 +96,46 @@ with models.DAG(
     )
 
     fxa_users_last_seen >> smoot_usage_fxa_v2
+
+
+    # Per-user-per-service tables.
+
+    fxa_users_services_daily = bigquery_etl_query(
+        task_id='fxa_users_services_daily',
+        destination_table='moz-fx-data-shared-prod:telemetry_derived.fxa_users_services_daily_v1',
+        sql_file_path='sql/telemetry_derived/fxa_users_services_daily_v1/query.sql',
+        dataset_id='telemetry_derived',
+    )
+
+    fxa_users_services_daily << fxa_auth_events
+    fxa_users_services_daily << fxa_auth_bounce_events
+    fxa_users_services_daily << fxa_content_events
+    fxa_users_services_daily << fxa_oauth_events
+
+    fxa_users_services_first_seen = bigquery_etl_query(
+        task_id='fxa_users_services_first_seen',
+        destination_table='moz-fx-data-shared-prod:telemetry_derived.fxa_users_services_first_seen_v1',
+        sql_file_path='sql/telemetry_derived/fxa_users_services_first_seen_v1/query.sql',
+        dataset_id='telemetry_derived',
+        # At least for now, we completely recreate this table every day;
+        # making it incremental is possible but nuanced since it windows over
+        # events that may cross the midnight boundary.
+        date_partition_parameter=None,
+    )
+
+    fxa_users_services_first_seen << fxa_auth_events
+    fxa_users_services_first_seen << fxa_auth_bounce_events
+    fxa_users_services_first_seen << fxa_content_events
+    fxa_users_services_first_seen << fxa_oauth_events
+
+    fxa_users_services_last_seen = bigquery_etl_query(
+        task_id='fxa_users_services_last_seen',
+        destination_table='moz-fx-data-shared-prod:telemetry_derived.fxa_users_services_last_seen_v1',
+        sql_file_path='sql/telemetry_derived/fxa_users_services_last_seen_v1/query.sql',
+        dataset_id='telemetry_derived',
+        depends_on_past=True,
+        start_date=datetime.datetime(2019, 10, 8),
+    )
+
+    fxa_users_services_daily >> fxa_users_services_last_seen
+    fxa_users_services_first_seen >> fxa_users_services_last_seen
