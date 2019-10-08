@@ -114,13 +114,15 @@ with models.DAG(
 
     fxa_users_services_first_seen = bigquery_etl_query(
         task_id='fxa_users_services_first_seen',
-        destination_table='moz-fx-data-shared-prod:telemetry_derived.fxa_users_services_first_seen_v1',
-        sql_file_path='sql/telemetry_derived/fxa_users_services_first_seen_v1/query.sql',
+        sql_file_path='sql/telemetry_derived/fxa_users_services_first_seen_v1/init.sql',
         dataset_id='telemetry_derived',
         # At least for now, we completely recreate this table every day;
         # making it incremental is possible but nuanced since it windows over
         # events that may cross the midnight boundary.
         date_partition_parameter=None,
+        # The init.sql file contains a CREATE TABLE statement, so we must not
+        # set a destination table or the query will return an error.
+        destination_table=None,
     )
 
     fxa_users_services_first_seen << fxa_auth_events
