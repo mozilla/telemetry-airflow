@@ -405,7 +405,7 @@ def bigquery_etl_query(
 ):
     """ Generate.
 
-    :param str destination_table:                  [Required] BigQuery destination table
+    :param Optional[str] destination_table:        [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
@@ -431,7 +431,7 @@ def bigquery_etl_query(
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
     sql_file_path = sql_file_path or "sql/{}/{}/query.sql".format(dataset_id, destination_table)
-    if date_partition_parameter is not None:
+    if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
@@ -442,7 +442,7 @@ def bigquery_etl_query(
         namespace=gke_namespace,
         image=docker_image,
         arguments=["query"]
-        + ["--destination_table=" + destination_table]
+        + (["--destination_table=" + destination_table] if destination_table else [])
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
