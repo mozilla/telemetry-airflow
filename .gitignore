@@ -3,3 +3,7 @@
 *undo-tree~
 *.un~
 venv
+
+logs
+unittests.cfg
+.config

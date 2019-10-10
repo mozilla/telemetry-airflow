@@ -48,10 +48,6 @@ init_connections() {
         --conn_type google_cloud_platform
 
     airflow connections --add \
-        --conn_id google_cloud_derived_datasets \
-        --conn_type google_cloud_platform
-
-    airflow connections --add \
         --conn_id amplitude_s3_conn \
         --conn_type s3
 }
