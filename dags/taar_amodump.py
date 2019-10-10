@@ -108,8 +108,8 @@ taar_lite = SubDagOperator(
         default_args=default_args,
         cluster_name=taarlite_cluster_name,
         job_name="TAAR_Lite_GUID_GUID",
-        # python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
-        python_driver_code="gs://temp-hwoo-removemelater/taar_lite_guidguid.py",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
+        # python_driver_code="gs://temp-hwoo-removemelater/taar_lite_guidguid.py",
         num_workers=8,
         py_args=[
             "--date",
