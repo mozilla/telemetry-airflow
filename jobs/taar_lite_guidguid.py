@@ -116,6 +116,7 @@ def get_initial_sample(spark, thedate):
         .where("normalized_channel = 'release'")
         .where("app_name = 'Firefox'")
         .selectExpr("client_id", "active_addons")
+        .sample(False, 0.05)
     )
     logging.info("Initial dataframe loaded!")
     return df
