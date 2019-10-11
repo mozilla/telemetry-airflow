@@ -1,10 +1,14 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
+from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.dataproc import moz_dataproc_jar_runner
+from utils.dataproc import (
+        moz_dataproc_jar_runner,
+        moz_dataproc_pyspark_runner
+)
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
@@ -15,6 +19,11 @@ from utils.gcp import (
     load_to_bigquery,
     gke_command,
 )
+
+taar_aws_conn_id = "airflow_taar_rw_s3"
+taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
+taarlite_cluster_name = "dataproc-taarlite-guidguid"
+taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -761,6 +770,32 @@ search_aggregates_bigquery = bigquery_etl_query(
     sql_file_path='sql/search/search_aggregates_v8/query.sql',
     dag=dag)
 
+taar_lite = SubDagOperator(
+    task_id="taar_lite",
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name="taar_amodump",
+        dag_name="taar_lite",
+        default_args=default_args,
+        cluster_name=taarlite_cluster_name,
+        job_name="TAAR_Lite_GUID_GUID",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
+        # python_driver_code="gs://temp-hwoo-removemelater/taar_lite_guidguid.py",
+        num_workers=8,
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--aws_access_key_id",
+            taar_aws_access_key,
+            "--aws_secret_access_key",
+            taar_aws_secret_key,
+        ],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+    ),
+    dag=dag,
+)
+
+
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
 
@@ -815,3 +850,6 @@ bgbb_pred_bigquery_load.set_upstream(bgbb_pred)
 
 search_clients_daily_bigquery.set_upstream(main_summary_bigquery_load)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
+
+# Set a dependency on clients_daily from taar_lite
+taar_lite.set_upstream(clients_daily_v6_bigquery_load)
