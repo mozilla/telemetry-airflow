@@ -54,7 +54,7 @@ usage_report = SubDagOperator(
         env={"date": DS_WEEKLY,
              "bucket": output_bucket,
              "PYTHONPATH": "/usr/lib/spark/python/lib/pyspark.zip",
-             "deploy_environment": "{{ task.__class__.deploy_environment }}",
+             "deploy_environment": "prod",
              # These env variables are needed in addition to the s3a configs, since some code uses boto to list bucket objects
              "AWS_ACCESS_KEY_ID": aws_access_key,
              "AWS_SECRET_ACCESS_KEY": aws_secret_key
