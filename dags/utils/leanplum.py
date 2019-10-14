@@ -56,12 +56,13 @@ def export(
         namespace=gke_namespace,
         image=docker_image,
         image_pull_policy=image_pull_policy,
-        arguments=["leanplum-data-export"]
-            + ["export-leanplum"]
-            + ["--app-id", leanplum_app_id]
-            + ["--client-key", leanplum_client_key]
-            + ["--date", "{{ ds_nodash }}"]
-            + ["--bucket", gcs_bucket]
-            + ["--prefix", gcs_prefix]
-            + ["--bq-dataset", bq_dataset_id],
+        arguments=[
+            "leanplum-data-export",
+            "export-leanplum",
+            "--app-id", leanplum_app_id,
+            "--client-key", leanplum_client_key,
+            "--date", "{{ ds_nodash }}",
+            "--bucket", gcs_bucket,
+            "--prefix", gcs_prefix,
+            "--bq-dataset", bq_dataset_id],
         **kwargs)
