@@ -54,19 +54,4 @@ game_hw_survey = EMRSparkOperator(
     dag=dag)
 
 
-taar_lite_guidranking = EMRSparkOperator(
-    task_id="taar_lite_guidranking",
-    job_name="TAARlite Addon Ranking",
-    owner="mlopatka@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
-    execution_timeout=timedelta(hours=2),
-    instance_count=4,
-    env=mozetl_envvar("taar_lite_guidranking",
-                      {"date": "{{ ds_nodash }}"},
-                      {'MOZETL_SUBMISSION_METHOD': 'spark'}),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
 game_hw_survey.set_upstream(longitudinal)
-taar_lite_guidranking.set_upstream(longitudinal)
