@@ -375,6 +375,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         cluster_by=["experiment_id"],
         drop=["submission_date"],
         rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="main_summary_experiments_bigquery_load",
     dag=dag)
