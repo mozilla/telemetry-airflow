@@ -50,6 +50,22 @@ init_connections() {
     airflow connections --add \
         --conn_id amplitude_s3_conn \
         --conn_type s3
+
+    airflow connections --add \
+        --conn_id google_cloud_derived_datasets \
+        --conn_type google_cloud_platform
+
+    airflow connections --add \
+        --conn_id google_cloud_airflow_dataproc \
+        --conn_type google_cloud_platform
+}
+
+init_variables() {
+    airflow variables -s \
+        "LEANPLUM_FENNEC_NIGHTLY_APP_ID" "fennec-nightly-app-id"
+
+    airflow variables -s \
+        "LEANPLUM_FENNEC_NIGHTLY_CLIENT_KEY" "fennec-nightly-client-key"
 }
 
 [ $# -lt 1 ] && usage
@@ -67,7 +83,7 @@ case $1 in
     airflow upgradedb
 
     # Only init connections in dev
-    [ ! -z ${DEVELOPMENT+check} ] && init_connections
+    [ ! -z ${DEVELOPMENT+check} ] && init_connections && init_variables
 
     exec airflow webserver -p ${PORT} --workers 4
     ;;
