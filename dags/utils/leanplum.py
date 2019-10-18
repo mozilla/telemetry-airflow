@@ -14,7 +14,7 @@ def export(
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
-    docker_image="mozilla/leanplum-data-export:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/leanplum-data-export:latest",
     image_pull_policy="Always",
     **kwargs
 ):
@@ -26,9 +26,9 @@ def export(
 
     :param str leanplum_app_id:      [Required] Leanplum application ID
     :param str leanplum_client_key:  [Required] Leanplum client key
-    :param str gcs_bucket:           [Required] GCS Bucket to export data to
     :param str bq_dataset:           [Required] BigQuery default dataset id
     :param str task_id:              [Required] The task ID for this task
+    :param str gcs_bucket:           GCS Bucket to export data to
     :param str gcs_prefix:           Prefix for data exported to GCS
     :param str project_id:           Project the GKE cluster is in
     :param str gcp_conn_id:          Airflow connection id for GCP access
