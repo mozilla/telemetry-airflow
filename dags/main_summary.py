@@ -70,7 +70,7 @@ main_summary_dataproc = SubDagOperator(
         cluster_name="main-summary-{{ds}}",
         image_version="1.3",
         worker_machine_type="n1-standard-8",
-        num_preemptible_workers=40,
+        num_workers=40,
         service_account="dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com",
         optional_components=[],
         install_component_gateway=False,
@@ -166,7 +166,7 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
 main_summary = MozDatabricksSubmitRunOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    execution_timeout=timedelta(hours=4),
+    execution_timeout=timedelta(hours=6),
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
     instance_count=5,
     max_instance_count=40,
@@ -366,6 +366,7 @@ main_summary_experiments_bigquery_load = SubDagOperator(
         cluster_by=["experiment_id"],
         drop=["submission_date"],
         rename={"submission_date_s3": "submission_date"},
+        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="main_summary_experiments_bigquery_load",
     dag=dag)
