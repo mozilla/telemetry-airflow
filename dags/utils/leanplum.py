@@ -4,9 +4,10 @@ from operators.gcp_container_operator import GKEPodOperator
 def export(
     leanplum_app_id,
     leanplum_client_key,
-    gcs_bucket,
     bq_dataset_id,
     task_id,
+    gcs_bucket="moz-fx-data-prod-external-data",
+    table_prefix=None,
     gcs_prefix=None,
     project_id=None,
     gcp_conn_id="google_cloud_derived_datasets",
@@ -19,6 +20,9 @@ def export(
 ):
     """ Export a day of data from Leanplum for a single application,
         and make it available in BigQuery.
+
+    See bug 1588654 for information on which buckets and datasets
+    these tabes should live in.
 
     :param str leanplum_app_id:      [Required] Leanplum application ID
     :param str leanplum_client_key:  [Required] Leanplum client key
@@ -39,13 +43,24 @@ def export(
 
     :return: GKEPodOperator
     """
-
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+
     if project_id is None:
         project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
 
-    if gcs_prefix is None:
-        gcs_prefix = ""
+    args = ["leanplum-data-export",
+            "export-leanplum",
+            "--app-id", leanplum_app_id,
+            "--client-key", leanplum_client_key,
+            "--date", "{{ ds_nodash }}",
+            "--bucket", gcs_bucket,
+            "--bq-dataset", bq_dataset_id]
+
+    if gcs_prefix is not None:
+        args += ["--prefix",  gcs_prefix]
+
+    if table_prefix is not None:
+        args += ["--table-prefix", table_prefix]
 
     return GKEPodOperator(
         task_id=task_id,
@@ -56,13 +71,5 @@ def export(
         namespace=gke_namespace,
         image=docker_image,
         image_pull_policy=image_pull_policy,
-        arguments=[
-            "leanplum-data-export",
-            "export-leanplum",
-            "--app-id", leanplum_app_id,
-            "--client-key", leanplum_client_key,
-            "--date", "{{ ds_nodash }}",
-            "--bucket", gcs_bucket,
-            "--prefix", gcs_prefix,
-            "--bq-dataset", bq_dataset_id],
+        arguments=args,
         **kwargs)

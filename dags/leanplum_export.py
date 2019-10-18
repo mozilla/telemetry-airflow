@@ -26,8 +26,8 @@ with DAG('leanplum_export',
         task_id='fennec_nightly_export',
         leanplum_app_id=app_id,
         leanplum_client_key=client_key,
-        gcs_bucket='moz-fx-data-leanplum-export',
-        gcs_prefix='firefox-android-dev',
-        bq_dataset_id='firefox_android_dev_leanplum',
+        gcs_prefix='firefox/android/nightly',
+        bq_dataset_id='firefox_android_nightly_external',
+        table_prefix='leanplum',
         dag=dag
     )
