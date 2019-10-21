@@ -175,7 +175,7 @@ main_summary_all_histograms = MozDatabricksSubmitRunOperator(
 main_summary = MozDatabricksSubmitRunOperator(
     task_id="main_summary",
     job_name="Main Summary View",
-    execution_timeout=timedelta(hours=4),
+    execution_timeout=timedelta(hours=6),
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
     instance_count=5,
     max_instance_count=40,
