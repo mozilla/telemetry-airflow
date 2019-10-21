@@ -29,6 +29,7 @@ class DataProcHelper:
                  num_preemptible_workers=0,
                  service_account=None,
                  init_actions_uris=None,
+                 additional_metadata=None,
                  optional_components=['ANACONDA'],
                  install_component_gateway=True,
                  aws_conn_id=None,
@@ -82,6 +83,13 @@ class DataProcHelper:
                     elif key == "secret.key":
                         properties["core:fs.s3.awsSecretAccessKey"] = value
 
+        base_metadata = {
+                'gcs-connector-version': '1.9.16',
+                'bigquery-connector-version': '0.13.6'
+            }
+        additional_metadata = {} if additional_metadata is None
+        metadata = {**base_metadata, **additional_metadata}
+
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
             cluster_name=self.cluster_name,
@@ -101,10 +109,7 @@ class DataProcHelper:
             optional_components = self.optional_components,
             install_component_gateway = self.install_component_gateway,
             init_actions_uris=self.init_actions_uris,
-            metadata={
-                'gcs-connector-version': '1.9.16',
-                'bigquery-connector-version': '0.13.6'
-            },
+            metadata=metadata,
         )
 
     def delete_cluster(self):
@@ -132,6 +137,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 num_preemptible_workers=0,
                                 service_account=None,
                                 init_actions_uris=None,
+                                additional_metadata=None,
                                 optional_components=['ANACONDA'],
                                 install_component_gateway=True,
                                 python_driver_code=None,
@@ -190,6 +196,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                           account needs the following permissions:
                                           roles/logging.logWriter and roles/storage.objectAdmin.
     :param list init_actions_uris:        List of GCS uri's containing dataproc init scripts.
+    :param dict additional_metadata       Custom metadata keys and values, might be used to
+                                          configure initialization actions.
     :param str job_name:                  Name of the spark job to run.
 
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
@@ -221,6 +229,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      service_account=service_account,
                                      init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
+                                     additional_metadata=additional_metadata,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id)
