@@ -6,6 +6,7 @@ def export(
     leanplum_client_key,
     bq_dataset_id,
     task_id,
+    bq_project,
     gcs_bucket="moz-fx-data-prod-external-data",
     table_prefix=None,
     gcs_prefix=None,
@@ -28,6 +29,7 @@ def export(
     :param str leanplum_client_key:  [Required] Leanplum client key
     :param str bq_dataset:           [Required] BigQuery default dataset id
     :param str task_id:              [Required] The task ID for this task
+    :param str bq_project:           [Required] The project to create tables in
     :param str gcs_bucket:           GCS Bucket to export data to
     :param str gcs_prefix:           Prefix for data exported to GCS
     :param str project_id:           Project the GKE cluster is in
@@ -54,7 +56,8 @@ def export(
             "--client-key", leanplum_client_key,
             "--date", "{{ ds_nodash }}",
             "--bucket", gcs_bucket,
-            "--bq-dataset", bq_dataset_id]
+            "--bq-dataset", bq_dataset_id
+            "--project", bq_project]
 
     if gcs_prefix is not None:
         args += ["--prefix",  gcs_prefix]
