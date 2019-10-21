@@ -102,7 +102,6 @@ crash_report_parquet = SubDagOperator(
         default_args=default_args,
         cluster_name=cluster_name,
         job_name="Socorro_Crash_Reports_to_Parquet",
-        # TODO - CI/CD for gcs and repo sync for artifact bucket jobs and gcp bootstrap folders
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/socorro_import_crash_data.py",
         py_args=[
             "--date", "{{ ds_nodash }}",
