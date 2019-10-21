@@ -12,6 +12,7 @@ DEFAULT_ARGS = {
     'owner': 'hwoo@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2019, 4, 17),
+    'end_date': datetime(2019, 4, 17),
     'email': ['hwoo@mozilla.com', 'dataops+alerts@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
