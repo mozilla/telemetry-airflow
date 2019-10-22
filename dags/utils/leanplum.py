@@ -56,7 +56,7 @@ def export(
             "--client-key", leanplum_client_key,
             "--date", "{{ ds_nodash }}",
             "--bucket", gcs_bucket,
-            "--bq-dataset", bq_dataset_id
+            "--bq-dataset", bq_dataset_id,
             "--project", bq_project]
 
     if gcs_prefix is not None:
