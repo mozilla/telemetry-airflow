@@ -53,6 +53,11 @@ class DataProcHelper:
         else:
             self.init_actions_uris=init_actions_uris
 
+        if additional_metadata is None:
+            self.additional_metadata = {}
+        else:
+            self.additional_metadata = additional_metadata
+
         self.optional_components = optional_components
         self.install_component_gateway = install_component_gateway
         self.aws_conn_id = aws_conn_id
@@ -83,12 +88,11 @@ class DataProcHelper:
                     elif key == "secret.key":
                         properties["core:fs.s3.awsSecretAccessKey"] = value
 
-        base_metadata = {
+        metadata = {
                 'gcs-connector-version': '1.9.16',
                 'bigquery-connector-version': '0.13.6'
             }
-        additional_metadata = {} if additional_metadata is None
-        metadata = {**base_metadata, **additional_metadata}
+        metadata.update(self.additional_metadata)
 
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
