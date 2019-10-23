@@ -9,6 +9,7 @@ from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOpe
 from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
+from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
 
 import re
 
@@ -305,6 +306,8 @@ def export_to_parquet(
     dataproc_zone="us-central1-a",
     dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
     num_preemptible_workers=0,
+    gcs_output_bucket="moz-fx-data-derived-datasets-parquet-tmp",
+    s3_output_bucket="telemetry-parquet",
 ):
 
     """ Export a BigQuery table to Parquet.
@@ -336,14 +339,6 @@ def export_to_parquet(
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
-    properties = {
-        "core:fs.s3a." + key: value
-        for key, value in zip(
-            ("access.key", "secret.key", "session.token"),
-            AwsHook(aws_conn_id).get_credentials(),
-        )
-        if value is not None
-    }
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
@@ -352,25 +347,28 @@ def export_to_parquet(
             cluster_name=cluster_name,
             gcp_conn_id=gcp_conn_id,
             project_id=connection.project_id,
-            properties=properties,
             num_workers=2,
-            image_version="1.3",
+            image_version="1.4",
             storage_bucket=dataproc_storage_bucket,
             zone=dataproc_zone,
             master_machine_type="n1-standard-8",
             worker_machine_type="n1-standard-8",
             num_preemptible_workers=num_preemptible_workers,
+            init_actions_uris=[
+                "gs://dataproc-initialization-actions/python/pip-install.sh",
+            ],
+            metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
         )
 
         run_dataproc_pyspark = DataProcPySparkOperator(
             task_id="run_dataproc_pyspark",
             cluster_name=cluster_name,
             dataproc_pyspark_jars=[
-                "gs://mozilla-bigquery-etl/jars/spark-bigquery-0.5.1-beta-SNAPSHOT.jar"
+                "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
             ],
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
             "/script/pyspark/export_to_parquet.py",
-            arguments=[table] + arguments,
+            arguments=[table, "--destination=gs://{}".format(gcs_bucket)] + arguments,
             gcp_conn_id=gcp_conn_id,
         )
 
@@ -382,7 +380,18 @@ def export_to_parquet(
             trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
         )
 
+        gcs_to_s3 = GoogleCloudStorageToS3Operator(
+            task_id="gcs_to_s3",
+            bucket=gcs_bucket,
+            prefix="clients_last_seen/v1",
+            google_cloud_storage_conn_id=gcp_conn_id,
+            dest_aws_conn_id=aws_conn_id,
+            dest_s3_key="s3://{}/".format(s3_bucket),
+            replace=True,
+        )
+
         create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
+        run_dataproc_pyspark >> gcs_to_s3
 
         return dag
 
@@ -401,6 +410,7 @@ def bigquery_etl_query(
     docker_image="mozilla/bigquery-etl:latest",
     image_pull_policy="Always",
     date_partition_parameter="submission_date",
+    multipart=False,
     **kwargs
 ):
     """ Generate.
@@ -441,7 +451,7 @@ def bigquery_etl_query(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["query"]
+        arguments=["script/run_multipart_query" if multipart else "query"]
         + (["--destination_table=" + destination_table] if destination_table else [])
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
