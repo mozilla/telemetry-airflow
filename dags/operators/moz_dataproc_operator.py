@@ -283,7 +283,10 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
 
         # Fetch current nested dict and add nested keys
         cluster_config_new = cluster_data['config']
-        cluster_config_new.update({'softwareConfig' : {'optionalComponents': self.optional_components }})
+
+        software_config_new = cluster_config_new['softwareConfig']
+        software_config_new.update({'optionalComponents': self.optional_components })
+        cluster_config_new.update({'softwareConfig': software_config_new})
 
         if self.install_component_gateway:
             cluster_config_new.update({'endpointConfig' : {'enableHttpPortAccess' : True}})
