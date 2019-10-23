@@ -47,7 +47,6 @@ def parse_args():
     parser.add_argument("--s3-output-path", required=True)
     parser.add_argument("--aws-access-key-id", required=True)
     parser.add_argument("--aws-secret-access-key", required=True)
-    parser.add_argument("--aws-session-token", required=False)
     return parser.parse_args()
 
 args = parse_args()
@@ -1210,8 +1209,7 @@ path = args.s3_output_path #"app-update/data/out-of-date/"
 timestamped_s3_key = path + report_filename + ".json"
 client = boto3.client('s3', 'us-west-2',
     aws_access_key_id=args.aws_access_key_id,
-    aws_secret_access_key=args.aws_secret_access_key,
-    aws_session_token=args.aws_session_token
+    aws_secret_access_key=args.aws_secret_access_key
 )
 client.put_object(Body=results_json, Bucket=bucket, Key=timestamped_s3_key)
 print(f"Output file saved to: {bucket}/{timestamped_s3_key}")
