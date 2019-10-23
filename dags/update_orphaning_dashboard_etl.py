@@ -1,6 +1,7 @@
 from airflow import DAG
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 
 from utils.dataproc import moz_dataproc_pyspark_runner
