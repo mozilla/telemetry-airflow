@@ -57,8 +57,7 @@ crash_report_parquet = SubDagOperator(
             "--s3-output-bucket", "telemetry-public-analysis-2",
             "--s3-output-path", "app-update-test/data/out-of-date/", # TODO: switch to `app-update` when this is stable
             "--aws-access-key-id", aws_access_key,
-            "--aws-secret-access-key", aws_secret_key,
-            "--aws-session-token", session
+            "--aws-secret-access-key", aws_secret_key
         ],
         idle_delete_ttl='14400',
         num_workers=20,
