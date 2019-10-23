@@ -579,17 +579,6 @@ smoot_usage_desktop_v2 = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
-client_count_daily_view = EMRSparkOperator(
-    task_id="client_count_daily_view",
-    job_name="Client Count Daily View",
-    execution_timeout=timedelta(hours=10),
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    instance_count=10,
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/client_count_daily_view.sh",
-    dag=dag)
-
 main_summary_glue = EMRSparkOperator(
     task_id="main_summary_glue",
     job_name="Main Summary Update Glue",
@@ -622,20 +611,6 @@ taar_dynamo = EMRSparkOperator(
     }),
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     output_visibility="private",
-    dag=dag)
-
-desktop_dau = EMRSparkOperator(
-    task_id="desktop_dau",
-    job_name="Desktop DAU",
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    execution_timeout=timedelta(hours=1),
-    instance_count=1,
-    env=tbv_envvar("com.mozilla.telemetry.views.dau.DesktopDauView", {
-        "to": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     dag=dag)
 
 taar_locale_job = EMRSparkOperator(
@@ -821,9 +796,6 @@ exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 smoot_usage_desktop_raw.set_upstream(clients_last_seen)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
-
-client_count_daily_view.set_upstream(main_summary)
-desktop_dau.set_upstream(client_count_daily_view)
 
 main_summary_glue.set_upstream(main_summary)
 
