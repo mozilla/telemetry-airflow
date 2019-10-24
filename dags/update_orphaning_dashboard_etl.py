@@ -50,6 +50,7 @@ crash_report_parquet = SubDagOperator(
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/update_orphaning_dashboard_etl.py",
         init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
         additional_metadata={'PIP_PACKAGES': "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1 boto3==1.9.253"},
+        additional_properties={"spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3"},
         py_args=[
             "--run-date", "{{ ds_nodash }}",
             "--gcs-bucket", "moz-fx-data-derived-datasets-analysis",
