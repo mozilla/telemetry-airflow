@@ -50,6 +50,7 @@ amodump = GKEPodOperator(
         "AWS_SECRET_ACCESS_KEY": taar_aws_secret_key,
     },
     dag=dag,
+    is_delete_operator_pod=True,
 )
 
 amowhitelist = GKEPodOperator(
@@ -73,6 +74,7 @@ amowhitelist = GKEPodOperator(
         "AWS_SECRET_ACCESS_KEY": taar_aws_secret_key,
     },
     dag=dag,
+    is_delete_operator_pod=True,
 )
 
 editorial_whitelist = GKEPodOperator(
@@ -93,6 +95,7 @@ editorial_whitelist = GKEPodOperator(
         "AWS_SECRET_ACCESS_KEY": taar_aws_secret_key,
     },
     dag=dag,
+    is_delete_operator_pod=True,
 )
 
 

@@ -61,6 +61,7 @@ load_bq_to_tmp_tbl = GKEPodOperator(
     name='bq-load-tmp-tbl',
     namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
+    is_delete_operator_pod=True,
     arguments=load_args,
     dag=blp_dag
 )
@@ -74,6 +75,7 @@ select_insert_into_final_table = GKEPodOperator(
     name='bq-query-insert-final-tbl',
     namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
+    is_delete_operator_pod=True,
     arguments=insert_args,
     dag=blp_dag
 )

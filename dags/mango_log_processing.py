@@ -201,6 +201,7 @@ load_blpadi_to_bq = GKEPodOperator(
     namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
     arguments=bq_args,
+    is_delete_operator_pod=True,
     dag=blp_dag
 )
 

@@ -14,7 +14,7 @@ from utils.dataproc import moz_dataproc_pyspark_runner
 
 """
 Originally, this job read json (non-ndjson) from aws prod at:
-s3://crashstats-telemetry-crashes-prod-us-west-2/v1/crash_report 
+s3://crashstats-telemetry-crashes-prod-us-west-2/v1/crash_report
 and wrote the data to parquet format in aws dev at:
 s3://telemetry-parquet/socorro_crash/v2
 
@@ -61,7 +61,7 @@ write_aws_conn_id='aws_dev_socorro_telemetry_parquet_s3'
 aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credentials()
 
 # We use an application-specific gcs bucket since the copy operator can't set the destination
-# bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead 
+# bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead
 # of having the dataset name come first
 gcs_data_bucket = 'moz-fx-data-prod-socorro-data'
 
@@ -143,6 +143,7 @@ gcs_to_s3 = GKEPodOperator(
         "AWS_ACCESS_KEY_ID": aws_access_key,
         "AWS_SECRET_ACCESS_KEY": aws_secret_key
     },
+    is_delete_operator_pod=True,
     dag=dag,
 )
 
@@ -181,6 +182,7 @@ bq_load = GKEPodOperator(
     namespace='default',
     image=docker_image,
     arguments=gke_args,
+    is_delete_operator_pod=True,
     dag=dag,
 )
 

@@ -180,6 +180,7 @@ def load_to_bigquery(parent_dag_name=None,
             name=_dag_name.replace('_', '-'),
             namespace=gke_namespace,
             image=docker_image,
+            is_delete_operator_pod=True,
             arguments=gke_args,
             )
 
@@ -449,6 +450,7 @@ def bigquery_etl_query(
         + list(arguments)
         + [sql_file_path],
         image_pull_policy=image_pull_policy,
+        is_delete_operator_pod=True,
         **kwargs
     )
 
@@ -518,6 +520,7 @@ def bigquery_etl_copy_deduplicate(
         + (["--slices={}".format(slices)] if slices is not None else [])
         + table_qualifiers,
         image_pull_policy=image_pull_policy,
+        is_delete_operator_pod=True,
         **kwargs
     )
 
@@ -584,5 +587,6 @@ def gke_command(
             if value is not None
         },
         image_pull_policy=image_pull_policy,
+        is_delete_operator_pod=True,
         **kwargs
     )

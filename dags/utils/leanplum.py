@@ -75,4 +75,5 @@ def export(
         image=docker_image,
         image_pull_policy=image_pull_policy,
         arguments=args,
+        is_delete_operator_pod=True,
         **kwargs)

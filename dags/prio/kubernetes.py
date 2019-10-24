@@ -97,6 +97,7 @@ def container_subdag(
             arguments=arguments,
             env_vars=env_vars,
             dag=dag,
+            is_delete_operator_pod=True,
             **shared_config
         )
 
