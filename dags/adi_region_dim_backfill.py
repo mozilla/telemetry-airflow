@@ -26,8 +26,12 @@ blp_dag = DAG(
     schedule_interval='0 0 * * *'
 )
 
-# TODO - create bq table first 
-# partition by year!
+
+
+
+# TODO - create bq table first  -> maybe do a 1 shot single csv load into the table, then 
+# start loading from s3 net-mozaws-data-us-west-2-data-analysis/adi_by_region
+# actually dont partition at all
 # yr,mnth,region,country_code,domain,tot_requests,product
 # 2018,1,AA,US,blocklists.settings.services.mozilla.com,89,Chrome
 # 2018,1,AA,US,blocklists.settings.services.mozilla.com,1807,Firefox
@@ -39,8 +43,8 @@ load_args = [
     '--skip_leading_rows=1',
     '--replace',
     '--field_delimiter=,',
-    'blpadi.adi_by_region${{ ds_nodash_onlymonth or year? }}',
-    'gs://dp2-stage-vertica/adi_by_region/adi_by_region-{{ ds onlymonth }}.csv',
+    'blpadi.adi_by_region${{ dont partition at all }}',
+    'gs://dp2-stage-vertica/adi_by_region/adi_by_region-{{ dont partition at all?? }}.csv',
 ]
 
 load_bq = GKEPodOperator(
