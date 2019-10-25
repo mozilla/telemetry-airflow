@@ -17,11 +17,11 @@ default_args = {
     "owner": "akomar@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 12),
-    "email": ["akomar@mozilla.com"], # TODO: add "telemetry-alerts@mozilla.com", "rstrong@mozilla.com" when this is stable
+    "email": ["telemetry-alerts@mozilla.com", "rstrong@mozilla.com", "akomar@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retry_delay": timedelta(minutes=10),
 }
 
 # run every Monday to maintain compatibility with legacy ATMO schedule
@@ -56,7 +56,7 @@ crash_report_parquet = SubDagOperator(
             "--gcs-bucket", "moz-fx-data-derived-datasets-analysis",
             "--gcs-prefix", "update-orphaning-airflow",
             "--s3-output-bucket", "telemetry-public-analysis-2",
-            "--s3-output-path", "app-update-test/data/out-of-date/", # TODO: switch to `app-update` when this is stable
+            "--s3-output-path", "app-update/data/out-of-date/",
             "--aws-access-key-id", aws_access_key,
             "--aws-secret-access-key", aws_secret_key
         ],
