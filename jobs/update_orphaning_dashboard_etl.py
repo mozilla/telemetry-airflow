@@ -1198,7 +1198,9 @@ results_dict = {"reportDetails": report_details_dict,
                 "stateCodeStartupOfConcern": state_code_startup_of_concern_dict,
                 "stateFailureCodeStartupOfConcern": state_failure_code_startup_of_concern_dict}
 results_json = json.dumps(results_dict, ensure_ascii=False)
-results_json
+# This job was previously running on Python2, which serialized boolean keys in a different way
+# We're uppercasing booleans here to keep the output compatible with the dashboard
+results_json = results_json.replace('"true"', '"True"').replace('"false"', '"False"')
 
 # Save the output to be uploaded automatically once the job completes.
 # The file will be stored at:
