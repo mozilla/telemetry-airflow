@@ -27,9 +27,10 @@ class DataProcHelper:
                  master_machine_type='n1-standard-8',
                  worker_machine_type='n1-standard-4',
                  num_preemptible_workers=0,
-                 service_account=None,
+                 service_account='dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com',
                  init_actions_uris=None,
                  additional_metadata=None,
+                 additional_properties=None,
                  optional_components=['ANACONDA'],
                  install_component_gateway=True,
                  aws_conn_id=None,
@@ -57,6 +58,11 @@ class DataProcHelper:
             self.additional_metadata = {}
         else:
             self.additional_metadata = additional_metadata
+
+        if additional_properties is None:
+            self.additional_properties = {}
+        else:
+            self.additional_properties = additional_properties
 
         self.optional_components = optional_components
         self.install_component_gateway = install_component_gateway
@@ -87,6 +93,8 @@ class DataProcHelper:
                         properties["core:fs.s3.awsAccessKeyId"] = value
                     elif key == "secret.key":
                         properties["core:fs.s3.awsSecretAccessKey"] = value
+
+        properties.update(self.additional_properties)
 
         metadata = {
                 'gcs-connector-version': '1.9.16',
@@ -139,9 +147,10 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 master_machine_type='n1-standard-8',
                                 worker_machine_type='n1-standard-4',
                                 num_preemptible_workers=0,
-                                service_account=None,
+                                service_account='dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com',
                                 init_actions_uris=None,
                                 additional_metadata=None,
+                                additional_properties=None,
                                 optional_components=['ANACONDA'],
                                 install_component_gateway=True,
                                 python_driver_code=None,
@@ -202,6 +211,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param list init_actions_uris:        List of GCS uri's containing dataproc init scripts.
     :param dict additional_metadata       Custom metadata keys and values, might be used to
                                           configure initialization actions.
+    :param dict additional_properties     Custom cluster properties, can be used to configure
+                                          cluster components, add Spark packages, etc.
     :param str job_name:                  Name of the spark job to run.
 
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
@@ -234,6 +245,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      init_actions_uris=init_actions_uris,
                                      optional_components=optional_components,
                                      additional_metadata=additional_metadata,
+                                     additional_properties=additional_properties,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id)
@@ -271,7 +283,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             master_machine_type='n1-standard-8',
                             worker_machine_type='n1-standard-4',
                             num_preemptible_workers=0,
-                            service_account=None,
+                            service_account='dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com',
                             init_actions_uris=None,
                             optional_components=['ANACONDA'],
                             install_component_gateway=True,
@@ -386,7 +398,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               master_machine_type='n1-standard-8',
                               worker_machine_type='n1-standard-4',
                               num_preemptible_workers=0,
-                              service_account=None,
+                              service_account='dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com',
                               init_actions_uris=None,
                               optional_components=['ANACONDA'],
                               install_component_gateway=True,
