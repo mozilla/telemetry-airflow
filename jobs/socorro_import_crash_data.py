@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 import tempfile
-import urllib2
+import urllib
 
 from datetime import datetime as dt, timedelta, date
 from os import environ
@@ -145,7 +145,7 @@ def fetch_schema():
         log.warning(("Could not fetch schema from s3://{}/{}: {}\n"
                      "Fetching crash data schema from {}")
                     .format(bucket, key, e, fallback_url))
-        resp = urllib2.urlopen(fallback_url)
+        resp = urllib.request.urlopen(fallback_url)
 
     return resp
 
