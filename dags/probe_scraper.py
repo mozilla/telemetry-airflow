@@ -4,7 +4,7 @@ from operators.gcp_container_operator import GKEPodOperator
 
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-
+from airflow.contrib.kubernetes.pod import Resources
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -40,6 +40,10 @@ with DAG('probe_scraper',
         '--env', 'prod'
     ]
 
+    # Cluster autoscaling works on pod resource requests, instead of usage
+    resources = Resources(request_memory='13312Mi', request_cpu=None,
+                         limit_memory='20480Mi', limit_cpu=None)
+
     probe_scraper = GKEPodOperator(
         task_id="probe_scraper",
         gcp_conn_id=gcp_conn_id,
@@ -48,12 +52,16 @@ with DAG('probe_scraper',
         cluster_name=gke_cluster_name,
         name='probe-scraper',
         namespace='default',
-        # This python job requires 13 GB of memory
+        # Needed to scale the highmem pool from 0 -> 1
+        resources=resources,
+        # This python job requires 13 GB of memory, thus the highmem node pool
         node_selectors={"nodepool" : "highmem"},
         # Due to the nature of the container run, we set get_logs to False,
         # To avoid urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes read)' errors
         # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
         get_logs=False,
+        # Give additional time since we will likely always scale up when running this job
+        startup_timeout_seconds=360,
         image=probe_scraper_image,
         is_delete_operator_pod=True,
         arguments=probe_scraper_args,
