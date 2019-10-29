@@ -40,7 +40,7 @@ run_month = last_month_date.strftime("%m")
 run_year = last_month_date.strftime("%Y")
 
 gcstj_object_conditions = {
-    'includePrefixes':  "adi_by_region/year={}/month={}/*.csv".format(run_year, run_month)
+    'includePrefixes':  "adi_by_region/year={}/month={}/".format(run_year, run_month)
 }
 
 gcstj_transfer_options = {
@@ -60,7 +60,6 @@ s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
     transfer_options=gcstj_transfer_options,
     dag=blp_dag
 )
-
 
 # TODO add this back to start testing delete step and load step
 '''
