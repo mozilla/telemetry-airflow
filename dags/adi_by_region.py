@@ -47,7 +47,7 @@ gcstj_transfer_options = {
     'deleteObjectsUniqueInSink': True
 }
 
-# COPY from s3 net-mozaws-data-us-west-2-data-analysis/adi_by_region to gcs
+# Copy s3://net-mozaws-data-us-west-2-data-analysis/adi_by_region to gcs
 s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
     task_id='s3_to_gcs',
     s3_bucket='net-mozaws-data-us-west-2-data-analysis',
@@ -61,15 +61,32 @@ s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
     dag=blp_dag
 )
 
-# TODO add this back to start testing delete step and load step
-'''
-# TODO - add step that deletes all records from yr + mnth prior to loading, so we are idempotent
+# For idempotency, we remove records before loading them
+delete_args = [
+    'bq',
+    '--location=US',
+    'query',
+    '--use_legacy_sql=false',
+    "DELETE from blpadi.adi_by_region WHERE yr = {} AND mnth = {}".format(run_year, run_month)
+]
 
-# data looks like
-#"_col0","_col1","_col2","city","country_code","domain","ua_family"
-#"207","2019","9","AA","US","blocklists.settings.services.mozilla.com","Android"
-#"21","2019","9","AA","US","blocklists.settings.services.mozilla.com","Chrome"
+location='us-central1-a'
+cluster_name='bq-load-gke-1'
 
+delete_from_table = GKEPodOperator(
+    task_id='delete_from_adi_by_region',
+    gcp_conn_id=gcp_conn_id,
+    project_id=connection.project_id,
+    location=location,
+    cluster_name=cluster_name,
+    name='delete-from-adi-by-region-table',
+    namespace='default',
+    image='google/cloud-sdk:242.0.0-alpine',
+    arguments=delete_args,
+    dag=blp_dag
+)
+
+# Finally we load the csv into bq
 load_args = [
     'bq',
     '--location=US',
@@ -78,19 +95,20 @@ load_args = [
     '--skip_leading_rows=1',
     '--field_delimiter=,',
     'blpadi.adi_by_region',
-    'gs://moz-fx-data-derived-datasets-blpadi/adi_by_region/year={}/month={}/*.csv'.format(run_year, run_month),
+    "gs://moz-fx-data-derived-datasets-blpadi/adi_by_region/year={}/month={}/*.csv".format(run_year, run_month)
 ]
 
 load_bq = GKEPodOperator(
-    task_id='bq_load',
+    task_id='bq_load_adi_by_region',
     gcp_conn_id=gcp_conn_id,
     project_id=connection.project_id,
-    location='us-central1-a',
-    cluster_name='bq-load-gke-1',
-    name='bq-load',
+    location=location,
+    cluster_name=cluster_name,
+    name='bq-load-adi-by-region',
     namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
     arguments=load_args,
     dag=blp_dag
 )
-'''
+
+s3_to_gcs >> delete_from_table >> load_bq
