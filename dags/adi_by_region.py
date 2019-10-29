@@ -5,13 +5,12 @@ from operators.gcp_container_operator import GKEPodOperator
 
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+# The adi_dimensional_by_date bq table is loaded in mango_log_processing.py
+
 DEFAULT_ARGS = {
     'owner': 'hwoo@mozilla.com',
     'depends_on_past': False,
-    # TODO set start date, remove end date
-    #'start_date': datetime(2018, 1, 1),
-    'start_date': datetime(2019, 8, 1),
-    'end_date': datetime(2019, 10, 1),
+    'start_date': datetime(2018, 1, 1),
     'email': ['hwoo@mozilla.com', 'dataops+alerts@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -31,6 +30,9 @@ gcp_conn_id = "google_cloud_derived_datasets"
 connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
 aws_conn_id = 'aws_data_iam_blpadi'
+
+location='us-central1-a'
+cluster_name='bq-load-gke-1'
 
 # Calculate run month and year
 today = date.today()
@@ -69,9 +71,6 @@ delete_args = [
     '--use_legacy_sql=false',
     "DELETE from blpadi.adi_by_region WHERE yr = {} AND mnth = {}".format(run_year, run_month)
 ]
-
-location='us-central1-a'
-cluster_name='bq-load-gke-1'
 
 delete_from_table = GKEPodOperator(
     task_id='delete_from_adi_by_region',
