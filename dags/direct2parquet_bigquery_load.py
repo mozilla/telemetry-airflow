@@ -152,15 +152,6 @@ with DAG(
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
     fenix_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
 
-    smoot_usage_nondesktop_raw = bigquery_etl_query(
-        task_id='smoot_usage_nondesktop_raw',
-        destination_table='smoot_usage_nondesktop_raw_v1',
-        dataset_id='telemetry',
-    )
-
-    core_clients_last_seen >> smoot_usage_nondesktop_raw
-    fenix_clients_last_seen >> smoot_usage_nondesktop_raw
-
     smoot_usage_nondesktop_v2 = bigquery_etl_query(
         task_id='smoot_usage_nondesktop_v2',
         destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_nondesktop_v2',

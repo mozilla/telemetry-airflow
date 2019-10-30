@@ -80,14 +80,6 @@ with models.DAG(
 
     fxa_users_last_seen >> firefox_accounts_exact_mau28_raw
 
-    smoot_usage_fxa_raw = bigquery_etl_query(
-        task_id='smoot_usage_fxa_raw',
-        destination_table='smoot_usage_fxa_raw_v1',
-        dataset_id='telemetry',
-    )
-
-    fxa_users_last_seen >> smoot_usage_fxa_raw
-
     smoot_usage_fxa_v2 = bigquery_etl_query(
         task_id='smoot_usage_fxa_v2',
         destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_fxa_v2',

@@ -29,12 +29,6 @@ with models.DAG(
         date_partition_parameter=None,
     )
 
-    smoot_usage_all_mtr = bigquery_etl_query(
-        destination_table='smoot_usage_all_mtr_v1',
-        dataset_id='telemetry',
-        date_partition_parameter=None,
-    )
-
     smoot_usage_new_profiles_v2 = bigquery_etl_query(
         task_id='smoot_usage_new_profiles_v2',
         destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_new_profiles_v2',
