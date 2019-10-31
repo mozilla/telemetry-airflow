@@ -39,6 +39,19 @@ print(json.dumps(extra))
 END
 }
 
+aws_default_extras() {
+python - <<END
+import json
+
+extra = {
+    "aws_access_key_id": "dummy_access_key_id",
+    "aws_secret_access_key": "dummy_secret_access_key",
+}
+
+print(json.dumps(extra))
+END
+}
+
 init_connections() {
     # set dummy credentials
     export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-dummy_access_key_id}
@@ -52,34 +65,38 @@ init_connections() {
         --conn_host https://dbc-caf9527b-e073.cloud.databricks.com \
         --conn_extra "{\"token\":\"${DB_TOKEN}\"}"
 
-    airflow connections --add \
-        --conn_id google_cloud_prio_admin \
+    gcp_conn=(
+      "google_cloud_airflow_dataproc"
+      "google_cloud_derived_datasets"
+      "google_cloud_prio_a"
+      "google_cloud_prio_admin"
+      "google_cloud_prio_b"
+    )
+    for conn_id in "${gcp_conn[@]}"; do
+        airflow connections --delete --conn_id "${conn_id}"
+        airflow connections --add \
+        --conn_id "${conn_id}" \
         --conn_type google_cloud_platform \
         --conn_extra "$(gcp_default_extras)"
+    done
 
-    airflow connections --add \
-        --conn_id google_cloud_prio_a \
-        --conn_type google_cloud_platform \
-        --conn_extra "$(gcp_default_extras)"
-
-    airflow connections --add \
-        --conn_id google_cloud_prio_b \
-        --conn_type google_cloud_platform \
-        --conn_extra "$(gcp_default_extras)"
-
-    airflow connections --add \
-        --conn_id amplitude_s3_conn \
-        --conn_type s3
-
-    airflow connections --add \
-        --conn_id google_cloud_derived_datasets \
-        --conn_type google_cloud_platform \
-        --conn_extra "$(gcp_default_extras)"
-
-    airflow connections --add \
-        --conn_id google_cloud_airflow_dataproc \
-        --conn_type google_cloud_platform \
-        --conn_extra "$(gcp_default_extras)"
+    aws_conn=(
+      "airflow_taar_rw_s3"
+      "amplitude_s3_conn"
+      "aws_dev_iam_s3"
+      "aws_dev_socorro_telemetry_parquet_s3"
+      "aws_dev_telemetry_public_analysis_2_rw"
+      "aws_prod_fx_usage_report"
+      "aws_prod_probe_scraper"
+      "aws_socorro_readonly_s3"
+    )
+    for conn_id in "${aws_conn[@]}"; do
+        airflow connections --delete --conn_id "${conn_id}"
+        airflow connections --add \
+        --conn_id "${conn_id}" \
+        --conn_type s3 \
+        --conn_extra "$(aws_default_extras)"
+    done
 }
 
 init_variables() {
