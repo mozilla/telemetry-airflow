@@ -48,7 +48,7 @@ from prio import dataproc, kubernetes
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
-    "depends_on_past": True,
+    "depends_on_past": False,
     "start_date": datetime(2019, 8, 22),
     "email": [
         "amiyaguchi@mozilla.com",
@@ -92,6 +92,8 @@ BUCKET_SHARED_B = "moz-fx-prio-{}-b-shared".format(ENVIRONMENT)
 BUCKET_DATA_ADMIN = "moz-fx-data-{}-prio-data".format(ENVIRONMENT)
 BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
 
+# https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
+# max_active_runs controls the number of DagRuns at a given time.
 dag = DAG(dag_id="prio_processor", max_active_runs=1, default_args=DEFAULT_ARGS)
 
 
