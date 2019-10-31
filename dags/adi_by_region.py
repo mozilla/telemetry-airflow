@@ -34,12 +34,9 @@ aws_conn_id = 'aws_data_iam_blpadi'
 location='us-central1-a'
 cluster_name='bq-load-gke-1'
 
-# Calculate run month and year
-today = date.today()
-first_of_month = today.replace(day=1)
-last_month_date = first_of_month - timedelta(days=1)
-run_month = last_month_date.strftime("%m")
-run_year = last_month_date.strftime("%Y")
+# Calculate run month and year. Execution date is the previous period (month)
+run_month = '{{ (execution_date.replace(day=1)).strftime("%m") }}'
+run_year = '{{ (execution_date.replace(day=1)).strftime("%Y") }}'
 
 gcstj_object_conditions = {
     'includePrefixes':  "adi_by_region/year={}/month={}/".format(run_year, run_month)
