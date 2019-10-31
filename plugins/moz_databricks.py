@@ -97,8 +97,10 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
                                  "than the instance count.")
 
         is_dev = self.deploy_environment == 'dev'
+        self.is_dev = is_dev
         self.disable_on_dev = disable_on_dev
         self.job_name = job_name
+        self.env = env
 
         jar_task = None
         python_task = None
@@ -174,20 +176,11 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
         elif env.get("MOZETL_COMMAND"):
             # create a runner if it doesn't exist
-            s3 = boto3.resource("s3")
             bucket = "telemetry-test-bucket" if is_dev else "telemetry-airflow"
             prefix = "steps"
 
             module_name = env.get("MOZETL_EXTERNAL_MODULE", "mozetl")
             runner_name = "{}_runner.py".format(module_name)
-
-            try:
-                s3.Object(bucket, "{}/{}".format(prefix, runner_name)).load()
-            except botocore.exceptions.ClientError as e:
-                if e.response["Error"]["Code"] == "404":
-                    generate_runner(module_name, bucket, prefix)
-                else:
-                    raise e
 
             # options are read directly from the environment via Click
             python_task = {
@@ -242,6 +235,23 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
             self.log.info("Skipping {} in the development environment"
                           .format(self.job_name))
             return
+
+        # Create a runner if it doesn't exist only at execution time of the job.
+        if self.env.get("MOZETL_COMMAND"):
+            s3 = boto3.resource("s3")
+            bucket = "telemetry-test-bucket" if self.is_dev else "telemetry-airflow"
+            prefix = "steps"
+
+            module_name = self.env.get("MOZETL_EXTERNAL_MODULE", "mozetl")
+            runner_name = "{}_runner.py".format(module_name)
+
+            try:
+                s3.Object(bucket, "{}/{}".format(prefix, runner_name)).load()
+            except botocore.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    generate_runner(module_name, bucket, prefix)
+                else:
+                    raise e
 
         super(MozDatabricksSubmitRunOperator, self).execute(context)
 
