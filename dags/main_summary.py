@@ -573,14 +573,6 @@ exact_mau_by_dimensions_export = SubDagOperator(
     task_id="exact_mau_by_dimensions_export",
     dag=dag)
 
-smoot_usage_desktop_raw = bigquery_etl_query(
-    task_id='smoot_usage_desktop_raw',
-    destination_table='smoot_usage_desktop_raw_v1',
-    dataset_id='telemetry',
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
 smoot_usage_desktop_v2 = bigquery_etl_query(
     task_id='smoot_usage_desktop_v2',
     destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_desktop_v2',
@@ -820,7 +812,6 @@ clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
-smoot_usage_desktop_raw.set_upstream(clients_last_seen)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 
 main_summary_glue.set_upstream(main_summary)
