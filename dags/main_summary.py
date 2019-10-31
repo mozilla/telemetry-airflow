@@ -54,6 +54,17 @@ copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
+
+bq_main_events = bigquery_etl_query(
+    task_id="bq_main_events",
+    project_id="moz-fx-data-shared-prod",
+    destination_table="main_events_v1",
+    dataset_id="telemetry_derived",
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+    dag=dag)
+
+
 gcloud_docker_image = "google/cloud-sdk:263.0.0-slim"
 main_summary_dataproc_bucket = "gs://moz-fx-data-derived-datasets-parquet-tmp"
 main_ping_bigquery_export_prefix = main_summary_dataproc_bucket + "/export"
@@ -816,3 +827,5 @@ search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 
 # Set a dependency on clients_daily from taar_lite
 taar_lite.set_upstream(clients_daily_v6_bigquery_load)
+
+bq_main_events.set_upstream(copy_deduplicate_main_ping)
