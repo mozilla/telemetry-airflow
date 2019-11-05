@@ -366,7 +366,8 @@ def export_to_parquet(
             ],
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
             "/script/pyspark/export_to_parquet.py",
-            arguments=[table, "--destination=gs://{}".format(gcs_bucket)] + arguments,
+            arguments=[table, "--destination=gs://{}".format(gcs_output_bucket)]
+            + arguments,
             gcp_conn_id=gcp_conn_id,
         )
 
@@ -380,12 +381,12 @@ def export_to_parquet(
 
         gcs_to_s3 = GoogleCloudStorageToS3Operator(
             task_id="gcs_to_s3",
-            bucket=gcs_bucket,
+            bucket=gcs_output_bucket,
             # separate version using "/" instead of "_"
             prefix=re.sub(r"(.*)_(v[0-9]+)$", r"\1/\2", table),
             google_cloud_storage_conn_id=gcp_conn_id,
             dest_aws_conn_id=aws_conn_id,
-            dest_s3_key="s3://{}/".format(s3_bucket),
+            dest_s3_key="s3://{}/".format(s3_output_bucket),
             replace=True,
         )
 

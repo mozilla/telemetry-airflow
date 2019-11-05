@@ -5,10 +5,7 @@ from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.dataproc import (
-        moz_dataproc_jar_runner,
-        moz_dataproc_pyspark_runner
-)
+from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
@@ -17,7 +14,6 @@ from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     export_to_parquet,
     load_to_bigquery,
-    gke_command,
 )
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
