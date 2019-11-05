@@ -54,6 +54,15 @@ copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
+bq_main_events = bigquery_etl_query(
+    task_id="bq_main_events",
+    project_id="moz-fx-data-shared-prod",
+    destination_table="main_events_v1",
+    dataset_id="telemetry_derived",
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+    dag=dag)
+
 sql_main_summary = bigquery_etl_query(
     task_id="sql_main_summary",
     destination_table="sql_main_summary_v4",
@@ -497,18 +506,10 @@ exact_mau_by_dimensions_export = SubDagOperator(
     task_id="exact_mau_by_dimensions_export",
     dag=dag)
 
-smoot_usage_desktop_raw = bigquery_etl_query(
-    task_id='smoot_usage_desktop_raw',
-    destination_table='smoot_usage_desktop_raw_v1',
-    dataset_id='telemetry',
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
 smoot_usage_desktop_v2 = bigquery_etl_query(
     task_id='smoot_usage_desktop_v2',
-    destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_desktop_v2',
-    sql_file_path='sql/telemetry_derived/smoot_usage_desktop_v2/query.sql',
+    project_id='moz-fx-data-shared-prod',
+    destination_table='smoot_usage_desktop_v2',
     dataset_id='telemetry_derived',
     owner="jklukas@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
@@ -741,7 +742,6 @@ clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
-smoot_usage_desktop_raw.set_upstream(clients_last_seen)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 
 main_summary_glue.set_upstream(main_summary)
@@ -757,3 +757,5 @@ search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 
 # Set a dependency on clients_daily from taar_lite
 taar_lite.set_upstream(clients_daily_v6_bigquery_load)
+
+bq_main_events.set_upstream(copy_deduplicate_main_ping)

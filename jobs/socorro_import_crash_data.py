@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 import tempfile
-import urllib2
+import urllib
 
 from datetime import datetime as dt, timedelta, date
 from os import environ
@@ -141,11 +141,11 @@ def fetch_schema():
         # Note: only do this on small json files, since collect will bring the file onto the driver
         json_obj = spark.read.json("s3a://{}/{}".format(bucket, key), multiLine=True).toJSON().collect()
         resp = json.loads(json_obj[0])
-    except Exception, e:
+    except Exception as e:
         log.warning(("Could not fetch schema from s3://{}/{}: {}\n"
                      "Fetching crash data schema from {}")
                     .format(bucket, key, e, fallback_url))
-        resp = urllib2.urlopen(fallback_url)
+        resp = urllib.request.urlopen(fallback_url)
 
     return resp
 

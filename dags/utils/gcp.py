@@ -330,11 +330,9 @@ def export_to_parquet(
     # limit cluster name to 42 characters then suffix with -YYYYMMDD
     cluster_name = table.replace("_", "-")
     if len(cluster_name) > 42:
-        if cluster_name.rsplit("-v", 1)[-1].isdigit():
-            prefix, version = cluster_name.rsplit("-v", 1)
-            cluster_name = prefix[:40 - len(version)] + "-v" + version
-        else:
-            cluster_name = cluster_name[:42]
+        # preserve version when truncating cluster name to 42 characters
+        prefix, version = re.match(r"(.*?)(-v[0-9]+)?$", cluster_name).groups("")
+        cluster_name = prefix[:42 - len(version)] + version
     cluster_name += "-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
@@ -383,7 +381,8 @@ def export_to_parquet(
         gcs_to_s3 = GoogleCloudStorageToS3Operator(
             task_id="gcs_to_s3",
             bucket=gcs_bucket,
-            prefix="clients_last_seen/v1",
+            # separate version using "/" instead of "_"
+            prefix=re.sub(r"(.*)_(v[0-9]+)$", r"\1/\2", table),
             google_cloud_storage_conn_id=gcp_conn_id,
             dest_aws_conn_id=aws_conn_id,
             dest_s3_key="s3://{}/".format(s3_bucket),

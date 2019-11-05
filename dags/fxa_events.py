@@ -9,7 +9,7 @@ default_args = {
     'email': ['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
-    'depends_on_past': True,
+    'depends_on_past': False,
     # If a task fails, retry it once after waiting at least 5 minutes
     'retries': 1,
     'retry_delay': datetime.timedelta(minutes=10),
@@ -80,18 +80,10 @@ with models.DAG(
 
     fxa_users_last_seen >> firefox_accounts_exact_mau28_raw
 
-    smoot_usage_fxa_raw = bigquery_etl_query(
-        task_id='smoot_usage_fxa_raw',
-        destination_table='smoot_usage_fxa_raw_v1',
-        dataset_id='telemetry',
-    )
-
-    fxa_users_last_seen >> smoot_usage_fxa_raw
-
     smoot_usage_fxa_v2 = bigquery_etl_query(
         task_id='smoot_usage_fxa_v2',
-        destination_table='moz-fx-data-shared-prod:telemetry_derived.smoot_usage_fxa_v2',
-        sql_file_path='sql/telemetry_derived/smoot_usage_fxa_v2/query.sql',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='smoot_usage_fxa_v2',
         dataset_id='telemetry_derived',
     )
 
@@ -102,8 +94,8 @@ with models.DAG(
 
     fxa_users_services_daily = bigquery_etl_query(
         task_id='fxa_users_services_daily',
-        destination_table='moz-fx-data-shared-prod:telemetry_derived.fxa_users_services_daily_v1',
-        sql_file_path='sql/telemetry_derived/fxa_users_services_daily_v1/query.sql',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='fxa_users_services_daily_v1',
         dataset_id='telemetry_derived',
     )
 
@@ -114,6 +106,7 @@ with models.DAG(
 
     fxa_users_services_first_seen = bigquery_etl_query(
         task_id='fxa_users_services_first_seen',
+        project_id='moz-fx-data-shared-prod',
         sql_file_path='sql/telemetry_derived/fxa_users_services_first_seen_v1/init.sql',
         dataset_id='telemetry_derived',
         # At least for now, we completely recreate this table every day;
@@ -132,8 +125,8 @@ with models.DAG(
 
     fxa_users_services_last_seen = bigquery_etl_query(
         task_id='fxa_users_services_last_seen',
-        destination_table='moz-fx-data-shared-prod:telemetry_derived.fxa_users_services_last_seen_v1',
-        sql_file_path='sql/telemetry_derived/fxa_users_services_last_seen_v1/query.sql',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='fxa_users_services_last_seen_v1',
         dataset_id='telemetry_derived',
         depends_on_past=True,
         start_date=datetime.datetime(2019, 10, 8),

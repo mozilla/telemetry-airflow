@@ -4,6 +4,7 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 
+from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
 
 """
@@ -21,7 +22,7 @@ default_args = {
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retry_delay": timedelta(minutes=10),
 }
 
 # run every Monday to maintain compatibility with legacy ATMO schedule
@@ -50,12 +51,13 @@ crash_report_parquet = SubDagOperator(
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/update_orphaning_dashboard_etl.py",
         init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
         additional_metadata={'PIP_PACKAGES': "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1 boto3==1.9.253"},
+        additional_properties={"spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3"},
         py_args=[
-            "--run-date", "{{ ds_nodash }}",
+            "--run-date", DS_WEEKLY,
             "--gcs-bucket", "moz-fx-data-derived-datasets-analysis",
             "--gcs-prefix", "update-orphaning-airflow",
             "--s3-output-bucket", "telemetry-public-analysis-2",
-            "--s3-output-path", "app-update-test/data/out-of-date/", # TODO: switch to `app-update` when this is stable
+            "--s3-output-path", "app-update/data/out-of-date/",
             "--aws-access-key-id", aws_access_key,
             "--aws-secret-access-key", aws_secret_key
         ],
