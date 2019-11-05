@@ -1,10 +1,14 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from operators.emr_spark_operator import EMRSparkOperator
+
 from utils.constants import DS_WEEKLY
-from utils.tbv import tbv_envvar
+from utils.dataproc import moz_dataproc_scriptrunner
 from utils.deploy import get_artifact_url
 from utils.status import register_status
+from utils.tbv import tbv_envvar
+
+from airflow.operators.subdag_operator import SubDagOperator
+from airflow.contrib.hooks.aws_hook import AwsHook
 
 FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
@@ -14,7 +18,9 @@ FENNEC_IOS_INSTANCES = 10
 FIRE_TV_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
-environment = "{{ task.__class__.deploy_environment }}"
+# TODO - change this to 'prod' before merging
+#environment = "{{ task.__class__.deploy_environment }}"
+environment = "dev"
 
 def key_file(project):
     return (
@@ -33,8 +39,10 @@ slug = "{{ task.__class__.telemetry_streaming_slug }}"
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2018, 11, 20),
-    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
+    # TODO - change start date
+    #'start_date': datetime(2018, 11, 20),
+    'start_date': datetime(2019, 11, 20),
+    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com', 'hwoo@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -44,22 +52,58 @@ default_args = {
 
 dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0 1 * * *')
 
+cluster_name = 'events-to-amplitude-dataproc-cluster'
 
-focus_events_to_amplitude = EMRSparkOperator(
+# AWS credentials required to read aws dev s3://telemetry-airflow for amplitude keys
+# or move that bucket to gcs or aws prod
+# depending on if the jar job also reads/writes to other s3 locations
+
+aws_conn_id = 'aws_dev_telemetry-airflow-config-read?'
+aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
+
+gcp_conn_id = 'google_cloud_airflow_dataproc'
+
+# Ask frank 
+# ask about task.__class__.blah
+# ask about what the actual jar does (looks like it exports to amplitude uri)
+# but what the jar inputs / outputs are (s3? etc)
+# and how should we change the jar? or how does the subdagoperttor
+# that exports to amplitude work
+
+
+focus_events_to_amplitude = SubDagOperator(
     task_id="focus_android_events_to_amplitude",
-    job_name="Focus Android Events to Amplitude",
-    execution_timeout=timedelta(hours=8),
-    instance_count=FOCUS_ANDROID_INSTANCES,
-    env={
-        "date": "{{ ds_nodash }}",
-        "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file("focus_android"),
-        "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "focus_android_events_schemas.json",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag)
+    dag=dag,
+    subdag = moz_dataproc_scriptrunner(
+        parent_dag_name=dag.dag_id,
+        dag_name='focus_android_events_to_amplitude',
+        default_args=default_args,
+        cluster_name=cluster_name + '-focus',
+        service_account='dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com',
+        job_name="Focus_Android_Events_to_Amplitude",
+        uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
+        env={
+            "date": "{{ ds_nodash }}",
+            "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
+            "key_file": key_file("focus_android"),
+            # TODO - this may break with the task.__class__.region|artifacts_bucket|etc
+            "artifact": get_artifact_url(slug, branch="master"),
+            "config_filename": "focus_android_events_schemas.json",
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_key
+        },
+        gcp_conn_id=gcp_conn_id,
+        # TODO - it seems like we actually may need to pass the aws keys
+        # as cmd line arguments to the bash script instead to use as env var aws auth
+        # unless this job's spark part writes to s3a://
+        aws_conn_id=aws_conn_id,
+        # TODO - check if this is an appropriate number of instances,
+        # TODO - also check if we need to resize the default instance type
+        num_workers=FOCUS_ANDROID_INSTANCES,
+        auto_delete_ttl='28800',
+    )
 
+'''
 devtools_prerelease_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_prerelease_events_to_amplitude",
     job_name="DevTools Prerelease Events to Amplitude",
@@ -162,3 +206,4 @@ fire_tv_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag
 )
+'''
