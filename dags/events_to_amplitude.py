@@ -19,8 +19,8 @@ FIRE_TV_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 # TODO - change this to 'prod' before merging
-#environment = "{{ task.__class__.deploy_environment }}"
 environment = "dev"
+#environment = "prod"
 
 def key_file(project):
     return (
@@ -28,13 +28,13 @@ def key_file(project):
         .format(environment, project)
     )
 
+
 def key_path(project):
     return (
         "config/amplitude/{}/{}/apiKey"
         .format(environment, project)
     )
 
-slug = "{{ task.__class__.telemetry_streaming_slug }}"
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -55,8 +55,9 @@ dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0
 cluster_name = 'events-to-amplitude-dataproc-cluster'
 
 # AWS credentials required to read aws dev s3://telemetry-airflow for amplitude keys
-# or move that bucket to gcs or aws prod
+# or move that bucket to gcs or aws prod/data
 # depending on if the jar job also reads/writes to other s3 locations
+# read from s3://net-mozaws-data-us-west-2-ops-ci-artifacts
 
 aws_conn_id = 'aws_dev_telemetry-airflow-config-read?'
 aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
@@ -64,12 +65,17 @@ aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
 gcp_conn_id = 'google_cloud_airflow_dataproc'
 
 # Ask frank 
-# ask about task.__class__.blah
-# ask about what the actual jar does (looks like it exports to amplitude uri)
+# what the actual jar does (looks like it exports to amplitude uri)
 # but what the jar inputs / outputs are (s3? etc)
 # and how should we change the jar? or how does the subdagoperttor
-# that exports to amplitude work
+# that exports to amplitude work and will that replace some jar functionality
 
+# Values taken from old dags/operators/emr_spark_operator.py
+slug = "telemetry-streaming"
+region = "us-west-2"
+bucket = "net-mozaws-data-us-west-2-ops-ci-artifacts"
+owner_slug = "mozilla"
+deploy_tag = "master"
 
 focus_events_to_amplitude = SubDagOperator(
     task_id="focus_android_events_to_amplitude",
@@ -86,17 +92,20 @@ focus_events_to_amplitude = SubDagOperator(
             "date": "{{ ds_nodash }}",
             "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
             "key_file": key_file("focus_android"),
-            # TODO - this may break with the task.__class__.region|artifacts_bucket|etc
-            "artifact": get_artifact_url(slug, branch="master"),
+            "artifact": get_artifact_url(slug,
+                                         branch="master",
+                                         region=region,
+                                         bucket=bucket,
+                                         owner_slug=owner_slug,
+                                         deploy_tag=deploy_tag),
             "config_filename": "focus_android_events_schemas.json",
+            # These keys are used for running the bash entrypoint script s3://telemetry-airflow and ops-ci-artifacts in aws data
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key
         },
         gcp_conn_id=gcp_conn_id,
-        # TODO - it seems like we actually may need to pass the aws keys
-        # as cmd line arguments to the bash script instead to use as env var aws auth
-        # unless this job's spark part writes to s3a://
-        aws_conn_id=aws_conn_id,
+        # TODO - pass the aws keys to this cluster create if this job's spark part writes to s3a://
+        aws_conn_id=spark_job_aws_conn_id,
         # TODO - check if this is an appropriate number of instances,
         # TODO - also check if we need to resize the default instance type
         num_workers=FOCUS_ANDROID_INSTANCES,
