@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import models
-from utils.gcp import bigquery_etl_copy_deduplicate
+from utils.gcp import bigquery_etl_copy_deduplicate, bigquery_etl_query
 
 default_args = {
     "owner": "jklukas@mozilla.com",
@@ -31,3 +31,13 @@ with models.DAG(
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"])
+
+    event_events = bigquery_etl_query(
+        task_id="event_events",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="event_events_v1",
+        dataset_id="telemetry_derived",
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+
+    copy_deduplicate_all >> event_events
