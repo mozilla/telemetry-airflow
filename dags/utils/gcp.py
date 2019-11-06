@@ -297,6 +297,7 @@ def reprocess_parquet(parent_dag_name,
 
 def export_to_parquet(
     table,
+    destination_table=None,
     arguments=[],
     dag_name="export_to_parquet",
     parent_dag_name=None,
@@ -315,6 +316,9 @@ def export_to_parquet(
     https://github.com/mozilla/bigquery-etl/blob/master/script/pyspark/export_to_parquet.py
 
     :param str table:                             [Required] BigQuery table name
+    :param Optional[str] destination_table:       Output table name, defaults to table,
+                                                  will have r'_v[0-9]+$' replaced with
+                                                  r'/v[0-9]+'
     :param List[str] arguments:                   Additional pyspark arguments
     :param str dag_name:                          Name of DAG
     :param Optional[str] parent_dag_name:         Parent DAG name
@@ -328,7 +332,7 @@ def export_to_parquet(
     """
 
     # limit cluster name to 42 characters then suffix with -YYYYMMDD
-    cluster_name = table.replace("_", "-")
+    cluster_name = table.rsplit(".", 1).pop().replace("_", "-")
     if len(cluster_name) > 42:
         # preserve version when truncating cluster name to 42 characters
         prefix, version = re.match(r"(.*?)(-v[0-9]+)?$", cluster_name).groups("")
@@ -367,6 +371,7 @@ def export_to_parquet(
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
             "/script/pyspark/export_to_parquet.py",
             arguments=[table, "--destination=gs://{}".format(gcs_output_bucket)]
+            + (["--destination_table=" + destination_table] if destination_table else [])
             + arguments,
             gcp_conn_id=gcp_conn_id,
         )
@@ -383,7 +388,11 @@ def export_to_parquet(
             task_id="gcs_to_s3",
             bucket=gcs_output_bucket,
             # separate version using "/" instead of "_"
-            prefix=re.sub(r"(.*)_(v[0-9]+)$", r"\1/\2", table),
+            prefix=re.sub(
+                r"_(v[0-9]+)$",
+                r"/\1",
+                destination_table or table.rsplit(".", 1).pop(),
+            ),
             google_cloud_storage_conn_id=gcp_conn_id,
             dest_aws_conn_id=aws_conn_id,
             dest_s3_key="s3://{}/".format(s3_output_bucket),

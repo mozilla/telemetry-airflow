@@ -61,9 +61,11 @@ bq_main_events = bigquery_etl_query(
 
 sql_main_summary = bigquery_etl_query(
     task_id="sql_main_summary",
-    destination_table="sql_main_summary_v4",
+    destination_table="main_summary_v4",
+    project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
     sql="sql/telemetry_derived/main_summary_v4/",
+    multipart=True,
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     start_date=datetime(2019, 10, 25),
@@ -71,9 +73,9 @@ sql_main_summary = bigquery_etl_query(
 
 sql_main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="sql_main_summary_v4",
+        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4",
+        destination_table="sql_main_summary_v4",
         arguments=[
-            "--dataset=telemetry_derived",
             "--filter=submission_date = DATE '{{ds}}'",
             "--where=submission_date = DATE '{{ds}}'",
             "--static-partitions=submission_date_s3={{ds_nodash}}"
