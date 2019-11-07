@@ -9,9 +9,9 @@ from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOpe
 from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
-from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator  # noqa:E501
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
 from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
+from ..operators.gcs import GoogleCloudStorageDeleteOperator
 
 import re
 
