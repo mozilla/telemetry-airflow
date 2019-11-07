@@ -336,8 +336,10 @@ def export_to_parquet(
     :return: airflow.models.DAG
     """
 
+    # remove the dataset prefix and partition suffix from table
+    unqualified_table = table.rsplit(".", 1).pop().split("$", 1)[0]
     # limit cluster name to 35 characters plus suffix of -export-YYYYMMDD (51 total)
-    cluster_name = table.rsplit(".", 1).pop().replace("_", "-")
+    cluster_name = unqualified_table.replace("_", "-")
     if len(cluster_name) > 35:
         # preserve version when truncating cluster name to 42 characters
         prefix, version = re.match(r"(.*?)(-v[0-9]+)?$", cluster_name).groups("")
