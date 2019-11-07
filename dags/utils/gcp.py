@@ -420,6 +420,7 @@ def export_to_parquet(
                 destination_cloud_storage_uris=avro_path,
                 compression=None,
                 export_format="AVRO",
+                bigquery_conn_id=gcp_conn_id,
             )
             avro_delete = GoogleCloudStorageDeleteOperator(
                 task_id="avro_delete",
