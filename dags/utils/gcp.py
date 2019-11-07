@@ -371,7 +371,7 @@ def export_to_parquet(
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
             "/script/pyspark/export_to_parquet.py",
             arguments=[table, "--destination=gs://{}".format(gcs_output_bucket)]
-            + (["--destination_table=" + destination_table] if destination_table else [])
+            + (["--destination-table=" + destination_table] if destination_table else [])
             + arguments,
             gcp_conn_id=gcp_conn_id,
         )
