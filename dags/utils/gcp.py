@@ -11,7 +11,7 @@ from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTab
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
 from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
-from ..operators.gcs import GoogleCloudStorageDeleteOperator
+from operators.gcs import GoogleCloudStorageDeleteOperator
 
 import re
 
