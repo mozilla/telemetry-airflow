@@ -73,16 +73,15 @@ sql_main_summary = bigquery_etl_query(
 
 sql_main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4",
+        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
         destination_table="sql_main_summary_v4",
         arguments=[
-            "--filter=submission_date = DATE '{{ds}}'",
-            "--where=submission_date = DATE '{{ds}}'",
-            "--static-partitions=submission_date_s3={{ds_nodash}}"
+            "--static-partitions=submission_date_s3={{ds_nodash}}",
             "--partition-by=sample_id",
             "--replace='{{ds_nodash}}' AS submission_date",
             "--maps-from-entries",
         ],
+        use_storage_api=False,
         parent_dag_name=dag.dag_id,
         dag_name="sql_main_summary_export",
         default_args=default_args,
@@ -432,15 +431,14 @@ sql_clients_daily = bigquery_etl_query(
 
 sql_clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6",
+        table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
         destination_table="sql_clients_daily_v6",
         arguments=[
-            "--filter=submission_date = DATE '{{ds}}'",
-            "--where=submission_date = DATE '{{ds}}'",
-            "--static-partitions=submission_date_s3={{ds_nodash}}"
+            "--static-partitions=submission_date_s3={{ds_nodash}}",
             "--partition-by=sample_id",
             "--maps-from-entries",
         ],
+        use_storage_api=False,
         parent_dag_name=dag.dag_id,
         dag_name="sql_clients_daily_export",
         default_args=default_args,
