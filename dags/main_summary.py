@@ -736,6 +736,7 @@ taar_lite = SubDagOperator(
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
 
+sql_main_summary.set_upstream(copy_deduplicate_main_ping)
 sql_main_summary_export.set_upstream(sql_main_summary)
 sql_clients_daily.set_upstream(sql_main_summary)
 sql_clients_daily_export.set_upstream(sql_clients_daily)
