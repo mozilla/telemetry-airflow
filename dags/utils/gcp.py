@@ -331,13 +331,13 @@ def export_to_parquet(
     :return: airflow.models.DAG
     """
 
-    # limit cluster name to 42 characters then suffix with -YYYYMMDD
+    # limit cluster name to 35 characters plus suffix of -export-YYYYMMDD (51 total)
     cluster_name = table.rsplit(".", 1).pop().replace("_", "-")
-    if len(cluster_name) > 42:
+    if len(cluster_name) > 35:
         # preserve version when truncating cluster name to 42 characters
         prefix, version = re.match(r"(.*?)(-v[0-9]+)?$", cluster_name).groups("")
-        cluster_name = prefix[:42 - len(version)] + version
-    cluster_name += "-{{ ds_nodash }}"
+        cluster_name = prefix[:35 - len(version)] + version
+    cluster_name += "-export-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
