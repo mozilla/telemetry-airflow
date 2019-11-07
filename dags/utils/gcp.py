@@ -421,7 +421,7 @@ def export_to_parquet(
             )
             avro_delete = GoogleCloudStorageDeleteOperator(
                 task_id="avro_delete",
-                bucket=gcs_output_bucket,
+                bucket_name=gcs_output_bucket,
                 prefix=avro_prefix,
                 google_cloud_storage_conn_id=gcp_conn_id,
             )
