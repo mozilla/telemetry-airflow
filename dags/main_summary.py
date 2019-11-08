@@ -168,23 +168,6 @@ main_summary_bigquery_load = SubDagOperator(
     task_id="main_summary_bigquery_load",
     dag=dag)
 
-engagement_ratio = EMRSparkOperator(
-    task_id="engagement_ratio",
-    job_name="Update Engagement Ratio",
-    execution_timeout=timedelta(hours=6),
-    instance_count=10,
-    env=mozetl_envvar("engagement_ratio",
-        options={
-            "input_bucket": "{{ task.__class__.private_output_bucket }}",
-            "output_bucket": "net-mozaws-prod-us-west-2-pipeline-analysis"
-        },
-        dev_options={
-            "output_bucket": "{{ task.__class__.private_output_bucket }}"
-        }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="public",
-    dag=dag)
-
 addons = EMRSparkOperator(
     task_id="addons",
     job_name="Addons View",
@@ -738,8 +721,6 @@ sql_main_summary.set_upstream(copy_deduplicate_main_ping)
 sql_main_summary_export.set_upstream(sql_main_summary)
 sql_clients_daily.set_upstream(sql_main_summary)
 sql_clients_daily_export.set_upstream(sql_clients_daily)
-
-engagement_ratio.set_upstream(main_summary)
 
 addons.set_upstream(main_summary)
 addons_bigquery_load.set_upstream(addons)
