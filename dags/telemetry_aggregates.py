@@ -14,18 +14,23 @@ common = {
     "retry_delay": timedelta(minutes=30),
 }
 
-default_args = common.copy()
-default_args.update(
-    {
-        "owner": "frank@mozilla.com",
-        "email": ["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    }
-)
+
+def merge_dict(this, other):
+    copied = this.copy()
+    copied.update(other)
+    return copied
+
 
 with DAG(
     "prerelease_telemetry_aggregates",
     start_date=datetime(2018, 12, 23),
-    default_args=default_args,
+    default_args=merge_dict(
+        common,
+        {
+            "owner": "frank@mozilla.com",
+            "email": ["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
+        },
+    ),
     schedule_interval="@daily",
 ) as dag:
     prerelease_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
@@ -54,18 +59,16 @@ with DAG(
     )
 
 
-default_args = common.copy()
-default_args.update(
-    {
-        "owner": "frank@mozilla.com",
-        "email": ["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    }
-)
-
 with DAG(
     "release_telemetry_aggregates",
     start_date=datetime(2018, 12, 17),
-    default_args=default_args,
+    default_args=merge_dict(
+        common,
+        {
+            "owner": "frank@mozilla.com",
+            "email": ["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
+        },
+    ),
     schedule_interval="@daily",
 ) as dag:
     release_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
@@ -93,22 +96,20 @@ with DAG(
     )
 
 
-default_args = common.copy()
-default_args.update(
-    {
-        "owner": "robhudson@mozilla.com",
-        "email": [
-            "telemetry-alerts@mozilla.com",
-            "robhudson@mozilla.com",
-            "frank@mozilla.com",
-        ],
-    }
-)
-
 with DAG(
     "mobile_aggregates",
     start_date=datetime(2019, 1, 1),
-    default_args=default_args,
+    default_args=merge_dict(
+        common,
+        {
+            "owner": "robhudson@mozilla.com",
+            "email": [
+                "telemetry-alerts@mozilla.com",
+                "robhudson@mozilla.com",
+                "frank@mozilla.com",
+            ],
+        },
+    ),
     schedule_interval="@daily",
 ) as dag:
     mobile_aggregate_view = MozDatabricksSubmitRunOperator(
@@ -140,22 +141,20 @@ with DAG(
     )
 
 
-default_args = common.copy()
-default_args.update(
-    {
-        "owner": "robhudson@mozilla.com",
-        "email": [
-            "telemetry-alerts@mozilla.com",
-            "robhudson@mozilla.com",
-            "frank@mozilla.com",
-        ],
-    }
-)
-
 with DAG(
     "telemetry_aggregates_parquet",
     start_date=datetime(2018, 11, 28),
-    default_args=default_args,
+    default_args=merge_dict(
+        common,
+        {
+            "owner": "robhudson@mozilla.com",
+            "email": [
+                "telemetry-alerts@mozilla.com",
+                "robhudson@mozilla.com",
+                "frank@mozilla.com",
+            ],
+        },
+    ),
     schedule_interval="@daily",
 ) as dag:
     telemetry_aggregate_parquet_view = MozDatabricksSubmitRunOperator(
