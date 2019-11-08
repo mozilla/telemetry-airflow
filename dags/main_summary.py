@@ -85,7 +85,7 @@ sql_main_summary_export = SubDagOperator(
         parent_dag_name=dag.dag_id,
         dag_name="sql_main_summary_export",
         default_args=default_args,
-        num_preemptible_workers=10),
+        num_workers=40),
     task_id="sql_main_summary_export",
     dag=dag)
 
