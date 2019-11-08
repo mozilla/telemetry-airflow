@@ -39,6 +39,7 @@ with DAG(
         instance_count=10,
         dev_instance_count=10,
         execution_timeout=timedelta(hours=12),
+        python_version=2,
         env=mozetl_envvar(
             "aggregator",
             {
@@ -75,6 +76,7 @@ with DAG(
         job_name="Release Telemetry Aggregate View",
         instance_count=40,
         execution_timeout=timedelta(hours=12),
+        python_version=2,
         env=mozetl_envvar(
             "aggregator",
             {
@@ -115,6 +117,7 @@ with DAG(
         job_name="Mobile Aggregate View",
         instance_count=5,
         execution_timeout=timedelta(hours=12),
+        python_version=2,
         env=mozetl_envvar(
             "mobile",
             {
@@ -159,6 +162,7 @@ with DAG(
         job_name="Telemetry Aggregate Parquet View",
         instance_count=5,
         execution_timeout=timedelta(hours=12),
+        python_version=2,
         env=mozetl_envvar(
             "parquet",
             {
