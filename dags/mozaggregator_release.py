@@ -23,6 +23,7 @@ dag = DAG(
 release_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
     task_id="release_telemetry_aggregate_view",
     job_name="Release Telemetry Aggregate View",
+    release_label="6.1.x-scala2.11",
     instance_count=40,
     execution_timeout=timedelta(hours=12),
     env=mozetl_envvar(

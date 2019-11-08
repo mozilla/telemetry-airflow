@@ -25,6 +25,7 @@ dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@da
 mobile_aggregate_view = MozDatabricksSubmitRunOperator(
     task_id="mobile_aggregate_view",
     job_name="Mobile Aggregate View",
+    release_label="6.1.x-scala2.11",
     instance_count=5,
     execution_timeout=timedelta(hours=12),
     env=mozetl_envvar(

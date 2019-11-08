@@ -27,6 +27,7 @@ dag = DAG(
 telemetry_aggregate_parquet_view = MozDatabricksSubmitRunOperator(
     task_id="telemetry_aggregate_parquet_view",
     job_name="Telemetry Aggregate Parquet View",
+    release_label="6.1.x-scala2.11",
     instance_count=5,
     execution_timeout=timedelta(hours=12),
     env=mozetl_envvar(
