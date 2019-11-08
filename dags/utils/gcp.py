@@ -426,7 +426,7 @@ def export_to_parquet(
                 task_id="avro_delete",
                 bucket_name=gcs_output_bucket,
                 prefix=avro_prefix,
-                google_cloud_storage_conn_id=gcp_conn_id,
+                gcp_conn_id=gcp_conn_id,
             )
             avro_export >> run_dataproc_pyspark >> avro_delete
 
