@@ -6,7 +6,7 @@ from utils.mozetl import mozetl_envvar
 default_args = {
     "owner": "frank@mozilla.com",
     "depends_on_past": True,
-    "start_date": datetime(2018, 12, 17),
+    "start_date": datetime(2018, 12, 23),
     "email": ["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -15,25 +15,25 @@ default_args = {
 }
 
 dag = DAG(
-    "release_telemetry_aggregates",
+    "prerelease_telemetry_aggregates",
     default_args=default_args,
     schedule_interval="@daily",
 )
 
-release_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
-    task_id="release_telemetry_aggregate_view",
-    job_name="Release Telemetry Aggregate View",
-    instance_count=40,
+prerelease_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
+    task_id="prerelease_telemetry_aggregate_view",
+    job_name="Prerelease Telemetry Aggregate View",
+    instance_count=10,
+    dev_instance_count=10,
     execution_timeout=timedelta(hours=12),
-    python_version=2,
     env=mozetl_envvar(
         "aggregator",
         {
             "date": "{{ ds_nodash }}",
-            "channels": "release",
+            "channels": "nightly,aurora,beta",
             "credentials-bucket": "telemetry-spark-emr-2",
             "credentials-prefix": "aggregator_database_envvars.json",
-            "num-partitions": 40 * 32,
+            "num-partitions": 10*32,
         },
         dev_options={"credentials-prefix": "aggregator_dev_database_envvars.json"},
         other={
