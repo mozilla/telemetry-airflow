@@ -25,7 +25,6 @@ release_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
     job_name="Release Telemetry Aggregate View",
     instance_count=40,
     execution_timeout=timedelta(hours=12),
-    python_version=2,
     env=mozetl_envvar(
         "aggregator",
         {

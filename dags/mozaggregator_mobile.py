@@ -27,7 +27,6 @@ mobile_aggregate_view = MozDatabricksSubmitRunOperator(
     job_name="Mobile Aggregate View",
     instance_count=5,
     execution_timeout=timedelta(hours=12),
-    python_version=2,
     env=mozetl_envvar(
         "mobile",
         {
