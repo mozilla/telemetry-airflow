@@ -7,9 +7,11 @@ from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOperator, DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator # noqa
 from operators.gcp_container_operator import GKEPodOperator
-from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
-from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
+from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
+from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
+from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
 from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
+from operators.gcs import GoogleCloudStorageDeleteOperator
 
 import re
 
@@ -93,7 +95,7 @@ def load_to_bigquery(parent_dag_name=None,
     }
 
     gcstj_object_conditions = {
-        'includePrefixes':  _objects_prefix
+        'includePrefixes': _objects_prefix
     }
 
     gcstj_transfer_options = {
@@ -299,6 +301,7 @@ def export_to_parquet(
     table,
     destination_table=None,
     arguments=[],
+    use_storage_api=True,
     dag_name="export_to_parquet",
     parent_dag_name=None,
     default_args=None,
@@ -320,6 +323,8 @@ def export_to_parquet(
                                                   will have r'_v[0-9]+$' replaced with
                                                   r'/v[0-9]+'
     :param List[str] arguments:                   Additional pyspark arguments
+    :param bool use_storage_api:                  Whether to read from the BigQuery
+                                                  Storage API or an AVRO export
     :param str dag_name:                          Name of DAG
     :param Optional[str] parent_dag_name:         Parent DAG name
     :param Optional[Dict[str, Any]] default_args: DAG configuration
@@ -331,16 +336,24 @@ def export_to_parquet(
     :return: airflow.models.DAG
     """
 
-    # limit cluster name to 42 characters then suffix with -YYYYMMDD
-    cluster_name = table.rsplit(".", 1).pop().replace("_", "-")
-    if len(cluster_name) > 42:
+    # remove the dataset prefix and partition suffix from table
+    unqualified_table = table.rsplit(".", 1).pop().split("$", 1)[0]
+    # limit cluster name to 35 characters plus suffix of -export-YYYYMMDD (51 total)
+    cluster_name = unqualified_table.replace("_", "-")
+    if len(cluster_name) > 35:
         # preserve version when truncating cluster name to 42 characters
         prefix, version = re.match(r"(.*?)(-v[0-9]+)?$", cluster_name).groups("")
-        cluster_name = prefix[:42 - len(version)] + version
-    cluster_name += "-{{ ds_nodash }}"
+        cluster_name = prefix[:35 - len(version)] + version
+    cluster_name += "-export-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+
+    if destination_table is None:
+        destination_table = table.rsplit(".", 1).pop()
+    export_prefix = re.sub(r"_(v[0-9]+)$", r"/\1", destination_table)
+    avro_prefix = "avro/" + export_prefix + "/date={{ds}}/"
+    avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
@@ -368,10 +381,15 @@ def export_to_parquet(
             dataproc_pyspark_jars=[
                 "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
             ],
+            dataproc_pyspark_properties={
+                "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
+            },
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
             "/script/pyspark/export_to_parquet.py",
-            arguments=[table, "--destination=gs://{}".format(gcs_output_bucket)]
-            + (["--destination-table=" + destination_table] if destination_table else [])
+            arguments=[table]
+            + ([] if use_storage_api else ["--avro-path=" + avro_path])
+            + ["--destination=gs://{}".format(gcs_output_bucket)]
+            + ["--destination-table=" + destination_table]
             + arguments,
             gcp_conn_id=gcp_conn_id,
         )
@@ -388,16 +406,29 @@ def export_to_parquet(
             task_id="gcs_to_s3",
             bucket=gcs_output_bucket,
             # separate version using "/" instead of "_"
-            prefix=re.sub(
-                r"_(v[0-9]+)$",
-                r"/\1",
-                destination_table or table.rsplit(".", 1).pop(),
-            ),
+            prefix=export_prefix,
             google_cloud_storage_conn_id=gcp_conn_id,
             dest_aws_conn_id=aws_conn_id,
             dest_s3_key="s3://{}/".format(s3_output_bucket),
             replace=True,
         )
+
+        if not use_storage_api:
+            avro_export = BigQueryToCloudStorageOperator(
+                task_id="avro_export",
+                source_project_dataset_table=table,
+                destination_cloud_storage_uris=avro_path,
+                compression=None,
+                export_format="AVRO",
+                bigquery_conn_id=gcp_conn_id,
+            )
+            avro_delete = GoogleCloudStorageDeleteOperator(
+                task_id="avro_delete",
+                bucket_name=gcs_output_bucket,
+                prefix=avro_prefix,
+                google_cloud_storage_conn_id=gcp_conn_id,
+            )
+            avro_export >> run_dataproc_pyspark >> avro_delete
 
         create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
         run_dataproc_pyspark >> gcs_to_s3
