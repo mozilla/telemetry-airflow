@@ -47,7 +47,7 @@ crash_report_parquet = SubDagOperator(
         dag_name="hardware_report",
         default_args=default_args,
         cluster_name=cluster_name,
-        job_name="Firefox Hardware Report",
+        job_name="Firefox_Hardware_Report",
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/hardware_report.py",
         init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
         additional_metadata={'PIP_PACKAGES': "google-cloud-bigquery==1.21.0 python_moztelemetry==0.10.2 boto3==1.9.87 click==6.7 click_datetime==0.2 requests-toolbelt==0.8.0 requests==2.20.1 typing==3.6.4"},
