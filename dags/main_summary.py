@@ -75,13 +75,12 @@ sql_main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
         destination_table="sql_main_summary_v4",
+        static_partitions="submission_date_s3={{ds_nodash}}",
         arguments=[
-            "--static-partitions=submission_date_s3={{ds_nodash}}",
             "--partition-by=sample_id",
             "--replace='{{ds_nodash}}' AS submission_date",
             "--maps-from-entries",
         ],
-        use_storage_api=False,
         parent_dag_name=dag.dag_id,
         dag_name="sql_main_summary_export",
         default_args=default_args,
@@ -416,12 +415,11 @@ sql_clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
         destination_table="sql_clients_daily_v6",
+        static_partitions="submission_date_s3={{ds_nodash}}",
         arguments=[
-            "--static-partitions=submission_date_s3={{ds_nodash}}",
             "--partition-by=sample_id",
             "--maps-from-entries",
         ],
-        use_storage_api=False,
         parent_dag_name=dag.dag_id,
         dag_name="sql_clients_daily_export",
         default_args=default_args,
@@ -478,9 +476,9 @@ clients_last_seen = bigquery_etl_query(
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
         table="clients_last_seen_v1",
+        static_partitions="submission_date={{ds}}",
         arguments=[
             "--dataset=telemetry_derived",
-            "--submission-date={{ds}}",
             "--select",
             "cast(log2(days_seen_bits & -days_seen_bits) as long) as days_since_seen",
             "cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as long) as days_since_visited_5_uri",

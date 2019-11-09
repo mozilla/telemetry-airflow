@@ -10,7 +10,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
-from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
+from operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
 from operators.gcs import GoogleCloudStorageDeleteOperator
 
 import re
@@ -300,8 +300,9 @@ def reprocess_parquet(parent_dag_name,
 def export_to_parquet(
     table,
     destination_table=None,
+    static_partitions=None,
     arguments=[],
-    use_storage_api=True,
+    use_storage_api=False,
     dag_name="export_to_parquet",
     parent_dag_name=None,
     default_args=None,
@@ -352,8 +353,10 @@ def export_to_parquet(
 
     if destination_table is None:
         destination_table = table.rsplit(".", 1).pop()
-    export_prefix = re.sub(r"_(v[0-9]+)$", r"/\1", destination_table)
-    avro_prefix = "avro/" + export_prefix + "/date={{ds}}/"
+    export_prefix = re.sub(r"_(v[0-9]+)$", r"/\1", destination_table) + "/"
+    if static_partitions:
+        export_prefix += static_partitions + "/"
+    avro_prefix = "avro/" + export_prefix
     avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
@@ -388,9 +391,16 @@ def export_to_parquet(
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
             "/script/pyspark/export_to_parquet.py",
             arguments=[table]
-            + ([] if use_storage_api else ["--avro-path=" + avro_path])
-            + ["--destination=gs://{}".format(gcs_output_bucket)]
-            + ["--destination-table=" + destination_table]
+            + [
+                "--" + key + "=" + value
+                for key, value in {
+                    "avro-path": use_storage_api and avro_path,
+                    "destination": "gs://" + gcs_output_bucket,
+                    "destination-table": destination_table,
+                    "static-partitions": static_partitions,
+                }.items()
+                if value
+            ]
             + arguments,
             gcp_conn_id=gcp_conn_id,
         )
