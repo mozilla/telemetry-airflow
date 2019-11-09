@@ -111,7 +111,8 @@ class MozGoogleCloudStorageToS3Operator(GoogleCloudStorageListOperator):
 
             if self.num_workers > 0:
                 with ThreadPool(self.num_workers) as pool:
-                    pool.map(copy_file, files, chunk_size=1)
+                    # use list() to ensure all tasks are complete before continuing
+                    list(pool.map(copy_file, files, chunk_size=1))
             else:
                 for source_key in files:
                     copy_file(source_key)
