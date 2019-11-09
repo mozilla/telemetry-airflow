@@ -23,10 +23,10 @@ dag = DAG(
 prerelease_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
     task_id="prerelease_telemetry_aggregate_view",
     job_name="Prerelease Telemetry Aggregate View",
+    release_label="6.1.x-scala2.11",
     instance_count=10,
     dev_instance_count=10,
     execution_timeout=timedelta(hours=12),
-    python_version=2,
     env=mozetl_envvar(
         "aggregator",
         {
