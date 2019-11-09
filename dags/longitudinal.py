@@ -37,21 +37,3 @@ longitudinal = MozDatabricksSubmitRunOperator(
     dag=dag)
 
 register_status(longitudinal, "Longitudinal", "A 6-month longitudinal view of client history.")
-
-
-game_hw_survey = EMRSparkOperator(
-    task_id="game_hw_survey",
-    job_name="Firefox Hardware Report",
-    execution_timeout=timedelta(hours=5),
-    instance_count=15,
-    owner="frank@mozilla.com",
-    depends_on_past=True,
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com",
-           "firefox-hardware-report-feedback@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.public_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/hardware_report.sh",
-    output_visibility="public",
-    dag=dag)
-
-
-game_hw_survey.set_upstream(longitudinal)

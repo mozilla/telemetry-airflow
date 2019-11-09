@@ -73,12 +73,10 @@ sql_main_summary = bigquery_etl_query(
 
 sql_main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4",
+        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
         destination_table="sql_main_summary_v4",
+        static_partitions="submission_date_s3={{ds_nodash}}",
         arguments=[
-            "--filter=submission_date = DATE '{{ds}}'",
-            "--where=submission_date = DATE '{{ds}}'",
-            "--static-partitions=submission_date_s3={{ds_nodash}}"
             "--partition-by=sample_id",
             "--replace='{{ds_nodash}}' AS submission_date",
             "--maps-from-entries",
@@ -86,7 +84,7 @@ sql_main_summary_export = SubDagOperator(
         parent_dag_name=dag.dag_id,
         dag_name="sql_main_summary_export",
         default_args=default_args,
-        num_preemptible_workers=10),
+        num_workers=40),
     task_id="sql_main_summary_export",
     dag=dag)
 
@@ -167,23 +165,6 @@ main_summary_bigquery_load = SubDagOperator(
         replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
         ),
     task_id="main_summary_bigquery_load",
-    dag=dag)
-
-engagement_ratio = EMRSparkOperator(
-    task_id="engagement_ratio",
-    job_name="Update Engagement Ratio",
-    execution_timeout=timedelta(hours=6),
-    instance_count=10,
-    env=mozetl_envvar("engagement_ratio",
-        options={
-            "input_bucket": "{{ task.__class__.private_output_bucket }}",
-            "output_bucket": "net-mozaws-prod-us-west-2-pipeline-analysis"
-        },
-        dev_options={
-            "output_bucket": "{{ task.__class__.private_output_bucket }}"
-        }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="public",
     dag=dag)
 
 addons = EMRSparkOperator(
@@ -420,6 +401,32 @@ clients_daily = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
+sql_clients_daily = bigquery_etl_query(
+    task_id="sql_clients_daily",
+    destination_table="clients_daily_v6",
+    project_id="moz-fx-data-shared-prod",
+    dataset_id="telemetry_derived",
+    owner="relud@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
+    start_date=datetime(2019, 11, 5),
+    dag=dag)
+
+sql_clients_daily_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
+        destination_table="sql_clients_daily_v6",
+        static_partitions="submission_date_s3={{ds_nodash}}",
+        arguments=[
+            "--partition-by=sample_id",
+            "--maps-from-entries",
+        ],
+        parent_dag_name=dag.dag_id,
+        dag_name="sql_clients_daily_export",
+        default_args=default_args,
+        num_preemptible_workers=10),
+    task_id="sql_clients_daily_export",
+    dag=dag)
+
 clients_daily_v6 = EMRSparkOperator(
     task_id="clients_daily_v6",
     job_name="Clients Daily v6",
@@ -469,9 +476,9 @@ clients_last_seen = bigquery_etl_query(
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
         table="clients_last_seen_v1",
+        static_partitions="submission_date={{ds}}",
         arguments=[
             "--dataset=telemetry_derived",
-            "--submission-date={{ds}}",
             "--select",
             "cast(log2(days_seen_bits & -days_seen_bits) as long) as days_since_seen",
             "cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as long) as days_since_visited_5_uri",
@@ -694,9 +701,10 @@ taar_lite = SubDagOperator(
 main_summary_schema.set_upstream(main_summary)
 main_summary_bigquery_load.set_upstream(main_summary)
 
+sql_main_summary.set_upstream(copy_deduplicate_main_ping)
 sql_main_summary_export.set_upstream(sql_main_summary)
-
-engagement_ratio.set_upstream(main_summary)
+sql_clients_daily.set_upstream(sql_main_summary)
+sql_clients_daily_export.set_upstream(sql_clients_daily)
 
 addons.set_upstream(main_summary)
 addons_bigquery_load.set_upstream(addons)
