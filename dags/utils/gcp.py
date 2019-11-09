@@ -10,7 +10,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
-from operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
+from operators.moz_gcs_to_s3 import MozGoogleCloudStorageToS3Operator
 from operators.gcs import GoogleCloudStorageDeleteOperator
 
 import re
@@ -353,6 +353,7 @@ def export_to_parquet(
 
     if destination_table is None:
         destination_table = table.rsplit(".", 1).pop()
+    # separate version using "/" instead of "_"
     export_prefix = re.sub(r"_(v[0-9]+)$", r"/\1", destination_table) + "/"
     if static_partitions:
         export_prefix += static_partitions + "/"
@@ -413,15 +414,15 @@ def export_to_parquet(
             trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
         )
 
-        gcs_to_s3 = GoogleCloudStorageToS3Operator(
+        gcs_to_s3 = MozGoogleCloudStorageToS3Operator(
             task_id="gcs_to_s3",
             bucket=gcs_output_bucket,
-            # separate version using "/" instead of "_"
             prefix=export_prefix,
             google_cloud_storage_conn_id=gcp_conn_id,
             dest_aws_conn_id=aws_conn_id,
             dest_s3_key="s3://{}/".format(s3_output_bucket),
             replace=True,
+            num_workers=30,
         )
 
         if not use_storage_api:
