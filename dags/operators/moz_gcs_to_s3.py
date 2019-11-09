@@ -110,9 +110,12 @@ class MozGoogleCloudStorageToS3Operator(GoogleCloudStorageListOperator):
                 s3_hook.load_bytes(content, key=dest_key, replace=self.replace)
 
             if self.num_workers > 0:
-                with ThreadPool(self.num_workers) as pool:
-                    # use list() to ensure all tasks are complete before continuing
-                    list(pool.map(copy_file, files, chunk_size=1))
+                pool = ThreadPool(self.num_workers)
+                try:
+                    pool.map(copy_file, files, chunk_size=1)
+                finally:
+                    pool.close()
+                    pool.join()
             else:
                 for source_key in files:
                     copy_file(source_key)
