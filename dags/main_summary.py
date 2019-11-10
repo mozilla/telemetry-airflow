@@ -433,10 +433,9 @@ clients_last_seen = bigquery_etl_query(
 
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="clients_last_seen_v1",
+        table="telemetry_derived.clients_last_seen_v1${{ds_nodash}",
         static_partitions="submission_date={{ds}}",
         arguments=[
-            "--dataset=telemetry_derived",
             "--select",
             "cast(log2(days_seen_bits & -days_seen_bits) as long) as days_since_seen",
             "cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as long) as days_since_visited_5_uri",
@@ -461,7 +460,7 @@ exact_mau_by_dimensions = bigquery_etl_query(
 
 exact_mau_by_dimensions_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="firefox_desktop_exact_mau28_by_dimensions_v1",
+        table="firefox_desktop_exact_mau28_by_dimensions_v1${{ds_nodash}",
         static_partitions="submission_date={{ds}}",
         parent_dag_name=dag.dag_id,
         dag_name="exact_mau_by_dimensions_export",
