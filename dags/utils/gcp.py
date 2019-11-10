@@ -395,7 +395,7 @@ def export_to_parquet(
             + [
                 "--" + key + "=" + value
                 for key, value in {
-                    "avro-path": use_storage_api and avro_path,
+                    "avro-path": (not use_storage_api) and avro_path,
                     "destination": "gs://" + gcs_output_bucket,
                     "destination-table": destination_table,
                     "static-partitions": static_partitions,
