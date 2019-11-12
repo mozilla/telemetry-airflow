@@ -56,7 +56,7 @@ crash_report_parquet = SubDagOperator(
                                "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key},
         py_args=[
             "--start_date", DS_WEEKLY,
-            "--bucket", "{{ task.__class__.public_output_bucket }}",
+            "--bucket", "telemetry-public-analysis-2",
             "--spark-provider", "dataproc",
         ],
         idle_delete_ttl='14400',
