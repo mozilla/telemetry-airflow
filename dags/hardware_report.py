@@ -55,7 +55,7 @@ crash_report_parquet = SubDagOperator(
                                "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
                                "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key},
         py_args=[
-            "--start-date", DS_WEEKLY,
+            "--start_date", DS_WEEKLY,
             "--bucket", "{{ task.__class__.public_output_bucket }}",
             "--spark-provider", "dataproc",
         ],
