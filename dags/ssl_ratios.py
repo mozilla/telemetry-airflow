@@ -21,7 +21,7 @@ with DAG("ssl_ratios", default_args=default_args, schedule_interval="@daily") as
     wait_for_main_summary = ExternalTaskSensor(
         task_id="wait_for_main_summary",
         external_dag_id="main_summary",
-        external_task_id="main_summary_bigquery_load",
+        external_task_id="main_summary",
         execution_delta=timedelta(hours=-1),
         dag=dag,
     )

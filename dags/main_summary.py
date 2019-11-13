@@ -60,8 +60,8 @@ bq_main_events = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
     dag=dag)
 
-sql_main_summary = bigquery_etl_query(
-    task_id="sql_main_summary",
+main_summary = bigquery_etl_query(
+    task_id="main_summary",
     destination_table="main_summary_v4",
     project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
@@ -72,10 +72,10 @@ sql_main_summary = bigquery_etl_query(
     start_date=datetime(2019, 10, 25),
     dag=dag)
 
-sql_main_summary_export = SubDagOperator(
+main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
-        destination_table="sql_main_summary_v4",
+        destination_table="main_summary_v4",
         static_partitions="submission_date_s3={{ds_nodash}}",
         arguments=[
             "--partition-by=sample_id",
@@ -83,66 +83,14 @@ sql_main_summary_export = SubDagOperator(
             "--maps-from-entries",
         ],
         parent_dag_name=dag.dag_id,
-        dag_name="sql_main_summary_export",
+        dag_name="main_summary_export",
         default_args=default_args,
         num_workers=40),
-    task_id="sql_main_summary_export",
+    task_id="main_summary_export",
     executor=GetDefaultExecutor(),
     dag=dag)
 
-main_summary = MozDatabricksSubmitRunOperator(
-    task_id="main_summary",
-    job_name="Main Summary View",
-    execution_timeout=timedelta(hours=6),
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "main_summary_dataset@moz-svc-ops.pagerduty.com"],
-    instance_count=5,
-    max_instance_count=40,
-    enable_autoscale=True,
-    instance_type="c4.4xlarge",
-    spot_bid_price_percent=50,
-    ebs_volume_count=1,
-    ebs_volume_size=250,
-    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
-        options={
-            "from": "{{ ds_nodash }}",
-            "to": "{{ ds_nodash }}",
-            "schema-report-location": "s3://{{ task.__class__.private_output_bucket }}/schema/main_summary/submission_date_s3={{ ds_nodash }}",
-            "bucket": "{{ task.__class__.private_output_bucket }}",
-            "read-mode": "aligned",
-            "input-partition-multiplier": "400"
-        },
-        dev_options={
-            "channel": "nightly",   # run on smaller nightly data rather than release
-        }),
-    dag=dag)
-
 register_status(main_summary, "Main Summary", "A summary view of main pings.")
-
-main_summary_schema = EmailSchemaChangeOperator(
-    task_id="main_summary_schema",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    to=["bimsland@mozilla.com", "telemetry-alerts@mozilla.com"],
-    key_prefix='schema/main_summary/submission_date_s3=',
-    dag=dag)
-
-main_summary_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_summary_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="main_summary",
-        dataset_version="v4",
-        gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["sample_id"],
-        drop=["submission_date"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="main_summary_bigquery_load",
-    dag=dag)
 
 addons = EMRSparkOperator(
     task_id="addons",
@@ -660,35 +608,32 @@ taar_lite = SubDagOperator(
 )
 
 
-main_summary_schema.set_upstream(main_summary)
-main_summary_bigquery_load.set_upstream(main_summary)
-
-sql_main_summary.set_upstream(copy_deduplicate_main_ping)
-sql_main_summary_export.set_upstream(sql_main_summary)
-clients_daily.set_upstream(sql_main_summary)
+main_summary.set_upstream(copy_deduplicate_main_ping)
+main_summary_export.set_upstream(main_summary)
+clients_daily.set_upstream(main_summary)
 clients_daily_export.set_upstream(clients_daily)
 
-addons.set_upstream(main_summary)
+addons.set_upstream(main_summary_export)
 addons_bigquery_load.set_upstream(addons)
 addon_aggregates.set_upstream(addons)
 addon_aggregates_bigquery_load.set_upstream(addon_aggregates)
 
-main_events.set_upstream(main_summary)
+main_events.set_upstream(main_summary_export)
 main_events_bigquery_load.set_upstream(main_events)
 
-main_summary_experiments.set_upstream(main_summary)
+main_summary_experiments.set_upstream(main_summary_export)
 main_summary_experiments_bigquery_load.set_upstream(main_summary_experiments)
 
 experiments_aggregates_import.set_upstream(main_summary_experiments)
-search_dashboard.set_upstream(main_summary)
+search_dashboard.set_upstream(main_summary_export)
 search_dashboard_bigquery_load.set_upstream(search_dashboard)
-search_clients_daily.set_upstream(main_summary)
+search_clients_daily.set_upstream(main_summary_export)
 search_clients_daily_bigquery_load.set_upstream(search_clients_daily)
 
-taar_dynamo.set_upstream(main_summary)
+taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_v6)
 
-clients_daily_v6.set_upstream(main_summary)
+clients_daily_v6.set_upstream(main_summary_export)
 clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
 clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 clients_last_seen_export.set_upstream(clients_last_seen)
@@ -696,7 +641,7 @@ exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 
-main_summary_glue.set_upstream(main_summary)
+main_summary_glue.set_upstream(main_summary_export)
 
 taar_locale_job.set_upstream(clients_daily_v6)
 taar_collaborative_recommender.set_upstream(clients_daily_v6)
@@ -704,7 +649,7 @@ taar_collaborative_recommender.set_upstream(clients_daily_v6)
 bgbb_pred.set_upstream(clients_daily_v6)
 bgbb_pred_bigquery_load.set_upstream(bgbb_pred)
 
-search_clients_daily_bigquery.set_upstream(main_summary_bigquery_load)
+search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 
 # Set a dependency on clients_daily from taar_lite
