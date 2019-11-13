@@ -102,7 +102,7 @@ REASON_BROKEN_DATA = "broken"
 EXCLUSION_LIST = ["has_flash", "browser_arch", "os_arch"]
 
 #TODO parameterize this
-S3_DATA_PATH = "game-hardware-survey-test/data/"
+S3_DATA_PATH = "game-hardware-survey/data/"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

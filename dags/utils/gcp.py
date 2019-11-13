@@ -10,7 +10,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
-from operators.moz_gcs_to_s3 import MozGoogleCloudStorageToS3Operator
+from operators.dataproc_hadoop_with_aws import DataProcHadoopOperatorWithAws
 from operators.gcs import GoogleCloudStorageDeleteOperator
 
 import re
@@ -395,7 +395,7 @@ def export_to_parquet(
             + [
                 "--" + key + "=" + value
                 for key, value in {
-                    "avro-path": use_storage_api and avro_path,
+                    "avro-path": (not use_storage_api) and avro_path,
                     "destination": "gs://" + gcs_output_bucket,
                     "destination-table": destination_table,
                     "static-partitions": static_partitions,
@@ -406,23 +406,26 @@ def export_to_parquet(
             gcp_conn_id=gcp_conn_id,
         )
 
+        gcs_to_s3 = DataProcHadoopOperatorWithAws(
+            task_id="gcs_to_s3",
+            main_jar="file:///usr/lib/hadoop-mapreduce/hadoop-distcp.jar",
+            arguments=[
+                "-update",
+                "gs://{}/{}".format(gcs_output_bucket, export_prefix),
+                "s3a://{}/{}".format(s3_output_bucket, export_prefix),
+            ],
+            cluster_name=cluster_name,
+            gcp_conn_id=gcp_conn_id,
+            project_id=connection.project_id,
+            aws_conn_id=aws_conn_id,
+        )
+
         delete_dataproc_cluster = DataprocClusterDeleteOperator(
             task_id="delete_dataproc_cluster",
             cluster_name=cluster_name,
             gcp_conn_id=gcp_conn_id,
             project_id=connection.project_id,
             trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
-        )
-
-        gcs_to_s3 = MozGoogleCloudStorageToS3Operator(
-            task_id="gcs_to_s3",
-            bucket=gcs_output_bucket,
-            prefix=export_prefix,
-            google_cloud_storage_conn_id=gcp_conn_id,
-            dest_aws_conn_id=aws_conn_id,
-            dest_s3_key="s3://{}/".format(s3_output_bucket),
-            replace=True,
-            num_workers=30,
         )
 
         if not use_storage_api:
@@ -439,11 +442,12 @@ def export_to_parquet(
                 bucket_name=gcs_output_bucket,
                 prefix=avro_prefix,
                 gcp_conn_id=gcp_conn_id,
+                trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
             )
             avro_export >> run_dataproc_pyspark >> avro_delete
 
-        create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
-        run_dataproc_pyspark >> gcs_to_s3
+        create_dataproc_cluster >> run_dataproc_pyspark >> gcs_to_s3
+        gcs_to_s3 >> delete_dataproc_cluster
 
         return dag
 

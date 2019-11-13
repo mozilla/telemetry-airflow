@@ -268,7 +268,7 @@ docker volume rm $(docker volume ls -qf dangling=true)
 - If the dag run is not showing in the Dag Tree View UI (maybe deleted)
   - Browse -> Dag Runs
   - Create (you can look at another dag run of the same dag for example values too)
-    - Dag Id: the name of the dag, for example, `main_summary` or `crash_summary`
+    - Dag Id: the name of the dag, for example, `main_summary`
     - Execution Date: The date the dag should have run, for example, `2018-05-14 00:00:00`
     - Start Date: Some date between the execution date and "now", for example, `2018-05-20 00:00:05`
     - End Date: Leave it blank

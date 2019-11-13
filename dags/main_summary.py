@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
@@ -86,31 +87,7 @@ sql_main_summary_export = SubDagOperator(
         default_args=default_args,
         num_workers=40),
     task_id="sql_main_summary_export",
-    dag=dag)
-
-main_summary_all_histograms = MozDatabricksSubmitRunOperator(
-    task_id="main_summary_all_histograms",
-    job_name="Main Summary View - All Histograms",
-    execution_timeout=timedelta(hours=12),
-    instance_count=5,
-    max_instance_count=50,
-    enable_autoscale=True,
-    instance_type="c4.4xlarge",
-    spot_bid_price_percent=50,
-    ebs_volume_count=1,
-    ebs_volume_size=250,
-    env=tbv_envvar("com.mozilla.telemetry.views.MainSummaryView",
-        options={
-            "from": "{{ ds_nodash }}",
-            "to": "{{ ds_nodash }}",
-            "bucket": "telemetry-backfill",
-            "all_histograms": "",
-            "read-mode": "aligned",
-            "input-partition-multiplier": "400",
-        },
-        dev_options={
-            "channel": "nightly",
-        }),
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 main_summary = MozDatabricksSubmitRunOperator(
@@ -384,25 +361,8 @@ search_clients_daily_bigquery_load = SubDagOperator(
     task_id="search_clients_daily_bigquery_load",
     dag=dag)
 
-clients_daily = EMRSparkOperator(
+clients_daily = bigquery_etl_query(
     task_id="clients_daily",
-    job_name="Clients Daily",
-    execution_timeout=timedelta(hours=5),
-    instance_count=10,
-    env=mozetl_envvar("clients_daily", {
-        # Note that the output of this job will be earlier
-        # than this date to account for submission latency.
-        # See the clients_daily code in the python_mozetl
-        # repo for more details.
-        "date": "{{ ds }}",
-        "input-bucket": "{{ task.__class__.private_output_bucket }}",
-        "output-bucket": "{{ task.__class__.private_output_bucket }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    dag=dag)
-
-sql_clients_daily = bigquery_etl_query(
-    task_id="sql_clients_daily",
     destination_table="clients_daily_v6",
     project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
@@ -411,7 +371,7 @@ sql_clients_daily = bigquery_etl_query(
     start_date=datetime(2019, 11, 5),
     dag=dag)
 
-sql_clients_daily_export = SubDagOperator(
+clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
         destination_table="sql_clients_daily_v6",
@@ -421,10 +381,11 @@ sql_clients_daily_export = SubDagOperator(
             "--maps-from-entries",
         ],
         parent_dag_name=dag.dag_id,
-        dag_name="sql_clients_daily_export",
+        dag_name="clients_daily_export",
         default_args=default_args,
         num_preemptible_workers=10),
-    task_id="sql_clients_daily_export",
+    task_id="clients_daily_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 clients_daily_v6 = EMRSparkOperator(
@@ -475,10 +436,9 @@ clients_last_seen = bigquery_etl_query(
 
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="clients_last_seen_v1",
+        table="telemetry_derived.clients_last_seen_v1${{ds_nodash}}",
         static_partitions="submission_date={{ds}}",
         arguments=[
-            "--dataset=telemetry_derived",
             "--select",
             "cast(log2(days_seen_bits & -days_seen_bits) as long) as days_since_seen",
             "cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as long) as days_since_visited_5_uri",
@@ -491,6 +451,7 @@ clients_last_seen_export = SubDagOperator(
         default_args=default_args,
         num_preemptible_workers=10),
     task_id="clients_last_seen_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 exact_mau_by_dimensions = bigquery_etl_query(
@@ -503,12 +464,13 @@ exact_mau_by_dimensions = bigquery_etl_query(
 
 exact_mau_by_dimensions_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="firefox_desktop_exact_mau28_by_dimensions_v1",
-        arguments=["--submission-date={{ds}}"],
+        table="telemetry.firefox_desktop_exact_mau28_by_dimensions_v1${{ds_nodash}}",
+        static_partitions="submission_date={{ds}}",
         parent_dag_name=dag.dag_id,
         dag_name="exact_mau_by_dimensions_export",
         default_args=default_args),
     task_id="exact_mau_by_dimensions_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 smoot_usage_desktop_v2 = bigquery_etl_query(
@@ -703,8 +665,8 @@ main_summary_bigquery_load.set_upstream(main_summary)
 
 sql_main_summary.set_upstream(copy_deduplicate_main_ping)
 sql_main_summary_export.set_upstream(sql_main_summary)
-sql_clients_daily.set_upstream(sql_main_summary)
-sql_clients_daily_export.set_upstream(sql_clients_daily)
+clients_daily.set_upstream(sql_main_summary)
+clients_daily_export.set_upstream(clients_daily)
 
 addons.set_upstream(main_summary)
 addons_bigquery_load.set_upstream(addons)
@@ -726,7 +688,6 @@ search_clients_daily_bigquery_load.set_upstream(search_clients_daily)
 taar_dynamo.set_upstream(main_summary)
 taar_similarity.set_upstream(clients_daily_v6)
 
-clients_daily.set_upstream(main_summary)
 clients_daily_v6.set_upstream(main_summary)
 clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
 clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
