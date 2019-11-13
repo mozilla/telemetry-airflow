@@ -2,6 +2,7 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
@@ -86,6 +87,7 @@ main_summary_export = SubDagOperator(
         default_args=default_args,
         num_workers=40),
     task_id="main_summary_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 register_status(main_summary, "Main Summary", "A summary view of main pings.")
@@ -331,6 +333,7 @@ clients_daily_export = SubDagOperator(
         default_args=default_args,
         num_preemptible_workers=10),
     task_id="clients_daily_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 clients_daily_v6 = EMRSparkOperator(
@@ -396,6 +399,7 @@ clients_last_seen_export = SubDagOperator(
         default_args=default_args,
         num_preemptible_workers=10),
     task_id="clients_last_seen_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 exact_mau_by_dimensions = bigquery_etl_query(
@@ -414,6 +418,7 @@ exact_mau_by_dimensions_export = SubDagOperator(
         dag_name="exact_mau_by_dimensions_export",
         default_args=default_args),
     task_id="exact_mau_by_dimensions_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 smoot_usage_desktop_v2 = bigquery_etl_query(
