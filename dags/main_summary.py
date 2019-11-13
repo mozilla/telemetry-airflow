@@ -464,20 +464,6 @@ taar_dynamo = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
-desktop_active_dau = EMRSparkOperator(
-    task_id="desktop_active_dau",
-    job_name="Desktop Active DAU",
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    execution_timeout=timedelta(hours=3),
-    instance_count=1,
-    env=tbv_envvar("com.mozilla.telemetry.views.dau.DesktopActiveDauView", {
-        "to": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
 taar_locale_job = EMRSparkOperator(
     task_id="taar_locale_job",
     job_name="TAAR Locale Model",
@@ -648,7 +634,6 @@ taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_v6)
 
 clients_daily_v6.set_upstream(main_summary_export)
-desktop_active_dau.set_upstream(clients_daily_v6)
 clients_daily_v6_bigquery_load.set_upstream(clients_daily_v6)
 clients_last_seen.set_upstream(clients_daily_v6_bigquery_load)
 clients_last_seen_export.set_upstream(clients_last_seen)
