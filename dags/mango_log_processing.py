@@ -7,7 +7,11 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
+from airflow.operators.subdag_operator import SubDagOperator
+
 from utils.dataproc import moz_dataproc_jar_runner
+from utils.dataproc import moz_dataproc_scriptrunner
+
 from utils.status import register_status
 
 
@@ -22,23 +26,6 @@ DEFAULT_ARGS = {
     'retry_delay': timedelta(minutes=15),
 }
 
-BLP_STEPS = [
-    {
-        # BLP nginx
-        "Name": "blocklists.settings.services.mozilla.com",
-        "ActionOnFailure": "TERMINATE_JOB_FLOW",
-        "HadoopJarStep": {
-            "Jar": "command-runner.jar",
-            "Args": [
-                "/usr/local/bin/processlogs",
-                "--domain", "blocklists.settings.services.mozilla.com",
-                "--bucket", "net-mozaws-prod-kintoblocklist-blocklist-kbprod1",
-                "--date", "{{ ds }}"
-            ]
-        }
-    }
-]
-
 blp_dag = DAG(
     'mango_log_processing_adi',
     default_args=DEFAULT_ARGS,
@@ -47,14 +34,43 @@ blp_dag = DAG(
 )
 
 aws_conn_id = 'aws_data_iam'
-emr_conn_id = 'emr_data_iam_mango'
+aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
 
-blp_logs = EmrCreateJobFlowOperator(
-    task_id='blp_create_job_flow',
-    job_flow_overrides={'Steps': BLP_STEPS},
-    aws_conn_id=aws_conn_id,
-    emr_conn_id=emr_conn_id,
-    dag=blp_dag
+blp_cluster_name = 'mango_blocklist_dataproc_cluster'
+
+blp_logs = SubDagOperator(
+    task_id='mango_blocklist_log_processing',
+    dag=blp_dag,
+    subdag = moz_dataproc_scriptrunner(
+        parent_dag_name=blp_dag.dag_id,
+        dag_name='mango_blocklist_log_processing',
+        default_args=DEFAULT_ARGS,
+        cluster_name=blp_cluster_name,
+        service_account='dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com',
+        job_name="blocklists.settings.smo_log_processing",
+        uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/mango_blocklist_processlogs.sh",
+        env={"PYTHONPATH": "/usr/lib/spark/python/lib/pyspark.zip",
+             # These env variables are needed in addition to the s3a configs, since some code uses boto to delete prefixes
+             "AWS_ACCESS_KEY_ID": aws_access_key,
+             "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+             "date": "{{ ds }}",
+             "bucket": "net-mozaws-prod-kintoblocklist-blocklist-kbprod1",
+             "domain": "blocklists.settings.services.mozilla.com"
+        },
+        gcp_conn_id=gcp_conn_id,
+        # This should is used to set the s3a configs for read/write to s3 for non boto calls
+        aws_conn_id=aws_conn_id,
+        num_preemptible_workers=40,
+        worker_machine_type='n1-highmem-4',
+        # TODO - check image version with lib versions? or just test
+        image_version='1.3',
+        # TODO add init scripts
+        init_actions_uris=['gs://moz-fx-data-prod-airflow-dataproc-artifacts/bootstrap/fx_usage_init.sh'],
+        # TODO - test optional components HIVE_WEBHCAT
+        optional_components=['ANACONDA', 'HIVE_WEBHCAT'],
+        # TODO - add additional properties for hive/hadoop/etc configs
+        additional_properties = ???,
+    )
 )
 
 gcp_conn_id = "google_cloud_derived_datasets"
