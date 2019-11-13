@@ -29,9 +29,6 @@ class DataProcHadoopOperatorWithAws(DataProcHadoopOperator):
         job = hook.create_job_template(
             self.task_id, self.cluster_name, "hadoopJob", properties
         )
-        self.job_template.set_job_name(self.job_name)
-        self.job_template.add_jar_file_uris(self.dataproc_jars)
-        self.job_template.add_labels(self.labels)
 
         job.set_main(self.main_jar, self.main_class)
         job.add_args(self.arguments)
