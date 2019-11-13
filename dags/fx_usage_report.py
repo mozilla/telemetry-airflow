@@ -26,7 +26,7 @@ dag = DAG('fx_usage_report', default_args=default_args, schedule_interval='@week
 wait_for_main_summary = ExternalTaskSensor(
     task_id='wait_for_main_summary',
     external_dag_id='main_summary',
-    external_task_id='main_summary',
+    external_task_id='main_summary_export',
     execution_delta=timedelta(days=-7, hours=-1), # main_summary waits one hour, execution date is beginning of the week
     dag=dag)
 
