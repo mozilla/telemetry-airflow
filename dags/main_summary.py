@@ -568,19 +568,19 @@ bgbb_pred_bigquery_load = SubDagOperator(
 search_clients_daily_bigquery = bigquery_etl_query(
     task_id="search_clients_daily_bigquery",
     destination_table="search_clients_daily_v8",
-    dataset_id="search_staging",
+    dataset_id="search_derived",
+    project_id="moz-fx-data-shared-prod",
     owner="bewu@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
-    sql_file_path='sql/search/search_clients_daily_v8/query.sql',
     dag=dag)
 
 search_aggregates_bigquery = bigquery_etl_query(
     task_id="search_aggregates_bigquery",
     destination_table="search_aggregates_v8",
-    dataset_id="search_staging",
+    dataset_id="search_derived",
+    project_id="moz-fx-data-shared-prod",
     owner="bewu@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
-    sql_file_path='sql/search/search_aggregates_v8/query.sql',
     dag=dag)
 
 taar_lite = SubDagOperator(
