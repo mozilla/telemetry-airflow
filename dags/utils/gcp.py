@@ -411,6 +411,7 @@ def export_to_parquet(
             main_jar="file:///usr/lib/hadoop-mapreduce/hadoop-distcp.jar",
             arguments=[
                 "-update",
+                "-delete",
                 "gs://{}/{}".format(gcs_output_bucket, export_prefix),
                 "s3a://{}/{}".format(s3_output_bucket, export_prefix),
             ],
