@@ -126,7 +126,6 @@ client_scalar_probe_counts = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     depends_on_past=True,
-    gke_cluster_name="test",
     date_partition_parameter=None,
     dag=dag)
 
