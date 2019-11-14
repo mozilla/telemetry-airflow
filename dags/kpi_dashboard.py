@@ -27,6 +27,7 @@ with models.DAG(
         destination_table='firefox_kpi_dashboard_v1',
         dataset_id='telemetry',
         date_partition_parameter=None,
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com']
     )
 
     smoot_usage_new_profiles_v2 = bigquery_etl_query(
