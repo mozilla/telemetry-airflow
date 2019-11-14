@@ -63,10 +63,14 @@ subdag_args["retries"] = 0
 task_id = "prerelease_telemetry_aggregate_view_dataproc"
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 keyfile = json.loads(gcp_conn.extras["extra__google_cloud_platform__keyfile_dict"])
-client_email = keyfile["client_email"]
 project_id = keyfile["project_id"]
 
 is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
+client_email = (
+    keyfile["client_email"]
+    if is_dev
+    else "dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com"
+)
 artifact_bucket = (
     "{}-dataproc-artifacts".format(project_id)
     if is_dev
