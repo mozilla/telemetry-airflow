@@ -380,7 +380,6 @@ clients_daily_export = SubDagOperator(
             "scalar_parent_aushelper_websense_reg_version",
             "scalar_parent_dom_contentprocess_troubled_due_to_memory_sum",
             "--replace",
-            "DATE_FORMAT(profile_creation_date, 'yyyy-MM-dd 00:00:00') AS profile_creation_date",
             "STRING(sample_id) AS sample_id",
             "CAST(subsession_hours_sum AS DECIMAL(37,6)) AS subsession_hours_sum",
             "TRANSFORM(active_addons, _ -> STRUCT(_.addon_id AS addon_id, _.blocklisted AS blocklisted, _.name AS name, _.user_disabled AS user_disabled, _.app_disabled AS app_disabled, _.version AS version, INT(_.scope) AS scope, _.type AS type, _.foreign_install AS foreign_install, _.has_binary_components AS has_binary_components, INT(_.install_day) AS install_day, INT(_.update_day) AS update_day, INT(_.signed_state) AS signed_state, _.is_system AS is_system, _.is_web_extension AS is_web_extension, _.multiprocess_compatible AS multiprocess_compatible) AS active_addons",
@@ -435,7 +434,6 @@ clients_last_seen_export = SubDagOperator(
             "*",
             # restore legacy schema
             "--replace",
-            "DATE_FORMAT(profile_creation_date, 'yyyy-MM-dd 00:00:00') AS profile_creation_date",
             "STRUCT(TRANSFORM(active_addons, element -> STRUCT(element)) AS list) AS active_addons",
             "STRUCT(TRANSFORM(environment_settings_intl_accept_languages, element -> STRUCT(element)) AS list) AS environment_settings_intl_accept_languages",
             "STRUCT(TRANSFORM(environment_settings_intl_app_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_app_locales",
