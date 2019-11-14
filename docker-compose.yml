@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 services:
   db:
@@ -20,6 +20,8 @@ services:
     restart: "no"
     volumes:
       - $PWD:/app
+      # mount a dummy file to google application credentials, if not provided
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-./README.md}:/app/.credentials
     command: "true"
     # Environment variables, exports, and substitution:
     #   https://docs.docker.com/compose/environment-variables/
@@ -31,6 +33,7 @@ services:
       - AWS_SECRET_ACCESS_KEY
       - AWS_ACCESS_KEY_ID
       - DB_TOKEN
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials
 
   web:
     extends:
