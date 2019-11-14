@@ -95,6 +95,7 @@ with DAG(
         task_id='core_clients_daily',
         destination_table='core_clients_daily_v1',
         dataset_id='telemetry',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
     )
 
     tasks['telemetry_core_parquet_bigquery_load'] >> core_clients_daily
@@ -104,6 +105,7 @@ with DAG(
         destination_table='core_clients_last_seen_raw_v1',
         dataset_id='telemetry',
         depends_on_past=True,
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
     )
 
     core_clients_daily >> core_clients_last_seen
@@ -125,6 +127,7 @@ with DAG(
         destination_table='clients_daily_v1',
         dataset_id='org_mozilla_fenix_derived',
         start_date=datetime(2019, 9, 5),
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
     )
 
     fenix_clients_daily << wait_for_copy_deduplicate
@@ -136,6 +139,7 @@ with DAG(
         dataset_id='org_mozilla_fenix_derived',
         start_date=datetime(2019, 9, 5),
         depends_on_past=True,
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
     )
 
     fenix_clients_daily >> fenix_clients_last_seen
@@ -147,6 +151,7 @@ with DAG(
         task_id='firefox_nondesktop_exact_mau28_raw',
         destination_table='firefox_nondesktop_exact_mau28_raw_v1',
         dataset_id='telemetry',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
     )
 
     core_clients_last_seen >> firefox_nondesktop_exact_mau28_raw
@@ -157,6 +162,7 @@ with DAG(
         project_id='moz-fx-data-shared-prod',
         destination_table='smoot_usage_nondesktop_v2',
         dataset_id='telemetry_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     core_clients_last_seen >> smoot_usage_nondesktop_v2
