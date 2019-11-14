@@ -437,7 +437,7 @@ clients_last_seen_export = SubDagOperator(
             "STRUCT(TRANSFORM(active_addons, element -> STRUCT(element)) AS list) AS active_addons",
             "STRUCT(TRANSFORM(environment_settings_intl_accept_languages, element -> STRUCT(element)) AS list) AS environment_settings_intl_accept_languages",
             "STRUCT(TRANSFORM(environment_settings_intl_app_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_app_locales",
-            "STRUCT(TRANSFORM(environment_settings_intl_available_locale, element -> STRUCT(element)) AS list) AS environment_settings_intl_available_locales",
+            "STRUCT(TRANSFORM(environment_settings_intl_available_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_available_locales",
             "STRUCT(TRANSFORM(environment_settings_intl_regional_prefs_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_regional_prefs_locales",
             "STRUCT(TRANSFORM(environment_settings_intl_requested_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_requested_locales",
             "STRUCT(TRANSFORM(environment_settings_intl_system_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_system_locales",
