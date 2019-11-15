@@ -119,6 +119,7 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
         cluster_name="prerelease-telemetry-aggregates-{{ ds_nodash }}",
         idle_delete_ttl="600",
         num_workers=10,
+        worker_machine_type="n1-standard-8",
         init_actions_uris=[
             "gs://dataproc-initialization-actions/python/pip-install.sh"
         ],
