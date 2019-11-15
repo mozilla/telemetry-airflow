@@ -367,6 +367,8 @@ clients_daily_export = SubDagOperator(
         arguments=[
             # restore legacy schema
             "--maps-from-entries",
+            "--partition-by",
+            "submission_date_s3",
             "--drop",
             "submission_date",
             "total_hours_sum",
