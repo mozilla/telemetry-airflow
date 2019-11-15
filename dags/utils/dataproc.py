@@ -34,7 +34,10 @@ class DataProcHelper:
                  optional_components=['ANACONDA'],
                  install_component_gateway=True,
                  aws_conn_id=None,
-                 gcp_conn_id='google_cloud_airflow_dataproc'):
+                 gcp_conn_id='google_cloud_airflow_dataproc',
+                 artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
+                 storage_bucket='moz-fx-data-prod-dataproc-scratch',
+                ):
 
         self.cluster_name = cluster_name
         self.num_workers = num_workers
@@ -47,7 +50,8 @@ class DataProcHelper:
         self.num_preemptible_workers = num_preemptible_workers
         self.service_account = service_account
         # The bucket with a default dataproc init script
-        self.artifact_bucket = 'moz-fx-data-prod-airflow-dataproc-artifacts'
+        self.artifact_bucket = artifact_bucket
+        self.storage_bucket = storage_bucket
 
         if init_actions_uris is None:
             self.init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)]
@@ -108,7 +112,7 @@ class DataProcHelper:
             gcp_conn_id=self.gcp_conn_id,
             service_account=self.service_account,
             project_id=self.connection.project_id,
-            storage_bucket='moz-fx-data-prod-dataproc-scratch',
+            storage_bucket=self.storage_bucket,
             num_workers=self.num_workers,
             image_version=self.image_version,
             properties=properties,
@@ -157,7 +161,10 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 py_args=None,
                                 job_name=None,
                                 aws_conn_id=None,
-                                gcp_conn_id='google_cloud_airflow_dataproc'):
+                                gcp_conn_id='google_cloud_airflow_dataproc',
+                                artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
+                                storage_bucket='moz-fx-data-prod-dataproc-scratch',
+                            ):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -216,7 +223,9 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param str job_name:                  Name of the spark job to run.
 
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
-    :param str gcp_conn_id:               The connection ID to use connecting to GCP. 
+    :param str gcp_conn_id:               The connection ID to use connecting to GCP.
+    :param str artifact_bucket:           Path to resources for bootstrapping the dataproc cluster
+    :param str storage_bucket:            Path to scratch bucket for intermediate cluster results
     :param list optional_components:      List of optional components to install on cluster
                                           Defaults to ['ANACONDA'] for now since JUPYTER is broken.
     :param str install_component_gateway: Enable alpha feature component gateway.
@@ -248,7 +257,10 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      additional_properties=additional_properties,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+                                     gcp_conn_id=gcp_conn_id,
+                                     artifact_bucket=artifact_bucket,
+                                     storage_bucket=storage_bucket,
+                                     )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
 
