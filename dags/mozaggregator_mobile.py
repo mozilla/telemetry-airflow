@@ -32,8 +32,7 @@ mobile_aggregate_view = MozDatabricksSubmitRunOperator(
         "mobile",
         {
             "date": "{{ ds_nodash }}",
-            "channels": "nightly",
-            "output": "s3://{{ task.__class__.private_output_bucket }}/mobile_metrics_aggregates/v2",
+            "output": "s3://{{ task.__class__.private_output_bucket }}/mobile_metrics_aggregates/v3",
             "num-partitions": 5*32
         },
         other={
