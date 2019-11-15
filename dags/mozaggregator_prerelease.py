@@ -74,7 +74,7 @@ client_email = (
 artifact_bucket = (
     "{}-dataproc-artifacts".format(project_id)
     if is_dev
-    else "moz-fx-data-prod-dataproc-artifacts"
+    else "moz-fx-data-prod-airflow-dataproc-artifacts"
 )
 storage_bucket = (
     "{}-dataproc-scratch".format(project_id)
