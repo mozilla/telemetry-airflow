@@ -352,7 +352,7 @@ def export_to_parquet(
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
     if destination_table is None:
-        destination_table = table.rsplit(".", 1).pop()
+        destination_table = unqualified_table
     # separate version using "/" instead of "_"
     export_prefix = re.sub(r"_(v[0-9]+)$", r"/\1", destination_table) + "/"
     if static_partitions:
@@ -411,6 +411,7 @@ def export_to_parquet(
             main_jar="file:///usr/lib/hadoop-mapreduce/hadoop-distcp.jar",
             arguments=[
                 "-update",
+                "-delete",
                 "gs://{}/{}".format(gcs_output_bucket, export_prefix),
                 "s3a://{}/{}".format(s3_output_bucket, export_prefix),
             ],
