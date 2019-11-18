@@ -12,7 +12,7 @@ from utils.status import register_status
 
 default_args = {
     "owner": "robhudson@mozilla.com",
-    "depends_on_past": True,
+    "depends_on_past": False,
     "start_date": datetime(2019, 1, 1),
     "email": [
         "telemetry-alerts@mozilla.com",
