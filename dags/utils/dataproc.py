@@ -1,5 +1,6 @@
 from airflow import models
 from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.operators.bash_operator import BashOperator
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator
 from airflow.exceptions import AirflowException
@@ -530,3 +531,42 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
         create_dataproc_cluster >> run_script_on_dataproc >> delete_dataproc_cluster
         return dag
 # End moz_dataproc_scriptrunner
+
+
+def copy_artifacts_dev(dag, project_id, artifact_bucket, storage_bucket):
+    """Bootstrap a dataproc job for local testing.
+
+    This job requires setting GOOGLE_APPLICATION_CREDENTIALS before starting the
+    airflow container. It will copy the contents of the local jobs and
+    dataproc_boostrap folders to the artifacts bucket, and create a scratch
+    storage bucket for dataproc.
+
+    :dag DAG: The dag to register the job
+    :project_id str: The project id, necessary for setting the default project
+    :artifact_bucket str: The bucket for storing bootstrap artifacts
+    :storage_bucket str: The scratch bucket for dataproc
+    """
+    return BashOperator(
+        task_id="copy_to_dev_artifacts",
+        bash_command="""
+        gcloud auth activate-service-account --key-file ~/.credentials
+        gcloud config set project ${PROJECT_ID}
+
+        gsutil mb gs://${ARTIFACT_BUCKET}
+        gsutil mb gs://${STORAGE_BUCKET}
+
+        gsutil -m cp -r ~/dataproc_bootstrap gs://${ARTIFACT_BUCKET}
+        gsutil -m cp -r ~/jobs gs://${ARTIFACT_BUCKET}
+
+        echo "listing artifacts..."
+        gsutil ls -r gs://${ARTIFACT_BUCKET}
+        """,
+        env={
+            # https://github.com/GoogleCloudPlatform/gsutil/issues/236
+            "CLOUDSDK_PYTHON": "python",
+            "PROJECT_ID": project_id,
+            "ARTIFACT_BUCKET": artifact_bucket,
+            "STORAGE_BUCKET": storage_bucket,
+        },
+        dag=dag,
+    )
