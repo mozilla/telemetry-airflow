@@ -312,7 +312,7 @@ def export_to_parquet(
     dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
     num_workers=2,
     num_preemptible_workers=0,
-    gcs_output_bucket="moz-fx-data-derived-datasets-parquet-tmp",
+    gcs_output_bucket="moz-fx-data-derived-datasets-parquet",
     s3_output_bucket="telemetry-parquet",
 ):
 
