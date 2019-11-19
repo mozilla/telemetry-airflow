@@ -34,6 +34,7 @@ bgbb_fit = MozDatabricksSubmitRunOperator(
     job_name="Fit parameters for a BGBB model to determine active profiles",
     execution_timeout=timedelta(hours=2),
     instance_count=3,
+    release_label="6.1.x-scala2.11",
     env=mozetl_envvar(
         "bgbb_fit",
         {
