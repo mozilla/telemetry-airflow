@@ -32,6 +32,9 @@ with models.DAG(
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"])
 
+
+    # Events.
+
     event_events = bigquery_etl_query(
         task_id="event_events",
         project_id="moz-fx-data-shared-prod",
@@ -41,3 +44,69 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
 
     copy_deduplicate_all >> event_events
+
+
+    # Daily and last seen views on top of core pings.
+
+    core_clients_daily = bigquery_etl_query(
+        task_id='core_clients_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='core_clients_daily_v1',
+        dataset_id='telemetry_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+    )
+
+    core_clients_last_seen = bigquery_etl_query(
+        task_id='core_clients_last_seen',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='core_clients_last_seen_v1',
+        dataset_id='telemetry_derived',
+        depends_on_past=True,
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+    )
+
+    # Daily and last seen views on top of glean pings.
+
+    fenix_clients_daily = bigquery_etl_query(
+        task_id='fenix_clients_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='clients_daily_v1',
+        dataset_id='org_mozilla_fenix_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+    )
+
+    fenix_clients_last_seen = bigquery_etl_query(
+        task_id='fenix_clients_last_seen',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='clients_last_seen_v1',
+        dataset_id='org_mozilla_fenix_derived',
+        depends_on_past=True,
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+    )
+
+    # Aggregated nondesktop tables and their dependency chains.
+
+    firefox_nondesktop_exact_mau28 = bigquery_etl_query(
+        task_id='firefox_nondesktop_exact_mau28',
+        destination_table='firefox_nondesktop_exact_mau28_raw_v1',
+        dataset_id='telemetry',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+    )
+
+    smoot_usage_nondesktop_v2 = bigquery_etl_query(
+        task_id='smoot_usage_nondesktop_v2',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='smoot_usage_nondesktop_v2',
+        dataset_id='telemetry_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+    )
+
+    (copy_deduplicate_all >>
+     core_clients_daily >>
+     core_clients_last_seen >>
+     [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2])
+
+    (copy_deduplicate_all >>
+     fenix_clients_daily >>
+     fenix_clients_last_seen >>
+     [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2])
