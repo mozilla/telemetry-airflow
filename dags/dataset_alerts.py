@@ -19,7 +19,7 @@ S3FSCheckSuccessSensor(
     task_id="check_main_summary",
     bucket="telemetry-parquet",
     prefix="main_summary/v4/submission_date_s3={{ ds_nodash }}",
-    num_partitions=100,
+    num_partitions=1,
     poke_interval=30 * 60,
     timeout=4 * 60 * 60,
     dag=dag,
