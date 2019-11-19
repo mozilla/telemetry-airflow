@@ -20,6 +20,7 @@ from utils.gcp import (
 taar_aws_conn_id = "airflow_taar_rw_s3"
 taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
+taar_locale_cluster_name = "dataproc-taar-locale"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 
 default_args = {
@@ -516,21 +517,35 @@ taar_dynamo = EMRSparkOperator(
     output_visibility="private",
     dag=dag)
 
-taar_locale_job = EMRSparkOperator(
+
+taar_locale_job = SubDagOperator(
     task_id="taar_locale_job",
-    job_name="TAAR Locale Model",
-    owner="mlopatka@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
-    execution_timeout=timedelta(hours=10),
-    instance_count=8,
-    env=mozetl_envvar("taar_locale", {
-          "date": "{{ ds_nodash }}",
-          "bucket": "{{ task.__class__.private_output_bucket }}",
-          "prefix": "taar/locale/"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name=dag.dag_id,
+        dag_name="taar_locale_job",
+        default_args=default_args,
+        cluster_name=taar_locale_cluster_name,
+        job_name="TAAR_Locale",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_locale.py",
+        num_workers=12,
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--aws_access_key_id",
+            taar_aws_access_key,
+            "--aws_secret_access_key",
+            taar_aws_secret_key,
+            "--bucket",
+            "telemetry-private-analysis-2",
+            "--prefix",
+            "taar/locale/",
+        ],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+    ),
+    dag=dag,
+)
+
 
 taar_similarity = MozDatabricksSubmitRunOperator(
     task_id="taar_similarity",
