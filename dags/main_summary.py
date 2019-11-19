@@ -574,6 +574,7 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
         "amiyaguchi@mozilla.com",
     ],
     instance_count=10,
+    release_label="6.1.x-scala2.11",
     env=mozetl_envvar(
         "bgbb_pred",
         {
