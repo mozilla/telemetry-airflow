@@ -14,7 +14,6 @@ spark-submit --master yarn \
              --class com.mozilla.telemetry.ml.AddonRecommender \
              target/scala-2.11/telemetry-batch-view-1.1.jar \
              train \
-             --output ml_output \
              --privateBucket $privateBucket \
              --publicBucket $publicBucket \
              --runDate $date
