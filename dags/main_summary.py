@@ -1,12 +1,13 @@
 from airflow import DAG
 from datetime import datetime, timedelta
+from itertools import chain
 from operators.emr_spark_operator import EMRSparkOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.dataproc import moz_dataproc_pyspark_runner
+from utils.dataproc import moz_dataproc_pyspark_runner, moz_dataproc_jar_runner
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
@@ -566,18 +567,42 @@ taar_similarity = MozDatabricksSubmitRunOperator(
     output_visibility="private",
     dag=dag)
 
-taar_collaborative_recommender = EMRSparkOperator(
+taar_collaborative_recommender = SubDagOperator(
     task_id="addon_recommender",
-    job_name="Train the Collaborative Addon Recommender",
-    execution_timeout=timedelta(hours=10),
-    instance_count=20,
-    owner="mlopatka@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"],
-    env={"date": "{{ ds_nodash }}",
-         "privateBucket": "{{ task.__class__.private_output_bucket }}",
-         "publicBucket": "{{ task.__class__.public_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/addon_recommender.sh",
-    dag=dag)
+    subdag=moz_dataproc_jar_runner(
+        parent_dag_name=dag.dag_id,
+        dag_name="addon_recommender",
+        job_name="Train the Collaborative Addon Recommender",
+        main_class="com.mozilla.telemetry.ml.AddonRecommender",
+        jar_urls=[
+            "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
+            "/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
+        ],
+        jar_args=[
+          "--runDate={{ds_nodash}}",
+          "--inputTable=gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6",
+          "--privateBucket=telemetry-parquet",
+          "--publicBucket=telemetry-public-analysis-2",
+        ],
+        cluster_name="addon-recommender-{{ds_nodash}}",
+        image_version="1.3",
+        worker_machine_type="n1-standard-8",
+        num_workers=20,
+        optional_components=[],
+        install_component_gateway=False,
+        init_actions_uris=[],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        default_args={
+            key: value
+            for key, value in chain(default_args.items(), [
+                ("owner", "mlopatka@mozilla.com"),
+                ("email", ["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"]),
+            ])
+        },
+    ),
+    dag=dag,
+)
 
 bgbb_pred = MozDatabricksSubmitRunOperator(
     task_id="bgbb_pred",
