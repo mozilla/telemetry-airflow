@@ -4,10 +4,8 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
-from utils.mozetl import mozetl_envvar
 from utils.status import register_status
 
 default_args = {
@@ -26,34 +24,6 @@ default_args = {
 }
 
 dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@daily")
-
-mobile_aggregate_view = MozDatabricksSubmitRunOperator(
-    task_id="mobile_aggregate_view",
-    job_name="Mobile Aggregate View",
-    release_label="6.1.x-scala2.11",
-    instance_count=5,
-    execution_timeout=timedelta(hours=12),
-    env=mozetl_envvar(
-        "mobile",
-        {
-            "date": "{{ ds_nodash }}",
-            "output": "s3://{{ task.__class__.private_output_bucket }}/mobile_metrics_aggregates/v3",
-            "num-partitions": 5*32
-        },
-        other={
-            "MOZETL_GIT_PATH": "https://github.com/mozilla/python_mozaggregator.git",
-            "MOZETL_EXTERNAL_MODULE": "mozaggregator",
-        },
-    ),
-    dag=dag,
-)
-
-register_status(
-    mobile_aggregate_view,
-    "Mobile Aggregates",
-    "Aggregates of metrics sent through the mobile-events pings.",
-)
-
 
 subdag_args = default_args.copy()
 subdag_args["retries"] = 0
@@ -124,6 +94,12 @@ mobile_aggregate_view_dataproc = SubDagOperator(
         storage_bucket=storage_bucket,
         default_args=subdag_args,
     ),
+)
+
+register_status(
+    mobile_aggregate_view_dataproc,
+    "Mobile Aggregates",
+    "Aggregates of metrics sent through the mobile-events pings.",
 )
 
 # copy over artifacts if we're running in dev
