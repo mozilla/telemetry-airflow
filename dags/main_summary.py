@@ -579,10 +579,11 @@ taar_collaborative_recommender = SubDagOperator(
             "/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
         ],
         jar_args=[
+          "train",
           "--runDate={{ds_nodash}}",
           "--inputTable=gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6",
-          "--privateBucket=telemetry-parquet",
-          "--publicBucket=telemetry-public-analysis-2",
+          "--privateBucket=s3a://telemetry-parquet",
+          "--publicBucket=s3a://telemetry-public-analysis-2",
         ],
         cluster_name="addon-recommender-{{ds_nodash}}",
         image_version="1.3",
