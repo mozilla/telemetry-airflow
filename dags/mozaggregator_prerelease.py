@@ -4,10 +4,8 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
-from utils.mozetl import mozetl_envvar
 
 default_args = {
     "owner": "frank@mozilla.com",
@@ -28,31 +26,6 @@ dag = DAG(
     "prerelease_telemetry_aggregates",
     default_args=default_args,
     schedule_interval="@daily",
-)
-
-prerelease_telemetry_aggregate_view = MozDatabricksSubmitRunOperator(
-    task_id="prerelease_telemetry_aggregate_view",
-    job_name="Prerelease Telemetry Aggregate View",
-    release_label="6.1.x-scala2.11",
-    instance_count=10,
-    dev_instance_count=10,
-    execution_timeout=timedelta(hours=12),
-    env=mozetl_envvar(
-        "aggregator",
-        {
-            "date": "{{ ds_nodash }}",
-            "channels": "nightly,aurora,beta",
-            "credentials-bucket": "telemetry-spark-emr-2",
-            "credentials-prefix": "aggregator_database_envvars.json",
-            "num-partitions": 10 * 32,
-        },
-        dev_options={"credentials-prefix": "aggregator_dev_database_envvars.json"},
-        other={
-            "MOZETL_GIT_PATH": "https://github.com/mozilla/python_mozaggregator.git",
-            "MOZETL_EXTERNAL_MODULE": "mozaggregator",
-        },
-    ),
-    dag=dag,
 )
 
 
