@@ -572,7 +572,7 @@ taar_collaborative_recommender = SubDagOperator(
     subdag=moz_dataproc_jar_runner(
         parent_dag_name=dag.dag_id,
         dag_name="addon_recommender",
-        job_name="Train the Collaborative Addon Recommender",
+        job_name="Train_the_Collaborative_Addon_Recommender",
         main_class="com.mozilla.telemetry.ml.AddonRecommender",
         jar_urls=[
             "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
