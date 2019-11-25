@@ -18,7 +18,7 @@ dag_name = 'error_aggregates'
 
 with models.DAG(
         dag_name,
-        schedule_interval=datetime.timedelta(hours=8),
+        schedule_interval=datetime.timedelta(hours=3),
         default_args=default_args) as dag:
 
     error_aggregates = bigquery_etl_query(
