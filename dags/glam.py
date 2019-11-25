@@ -29,6 +29,15 @@ wait_for_main_ping = ExternalTaskSensor(
     dag=dag,
 )
 
+latest_versions = bigquery_etl_query(
+    task_id="latest_versions",
+    destination_table="latest_versions",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    dag=dag)
+
 # This task runs first and replaces the relevant partition, followed
 # by the next two tasks that append to the same partition of the same table.
 clients_daily_scalar_aggregates = bigquery_etl_query(
@@ -67,6 +76,17 @@ clients_daily_keyed_boolean_aggregates = bigquery_etl_query(
 clients_scalar_aggregates = bigquery_etl_query(
     task_id="clients_scalar_aggregates",
     destination_table="clients_scalar_aggregates_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
+clients_scalar_bucket_counts = bigquery_etl_query(
+    task_id="clients_scalar_bucket_counts",
+    destination_table="clients_scalar_bucket_counts_v1",
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
@@ -134,17 +154,19 @@ client_histogram_probe_counts = bigquery_etl_query(
     arguments=('--append_table','--noreplace',),
     dag=dag)
 
+wait_for_main_ping >> latest_versions
 
-wait_for_main_ping >> clients_daily_scalar_aggregates
+latest_versions >> clients_daily_scalar_aggregates
 clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
 clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
 clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
 clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
+clients_scalar_aggregates >> clients_scalar_bucket_counts
 
-wait_for_main_ping >> clients_daily_histogram_aggregates
+latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
-clients_scalar_aggregates >> client_scalar_probe_counts
+clients_scalar_bucket_counts >> client_scalar_probe_counts
 client_scalar_probe_counts >> client_histogram_probe_counts
 clients_histogram_aggregates >> client_histogram_probe_counts
