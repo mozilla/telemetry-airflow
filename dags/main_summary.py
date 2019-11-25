@@ -135,34 +135,28 @@ main_summary_export = SubDagOperator(
 
 register_status(main_summary, "Main Summary", "A summary view of main pings.")
 
-addons = EMRSparkOperator(
+addons = bigquery_etl_query(
     task_id="addons",
-    job_name="Addons View",
-    execution_timeout=timedelta(hours=4),
-    instance_count=3,
-    env=tbv_envvar("com.mozilla.telemetry.views.AddonsView", {
-        "from": "{{ ds_nodash }}",
-        "to": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    destination_table="addons_v2",
+    dataset_id="telemetry_derived",
     dag=dag)
 
-addons_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
+addons_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="moz-fx-data-derived-datasets:telemetry_derived.addons_v2${{ds_nodash}}",
+        static_partitions="submission_date_s3={{ds_nodash}}",
+        arguments=[
+            "--partition-by=sample_id",
+            "--drop=submission_date",
+            # no bigint columns, convert them all to int for backward compatibility
+            "--bigint-columns=",
+        ],
         parent_dag_name=dag.dag_id,
-        dag_name="addons_bigquery_load",
+        dag_name="addons_export",
         default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="addons",
-        dataset_version="v2",
-        gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["sample_id"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="addons_bigquery_load",
+        num_preemptible_workers=10),
+    task_id="addons_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 main_events = EMRSparkOperator(
@@ -197,38 +191,28 @@ main_events_bigquery_load = SubDagOperator(
     task_id="main_events_bigquery_load",
     dag=dag)
 
-addon_aggregates = EMRSparkOperator(
+addon_aggregates = bigquery_etl_query(
     task_id="addon_aggregates",
-    job_name="Addon Aggregates View",
-    execution_timeout=timedelta(hours=8),
+    destination_table="addon_aggregates_v2",
+    dataset_id="telemetry_derived",
     owner="bmiroglio@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
-    instance_count=10,
-    env=mozetl_envvar("addon_aggregates", {
-        "date": "{{ ds_nodash }}",
-        "input-bucket": "{{ task.__class__.private_output_bucket }}",
-        "output-bucket": "{{ task.__class__.private_output_bucket }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
-addon_aggregates_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
+addon_aggregates_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="moz-fx-data-derived-datasets:telemetry_derived.addon_aggregates_v2${{ds_nodash}}",
+        destination_table="addons/agg/v2",
+        static_partitions="submission_date_s3={{ds_nodash}}",
+        arguments=[
+            "--partition-by=sample_id",
+            "--drop=submission_date",
+        ],
         parent_dag_name=dag.dag_id,
-        dag_name="addon_aggregates_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="addons/agg",
-        dataset_version="v2",
-        gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="addon_aggregates_v2",
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["sample_id"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="addon_aggregates_bigquery_load",
+        dag_name="addon_aggregates_export",
+        default_args=default_args),
+    task_id="addon_aggregates_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 main_summary_experiments = MozDatabricksSubmitRunOperator(
@@ -707,10 +691,10 @@ main_summary_export.set_upstream(main_summary)
 clients_daily.set_upstream(main_summary)
 clients_daily_export.set_upstream(clients_daily)
 
-addons.set_upstream(main_summary_export)
-addons_bigquery_load.set_upstream(addons)
-addon_aggregates.set_upstream(addons)
-addon_aggregates_bigquery_load.set_upstream(addon_aggregates)
+addons.set_upstream(copy_deduplicate_main_ping)
+addons_export.set_upstream(addons)
+addon_aggregates.set_upstream(copy_deduplicate_main_ping)
+addon_aggregates_export.set_upstream(addon_aggregates)
 
 main_events.set_upstream(main_summary_export)
 main_events_bigquery_load.set_upstream(main_events)
