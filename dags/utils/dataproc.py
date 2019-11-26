@@ -208,7 +208,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     ---
     :param str cluster_name:              The name of the dataproc cluster.
     :param int num_workers:               The number of spark workers.
-    :param str image_version:             The image version of software to use for dataproc 
+    :param str image_version:             The image version of software to use for dataproc
                                           cluster.
     :param str zone:                      The zone where the dataproc cluster will be located.
     :param str idle_delete_ttl:           The duration in seconds to keep idle cluster alive.
@@ -472,9 +472,9 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                         via the airflow_gcp.sh entrypoint. Ipynb is no longer
                                         supported.
     :param dict env:                    If env is not None, it must be a mapping that defines
-                                        the environment variables for the new process 
+                                        the environment variables for the new process
                                         (templated).
-    :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string 
+    :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string
                                         of space separated args.
 
     """
@@ -580,6 +580,7 @@ DataprocParameters = namedtuple(
     "DataprocParameters",
     [
         "conn_id",
+        "project_id",
         "is_dev",
         "client_email",
         "artifact_bucket",
@@ -619,5 +620,11 @@ def get_dataproc_parameters(conn_id="google_cloud_airflow_dataproc"):
         artifact_bucket if is_dev else "moz-fx-data-derived-datasets-parquet"
     )
     return DataprocParameters(
-        conn_id, is_dev, client_email, artifact_bucket, storage_bucket, output_bucket
+        conn_id,
+        project_id,
+        is_dev,
+        client_email,
+        artifact_bucket,
+        storage_bucket,
+        output_bucket
     )
