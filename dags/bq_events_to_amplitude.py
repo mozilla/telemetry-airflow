@@ -21,15 +21,30 @@ with models.DAG(
         dag_name,
         default_args=default_args) as dag:
 
-    task_id = 'fenix_amplitude_export'
+    fenix_task_id = 'fenix_amplitude_export'
     SubDagOperator(
         subdag=export_to_amplitude(
-            dag_name=task_id,
+            dag_name=fenix_task_id,
             parent_dag_name=dag_name,
             default_args=default_args,
             dataset='telemetry',
             table_or_view='fenix_events_v1',
             s3_prefix='fenix',
         ),
-        task_id=task_id
+        task_id=fenix_task_id
+    )
+
+    fennec_ios_task_id = 'fennec_ios_amplitude_export'
+    fennec_ios_args = default_args.copy()
+    fennec_ios_args["start_date"] = datetime.datetime(2019, 12, 2)
+    SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=fennec_ios_task_id,
+            parent_dag_name=dag_name,
+            default_args=fennec_ios_args,
+            dataset='telemetry',
+            table_or_view='fennec_ios_events_v1',
+            s3_prefix='fennec_ios',
+        ),
+        task_id=fennec_ios_task_id
     )
