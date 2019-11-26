@@ -234,7 +234,7 @@ main_summary_experiments = SubDagOperator(
         ],
         cluster_name="main-experiments-{{ds_nodash}}",
         image_version="1.3",
-        worker_machine_type="n2-highmem-8",
+        worker_machine_type="n1-highmem-8",
         num_workers=40,
         optional_components=[],
         install_component_gateway=False,
