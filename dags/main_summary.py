@@ -468,6 +468,16 @@ smoot_usage_desktop_v2 = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
+devtools_panel_usage = bigquery_etl_query(
+    task_id="devtools_panel_usage",
+    destination_table="devtools_panel_usage_v1",
+    project_id="moz-fx-data-shared-prod",
+    dataset_id="telemetry_derived",
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    start_date=datetime(2019, 11, 25),
+    dag=dag)
+
 main_summary_glue = EMRSparkOperator(
     task_id="main_summary_glue",
     job_name="Main Summary Update Glue",
@@ -716,6 +726,7 @@ clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
+devtools_panel_usage.set_upstream(clients_daily)
 
 main_summary_glue.set_upstream(main_summary_export)
 
