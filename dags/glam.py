@@ -35,6 +35,8 @@ latest_versions = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
+    date_partition_parameter=None,
+    arguments=('--replace',),
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     dag=dag)
 
