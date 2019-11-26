@@ -84,6 +84,7 @@ clients_scalar_aggregates = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     depends_on_past=True,
     date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
     arguments=('--replace',),
     dag=dag)
 
@@ -130,6 +131,7 @@ clients_histogram_aggregates = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     depends_on_past=True,
     date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
     arguments=('--replace',),
     dag=dag)
 
