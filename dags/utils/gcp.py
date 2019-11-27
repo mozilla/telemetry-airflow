@@ -356,7 +356,7 @@ def export_to_parquet(
     # separate version using "/" instead of "_"
     export_prefix = re.sub(r"_(v[0-9]+)$", r"/\1", destination_table) + "/"
     if static_partitions:
-        export_prefix += static_partitions + "/"
+        export_prefix += "/".join(static_partitions) + "/"
     avro_prefix = "avro/" + export_prefix
     avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
@@ -398,10 +398,10 @@ def export_to_parquet(
                     "avro-path": (not use_storage_api) and avro_path,
                     "destination": "gs://" + gcs_output_bucket,
                     "destination-table": destination_table,
-                    "static-partitions": static_partitions,
                 }.items()
                 if value
             ]
+            + ["--static-partitions=" + p for p in static_partitions]
             + arguments,
             gcp_conn_id=gcp_conn_id,
         )
