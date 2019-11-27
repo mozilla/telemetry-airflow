@@ -1,3 +1,7 @@
+import json
+import os
+from collections import namedtuple
+
 from airflow import models
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.operators.bash_operator import BashOperator
@@ -204,7 +208,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     ---
     :param str cluster_name:              The name of the dataproc cluster.
     :param int num_workers:               The number of spark workers.
-    :param str image_version:             The image version of software to use for dataproc 
+    :param str image_version:             The image version of software to use for dataproc
                                           cluster.
     :param str zone:                      The zone where the dataproc cluster will be located.
     :param str idle_delete_ttl:           The duration in seconds to keep idle cluster alive.
@@ -468,9 +472,9 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                         via the airflow_gcp.sh entrypoint. Ipynb is no longer
                                         supported.
     :param dict env:                    If env is not None, it must be a mapping that defines
-                                        the environment variables for the new process 
+                                        the environment variables for the new process
                                         (templated).
-    :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string 
+    :param str arguments:               Passed to `airflow_gcp.sh`, passed as one long string
                                         of space separated args.
 
     """
@@ -569,4 +573,58 @@ def copy_artifacts_dev(dag, project_id, artifact_bucket, storage_bucket):
             "STORAGE_BUCKET": storage_bucket,
         },
         dag=dag,
+    )
+
+# parameters that can be used to reconfigure a dataproc job for dev testing
+DataprocParameters = namedtuple(
+    "DataprocParameters",
+    [
+        "conn_id",
+        "project_id",
+        "is_dev",
+        "client_email",
+        "artifact_bucket",
+        "storage_bucket",
+        "output_bucket",
+    ],
+)
+
+
+def get_dataproc_parameters(conn_id="google_cloud_airflow_dataproc"):
+    """This function can be used to gather parameters that correspond to development
+    parameters. The provided connection string should be a Google Cloud connection
+    and should either be the production default ("dataproc-runner-prod"), or a
+    service key associated with a sandbox account.
+    """
+    gcp_conn = GoogleCloudBaseHook(conn_id)
+    keyfile = json.loads(gcp_conn.extras["extra__google_cloud_platform__keyfile_dict"])
+
+    project_id = keyfile["project_id"]
+    is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
+    client_email = (
+        keyfile["client_email"]
+        if is_dev
+        else "dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com"
+    )
+    artifact_bucket = (
+        "{}-dataproc-artifacts".format(project_id)
+        if is_dev
+        else "moz-fx-data-prod-airflow-dataproc-artifacts"
+    )
+    storage_bucket = (
+        "{}-dataproc-scratch".format(project_id)
+        if is_dev
+        else "moz-fx-data-prod-dataproc-scratch"
+    )
+    output_bucket = (
+        artifact_bucket if is_dev else "moz-fx-data-derived-datasets-parquet"
+    )
+    return DataprocParameters(
+        conn_id,
+        project_id,
+        is_dev,
+        client_email,
+        artifact_bucket,
+        storage_bucket,
+        output_bucket
     )
