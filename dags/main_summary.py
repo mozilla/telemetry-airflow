@@ -7,7 +7,11 @@ from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
-from utils.dataproc import moz_dataproc_pyspark_runner, moz_dataproc_jar_runner
+from utils.dataproc import (
+    moz_dataproc_pyspark_runner,
+    moz_dataproc_jar_runner,
+    get_dataproc_parameters,
+)
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
 from utils.status import register_status
@@ -565,6 +569,65 @@ bgbb_pred = MozDatabricksSubmitRunOperator(
     dag=dag
 )
 
+subdag_args = default_args.copy()
+subdag_args["retries"] = 0
+task_id = "bgbb_pred_dataproc"
+params = get_dataproc_parameters("google_cloud_airflow_dataproc")
+
+bgbb_pred_dataproc = SubDagOperator(
+    task_id=task_id,
+    dag=dag,
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name=dag.dag_id,
+        dag_name=task_id,
+        job_name="bgbb_pred_dataproc",
+        cluster_name="bgbb-pred-{{ ds_nodash }}",
+        idle_delete_ttl="600",
+        num_workers=10,
+        worker_machine_type="n1-standard-8",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_properties={
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+        },
+        additional_metadata={
+            "PIP_PACKAGES": "git+https://github.com/wcbeard/bgbb_airflow.git"
+        },
+        python_driver_code="gs://{}/jobs/bgbb_runner.py".format(params.artifact_bucket),
+        py_args=[
+            "bgbb_pred",
+            "--submission-date",
+            "{{ ds }}",
+            "--model-win",
+            "90",
+            "--sample-ids",
+            "[42]" if params.is_dev else "[]",
+            "--source",
+            "bigquery",
+            "--view-materialization-project",
+            params.project_id if params.is_dev else "moz-fx-data-shared-prod",
+            "--view-materialization-dataset",
+            "analysis",
+            "--bucket-protocol",
+            "gs",
+            "--param-bucket",
+            params.output_bucket,
+            "--param-prefix",
+            "bgbb/params/v1",
+            "--pred-bucket",
+            params.output_bucket,
+            "--pred-prefix",
+            "bgbb/active_profiles/v1",
+        ],
+        gcp_conn_id=params.conn_id,
+        service_account=params.client_email,
+        artifact_bucket=params.artifact_bucket,
+        storage_bucket=params.storage_bucket,
+        default_args=subdag_args,
+    ),
+)
+
 bgbb_pred_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
         parent_dag_name=dag.dag_id,
@@ -663,6 +726,7 @@ taar_collaborative_recommender.set_upstream(clients_daily_export)
 
 bgbb_pred.set_upstream(clients_daily_export)
 bgbb_pred_bigquery_load.set_upstream(bgbb_pred)
+bgbb_pred_dataproc.set_upstream(clients_daily)
 
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
