@@ -472,7 +472,7 @@ def bigquery_etl_query(
 ):
     """ Generate.
 
-    :param Optional[str] destination_table:        [Required] BigQuery destination table
+    :param str destination_table:                  [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
     :param Tuple[str] parameters:                  Parameters passed to bq query
     :param Tuple[str] arguments:                   Additional bq query arguments
@@ -584,6 +584,72 @@ def bigquery_etl_copy_deduplicate(
         + (["--hourly"] if hourly else [])
         + (["--slices={}".format(slices)] if slices is not None else [])
         + table_qualifiers,
+        image_pull_policy=image_pull_policy,
+        **kwargs
+    )
+
+
+def bigquery_xcom_query(
+    destination_table,
+    dataset_id,
+    xcom_task_id,
+    parameters=(),
+    arguments=(),
+    project_id=None,
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="mozilla/bigquery-etl:latest",
+    image_pull_policy="Always",
+    date_partition_parameter="submission_date",
+    **kwargs
+):
+    """ Generate a GKEPodOperator which runs an xcom result as a bigquery query.
+
+    :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
+    :param str xcom_task_id:                       [Required] task_id which generated the xcom to pull
+    :param Tuple[str] parameters:                  Parameters passed to bq query
+    :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Optional[str] project_id:               BigQuery default project id
+    :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_location:                       GKE cluster location
+    :param str gke_cluster_name:                   GKE cluster name
+    :param str gke_namespace:                      GKE cluster namespace
+    :param str docker_image:                       docker image to use
+    :param str image_pull_policy:                  Kubernetes policy for when to pull
+                                                   docker_image
+    :param Optional[str] date_partition_parameter: Parameter for indicating destination
+                                                   partition to generate, if None
+                                                   destination should be whole table
+                                                   rather than partition
+    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
+                                                   GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["task_id"] = kwargs.get("task_id", destination_table)
+    kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
+    if destination_table is not None and date_partition_parameter is not None:
+        destination_table = destination_table + "${{ds_nodash}}"
+        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    query = "{{ " + "task_instance.xcom_pull(task_ids='{}')".format("xcom_task_id") + " }}"
+    return GKEPodOperator(
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=["bq"]
+        + ["query"]
+        + (["--destination_table=" + destination_table] if destination_table else [])
+        + ["--dataset_id=" + dataset_id]
+        + (["--project_id=" + project_id] if project_id else [])
+        + ["--parameter=" + parameter for parameter in parameters]
+        + list(arguments)
+        + [query],
         image_pull_policy=image_pull_policy,
         **kwargs
     )

@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import models
-from utils.gcp import bigquery_etl_copy_deduplicate, bigquery_etl_query
+from utils.gcp import bigquery_etl_copy_deduplicate, bigquery_etl_query, gke_command, bigquery_xcom_query
 
 default_args = {
     "owner": "jklukas@mozilla.com",
@@ -45,6 +45,44 @@ with models.DAG(
 
     copy_deduplicate_all >> event_events
 
+    # Experiment enrollment aggregates chain (depends on events)
+
+    experiment_enrollment_aggregates = bigquery_etl_query(
+        task_id="experiment_enrollment_aggregates",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="experiment_enrollment_aggregates_v1",
+        dataset_id="telemetry_derived",
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+
+    gen_query_task_id = "experiment_enrollment_aggregates_live_generate_query"
+
+    # setting xcom_push to True outputs this query to an xcom
+    experiment_enrollment_aggregates_live_generate_query = gke_command(
+        task_id=gen_query_task_id,
+        command=[
+            "python",
+            "templates/telemetry_derived/experiment_enrollment_aggregates_live/query.sql.py",
+            "--submission-date",
+            "{ds}"
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        xcom_push=True,
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+
+    experiment_enrollment_aggregates_live_run_query = bigquery_xcom_query(
+        task_id="experiment_enrollment_aggregates_live_run_query",
+        destination_table=None,
+        dataset_id="telemetry_derived",
+        xcom_task_id=gen_query_task_id,
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+
+    (event_events >>
+     experiment_enrollment_aggregates >>
+     experiment_enrollment_aggregates_live_generate_query >>
+     experiment_enrollment_aggregates_live_run_query)
 
     # Daily and last seen views on top of core pings.
 
