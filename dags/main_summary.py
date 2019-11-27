@@ -215,41 +215,23 @@ addon_aggregates_export = SubDagOperator(
     executor=GetDefaultExecutor(),
     dag=dag)
 
-main_summary_experiments = SubDagOperator(
+main_summary_experiments = MozDatabricksSubmitRunOperator(
     task_id="main_summary_experiments",
-    subdag=moz_dataproc_jar_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_summary_experiments",
-        job_name="Experiments_Main_Summary_View",
-        main_class="com.mozilla.telemetry.views.ExperimentSummaryView",
-        jar_urls=[
-            "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
-            "/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
-        ],
-        jar_args=[
-            "--from={{ds_nodash}}",
-            "--to={{ds_nodash}}",
-            "--inbucket=gs://moz-fx-data-derived-datasets-parquet",
-            "--bucket=s3a://telemetry-parquet",
-        ],
-        cluster_name="main-experiments-{{ds_nodash}}",
-        image_version="1.3",
-        worker_machine_type="n1-highmem-8",
-        num_workers=40,
-        optional_components=[],
-        install_component_gateway=False,
-        init_actions_uris=[],
-        aws_conn_id="aws_dev_iam_s3",
-        default_args={
-            key: value
-            for key, value in chain(default_args.items(), [
-                ("owner", "ssuh@mozilla.com"),
-                ("email", ["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"]),
-            ])
-        },
-    ),
-    dag=dag,
-)
+    job_name="Experiments Main Summary View",
+    execution_timeout=timedelta(hours=10),
+    instance_count=5,
+    max_instance_count=40,
+    enable_autoscale=True,
+    instance_type="i3.2xlarge",
+    spot_bid_price_percent=50,
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
+    env=tbv_envvar("com.mozilla.telemetry.views.ExperimentSummaryView", {
+        "from": "{{ ds_nodash }}",
+        "to": "{{ ds_nodash }}",
+        "bucket": "{{ task.__class__.private_output_bucket }}"}),
+    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    dag=dag)
 
 main_summary_experiments_bigquery_load = SubDagOperator(
     subdag=load_to_bigquery(
