@@ -660,7 +660,7 @@ bgbb_pred_dataproc = SubDagOperator(
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
         },
         additional_metadata={
-            "PIP_PACKAGES": "git+https://github.com/wcbeard/bgbb_airflow.git@bigquery"
+            "PIP_PACKAGES": "git+https://github.com/wcbeard/bgbb_airflow.git"
         },
         python_driver_code="gs://{}/jobs/bgbb_runner.py".format(params.artifact_bucket),
         py_args=[
