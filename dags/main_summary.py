@@ -268,74 +268,6 @@ experiments_aggregates_import = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/firefox-test-tube/master/notebook/import.py",
     dag=dag)
 
-search_dashboard = EMRSparkOperator(
-    task_id="search_dashboard",
-    job_name="Search Dashboard",
-    execution_timeout=timedelta(hours=3),
-    instance_count=3,
-    owner="harterrt@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
-    env=mozetl_envvar("search_dashboard", {
-        "submission_date": "{{ ds_nodash }}",
-        "input_bucket": "{{ task.__class__.private_output_bucket }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "harter/searchdb",
-        "save_mode": "overwrite"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
-search_dashboard_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="search_dashboard_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="harter/searchdb",
-        dataset_version="v7",
-        bigquery_dataset="search",
-        gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="search_aggregates_v7",
-        ),
-    task_id="search_dashboard_bigquery_load",
-    dag=dag)
-
-search_clients_daily = EMRSparkOperator(
-    task_id="search_clients_daily",
-    job_name="Search Clients Daily",
-    execution_timeout=timedelta(hours=5),
-    instance_count=5,
-    owner="harterrt@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
-    env=mozetl_envvar("search_clients_daily", {
-        "submission_date": "{{ ds_nodash }}",
-        "input_bucket": "{{ task.__class__.private_output_bucket }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "search_clients_daily",
-        "save_mode": "overwrite"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
-search_clients_daily_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="search_clients_daily_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="search_clients_daily",
-        dataset_version="v7",
-        bigquery_dataset="search",
-        gke_cluster_name="bq-load-gke-1",
-        reprocess=True,
-        ),
-    task_id="search_clients_daily_bigquery_load",
-    dag=dag)
-
 clients_daily = bigquery_etl_query(
     task_id="clients_daily",
     destination_table="clients_daily_v6",
@@ -713,10 +645,6 @@ main_summary_experiments.set_upstream(main_summary_export)
 main_summary_experiments_bigquery_load.set_upstream(main_summary_experiments)
 
 experiments_aggregates_import.set_upstream(main_summary_experiments)
-search_dashboard.set_upstream(main_summary_export)
-search_dashboard_bigquery_load.set_upstream(search_dashboard)
-search_clients_daily.set_upstream(main_summary_export)
-search_clients_daily_bigquery_load.set_upstream(search_clients_daily)
 
 taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
