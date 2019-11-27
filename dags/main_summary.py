@@ -690,6 +690,15 @@ taar_lite = SubDagOperator(
     dag=dag,
 )
 
+experiments_daily_active_clients = bigquery_etl_query(
+    task_id="experiments_daily_active_clients",
+    destination_table="experiments_daily_active_clients_v1",
+    dataset_id="telemetry_derived",
+    project_id="moz-fx-data-shared-prod",
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+    dag=dag)
+
 
 main_summary.set_upstream(copy_deduplicate_main_ping)
 main_summary_export.set_upstream(main_summary)
@@ -735,3 +744,5 @@ search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 taar_lite.set_upstream(clients_daily_export)
 
 bq_main_events.set_upstream(copy_deduplicate_main_ping)
+
+experiments_daily_active_clients.set_upstream(clients_daily)
