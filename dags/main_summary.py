@@ -135,34 +135,28 @@ main_summary_export = SubDagOperator(
 
 register_status(main_summary, "Main Summary", "A summary view of main pings.")
 
-addons = EMRSparkOperator(
+addons = bigquery_etl_query(
     task_id="addons",
-    job_name="Addons View",
-    execution_timeout=timedelta(hours=4),
-    instance_count=3,
-    env=tbv_envvar("com.mozilla.telemetry.views.AddonsView", {
-        "from": "{{ ds_nodash }}",
-        "to": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
+    destination_table="addons_v2",
+    dataset_id="telemetry_derived",
     dag=dag)
 
-addons_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
+addons_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="moz-fx-data-derived-datasets:telemetry_derived.addons_v2${{ds_nodash}}",
+        static_partitions="submission_date_s3={{ds_nodash}}",
+        arguments=[
+            "--partition-by=sample_id",
+            "--drop=submission_date",
+            # no bigint columns, convert them all to int for backward compatibility
+            "--bigint-columns=",
+        ],
         parent_dag_name=dag.dag_id,
-        dag_name="addons_bigquery_load",
+        dag_name="addons_export",
         default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="addons",
-        dataset_version="v2",
-        gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["sample_id"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="addons_bigquery_load",
+        num_preemptible_workers=10),
+    task_id="addons_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 main_events = EMRSparkOperator(
@@ -197,38 +191,28 @@ main_events_bigquery_load = SubDagOperator(
     task_id="main_events_bigquery_load",
     dag=dag)
 
-addon_aggregates = EMRSparkOperator(
+addon_aggregates = bigquery_etl_query(
     task_id="addon_aggregates",
-    job_name="Addon Aggregates View",
-    execution_timeout=timedelta(hours=8),
+    destination_table="addon_aggregates_v2",
+    dataset_id="telemetry_derived",
     owner="bmiroglio@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
-    instance_count=10,
-    env=mozetl_envvar("addon_aggregates", {
-        "date": "{{ ds_nodash }}",
-        "input-bucket": "{{ task.__class__.private_output_bucket }}",
-        "output-bucket": "{{ task.__class__.private_output_bucket }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
     dag=dag)
 
-addon_aggregates_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
+addon_aggregates_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="moz-fx-data-derived-datasets:telemetry_derived.addon_aggregates_v2${{ds_nodash}}",
+        destination_table="addons/agg/v2",
+        static_partitions="submission_date_s3={{ds_nodash}}",
+        arguments=[
+            "--partition-by=sample_id",
+            "--drop=submission_date",
+        ],
         parent_dag_name=dag.dag_id,
-        dag_name="addon_aggregates_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="addons/agg",
-        dataset_version="v2",
-        gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="addon_aggregates_v2",
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["sample_id"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="addon_aggregates_bigquery_load",
+        dag_name="addon_aggregates_export",
+        default_args=default_args),
+    task_id="addon_aggregates_export",
+    executor=GetDefaultExecutor(),
     dag=dag)
 
 main_summary_experiments = MozDatabricksSubmitRunOperator(
@@ -282,74 +266,6 @@ experiments_aggregates_import = EMRSparkOperator(
     email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
     env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
     uri="https://raw.githubusercontent.com/mozilla/firefox-test-tube/master/notebook/import.py",
-    dag=dag)
-
-search_dashboard = EMRSparkOperator(
-    task_id="search_dashboard",
-    job_name="Search Dashboard",
-    execution_timeout=timedelta(hours=3),
-    instance_count=3,
-    owner="harterrt@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
-    env=mozetl_envvar("search_dashboard", {
-        "submission_date": "{{ ds_nodash }}",
-        "input_bucket": "{{ task.__class__.private_output_bucket }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "harter/searchdb",
-        "save_mode": "overwrite"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
-search_dashboard_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="search_dashboard_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="harter/searchdb",
-        dataset_version="v7",
-        bigquery_dataset="search",
-        gke_cluster_name="bq-load-gke-1",
-        p2b_table_alias="search_aggregates_v7",
-        ),
-    task_id="search_dashboard_bigquery_load",
-    dag=dag)
-
-search_clients_daily = EMRSparkOperator(
-    task_id="search_clients_daily",
-    job_name="Search Clients Daily",
-    execution_timeout=timedelta(hours=5),
-    instance_count=5,
-    owner="harterrt@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "harterrt@mozilla.com", "wlachance@mozilla.com"],
-    env=mozetl_envvar("search_clients_daily", {
-        "submission_date": "{{ ds_nodash }}",
-        "input_bucket": "{{ task.__class__.private_output_bucket }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "search_clients_daily",
-        "save_mode": "overwrite"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
-
-search_clients_daily_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="search_clients_daily_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="search_clients_daily",
-        dataset_version="v7",
-        bigquery_dataset="search",
-        gke_cluster_name="bq-load-gke-1",
-        reprocess=True,
-        ),
-    task_id="search_clients_daily_bigquery_load",
     dag=dag)
 
 clients_daily = bigquery_etl_query(
@@ -482,6 +398,16 @@ smoot_usage_desktop_v2 = bigquery_etl_query(
     dataset_id='telemetry_derived',
     owner="jklukas@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    dag=dag)
+
+devtools_panel_usage = bigquery_etl_query(
+    task_id="devtools_panel_usage",
+    destination_table="devtools_panel_usage_v1",
+    project_id="moz-fx-data-shared-prod",
+    dataset_id="telemetry_derived",
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    start_date=datetime(2019, 11, 25),
     dag=dag)
 
 main_summary_glue = EMRSparkOperator(
@@ -707,10 +633,10 @@ main_summary_export.set_upstream(main_summary)
 clients_daily.set_upstream(main_summary)
 clients_daily_export.set_upstream(clients_daily)
 
-addons.set_upstream(main_summary_export)
-addons_bigquery_load.set_upstream(addons)
-addon_aggregates.set_upstream(addons)
-addon_aggregates_bigquery_load.set_upstream(addon_aggregates)
+addons.set_upstream(copy_deduplicate_main_ping)
+addons_export.set_upstream(addons)
+addon_aggregates.set_upstream(copy_deduplicate_main_ping)
+addon_aggregates_export.set_upstream(addon_aggregates)
 
 main_events.set_upstream(main_summary_export)
 main_events_bigquery_load.set_upstream(main_events)
@@ -719,10 +645,6 @@ main_summary_experiments.set_upstream(main_summary_export)
 main_summary_experiments_bigquery_load.set_upstream(main_summary_experiments)
 
 experiments_aggregates_import.set_upstream(main_summary_experiments)
-search_dashboard.set_upstream(main_summary_export)
-search_dashboard_bigquery_load.set_upstream(search_dashboard)
-search_clients_daily.set_upstream(main_summary_export)
-search_clients_daily_bigquery_load.set_upstream(search_clients_daily)
 
 taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
@@ -732,6 +654,7 @@ clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
+devtools_panel_usage.set_upstream(clients_daily)
 
 main_summary_glue.set_upstream(main_summary_export)
 
