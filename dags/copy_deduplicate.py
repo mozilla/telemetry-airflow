@@ -62,7 +62,7 @@ with models.DAG(
         task_id=gen_query_task_id,
         command=[
             "python",
-            "templates/telemetry_derived/experiment_enrollment_aggregates_live/query.sql.py",
+            "templates/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
             "--submission-date",
             "{ds}"
         ],
