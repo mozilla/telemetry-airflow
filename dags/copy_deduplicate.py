@@ -97,7 +97,8 @@ with models.DAG(
             "python",
             "templates/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
             "--submission-date",
-            "{ds}"
+            "{{ ds }}",
+            "--json-output"
         ],
         docker_image="mozilla/bigquery-etl:latest",
         xcom_push=True,
