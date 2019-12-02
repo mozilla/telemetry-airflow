@@ -535,40 +535,6 @@ taar_collaborative_recommender = SubDagOperator(
     dag=dag,
 )
 
-bgbb_pred = MozDatabricksSubmitRunOperator(
-    task_id="bgbb_pred",
-    job_name="Predict retention from a BGBB model",
-    execution_timeout=timedelta(hours=2),
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "wbeard@mozilla.com",
-        "amiyaguchi@mozilla.com",
-    ],
-    instance_count=10,
-    release_label="6.1.x-scala2.11",
-    env=mozetl_envvar(
-        "bgbb_pred",
-        {
-            "submission-date": "{{ ds }}",
-            "model-win": "90",
-            "sample-ids": "[]",
-            "param-bucket": "{{ task.__class__.private_output_bucket }}",
-            "param-prefix": "bgbb/params/v1",
-            "pred-bucket": "{{ task.__class__.private_output_bucket }}",
-            "pred-prefix": "bgbb/active_profiles/v1",
-        },
-        dev_options={
-            "model-win": "30",
-            "sample-ids": "[1]",
-        },
-        other={
-            "MOZETL_GIT_PATH": "https://github.com/wcbeard/bgbb_airflow.git",
-            "MOZETL_EXTERNAL_MODULE": "bgbb_airflow",
-        },
-    ),
-    dag=dag
-)
-
 subdag_args = default_args.copy()
 subdag_args["retries"] = 0
 task_id = "bgbb_pred_dataproc"
@@ -633,8 +599,6 @@ bgbb_pred_bigquery_load = SubDagOperator(
         parent_dag_name=dag.dag_id,
         dag_name="bgbb_pred_bigquery_load",
         default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
         dataset="bgbb/active_profiles",
         dataset_version="v1",
         p2b_table_alias="active_profiles_v1",
@@ -733,9 +697,8 @@ main_summary_glue.set_upstream(main_summary_export)
 taar_locale_job.set_upstream(clients_daily_export)
 taar_collaborative_recommender.set_upstream(clients_daily_export)
 
-bgbb_pred.set_upstream(clients_daily_export)
-bgbb_pred_bigquery_load.set_upstream(bgbb_pred)
 bgbb_pred_dataproc.set_upstream(clients_daily)
+bgbb_pred_bigquery_load.set_upstream(bgbb_pred_dataproc)
 
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
