@@ -81,7 +81,7 @@ main_summary = bigquery_etl_query(
 main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
-        static_partitions="submission_date_s3={{ds_nodash}}",
+        static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             "--partition-by=sample_id",
             "--replace='{{ds_nodash}}' AS submission_date",
@@ -148,7 +148,7 @@ addons = bigquery_etl_query(
 addons_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-derived-datasets:telemetry_derived.addons_v2${{ds_nodash}}",
-        static_partitions="submission_date_s3={{ds_nodash}}",
+        static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             "--partition-by=sample_id",
             "--drop=submission_date",
@@ -207,7 +207,7 @@ addon_aggregates_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-derived-datasets:telemetry_derived.addon_aggregates_v2${{ds_nodash}}",
         destination_table="addons/agg/v2",
-        static_partitions="submission_date_s3={{ds_nodash}}",
+        static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             "--partition-by=sample_id",
             "--drop=submission_date",
@@ -285,7 +285,7 @@ clients_daily = bigquery_etl_query(
 clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
-        static_partitions="submission_date_s3={{ds_nodash}}",
+        static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             # restore legacy schema
             "--maps-from-entries",
@@ -348,7 +348,7 @@ clients_last_seen = bigquery_etl_query(
 clients_last_seen_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.clients_last_seen_v1${{ds_nodash}}",
-        static_partitions="submission_date={{ds}}",
+        static_partitions=["submission_date={{ds}}"],
         arguments=[
             "--select",
             "cast(log2(days_seen_bits & -days_seen_bits) as long) as days_since_seen",
@@ -387,7 +387,7 @@ exact_mau_by_dimensions = bigquery_etl_query(
 exact_mau_by_dimensions_export = SubDagOperator(
     subdag=export_to_parquet(
         table="telemetry.firefox_desktop_exact_mau28_by_dimensions_v1${{ds_nodash}}",
-        static_partitions="submission_date={{ds}}",
+        static_partitions=["submission_date={{ds}}"],
         parent_dag_name=dag.dag_id,
         dag_name="exact_mau_by_dimensions_export",
         default_args=default_args),
@@ -654,6 +654,15 @@ taar_lite = SubDagOperator(
     dag=dag,
 )
 
+experiments_daily_active_clients = bigquery_etl_query(
+    task_id="experiments_daily_active_clients",
+    destination_table="experiments_daily_active_clients_v1",
+    dataset_id="telemetry_derived",
+    project_id="moz-fx-data-shared-prod",
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+    dag=dag)
+
 
 main_summary.set_upstream(copy_deduplicate_main_ping)
 main_summary_export.set_upstream(main_summary)
@@ -698,3 +707,5 @@ search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 taar_lite.set_upstream(clients_daily_export)
 
 bq_main_events.set_upstream(copy_deduplicate_main_ping)
+
+experiments_daily_active_clients.set_upstream(clients_daily)

@@ -1,7 +1,13 @@
 import datetime
 
 from airflow import models
-from utils.gcp import bigquery_etl_copy_deduplicate, bigquery_etl_query, gke_command, bigquery_xcom_query
+from airflow.executors import GetDefaultExecutor
+from airflow.operators.subdag_operator import SubDagOperator
+from utils.gcp import (bigquery_etl_copy_deduplicate,
+                       bigquery_etl_query,
+                       gke_command,
+                       bigquery_xcom_query,
+                       export_to_parquet)
 
 default_args = {
     "owner": "jklukas@mozilla.com",
@@ -43,7 +49,35 @@ with models.DAG(
         owner="ssuh@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
 
-    copy_deduplicate_all >> event_events
+    event_events_export = SubDagOperator(
+        subdag=export_to_parquet(
+            table="moz-fx-data-shared-prod:telemetry_derived.event_events_v1${{ds_nodash}}",
+            destination_table="events",
+            static_partitions=["submission_date_s3={{ds_nodash}}", "doc_type=event"],
+            arguments=[
+                "--drop=submission_date",
+                "--partition-by=submission_date_s3",
+                "--replace=UNIX_TIMESTAMP(timestamp) AS timestamp",
+                "--replace=CAST(sample_id AS STRING) AS sample_id",
+                "--replace=UNIX_TIMESTAMP(session_start_time) AS session_start_time",
+                "--replace=MAP_FROM_ARRAYS(experiments.key, experiments.value.branch) AS experiments",
+                "--replace=MAP_FROM_ENTRIES(event_map_values) AS event_map_values",
+                "--bigint-columns",
+                "sample_id",
+                "event_timestamp",
+            ],
+            # Write into telemetry-test-bucket for a day so we can check schema compat between outputs
+            # before turning off the AWS-based event_events dag
+            s3_output_bucket="telemetry-test-bucket",
+            parent_dag_name=dag.dag_id,
+            dag_name="event_events_export",
+            default_args=default_args,
+            num_workers=10),
+        task_id="event_events_export",
+        executor=GetDefaultExecutor(),
+        dag=dag)
+
+    copy_deduplicate_all >> event_events >> event_events_export
 
     # Experiment enrollment aggregates chain (depends on events)
 
@@ -62,9 +96,10 @@ with models.DAG(
         task_id=gen_query_task_id,
         command=[
             "python",
-            "templates/telemetry_derived/experiment_enrollment_aggregates_live/query.sql.py",
+            "templates/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
             "--submission-date",
-            "{ds}"
+            "{{ ds }}",
+            "--json-output",
         ],
         docker_image="mozilla/bigquery-etl:latest",
         xcom_push=True,
