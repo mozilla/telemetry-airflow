@@ -56,7 +56,7 @@ with models.DAG(
             static_partitions=["submission_date_s3={{ds_nodash}}", "doc_type=event"],
             arguments=[
                 "--drop=submission_date",
-                "--partition-by=submission_date_s3",
+                "--partition-by=doc_type",
                 "--replace=UNIX_TIMESTAMP(timestamp) AS timestamp",
                 "--replace=CAST(sample_id AS STRING) AS sample_id",
                 "--replace=UNIX_TIMESTAMP(session_start_time) AS session_start_time",
