@@ -75,6 +75,8 @@ with models.DAG(
             num_workers=10),
         task_id="event_events_export",
         executor=GetDefaultExecutor(),
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
         dag=dag)
 
     copy_deduplicate_all >> event_events >> event_events_export
