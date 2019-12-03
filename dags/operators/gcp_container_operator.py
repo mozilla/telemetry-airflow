@@ -6,7 +6,7 @@ from airflow import AirflowException
 
 from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
 
-from airflow.contrib.operators.gcp_container_operator import GKEPodOperator, GKEClusterCreateOperator, GKEClusterDeleteOperator
+from airflow.contrib.operators.gcp_container_operator import GKEPodOperator as UpstreamGKEPodOperator, GKEClusterCreateOperator, GKEClusterDeleteOperator
 
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
@@ -14,7 +14,7 @@ G_APP_CRED = "GOOGLE_APPLICATION_CREDENTIALS"
 GCLOUD_APP_CRED = "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE"
 
 
-class GKEPodOperator(GKEPodOperator):
+class GKEPodOperator(UpstreamGKEPodOperator):
     """
     We override execute and _set_env_from_extras methods to support:
 
@@ -23,6 +23,8 @@ class GKEPodOperator(GKEPodOperator):
         for gcloud to operate.
 
     - Adjust when NamedTemporaryFile file descriptor is closed.
+
+    - Preserve XCOM result when xcom_push is True.
 
     """
     def execute(self, context):
@@ -52,7 +54,9 @@ class GKEPodOperator(GKEPodOperator):
 
             # Tell `KubernetesPodOperator` where the config file is located
             self.config_file = os.environ[KUBE_CONFIG_ENV_VAR]
-            super(GKEPodOperator, self).execute(context)
+            result = super(UpstreamGKEPodOperator, self).execute(context)
+            if self.xcom_push:
+                return result
 
     def _set_env_from_extras(self, extras):
         """
