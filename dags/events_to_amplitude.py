@@ -6,12 +6,8 @@ from utils.tbv import tbv_envvar
 from utils.deploy import get_artifact_url
 from utils.status import register_status
 
-FOCUS_ANDROID_INSTANCES = 10
 DEVTOOLS_INSTANCES = 10
 DEVTOOLS_PRERELEASE_INSTANCES = 20
-ROCKET_ANDROID_INSTANCES = 5
-FENNEC_IOS_INSTANCES = 10
-FIRE_TV_INSTANCES = 10
 VCPUS_PER_INSTANCE = 16
 
 environment = "{{ task.__class__.deploy_environment }}"
@@ -45,21 +41,6 @@ default_args = {
 dag = DAG('events_to_amplitude', default_args=default_args, schedule_interval='0 1 * * *')
 
 
-focus_events_to_amplitude = EMRSparkOperator(
-    task_id="focus_android_events_to_amplitude",
-    job_name="Focus Android Events to Amplitude",
-    execution_timeout=timedelta(hours=8),
-    instance_count=FOCUS_ANDROID_INSTANCES,
-    env={
-        "date": "{{ ds_nodash }}",
-        "max_requests": FOCUS_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file("focus_android"),
-        "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "focus_android_events_schemas.json",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag)
-
 devtools_prerelease_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_prerelease_events_to_amplitude",
     job_name="DevTools Prerelease Events to Amplitude",
@@ -77,43 +58,6 @@ devtools_prerelease_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
     dag=dag)
 
-rocket_android_events_to_amplitude = EMRSparkOperator(
-    owner='nechen@mozilla.com',
-    task_id="rocket_android_events_to_amplitude",
-    job_name="Rocket Android Events to Amplitude",
-    execution_timeout=timedelta(hours=8),
-    instance_count=ROCKET_ANDROID_INSTANCES,
-    email=['frank@mozilla.com', 'nechen@mozilla.com'],
-    env={
-        "date": "{{ ds_nodash }}",
-        "max_requests": ROCKET_ANDROID_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file("rocket_android"),
-        "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "rocket_android_events_schemas.json",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag
-)
-
-fennec_ios_events_to_amplitude = EMRSparkOperator(
-    task_id="fennec_ios_events_to_amplitude",
-    job_name="Fennec iOS Events to Amplitude",
-    execution_timeout=timedelta(hours=8),
-    instance_count=FENNEC_IOS_INSTANCES,
-    email=['akomar@mozilla.com', 'telemetry-alerts@mozilla.com'],
-    env={
-        "date": "{{ ds_nodash }}",
-        "max_requests": FENNEC_IOS_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file("fennec_ios"),
-        "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "fennec_ios_events_schemas.json",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag
-)
-
-register_status(fennec_ios_events_to_amplitude, "Firefox-iOS Amplitude events",
-                "Daily job sending Firefox iOS events to Amplitude.")
 
 devtools_release_events_to_amplitude = EMRSparkOperator(
     task_id="devtools_release_events_to_amplitude",
@@ -144,21 +88,3 @@ devtools_release_events_to_amplitude = EMRSparkOperator(
     uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
     start_date=datetime(2018, 12, 4),
     dag=dag)
-
-fire_tv_events_to_amplitude = EMRSparkOperator(
-    owner='frank@mozilla.com',
-    task_id="fire_tv_events_to_amplitude",
-    job_name="Fire TV Events to Amplitude",
-    execution_timeout=timedelta(hours=8),
-    instance_count=FIRE_TV_INSTANCES,
-    email=['frank@mozilla.com'],
-    env={
-        "date": "{{ ds_nodash }}",
-        "max_requests": FIRE_TV_INSTANCES * VCPUS_PER_INSTANCE,
-        "key_file": key_file("fire_tv"),
-        "artifact": get_artifact_url(slug, branch="master"),
-        "config_filename": "fire_tv_events_schemas.json",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/events_to_amplitude.sh",
-    dag=dag
-)
