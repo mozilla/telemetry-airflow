@@ -66,9 +66,7 @@ with models.DAG(
                 "sample_id",
                 "event_timestamp",
             ],
-            # Write into telemetry-test-bucket for a day so we can check schema compat between outputs
-            # before turning off the AWS-based event_events dag
-            s3_output_bucket="telemetry-test-bucket",
+            s3_output_bucket="telemetry-parquet",
             parent_dag_name=dag.dag_id,
             dag_name="event_events_export",
             default_args=default_args,
