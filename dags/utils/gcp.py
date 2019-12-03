@@ -634,7 +634,7 @@ def bigquery_xcom_query(
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    query = "{{ " + "task_instance.xcom_pull(task_ids='{}')".format("xcom_task_id") + " }}"
+    query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
