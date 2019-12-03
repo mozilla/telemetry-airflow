@@ -20,6 +20,7 @@ from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     export_to_parquet,
     load_to_bigquery,
+    gke_command,
 )
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
@@ -78,6 +79,51 @@ main_summary = bigquery_etl_query(
     start_date=datetime(2019, 10, 25),
     dag=dag)
 
+main_summary_bigint_columns = [
+    # bigquery does not have 32-bit int, and int->bigint is not a
+    # backward compatible schema change in spark, so these are the
+    # bigint columns from when main summary was generated in spark, and
+    # the rest are converted to 32-bit int for backward compatibility
+    "--bigint-columns",
+    "search_counts.count",
+    "events.timestamp",
+    "sample_id",
+    "os_service_pack_major",
+    "os_service_pack_minor",
+    "windows_build_number",
+    "windows_ubr",
+    "install_year",
+    "profile_creation_date",
+    "profile_reset_date",
+    "session_length",
+    "subsession_length",
+    "timestamp",
+    "e10s_multi_processes",
+    "active_addons_count",
+    "client_clock_skew",
+    "client_submission_latency",
+    "gc_max_pause_ms_main_above_150",
+    "gc_max_pause_ms_main_above_250",
+    "gc_max_pause_ms_main_above_2500",
+    "gc_max_pause_ms_content_above_150",
+    "gc_max_pause_ms_content_above_250",
+    "gc_max_pause_ms_content_above_2500",
+    "cycle_collector_max_pause_main_above_150",
+    "cycle_collector_max_pause_main_above_250",
+    "cycle_collector_max_pause_main_above_2500",
+    "cycle_collector_max_pause_content_above_150",
+    "cycle_collector_max_pause_content_above_250",
+    "cycle_collector_max_pause_content_above_2500",
+    "input_event_response_coalesced_ms_main_above_150",
+    "input_event_response_coalesced_ms_main_above_250",
+    "input_event_response_coalesced_ms_main_above_2500",
+    "input_event_response_coalesced_ms_content_above_150",
+    "input_event_response_coalesced_ms_content_above_250",
+    "input_event_response_coalesced_ms_content_above_2500",
+    "ghost_windows_main_above_1",
+    "ghost_windows_content_above_1",
+]
+
 main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
@@ -86,49 +132,7 @@ main_summary_export = SubDagOperator(
             "--partition-by=sample_id",
             "--replace='{{ds_nodash}}' AS submission_date",
             "--maps-from-entries",
-            # bigquery does not have 32-bit int, and int->bigint is not a
-            # backward compatible schema change in spark, so these are the
-            # bigint columns from when main summary was generated in spark, and
-            # the rest are converted to 32-bit int for backward compatibility
-            "--bigint-columns",
-            "search_counts.count",
-            "events.timestamp",
-            "sample_id",
-            "os_service_pack_major",
-            "os_service_pack_minor",
-            "windows_build_number",
-            "windows_ubr",
-            "install_year",
-            "profile_creation_date",
-            "profile_reset_date",
-            "session_length",
-            "subsession_length",
-            "timestamp",
-            "e10s_multi_processes",
-            "active_addons_count",
-            "client_clock_skew",
-            "client_submission_latency",
-            "gc_max_pause_ms_main_above_150",
-            "gc_max_pause_ms_main_above_250",
-            "gc_max_pause_ms_main_above_2500",
-            "gc_max_pause_ms_content_above_150",
-            "gc_max_pause_ms_content_above_250",
-            "gc_max_pause_ms_content_above_2500",
-            "cycle_collector_max_pause_main_above_150",
-            "cycle_collector_max_pause_main_above_250",
-            "cycle_collector_max_pause_main_above_2500",
-            "cycle_collector_max_pause_content_above_150",
-            "cycle_collector_max_pause_content_above_250",
-            "cycle_collector_max_pause_content_above_2500",
-            "input_event_response_coalesced_ms_main_above_150",
-            "input_event_response_coalesced_ms_main_above_250",
-            "input_event_response_coalesced_ms_main_above_2500",
-            "input_event_response_coalesced_ms_content_above_150",
-            "input_event_response_coalesced_ms_content_above_250",
-            "input_event_response_coalesced_ms_content_above_2500",
-            "ghost_windows_main_above_1",
-            "ghost_windows_content_above_1",
-        ],
+        ] + main_summary_bigint_columns,
         parent_dag_name=dag.dag_id,
         dag_name="main_summary_export",
         default_args=default_args,
@@ -218,6 +222,59 @@ addon_aggregates_export = SubDagOperator(
     task_id="addon_aggregates_export",
     executor=GetDefaultExecutor(),
     dag=dag)
+
+main_summary_experiments_get_experiment_list = gke_command(
+    task_id="main_summary_experiments_get_experiment_list",
+    command=["python3", "templates/telemetry_derived/experiments_v1/get_experiment_list.py", "{{ds}}"],
+    docker_image="mozilla/bigquery-etl:latest",
+    xcom_push=True,
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
+    dag=dag)
+
+sql_main_summary_experiments = bigquery_etl_query(
+    task_id="sql_main_summary_experiments",
+    destination_table="experiments_v1",
+    parameters=(
+        "experiment_list:ARRAY<STRING>:{{task_instance.xcom_pull('main_summary_experiments_get_experiment_list') | tojson}}",
+    ),
+    project_id="moz-fx-data-shared-prod",
+    dataset_id="telemetry_derived",
+    owner="ssuh@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
+    dag=dag)
+
+main_summary_experiments_export = SubDagOperator(
+    subdag=export_to_parquet(
+        table="moz-fx-data-shared-prod:telemetry_derived.experiments_v1${{ds_nodash}}",
+        destination_table="sql_experiments_v1",  # TODO remove this line when removing the databricks job
+        arguments=[
+            "--partition-by",
+            "experiment_id",
+            "submission_date_s3",
+            "--select",
+            "*",
+            "'{{ds_nodash}}' AS submission_date_s3",
+            "--replace",
+            "'{{ds_nodash}}' AS submission_date",
+            "SAFE_CAST(sample_id AS INT64) AS sample_id",
+            "--maps-from-entries",
+            "--partition-overwrite-mode",
+        ] + main_summary_bigint_columns,
+        parent_dag_name=dag.dag_id,
+        dag_name="main_summary_experiments_export",
+        default_args={
+            key: value
+            for key, value in chain(default_args.items(), [
+                ("owner", "ssuh@mozilla.com"),
+                ("email", ["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"]),
+            ])
+        },
+    ),
+    task_id="main_summary_experiments_export",
+    executor=GetDefaultExecutor(),
+    dag=dag,
+)
 
 main_summary_experiments = MozDatabricksSubmitRunOperator(
     task_id="main_summary_experiments",
@@ -677,6 +734,9 @@ addon_aggregates_export.set_upstream(addon_aggregates)
 main_events.set_upstream(main_summary_export)
 main_events_bigquery_load.set_upstream(main_events)
 
+sql_main_summary_experiments.set_upstream(main_summary)
+sql_main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
+main_summary_experiments_export.set_upstream(sql_main_summary_experiments)
 main_summary_experiments.set_upstream(main_summary_export)
 main_summary_experiments_bigquery_load.set_upstream(main_summary_experiments)
 
