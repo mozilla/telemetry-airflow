@@ -404,7 +404,8 @@ def export_to_parquet(
                 }.items()
                 if value
             ]
-            + ["--static-partitions=" + p for p in static_partitions]
+            + (["--static-partitions"] if static_partitions else [])
+            + [static_partitions]
             + arguments,
             gcp_conn_id=gcp_conn_id,
         )
