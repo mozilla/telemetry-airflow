@@ -13,6 +13,7 @@ from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleClou
 from operators.dataproc_hadoop_with_aws import DataProcHadoopOperatorWithAws
 from operators.gcs import GoogleCloudStorageDeleteOperator
 
+import json
 import re
 
 
