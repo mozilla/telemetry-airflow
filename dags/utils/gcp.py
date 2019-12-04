@@ -715,6 +715,7 @@ def gke_command(
         )
         if value is not None}
     context_env_vars["XCOM_PUSH"] = json.dumps(xcom_push)
+    context_env_vars.update(env_vars)
 
     return GKEPodOperator(
         task_id=task_id,
@@ -727,6 +728,6 @@ def gke_command(
         arguments=command,
         image_pull_policy=image_pull_policy,
         xcom_push=xcom_push,
-        env_vars=context_env_vars.update(env_vars),
+        env_vars=context_env_vars,
         **kwargs
     )
