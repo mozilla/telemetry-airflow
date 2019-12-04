@@ -259,7 +259,7 @@ main_summary_experiments_export = SubDagOperator(
             "'{{ds_nodash}}' AS submission_date",
             "SAFE_CAST(sample_id AS INT64) AS sample_id",
             "--maps-from-entries",
-            "--partition-overwrite-mode",
+            "--partition-overwrite-mode=DYNAMIC",
         ] + main_summary_bigint_columns,
         parent_dag_name=dag.dag_id,
         dag_name="main_summary_experiments_export",
