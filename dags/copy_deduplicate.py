@@ -52,16 +52,17 @@ with models.DAG(
     event_events_export = SubDagOperator(
         subdag=export_to_parquet(
             table="moz-fx-data-shared-prod:telemetry_derived.event_events_v1${{ds_nodash}}",
-            destination_table="events",
+            destination_table="events_v1",
             static_partitions=["submission_date_s3={{ds_nodash}}", "doc_type=event"],
             arguments=[
                 "--drop=submission_date",
                 "--partition-by=doc_type",
-                "--replace=UNIX_TIMESTAMP(timestamp) AS timestamp",
-                "--replace=CAST(sample_id AS STRING) AS sample_id",
-                "--replace=UNIX_TIMESTAMP(session_start_time) AS session_start_time",
-                "--replace=MAP_FROM_ARRAYS(experiments.key, experiments.value.branch) AS experiments",
-                "--replace=MAP_FROM_ENTRIES(event_map_values) AS event_map_values",
+                "--replace",
+                "UNIX_TIMESTAMP(timestamp) AS timestamp",
+                "CAST(sample_id AS STRING) AS sample_id",
+                "UNIX_TIMESTAMP(session_start_time) AS session_start_time",
+                "MAP_FROM_ARRAYS(experiments.key, experiments.value.branch) AS experiments",
+                "MAP_FROM_ENTRIES(event_map_values) AS event_map_values",
                 "--bigint-columns",
                 "sample_id",
                 "event_timestamp",
