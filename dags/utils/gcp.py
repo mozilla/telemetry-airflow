@@ -13,6 +13,7 @@ from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleClou
 from operators.dataproc_hadoop_with_aws import DataProcHadoopOperatorWithAws
 from operators.gcs import GoogleCloudStorageDeleteOperator
 
+import json
 import re
 
 
@@ -683,6 +684,7 @@ def gke_command(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     image_pull_policy="Always",
+    xcom_push=False,
     **kwargs
 ):
     """ Run a docker command on GKE
@@ -697,6 +699,7 @@ def gke_command(
     :param str gke_namespace:      GKE cluster namespace
     :param str image_pull_policy:  Kubernetes policy for when to pull
                                    docker_image
+    :param bool xcom_push:         Return the output of this command as an xcom
     :param Dict[str, Any] kwargs:  Additional keyword arguments for
                                    GKEPodOperator
 
@@ -712,14 +715,18 @@ def gke_command(
         namespace=gke_namespace,
         image=docker_image,
         arguments=command,
-        env_vars={
+        env_vars={**{
             key: value
             for key, value in zip(
                 ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
                 AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
             )
-            if value is not None
-        },
+            if value is not None},
+            **{
+                "XCOM_PUSH": json.dumps(xcom_push),
+            },
+        }},
         image_pull_policy=image_pull_policy,
+        xcom_push=xcom_push,
         **kwargs
     )
