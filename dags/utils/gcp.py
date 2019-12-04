@@ -685,6 +685,7 @@ def gke_command(
     gke_namespace="default",
     image_pull_policy="Always",
     xcom_push=False,
+    env_vars={},
     **kwargs
 ):
     """ Run a docker command on GKE
@@ -706,6 +707,15 @@ def gke_command(
     :return: GKEPodOperator
     """
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    context_env_vars = {
+        key: value
+        for key, value in zip(
+            ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
+            AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
+        )
+        if value is not None}
+    context_env_vars["XCOM_PUSH"] = json.dumps(xcom_push)
+
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
@@ -715,18 +725,8 @@ def gke_command(
         namespace=gke_namespace,
         image=docker_image,
         arguments=command,
-        env_vars={**{
-            key: value
-            for key, value in zip(
-                ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
-                AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
-            )
-            if value is not None},
-            **{
-                "XCOM_PUSH": json.dumps(xcom_push),
-            },
-        }},
         image_pull_policy=image_pull_policy,
         xcom_push=xcom_push,
+        env_vars=context_env_vars.update(env_vars),
         **kwargs
     )
