@@ -722,7 +722,7 @@ def gke_command(
             )
             if value is not None},
             **{
-                "XCOM_PUSH": xcom_push
+                "XCOM_PUSH": json.dumps(xcom_push),
             },
         }},
         image_pull_policy=image_pull_policy,
