@@ -275,18 +275,6 @@ main_summary_experiments_export = SubDagOperator(
     dag=dag,
 )
 
-experiments_aggregates_import = EMRSparkOperator(
-    task_id="experiments_aggregates_import",
-    job_name="Experiments Aggregates Import",
-    execution_timeout=timedelta(hours=10),
-    instance_count=1,
-    disable_on_dev=True,
-    owner="robhudson@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/firefox-test-tube/master/notebook/import.py",
-    dag=dag)
-
 clients_daily = bigquery_etl_query(
     task_id="clients_daily",
     destination_table="clients_daily_v6",
@@ -695,8 +683,6 @@ main_events_bigquery_load.set_upstream(main_events)
 main_summary_experiments.set_upstream(main_summary)
 main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
 main_summary_experiments_export.set_upstream(main_summary_experiments)
-
-experiments_aggregates_import.set_upstream(main_summary_experiments_export)
 
 taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
