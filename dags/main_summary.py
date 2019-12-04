@@ -247,7 +247,6 @@ main_summary_experiments = bigquery_etl_query(
 main_summary_experiments_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.experiments_v1${{ds_nodash}}",
-        destination_table="sql_experiments_v1",  # TODO remove this line when removing the databricks job
         arguments=[
             "--partition-by",
             "experiment_id",
