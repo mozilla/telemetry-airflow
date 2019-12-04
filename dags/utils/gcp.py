@@ -300,7 +300,7 @@ def reprocess_parquet(parent_dag_name,
 def export_to_parquet(
     table,
     destination_table=None,
-    static_partitions=None,
+    static_partitions=[],
     arguments=[],
     use_storage_api=False,
     dag_name="export_to_parquet",
@@ -339,7 +339,8 @@ def export_to_parquet(
     """
 
     # remove the dataset prefix and partition suffix from table
-    unqualified_table = table.rsplit(".", 1).pop().split("$", 1)[0]
+    table_id = table.rsplit(".", 1)[-1]
+    unqualified_table, _, partition_id = table_id.partition("$")
     # limit cluster name to 35 characters plus suffix of -export-YYYYMMDD (51 total)
     cluster_name = unqualified_table.replace("_", "-")
     if len(cluster_name) > 35:
@@ -358,6 +359,8 @@ def export_to_parquet(
     if static_partitions:
         export_prefix += "/".join(static_partitions) + "/"
     avro_prefix = "avro/" + export_prefix
+    if not static_partitions and partition_id:
+        avro_prefix += "partition_id=" + partition_id + "/"
     avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
@@ -634,7 +637,7 @@ def bigquery_xcom_query(
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    query = "{{ " + "task_instance.xcom_pull(task_ids='{}')".format("xcom_task_id") + " }}"
+    query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
