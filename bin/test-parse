@@ -12,17 +12,16 @@ function inject_failing_dags() {
     # cleanup in this function. Update this variable when new tests are added.
     export EXPECTED_NUM_ERRORS=1
 
-    local test_0="dags/bin_test_parse_variable_not_exist.py"
+    export test_0="dags/bin_test_parse_variable_not_exist.py"
     tee << EOF > ${test_0}
 from airflow import DAG
 from airflow.models import Variable
 Variable.get('non_existent_variable')
 EOF
-    # override the initial cleanup function
+
     function cleanup_with_tests() {
         docker-compose down
-        # also remove .pyc files
-        rm "${test_0}*"
+        rm "${test_0}"
     }
     trap cleanup_with_tests EXIT
 }
@@ -54,7 +53,8 @@ function main() {
         exit 1
     fi
     
-    # register clean-up, the testing function may override the trap.
+    # Register the cleanup function, note that the testing function may override
+    # the trap on the exit signal.
     function cleanup {
         docker-compose down
     }
