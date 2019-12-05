@@ -139,6 +139,7 @@ case $1 in
 
     # Only init connections in dev
     [ ! -z ${DEVELOPMENT+check} ] && init_connections && init_variables
+    echo "[testing_stage_0]: Initialization complete!"
 
     exec airflow webserver -p ${PORT} --workers 4
     ;;
