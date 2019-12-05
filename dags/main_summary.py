@@ -232,8 +232,8 @@ main_summary_experiments_get_experiment_list = gke_command(
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
     dag=dag)
 
-sql_main_summary_experiments = bigquery_etl_query(
-    task_id="sql_main_summary_experiments",
+main_summary_experiments = bigquery_etl_query(
+    task_id="main_summary_experiments",
     destination_table="experiments_v1",
     parameters=(
         "experiment_list:ARRAY<STRING>:{{task_instance.xcom_pull('main_summary_experiments_get_experiment_list') | tojson}}",
@@ -247,7 +247,6 @@ sql_main_summary_experiments = bigquery_etl_query(
 main_summary_experiments_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.experiments_v1${{ds_nodash}}",
-        destination_table="sql_experiments_v1",  # TODO remove this line when removing the databricks job
         arguments=[
             "--partition-by",
             "experiment_id",
@@ -275,59 +274,6 @@ main_summary_experiments_export = SubDagOperator(
     executor=GetDefaultExecutor(),
     dag=dag,
 )
-
-main_summary_experiments = MozDatabricksSubmitRunOperator(
-    task_id="main_summary_experiments",
-    job_name="Experiments Main Summary View",
-    execution_timeout=timedelta(hours=10),
-    instance_count=5,
-    max_instance_count=40,
-    enable_autoscale=True,
-    instance_type="i3.2xlarge",
-    spot_bid_price_percent=50,
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    env=tbv_envvar("com.mozilla.telemetry.views.ExperimentSummaryView", {
-        "from": "{{ ds_nodash }}",
-        "to": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
-main_summary_experiments_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_summary_experiments_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="experiments",
-        dataset_version="v1",
-        objects_prefix='experiments/v1',
-        spark_gs_dataset_location='gs://moz-fx-data-derived-datasets-parquet-tmp/experiments/v1/*/submission_date_s3={{ds_nodash}}',
-        gke_cluster_name="bq-load-gke-1",
-        p2b_resume=True,
-        reprocess=True,
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["experiment_id"],
-        drop=["submission_date"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="main_summary_experiments_bigquery_load",
-    dag=dag)
-
-experiments_aggregates_import = EMRSparkOperator(
-    task_id="experiments_aggregates_import",
-    job_name="Experiments Aggregates Import",
-    execution_timeout=timedelta(hours=10),
-    instance_count=1,
-    disable_on_dev=True,
-    owner="robhudson@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "robhudson@mozilla.com"],
-    env={"date": "{{ ds_nodash }}", "bucket": "{{ task.__class__.private_output_bucket }}"},
-    uri="https://raw.githubusercontent.com/mozilla/firefox-test-tube/master/notebook/import.py",
-    dag=dag)
 
 clients_daily = bigquery_etl_query(
     task_id="clients_daily",
@@ -734,13 +680,9 @@ addon_aggregates_export.set_upstream(addon_aggregates)
 main_events.set_upstream(main_summary_export)
 main_events_bigquery_load.set_upstream(main_events)
 
-sql_main_summary_experiments.set_upstream(main_summary)
-sql_main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
-main_summary_experiments_export.set_upstream(sql_main_summary_experiments)
-main_summary_experiments.set_upstream(main_summary_export)
-main_summary_experiments_bigquery_load.set_upstream(main_summary_experiments)
-
-experiments_aggregates_import.set_upstream(main_summary_experiments)
+main_summary_experiments.set_upstream(main_summary)
+main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
+main_summary_experiments_export.set_upstream(main_summary_experiments)
 
 taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
