@@ -17,7 +17,6 @@ default_args = {
 dag = DAG("document_sample", default_args=default_args, schedule_interval="0 1 * * *")
 
 document_sample_nonprod_v1 = bigquery_etl_query(
-    task_id="document_sample_nonprod_v1",
     destination_table="document_sample_nonprod_v1",
     dataset_id="monitoring",
     project_id="moz-fx-data-shared-prod",
