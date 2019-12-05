@@ -113,9 +113,10 @@ API keys in an Airflow connection or variable. These variables are sure to exist
 are often not mirrored locally for logistical reasons. Providing a dummy variable is the preferred
 way to keep the local development environment up to date.
 
-In `dags/run`, please update the `init_connections` and `init_variables` with appropriate strings to
-prevent broken workflows. To test this, restart the orchestrated containers and check for error
-messages within the main administration UI at `localhost:8000`.
+In `bin/run`, please update the `init_connections` and `init_variables` with appropriate strings to
+prevent broken workflows. To test this, run `bin/test-parse` to check for errors. You may manually
+test this by restarting the orchestrated containers and checking for error messages within the main
+administration UI at `localhost:8000`.
 
 ### Testing main_summary
 
