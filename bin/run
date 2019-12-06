@@ -111,11 +111,16 @@ init_connections() {
 }
 
 init_variables() {
-    airflow variables -s \
-        "LEANPLUM_FENNEC_NIGHTLY_APP_ID" "fennec-nightly-app-id"
-
-    airflow variables -s \
-        "LEANPLUM_FENNEC_NIGHTLY_CLIENT_KEY" "fennec-nightly-client-key"
+    airflow variables -s "LEANPLUM_FENNEC_NIGHTLY_APP_ID" "fennec-nightly-app-id"
+    airflow variables -s "LEANPLUM_FENNEC_NIGHTLY_CLIENT_KEY" "fennec-nightly-client-key"
+    airflow variables -s "LEANPLUM_FENNEC_BETA_APP_ID" "fennec-beta-app-id"
+    airflow variables -s "LEANPLUM_FENNEC_BETA_CLIENT_KEY" "fennec-beta-client-key"
+    airflow variables -s "LEANPLUM_FENNEC_RELEASE_APP_ID" "fennec-release-app-id"
+    airflow variables -s "LEANPLUM_FENNEC_RELEASE_CLIENT_KEY" "fennec-release-client-key"
+    airflow variables -s "LEANPLUM_FIREFOX_PREVIEW_APP_ID" "firefox-preview-app-id"
+    airflow variables -s "LEANPLUM_FIREFOX_PREVIEW_CLIENT_KEY" "firefox-preview-client-key"
+    airflow variables -s "LEANPLUM_FIREFOX_IOS_RELEASE_APP_ID" "firefox-ios-app-id"
+    airflow variables -s "LEANPLUM_FIREFOX_IOS_RELEASE_CLIENT_KEY" "firefox-ios-client-key"
 }
 
 [ $# -lt 1 ] && usage
@@ -134,6 +139,7 @@ case $1 in
 
     # Only init connections in dev
     [ ! -z ${DEVELOPMENT+check} ] && init_connections && init_variables
+    echo "[testing_stage_0]: Initialization complete!"
 
     exec airflow webserver -p ${PORT} --workers 4
     ;;

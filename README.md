@@ -106,6 +106,18 @@ docker exec -ti -e DEV_USERNAME -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID te
 airflow test example spark 20180101
 ```
 
+### Adding dummy credentials
+
+Tasks often require credentials to access external credentials. For example, one may choose to store
+API keys in an Airflow connection or variable. These variables are sure to exist in production but
+are often not mirrored locally for logistical reasons. Providing a dummy variable is the preferred
+way to keep the local development environment up to date.
+
+In `bin/run`, please update the `init_connections` and `init_variables` with appropriate strings to
+prevent broken workflows. To test this, run `bin/test-parse` to check for errors. You may manually
+test this by restarting the orchestrated containers and checking for error messages within the main
+administration UI at `localhost:8000`.
+
 ### Testing main_summary
 
 `main_summary` can be a good test case for any large changes to telemetry-batch-view, launch in dev as:
