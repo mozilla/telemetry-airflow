@@ -175,6 +175,24 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
+    # Mobile search
+
+    mobile_search_clients_daily = bigquery_etl_query(
+        task_id='mobile_search_clients_daily',
+        project_id='moz-fx-data-shared-prod',
+        dataset_id="search_derived",
+        destination_table='mobile_search_clients_daily_v1',
+        email=['telemetry-alerts@mozilla.com', 'bewu@mozilla.com'],
+    )
+
+    mobile_search_aggregates = bigquery_etl_query(
+        task_id='mobile_search_aggregates',
+        project_id='moz-fx-data-shared-prod',
+        dataset_id="search_derived",
+        destination_table='mobile_search_aggregates_v1',
+        email=['telemetry-alerts@mozilla.com', 'bewu@mozilla.com'],
+    )
+
     (copy_deduplicate_all >>
      core_clients_daily >>
      core_clients_last_seen >>
@@ -184,3 +202,7 @@ with models.DAG(
      fenix_clients_daily >>
      fenix_clients_last_seen >>
      [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2])
+
+    (copy_deduplicate_all >>
+     mobile_search_clients_daily >>
+     mobile_search_aggregates)
