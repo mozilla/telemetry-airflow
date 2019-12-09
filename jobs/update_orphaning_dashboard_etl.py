@@ -146,47 +146,10 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
             payload.histograms.update_status_error_code_partial_stage,
             payload.histograms.update_status_error_code_unknown_stage
         FROM
-            `moz-fx-data-shared-prod.static.main_1pct_backfill`
-        WHERE
-            sample_id = 42
-            AND DATE(submission_timestamp)>='2019-01-01'
-            AND DATE(submission_timestamp)<'2019-09-01'
-        UNION ALL
-        SELECT
-            submission_timestamp,
-            client_id,
-            struct(cast(environment.build.version as STRING) as version, environment.build.application_name as application_name) as build,
-            struct(struct(environment.settings.update.channel as channel, environment.settings.update.enabled as enabled) as update) as settings,
-            payload.info.session_length,
-            payload.info.profile_subsession_counter,
-            environment.settings.update.enabled,
-            payload.info.subsession_start_date,
-            payload.info.subsession_length,
-            payload.histograms.update_check_code_notify,
-            payload.keyed_histograms.update_check_extended_error_notify,
-            payload.histograms.update_check_no_update_notify,
-            payload.histograms.update_not_pref_update_auto_notify,
-            payload.histograms.update_ping_count_notify,
-            payload.histograms.update_unable_to_apply_notify,
-            payload.histograms.update_download_code_partial,
-            payload.histograms.update_download_code_complete,
-            payload.histograms.update_state_code_partial_stage,
-            payload.histograms.update_state_code_complete_stage,
-            payload.histograms.update_state_code_unknown_stage,
-            payload.histograms.update_state_code_partial_startup,
-            payload.histograms.update_state_code_complete_startup,
-            payload.histograms.update_state_code_unknown_startup,
-            payload.histograms.update_status_error_code_complete_startup,
-            payload.histograms.update_status_error_code_partial_startup,
-            payload.histograms.update_status_error_code_unknown_startup,
-            payload.histograms.update_status_error_code_complete_stage,
-            payload.histograms.update_status_error_code_partial_stage,
-            payload.histograms.update_status_error_code_unknown_stage
-        FROM
             `moz-fx-data-shared-prod.telemetry.main`
         WHERE
             sample_id = 42
-            AND DATE(submission_timestamp)>='2019-09-01' )
+            AND environment.build.version IS NOT NULL )
     SELECT
         client_id,
         struct(array_agg(build.version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as version, array_agg(build.application_name order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as application_name) as build,
