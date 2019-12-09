@@ -88,6 +88,17 @@ clients_scalar_aggregates = bigquery_etl_query(
     arguments=('--replace',),
     dag=dag)
 
+scalar_percentiles = bigquery_etl_query(
+    task_id="scalar_percentiles",
+    destination_table="scalar_percentiles_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
 clients_scalar_bucket_counts = bigquery_etl_query(
     task_id="clients_scalar_bucket_counts",
     destination_table="clients_scalar_bucket_counts_v1",
@@ -135,6 +146,28 @@ clients_histogram_aggregates = bigquery_etl_query(
     arguments=('--replace',),
     dag=dag)
 
+histogram_percentiles = bigquery_etl_query(
+    task_id="histogram_percentiles",
+    destination_table="histogram_percentiles_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
+glam_user_counts = bigquery_etl_query(
+    task_id="glam_user_counts",
+    destination_table="glam_user_counts_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
 sql_file_path = "sql/{}/{}/query.sql".format(dataset_id, "clients_scalar_probe_counts_v1")
 client_scalar_probe_counts = bigquery_etl_query(
     task_id="client_scalar_probe_counts",
@@ -168,6 +201,7 @@ clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
 clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
 clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
 clients_scalar_aggregates >> clients_scalar_bucket_counts
+clients_scalar_aggregates >> scalar_percentiles
 
 latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
@@ -176,3 +210,7 @@ clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 clients_scalar_bucket_counts >> client_scalar_probe_counts
 client_scalar_probe_counts >> client_histogram_probe_counts
 clients_histogram_aggregates >> client_histogram_probe_counts
+client_histogram_probe_counts >> histogram_percentiles
+
+clients_scalar_aggregates >> glam_user_counts
+clients_histogram_aggregates >> glam_user_counts
