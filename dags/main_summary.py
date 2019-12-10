@@ -22,6 +22,7 @@ from utils.gcp import (
     load_to_bigquery,
     gke_command,
 )
+from utils.forecasting import simpleprophet_forecast
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
 taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
@@ -415,6 +416,16 @@ smoot_usage_desktop_v2 = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
+simpleprophet_forecasts_desktop = simpleprophet_forecast(
+    task_id="simpleprophet_forecasts_desktop",
+    datasource="desktop",
+    project_id='moz-fx-data-shared-prod',
+    dataset_id='telemetry_derived',
+    table_id='simpleprophet_forecasts_desktop_v1',
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    dag=dag)
+
 devtools_panel_usage = bigquery_etl_query(
     task_id="devtools_panel_usage",
     destination_table="devtools_panel_usage_v1",
@@ -701,6 +712,7 @@ exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
+simpleprophet_forecasts_desktop.set_upstream(exact_mau_by_dimensions)
 devtools_panel_usage.set_upstream(clients_daily)
 
 main_summary_glue.set_upstream(main_summary_export)
