@@ -1,6 +1,7 @@
 import datetime
 
 from airflow import models
+from utils.forecasting import simpleprophet_forecast
 from utils.gcp import bigquery_etl_query
 
 default_args = {
@@ -88,6 +89,17 @@ with models.DAG(
     )
 
     fxa_users_last_seen >> smoot_usage_fxa_v2
+
+    simpleprophet_forecasts_fxa = simpleprophet_forecast(
+        task_id="fxa_simpleprophet_forecasts",
+        datasource="fxa",
+        project_id='moz-fx-data-shared-prod',
+        dataset_id='telemetry_derived',
+        table_id='simpleprophet_forecasts_fxa_v1',
+        email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    )
+
+    simpleprophet_forecasts_fxa << firefox_accounts_exact_mau28_raw
 
 
     # Per-user-per-service tables.

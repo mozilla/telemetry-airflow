@@ -3,6 +3,7 @@ import datetime
 from airflow import models
 from airflow.executors import GetDefaultExecutor
 from airflow.operators.subdag_operator import SubDagOperator
+from utils.forecasting import simpleprophet_forecast
 from utils.gcp import (bigquery_etl_copy_deduplicate,
                        bigquery_etl_query,
                        gke_command,
@@ -177,12 +178,43 @@ with models.DAG(
 
     firefox_nondesktop_exact_mau28_by_client_count_dimensions = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_by_client_count_dimensions',
+        project_id='moz-fx-data-shared-prod',
         destination_table='firefox_nondesktop_exact_mau28_by_client_count_dimensions_v1',
         dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
-    # Mobile search
+    nondesktop_aggregate_tasks = [
+        firefox_nondesktop_exact_mau28,
+        smoot_usage_nondesktop_v2,
+        firefox_nondesktop_exact_mau28_by_client_count_dimensions,
+    ]
+
+    (copy_deduplicate_all >>
+     core_clients_daily >>
+     core_clients_last_seen >>
+     nondesktop_aggregate_tasks)
+
+    (copy_deduplicate_all >>
+     fenix_clients_daily >>
+     fenix_clients_last_seen >>
+     nondesktop_aggregate_tasks)
+
+    # Nondesktop forecasts.
+
+    simpleprophet_forecasts_mobile = simpleprophet_forecast(
+        task_id="simpleprophet_forecasts_mobile",
+        datasource="mobile",
+        project_id='moz-fx-data-shared-prod',
+        dataset_id='telemetry_derived',
+        table_id='simpleprophet_forecasts_mobile_v1',
+        owner="jklukas@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    )
+
+    firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
+
+    # Mobile search queries and dependency chain.
 
     mobile_search_clients_daily = bigquery_etl_query(
         task_id='mobile_search_clients_daily',
@@ -199,17 +231,6 @@ with models.DAG(
         destination_table='mobile_search_aggregates_v1',
         email=['telemetry-alerts@mozilla.com', 'bewu@mozilla.com'],
     )
-
-    (copy_deduplicate_all >>
-     core_clients_daily >>
-     core_clients_last_seen >>
-     [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2,
-      firefox_nondesktop_exact_mau28_by_client_count_dimensions])
-
-    (copy_deduplicate_all >>
-     fenix_clients_daily >>
-     fenix_clients_last_seen >>
-     [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2])
 
     (copy_deduplicate_all >>
      mobile_search_clients_daily >>
