@@ -398,6 +398,14 @@ exact_mau_by_dimensions_export = SubDagOperator(
     executor=GetDefaultExecutor(),
     dag=dag)
 
+exact_mau_by_client_count_dimensions = bigquery_etl_query(
+    task_id="exact_mau_by_client_count_dimensions",
+    destination_table="firefox_desktop_exact_mau28_by_client_count_dimensions_v1",
+    dataset_id="telemetry_derived",
+    owner="mreid@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "mreid@mozilla.com"],
+    dag=dag)
+
 smoot_usage_desktop_v2 = bigquery_etl_query(
     task_id='smoot_usage_desktop_v2',
     project_id='moz-fx-data-shared-prod',
@@ -691,6 +699,7 @@ clients_last_seen.set_upstream(clients_daily)
 clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
+exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 devtools_panel_usage.set_upstream(clients_daily)
 
