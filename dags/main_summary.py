@@ -658,6 +658,7 @@ search_clients_last_seen = bigquery_etl_query(
     destination_table="search_clients_last_seen_v1",
     dataset_id="search_derived",
     project_id="moz-fx-data-shared-prod",
+    depends_on_past=True,
     owner="frank@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     dag=dag)
