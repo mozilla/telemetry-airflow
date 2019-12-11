@@ -653,6 +653,15 @@ search_aggregates_bigquery = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
     dag=dag)
 
+search_clients_last_seen = bigquery_etl_query(
+    task_id="search_clients_last_seen",
+    destination_table="search_clients_last_seen_v1",
+    dataset_id="search_derived",
+    project_id="moz-fx-data-shared-prod",
+    owner="frank@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
+    dag=dag)
+
 taar_lite = SubDagOperator(
     task_id="taar_lite",
     subdag=moz_dataproc_pyspark_runner(
@@ -726,6 +735,7 @@ bgbb_pred_bigquery_load.set_upstream(bgbb_pred_dataproc)
 
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
+search_clients_last_seen.set_upstream(search_clients_daily)
 
 # Set a dependency on clients_daily from taar_lite
 taar_lite.set_upstream(clients_daily_export)
