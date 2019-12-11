@@ -12,6 +12,7 @@ def export_to_amplitude(
         parent_dag_name,
         dag_name,
         default_args,
+        project,
         dataset,
         table_or_view,
         s3_prefix,
@@ -29,6 +30,7 @@ def export_to_amplitude(
     :param str parent_dag_name: Parent dag name
     :param str dag_name: This dag's name (appended to parent_dag_name)
     :param str default_args: DAG configuration
+    :param str dataset: BigQuery project containing the table to be exported
     :param str dataset: BigQuery dataset
     :param str table_or_view: Table or view name
     :param str gcs_bucket: The bucket the data will be exported to
@@ -50,9 +52,9 @@ def export_to_amplitude(
         # Check that we have data for this date
         check_sql = (
             'SELECT COUNT(*) '
-            'FROM {}.{} '
+            'FROM `{}.{}.{}` '
             'WHERE DATE(submission_timestamp) = "{}"'
-        ).format(dataset, table_or_view, exec_date)
+        ).format(project, dataset, table_or_view, exec_date)
 
         wait_for_data = BigQuerySQLSensorOperator(
                 task_id='wait_for_data',
@@ -68,9 +70,9 @@ def export_to_amplitude(
 
         sql = (
             'SELECT * EXCEPT (submission_timestamp) '
-            'FROM {}.{} '
+            'FROM `{}.{}.{}` '
             'WHERE DATE(submission_timestamp) = "{}"'
-        ).format(dataset, table_or_view, exec_date)
+        ).format(project, dataset, table_or_view, exec_date)
 
         create_table = BigQueryOperator(
             task_id='create_temporary_table',
