@@ -401,10 +401,11 @@ exact_mau_by_dimensions_export = SubDagOperator(
 
 exact_mau_by_client_count_dimensions = bigquery_etl_query(
     task_id="exact_mau_by_client_count_dimensions",
+    project_id='moz-fx-data-shared-prod',
     destination_table="firefox_desktop_exact_mau28_by_client_count_dimensions_v1",
     dataset_id="telemetry_derived",
-    owner="mreid@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "mreid@mozilla.com"],
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
 smoot_usage_desktop_v2 = bigquery_etl_query(
