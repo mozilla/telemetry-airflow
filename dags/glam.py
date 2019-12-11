@@ -146,6 +146,17 @@ clients_histogram_aggregates = bigquery_etl_query(
     arguments=('--replace',),
     dag=dag)
 
+clients_histogram_bucket_counts = bigquery_etl_query(
+    task_id="clients_histogram_bucket_counts",
+    destination_table="clients_histogram_bucket_counts_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
 histogram_percentiles = bigquery_etl_query(
     task_id="histogram_percentiles",
     destination_table="histogram_percentiles_v1",
@@ -209,7 +220,8 @@ clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_scalar_bucket_counts >> client_scalar_probe_counts
 client_scalar_probe_counts >> client_histogram_probe_counts
-clients_histogram_aggregates >> client_histogram_probe_counts
+clients_histogram_aggregates >> clients_histogram_bucket_counts
+clients_histogram_bucket_counts >> client_histogram_probe_counts
 client_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
