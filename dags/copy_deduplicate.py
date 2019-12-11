@@ -175,6 +175,13 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
+    firefox_nondesktop_exact_mau28_by_client_count_dimensions = bigquery_etl_query(
+        task_id='firefox_nondesktop_exact_mau28_by_client_count_dimensions',
+        destination_table='firefox_nondesktop_exact_mau28_by_client_count_dimensions_v1',
+        dataset_id='telemetry_derived',
+        email=['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+    )
+
     # Mobile search
 
     mobile_search_clients_daily = bigquery_etl_query(
@@ -196,7 +203,8 @@ with models.DAG(
     (copy_deduplicate_all >>
      core_clients_daily >>
      core_clients_last_seen >>
-     [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2])
+     [firefox_nondesktop_exact_mau28, smoot_usage_nondesktop_v2,
+      firefox_nondesktop_exact_mau28_by_client_count_dimensions])
 
     (copy_deduplicate_all >>
      fenix_clients_daily >>
