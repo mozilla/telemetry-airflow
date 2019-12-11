@@ -178,9 +178,10 @@ with models.DAG(
 
     firefox_nondesktop_exact_mau28_by_client_count_dimensions = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_by_client_count_dimensions',
+        project_id='moz-fx-data-shared-prod',
         destination_table='firefox_nondesktop_exact_mau28_by_client_count_dimensions_v1',
         dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'mreid@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     nondesktop_aggregate_tasks = [
