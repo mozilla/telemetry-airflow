@@ -736,7 +736,7 @@ bgbb_pred_bigquery_load.set_upstream(bgbb_pred_dataproc)
 
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
-search_clients_last_seen.set_upstream(search_clients_daily)
+search_clients_last_seen.set_upstream(search_clients_daily_bigquery)
 
 # Set a dependency on clients_daily from taar_lite
 taar_lite.set_upstream(clients_daily_export)
