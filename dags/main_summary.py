@@ -168,38 +168,6 @@ addons_export = SubDagOperator(
     executor=GetDefaultExecutor(),
     dag=dag)
 
-main_events = EMRSparkOperator(
-    task_id="main_events",
-    job_name="Main Events View",
-    execution_timeout=timedelta(hours=4),
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-    instance_count=1,
-    env=tbv_envvar("com.mozilla.telemetry.views.MainEventsView", {
-        "from": "{{ ds_nodash }}",
-        "to": "{{ ds_nodash }}",
-        "bucket": "{{ task.__class__.private_output_bucket }}"}),
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/telemetry_batch_view.py",
-    dag=dag)
-
-main_events_bigquery_load = SubDagOperator(
-    subdag=load_to_bigquery(
-        parent_dag_name=dag.dag_id,
-        dag_name="main_events_bigquery_load",
-        default_args=default_args,
-        dataset_s3_bucket="telemetry-parquet",
-        aws_conn_id="aws_dev_iam_s3",
-        dataset="events",
-        dataset_version="v1",
-        gke_cluster_name="bq-load-gke-1",
-        bigquery_dataset="telemetry_derived",
-        cluster_by=["sample_id"],
-        rename={"submission_date_s3": "submission_date"},
-        replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
-        ),
-    task_id="main_events_bigquery_load",
-    dag=dag)
-
 addon_aggregates = bigquery_etl_query(
     task_id="addon_aggregates",
     destination_table="addon_aggregates_v2",
@@ -706,9 +674,6 @@ addons.set_upstream(copy_deduplicate_main_ping)
 addons_export.set_upstream(addons)
 addon_aggregates.set_upstream(copy_deduplicate_main_ping)
 addon_aggregates_export.set_upstream(addon_aggregates)
-
-main_events.set_upstream(main_summary_export)
-main_events_bigquery_load.set_upstream(main_events)
 
 main_summary_experiments.set_upstream(main_summary)
 main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
