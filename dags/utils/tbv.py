@@ -5,7 +5,7 @@ from utils.deploy import get_artifact_url
 
 
 def tbv_envvar(klass, options, dev_options={}, branch=None, tag=None, other={},
-               metastore_location=None, artifact_url=None):
+               artifact_url=None):
     """Set up environment variables for telemetry-batch-view jobs.
 
     The command line interface can read options from the environment. All
@@ -20,7 +20,6 @@ def tbv_envvar(klass, options, dev_options={}, branch=None, tag=None, other={},
     :branch string:     the branch to run the job from, incompatible with tag
     :tag string:        the tag to run the job from, incompatible with branch
     :other dict:        environment variables to pass through
-    :metastore_location string: Location of the data-set metastore
     :artifact_url string:       Location of pre-built binaries
 
     :returns: a dictionary that contains properly prefixed class and options
@@ -43,9 +42,6 @@ def tbv_envvar(klass, options, dev_options={}, branch=None, tag=None, other={},
         prefixed_options["TBV_CLASS"] = klass
     else:
         assert other.get("DO_SUBMIT", "True") == "False", "To submit there must be a class name"
-
-    if metastore_location is not None:
-        prefixed_options["METASTORE_LOCATION"] = metastore_location
 
     prefixed_options["ARTIFACT_URL"] = url
     prefixed_options.update(other)
