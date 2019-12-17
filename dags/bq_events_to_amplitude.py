@@ -98,3 +98,20 @@ with models.DAG(
         ),
         task_id=fire_tv_task_id
     )
+
+    devtools_task_id = 'devtools_amplitude_export'
+    devtools_args = default_args.copy()
+    devtools_args["start_date"] = datetime.datetime(2019, 12, 2)
+    devtools_args["email"] = ['ssuh@mozilla.com', 'telemetry-alerts@mozilla.com', 'akomar@mozilla.com']
+    SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=devtools_task_id,
+            parent_dag_name=dag_name,
+            default_args=devtools_args,
+            project='moz-fx-data-shared-prod',
+            dataset='telemetry_derived',
+            table_or_view='devtools_events_amplitude_v1',
+            s3_prefix='devtools',
+        ),
+        task_id=devtools_task_id
+    )
