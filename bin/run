@@ -121,6 +121,9 @@ init_variables() {
     airflow variables -s "LEANPLUM_FIREFOX_PREVIEW_CLIENT_KEY" "firefox-preview-client-key"
     airflow variables -s "LEANPLUM_FIREFOX_IOS_RELEASE_APP_ID" "firefox-ios-app-id"
     airflow variables -s "LEANPLUM_FIREFOX_IOS_RELEASE_CLIENT_KEY" "firefox-ios-client-key"
+    airflow variables -s "surveygizmo_daily_attitudes_survey_id" "12345"
+    airflow variables -s "surveygizmo_api_token" "tokentokentoken"
+    airflow variables -s "surveygizmo_api_secret" "tapsekret"
 }
 
 [ $# -lt 1 ] && usage
