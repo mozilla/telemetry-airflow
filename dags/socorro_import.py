@@ -23,14 +23,10 @@ or at least modify it to write crash stats to gcs, this job will now copy json f
 to gcs, use dataproc to rewrite the data to parquet in gcs, and load the parquet data
 into bigquery.
 
-Copying the parquet data back from gcs to s3 will be necessary until we have migrated
-all workloads using the old athena datasource to its bigquery counterpart.
-
 The following WTMO connections are needed in order for this job to run:
 conn - google_cloud_airflow_dataproc
 conn - google_cloud_derived_datasets
 conn - aws_socorro_readonly_s3
-conn - aws_dev_socorro_telemetry_parquet_s3
 """
 
 default_args = {
@@ -55,10 +51,6 @@ connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
 # Required to copy socorro json data from aws prod s3 to gcs
 read_aws_conn_id='aws_socorro_readonly_s3'
-
-# Required to write parquet data back to s3://telemetry-parquet
-write_aws_conn_id='aws_dev_socorro_telemetry_parquet_s3'
-aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credentials()
 
 # We use an application-specific gcs bucket since the copy operator can't set the destination
 # bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead 
@@ -121,31 +113,6 @@ gke_location="us-central1-a"
 gke_cluster_name="bq-load-gke-1"
 dest_s3_key="s3://telemetry-parquet"
 
-# We don't use -m for parallel rsync because I ran into 503 while issues using it.
-gsutil_args = [
-    'gsutil', 'rsync', '-r',
-    'gs://{}/{}'.format(gcs_data_bucket, objects_prefix),
-    '{}/{}'.format(dest_s3_key, objects_prefix)
-]
-
-# Copy parquet data from gcs to s3
-gcs_to_s3 = GKEPodOperator(
-    task_id='gcs_to_s3',
-    gcp_conn_id=bq_gcp_conn_id,
-    project_id=bq_connection.project_id,
-    location=gke_location,
-    cluster_name=gke_cluster_name,
-    name='copy-parquet-data-back-to-s3',
-    namespace='default',
-    image="google/cloud-sdk:242.0.0-alpine",
-    arguments=gsutil_args,
-    env_vars={
-        "AWS_ACCESS_KEY_ID": aws_access_key,
-        "AWS_SECRET_ACCESS_KEY": aws_secret_key
-    },
-    dag=dag,
-)
-
 # Not using load_to_bigquery since our source data is on GCS.
 # We do use the parquet2bigquery container to load gcs parquet into bq though.
 bq_dataset='telemetry_derived'
@@ -191,5 +158,4 @@ register_status(
 )
 
 s3_to_gcs >> crash_report_parquet
-crash_report_parquet >> gcs_to_s3
 crash_report_parquet >> remove_bq_table_partition >> bq_load
