@@ -2,7 +2,9 @@ import datetime
 
 from airflow import models
 from airflow.models import Variable
-from utils.gcp import gke_command
+from airflow.operators.sensors import ExternalTaskSensor
+from utils.gcp import bigquery_etl_query, gke_command
+
 
 default_args = {
     "owner": "ssuh@mozilla.com",
@@ -22,6 +24,7 @@ with models.DAG(
         dag_name,
         schedule_interval="0 1 * * *",
         default_args=default_args) as dag:
+
     surveygizmo_attitudes_daily_import = gke_command(
         task_id="surveygizmo_attitudes_daily_import",
         command=[
@@ -39,3 +42,28 @@ with models.DAG(
             "moz-fx-data-shared-prod.telemetry_derived.survey_gizmo_daily_attitudes"
         ],
         docker_image="mozilla/bigquery-etl:latest")
+
+
+    wait_for_copy_deduplicate = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate",
+        external_dag_id="copy_deduplicate",
+        external_task_id="copy_deduplicate_all",
+        dag=dag)
+
+
+    wait_for_clients_daily = ExternalTaskSensor(
+        task_id="wait_for_clients_daily",
+        external_dag_id="main_summary",
+        external_task_id="clients_daily",
+        dag=dag)
+
+
+    attitudes_daily = bigquery_etl_query(
+        task_id="attitudes_daily_v1",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="attitudes_daily_v1",
+        dataset_id="telemetry_derived")
+
+    surveygizmo_attitudes_daily_import >> attitudes_daily
+    wait_for_clients_daily >> attitudes_daily
+    wait_for_copy_deduplicate >> attitudes_daily
