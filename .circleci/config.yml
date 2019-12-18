@@ -33,6 +33,23 @@ jobs:
       - run: find . -name *.pyc -delete
       - run: tox -e py27
 
+  test-environment:
+    machine:
+      image: ubuntu-1604:201903-01
+      docker_layer_caching: true
+    working_directory: ~/mozilla/telemetry-airflow
+    steps:
+      - checkout
+      - run:
+          command: |
+            docker-compose pull
+            docker-compose build
+            # now take ownership of the folder
+            sudo chown -R 10001:10001 .
+      - run:
+          name: Test if dag scripts can be parsed
+          command: bash bin/test-parse
+
   deploy:
     docker:
       - image: docker:18.02.0-ce
@@ -84,6 +101,11 @@ workflows:
               only: /.*/
 
       - test:
+          filters:
+            tags:
+              only: /.*/
+
+      - test-environment:
           filters:
             tags:
               only: /.*/
