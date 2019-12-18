@@ -38,6 +38,4 @@ with models.DAG(
             "--destination_table",
             "moz-fx-data-shared-prod.telemetry_derived.survey_gizmo_daily_attitudes"
         ],
-        docker_image="mozilla/bigquery-etl:latest",
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+        docker_image="mozilla/bigquery-etl:latest")
