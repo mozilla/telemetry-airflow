@@ -7,8 +7,7 @@ from utils.forecasting import simpleprophet_forecast
 from utils.gcp import (bigquery_etl_copy_deduplicate,
                        bigquery_etl_query,
                        gke_command,
-                       bigquery_xcom_query,
-                       export_to_parquet)
+                       bigquery_xcom_query)
 
 default_args = {
     "owner": "jklukas@mozilla.com",
@@ -50,36 +49,7 @@ with models.DAG(
         owner="ssuh@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
 
-    event_events_export = SubDagOperator(
-        subdag=export_to_parquet(
-            table="moz-fx-data-shared-prod:telemetry_derived.event_events_v1${{ds_nodash}}",
-            destination_table="events_v1",
-            static_partitions=["submission_date_s3={{ds_nodash}}", "doc_type=event"],
-            arguments=[
-                "--drop=submission_date",
-                "--partition-by=doc_type",
-                "--replace",
-                "UNIX_TIMESTAMP(timestamp) AS timestamp",
-                "CAST(sample_id AS STRING) AS sample_id",
-                "UNIX_TIMESTAMP(session_start_time) AS session_start_time",
-                "MAP_FROM_ARRAYS(experiments.key, experiments.value.branch) AS experiments",
-                "MAP_FROM_ENTRIES(event_map_values) AS event_map_values",
-                "--bigint-columns",
-                "sample_id",
-                "event_timestamp",
-            ],
-            s3_output_bucket="telemetry-parquet",
-            parent_dag_name=dag.dag_id,
-            dag_name="event_events_export",
-            default_args=default_args,
-            num_workers=10),
-        task_id="event_events_export",
-        executor=GetDefaultExecutor(),
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-        dag=dag)
-
-    copy_deduplicate_all >> event_events >> event_events_export
+    copy_deduplicate_all >> event_events
 
     # Experiment enrollment aggregates chain (depends on events)
 

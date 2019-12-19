@@ -307,14 +307,12 @@ def export_to_parquet(
     dag_name="export_to_parquet",
     parent_dag_name=None,
     default_args=None,
-    aws_conn_id="aws_dev_iam_s3",
     gcp_conn_id="google_cloud_derived_datasets",
     dataproc_zone="us-central1-a",
     dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
     num_workers=2,
     num_preemptible_workers=0,
     gcs_output_bucket="moz-fx-data-derived-datasets-parquet",
-    s3_output_bucket="telemetry-parquet",
 ):
 
     """ Export a BigQuery table to Parquet.
@@ -411,21 +409,6 @@ def export_to_parquet(
             gcp_conn_id=gcp_conn_id,
         )
 
-        gcs_to_s3 = DataProcHadoopOperatorWithAws(
-            task_id="gcs_to_s3",
-            main_jar="file:///usr/lib/hadoop-mapreduce/hadoop-distcp.jar",
-            arguments=[
-                "-update",
-                "-delete",
-                "gs://{}/{}".format(gcs_output_bucket, export_prefix),
-                "s3a://{}/{}".format(s3_output_bucket, export_prefix),
-            ],
-            cluster_name=cluster_name,
-            gcp_conn_id=gcp_conn_id,
-            project_id=connection.project_id,
-            aws_conn_id=aws_conn_id,
-        )
-
         delete_dataproc_cluster = DataprocClusterDeleteOperator(
             task_id="delete_dataproc_cluster",
             cluster_name=cluster_name,
@@ -452,8 +435,7 @@ def export_to_parquet(
             )
             avro_export >> run_dataproc_pyspark >> avro_delete
 
-        create_dataproc_cluster >> run_dataproc_pyspark >> gcs_to_s3
-        gcs_to_s3 >> delete_dataproc_cluster
+        create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
 
         return dag
 
