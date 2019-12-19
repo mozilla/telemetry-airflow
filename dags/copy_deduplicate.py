@@ -68,7 +68,6 @@ with models.DAG(
                 "sample_id",
                 "event_timestamp",
             ],
-            s3_output_bucket="telemetry-parquet",
             parent_dag_name=dag.dag_id,
             dag_name="event_events_export",
             default_args=default_args,
