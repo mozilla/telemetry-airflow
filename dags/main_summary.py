@@ -150,46 +150,12 @@ addons = bigquery_etl_query(
     dataset_id="telemetry_derived",
     dag=dag)
 
-addons_export = SubDagOperator(
-    subdag=export_to_parquet(
-        table="moz-fx-data-derived-datasets:telemetry_derived.addons_v2${{ds_nodash}}",
-        static_partitions=["submission_date_s3={{ds_nodash}}"],
-        arguments=[
-            "--partition-by=sample_id",
-            "--drop=submission_date",
-            # no bigint columns, convert them all to int for backward compatibility
-            "--bigint-columns=",
-        ],
-        parent_dag_name=dag.dag_id,
-        dag_name="addons_export",
-        default_args=default_args,
-        num_preemptible_workers=10),
-    task_id="addons_export",
-    executor=GetDefaultExecutor(),
-    dag=dag)
-
 addon_aggregates = bigquery_etl_query(
     task_id="addon_aggregates",
     destination_table="addon_aggregates_v2",
     dataset_id="telemetry_derived",
     owner="bmiroglio@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
-    dag=dag)
-
-addon_aggregates_export = SubDagOperator(
-    subdag=export_to_parquet(
-        table="moz-fx-data-derived-datasets:telemetry_derived.addon_aggregates_v2${{ds_nodash}}",
-        destination_table="addons/agg/v2",
-        static_partitions=["submission_date_s3={{ds_nodash}}"],
-        arguments=[
-            "--partition-by=sample_id",
-            "--drop=submission_date",
-        ],
-        parent_dag_name=dag.dag_id,
-        dag_name="addon_aggregates_export",
-        default_args=default_args),
-    task_id="addon_aggregates_export",
-    executor=GetDefaultExecutor(),
     dag=dag)
 
 main_summary_experiments_get_experiment_list = gke_command(
@@ -212,37 +178,6 @@ main_summary_experiments = bigquery_etl_query(
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
     dag=dag)
-
-main_summary_experiments_export = SubDagOperator(
-    subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.experiments_v1${{ds_nodash}}",
-        arguments=[
-            "--partition-by",
-            "experiment_id",
-            "submission_date_s3",
-            "--select",
-            "*",
-            "'{{ds_nodash}}' AS submission_date_s3",
-            "--replace",
-            "'{{ds_nodash}}' AS submission_date",
-            "STRING(sample_id) AS sample_id",
-            "--maps-from-entries",
-            "--partition-overwrite-mode=DYNAMIC",
-        ] + main_summary_bigint_columns,
-        parent_dag_name=dag.dag_id,
-        dag_name="main_summary_experiments_export",
-        default_args={
-            key: value
-            for key, value in chain(default_args.items(), [
-                ("owner", "ssuh@mozilla.com"),
-                ("email", ["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"]),
-            ])
-        },
-    ),
-    task_id="main_summary_experiments_export",
-    executor=GetDefaultExecutor(),
-    dag=dag,
-)
 
 clients_daily = bigquery_etl_query(
     task_id="clients_daily",
@@ -317,54 +252,12 @@ clients_last_seen = bigquery_etl_query(
     start_date=datetime(2019, 4, 15),
     dag=dag)
 
-clients_last_seen_export = SubDagOperator(
-    subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.clients_last_seen_v1${{ds_nodash}}",
-        static_partitions=["submission_date={{ds}}"],
-        arguments=[
-            "--select",
-            "cast(log2(days_seen_bits & -days_seen_bits) as long) as days_since_seen",
-            "cast(log2(days_visited_5_uri_bits & -days_visited_5_uri_bits) as long) as days_since_visited_5_uri",
-            "cast(log2(days_opened_dev_tools_bits & -days_opened_dev_tools_bits) as long) as days_since_opened_dev_tools",
-            "cast(log2(days_created_profile_bits & -days_created_profile_bits) as long) as days_since_created_profile",
-            "*",
-            # restore legacy schema
-            "--replace",
-            "STRUCT(TRANSFORM(active_addons, element -> STRUCT(element)) AS list) AS active_addons",
-            "STRUCT(TRANSFORM(environment_settings_intl_accept_languages, element -> STRUCT(element)) AS list) AS environment_settings_intl_accept_languages",
-            "STRUCT(TRANSFORM(environment_settings_intl_app_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_app_locales",
-            "STRUCT(TRANSFORM(environment_settings_intl_available_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_available_locales",
-            "STRUCT(TRANSFORM(environment_settings_intl_regional_prefs_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_regional_prefs_locales",
-            "STRUCT(TRANSFORM(environment_settings_intl_requested_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_requested_locales",
-            "STRUCT(TRANSFORM(environment_settings_intl_system_locales, element -> STRUCT(element)) AS list) AS environment_settings_intl_system_locales",
-            "STRUCT(experiments AS key_value) AS experiments",
-            "STRUCT(scalar_parent_devtools_accessibility_select_accessible_for_node_sum AS key_value) AS scalar_parent_devtools_accessibility_select_accessible_for_node_sum",
-        ],
-        parent_dag_name=dag.dag_id,
-        dag_name="clients_last_seen_export",
-        default_args=default_args,
-        num_preemptible_workers=10),
-    task_id="clients_last_seen_export",
-    executor=GetDefaultExecutor(),
-    dag=dag)
-
 exact_mau_by_dimensions = bigquery_etl_query(
     task_id="exact_mau_by_dimensions",
     destination_table="firefox_desktop_exact_mau28_by_dimensions_v1",
     dataset_id="telemetry",
     owner="relud@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "pmcdermott@mozilla.com", "dzielaski@mozilla.com", "jmundi@mozilla.com"],
-    dag=dag)
-
-exact_mau_by_dimensions_export = SubDagOperator(
-    subdag=export_to_parquet(
-        table="telemetry.firefox_desktop_exact_mau28_by_dimensions_v1${{ds_nodash}}",
-        static_partitions=["submission_date={{ds}}"],
-        parent_dag_name=dag.dag_id,
-        dag_name="exact_mau_by_dimensions_export",
-        default_args=default_args),
-    task_id="exact_mau_by_dimensions_export",
-    executor=GetDefaultExecutor(),
     dag=dag)
 
 exact_mau_by_client_count_dimensions = bigquery_etl_query(
@@ -403,25 +296,6 @@ devtools_panel_usage = bigquery_etl_query(
     owner="jklukas@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     start_date=datetime(2019, 11, 25),
-    dag=dag)
-
-main_summary_glue = EMRSparkOperator(
-    task_id="main_summary_glue",
-    job_name="Main Summary Update Glue",
-    execution_timeout=timedelta(hours=8),
-    owner="bimsland@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "bimsland@mozilla.com"],
-    instance_count=1,
-    disable_on_dev=True,
-    env={
-        "bucket": "{{ task.__class__.private_output_bucket }}",
-        "prefix": "main_summary",
-        "pdsm_version": "{{ var.value.pdsm_version }}",
-        "glue_access_key_id": "{{ var.value.glue_access_key_id }}",
-        "glue_secret_access_key": "{{ var.value.glue_secret_access_key }}",
-        "glue_default_region": "{{ var.value.glue_default_region }}",
-    },
-    uri="https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/jobs/update_glue.sh",
     dag=dag)
 
 taar_dynamo = EMRSparkOperator(
@@ -671,27 +545,20 @@ clients_daily.set_upstream(main_summary)
 clients_daily_export.set_upstream(clients_daily)
 
 addons.set_upstream(copy_deduplicate_main_ping)
-addons_export.set_upstream(addons)
 addon_aggregates.set_upstream(copy_deduplicate_main_ping)
-addon_aggregates_export.set_upstream(addon_aggregates)
 
 main_summary_experiments.set_upstream(main_summary)
 main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
-main_summary_experiments_export.set_upstream(main_summary_experiments)
 
 taar_dynamo.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
 
 clients_last_seen.set_upstream(clients_daily)
-clients_last_seen_export.set_upstream(clients_last_seen)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
-exact_mau_by_dimensions_export.set_upstream(exact_mau_by_dimensions)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
 smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 simpleprophet_forecasts_desktop.set_upstream(exact_mau_by_dimensions)
 devtools_panel_usage.set_upstream(clients_daily)
-
-main_summary_glue.set_upstream(main_summary_export)
 
 taar_locale_job.set_upstream(clients_daily_export)
 taar_collaborative_recommender.set_upstream(clients_daily_export)
