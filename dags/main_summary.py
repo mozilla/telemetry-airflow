@@ -300,20 +300,36 @@ devtools_panel_usage = bigquery_etl_query(
     start_date=datetime(2019, 11, 25),
     dag=dag)
 
-taar_dynamo = EMRSparkOperator(
-    task_id="taar_dynamo",
-    job_name="TAAR DynamoDB loader",
-    execution_timeout=timedelta(hours=14),
-    instance_count=6,
-    disable_on_dev=True,
-    owner="vng@mozilla.com",
-    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
-    env=mozetl_envvar("taar_dynamo", {
-        "date": "{{ ds_nodash }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
+
+taar_dynamo_job = SubDagOperator(
+    task_id="taar_dynamo_job",
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name=dag.dag_id,
+        dag_name="taar_dynamo_job",
+        default_args=default_args,
+        master_machine_type='n1-standard-32',
+        worker_machine_type='n1-standard-32',
+        cluster_name=taar_dynamo_cluster_name,
+        job_name="TAAR_Dynamo",
+        #python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_dynamo.py",
+        python_driver_code="gs://temp-hwoo-removemelater/taar_dynamo.py",
+        num_workers=12,
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--aws_access_key_id",
+            taar_aws_access_key,
+            "--aws_secret_access_key",
+            taar_aws_secret_key,
+        ],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        master_disk_type='pd-ssd',
+        worker_disk_type='pd-ssd',
+    ),
+    dag=dag,
+)
+
 
 
 taar_locale_job = SubDagOperator(
