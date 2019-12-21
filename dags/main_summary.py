@@ -311,8 +311,7 @@ taar_dynamo_job = SubDagOperator(
         worker_machine_type='n1-standard-32',
         cluster_name=taar_dynamo_cluster_name,
         job_name="TAAR_Dynamo",
-        #python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_dynamo.py",
-        python_driver_code="gs://temp-hwoo-removemelater/taar_dynamo.py",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_dynamo.py",
         num_workers=12,
         py_args=[
             "--date",
