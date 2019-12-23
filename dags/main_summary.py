@@ -1,7 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from itertools import chain
-from operators.emr_spark_operator import EMRSparkOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
@@ -29,6 +28,7 @@ taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).ge
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
+taar_dynamo_cluster_name = "dataproc-taar-dynamo"
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -567,7 +567,7 @@ addon_aggregates.set_upstream(copy_deduplicate_main_ping)
 main_summary_experiments.set_upstream(main_summary)
 main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
 
-taar_dynamo.set_upstream(main_summary_export)
+taar_dynamo_job.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
 
 clients_last_seen.set_upstream(clients_daily)
