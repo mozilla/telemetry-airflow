@@ -53,7 +53,10 @@ class BigQuerySQLSensorOperator(BaseSensorOperator):
                  *args,
                  **kwargs):
 
-        super(BaseSensorOperator, self).__init__(timeout=timeout, *args, **kwargs)
+        super(BigQuerySQLSensorOperator, self).__init__(
+            timeout=timeout,
+            *args,
+            **kwargs)
         self.sql = sql
         self.bigquery_conn_id = bigquery_conn_id
         self.use_legacy_sql = use_legacy_sql
