@@ -7,6 +7,9 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.status import register_status
+from utils.gcp import gke_command
+
+EXPORT_TO_AVRO = True
 
 default_args = {
     "owner": "robhudson@mozilla.com",
@@ -83,10 +86,14 @@ mobile_aggregate_view_dataproc = SubDagOperator(
             "gs://{}/mobile_metrics_aggregates/v3".format(output_bucket),
             "--num-partitions",
             str(5 * 32),
+        ]
+        + ["--source", "bigquery", "--project-id", "moz-fx-data-shared-prod"]
+        if not EXPORT_TO_AVRO
+        else [
             "--source",
-            "bigquery",
-            "--project-id",
-            "moz-fx-data-shared-prod",
+            "avro",
+            "--avro-prefix",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/moz-fx-data-shared-prod",
         ],
         gcp_conn_id=gcp_conn.gcp_conn_id,
         service_account=client_email,
@@ -95,6 +102,39 @@ mobile_aggregate_view_dataproc = SubDagOperator(
         default_args=subdag_args,
     ),
 )
+
+# export to avro, if necessary
+if EXPORT_TO_AVRO:
+    gke_command(
+        task_id="export_mobile_metrics_avro",
+        command=[
+            "bin/export-avro.sh",
+            "moz-fx-data-shared-prod",
+            "moz-fx-data-shared-prod:analysis",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator",
+            "mobile_metrics_v1",
+            '""',
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/python_mozaggregator:latest",
+        dag=dag,
+    ).set_downstream(mobile_aggregate_view_dataproc)
+
+    gke_command(
+        task_id="export_saved_session_avro",
+        command=[
+            "bin/export-avro.sh",
+            "moz-fx-data-shared-prod",
+            "moz-fx-data-shared-prod:analysis",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator",
+            "saved_session_v4",
+            "'nightly', 'beta'",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/python_mozaggregator:latest",
+        dag=dag,
+    ).set_downstream(mobile_aggregate_view_dataproc)
+
 
 register_status(
     mobile_aggregate_view_dataproc,
