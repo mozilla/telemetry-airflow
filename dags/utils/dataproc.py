@@ -27,6 +27,8 @@ class DataProcHelper:
                  num_workers=2,
                  image_version='1.4',
                  zone='us-west1-b',
+                 subnetwork_uri=None,
+                 internal_ip_only=None,
                  idle_delete_ttl='14400',
                  auto_delete_ttl='28800',
                  master_machine_type='n1-standard-8',
@@ -48,6 +50,8 @@ class DataProcHelper:
         self.num_workers = num_workers
         self.image_version = image_version
         self.zone = zone
+        self.subnetwork_uri = subnetwork_uri
+        self.internal_ip_only = internal_ip_only
         self.idle_delete_ttl = idle_delete_ttl
         self.auto_delete_ttl = auto_delete_ttl
         self.master_machine_type = master_machine_type
@@ -122,6 +126,8 @@ class DataProcHelper:
             image_version=self.image_version,
             properties=properties,
             zone=self.zone,
+            subnetwork_uri=self.subnetwork_uri,
+            internal_ip_only=self.internal_ip_only,
             idle_delete_ttl=self.idle_delete_ttl,
             auto_delete_ttl=self.auto_delete_ttl,
             master_machine_type=self.master_machine_type,
@@ -142,6 +148,7 @@ class DataProcHelper:
             cluster_name=self.cluster_name,
             gcp_conn_id=self.gcp_conn_id,
             project_id=self.connection.project_id)
+# End DataProcHelper
 
 
 def moz_dataproc_pyspark_runner(parent_dag_name=None,
@@ -151,6 +158,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 num_workers=2,
                                 image_version='1.4',
                                 zone='us-west1-b',
+                                subnetwork_uri=None,
+                                internal_ip_only=None,
                                 idle_delete_ttl='10800',
                                 auto_delete_ttl='21600',
                                 master_machine_type='n1-standard-8',
@@ -211,6 +220,15 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param str image_version:             The image version of software to use for dataproc
                                           cluster.
     :param str zone:                      The zone where the dataproc cluster will be located.
+    :param str subnetwork_uri:            The subnetwork uri to be used for machine communication,
+                                          cannot be specified with network_uri. Only need this if
+                                          setting internal_ip_only = True. (See next parameter)
+    :param bool internal_ip_only:         If True, cluster nodes will only have internal IP addresses.
+                                          Can only be enabled with subnetwork_uri enabled networks.
+                                          We use this for NAT'd dataproc clusters whose outbound traffic
+                                          needs to be whitelisted. To use a NAT'd cluster, set
+                                          subnetwork_uri='default', internal_ip_only=True, and
+                                          region=us-west2-a|b|c
     :param str idle_delete_ttl:           The duration in seconds to keep idle cluster alive.
     :param str auto_delete_ttl:           The duration in seconds that the cluster will live.
     :param str master_machine_type:       Compute engine machine type to use for master.
@@ -250,6 +268,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      num_workers=num_workers,
                                      image_version=image_version,
                                      zone=zone,
+                                     subnetwork_uri=subnetwork_uri,
+                                     internal_ip_only=internal_ip_only,
                                      idle_delete_ttl=idle_delete_ttl,
                                      auto_delete_ttl=auto_delete_ttl,
                                      master_machine_type=master_machine_type,
@@ -295,6 +315,8 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             num_workers=2,
                             image_version='1.4',
                             zone='us-west1-b',
+                            subnetwork_uri=None,
+                            internal_ip_only=None,
                             idle_delete_ttl='14400',
                             auto_delete_ttl='28800',
                             master_machine_type='n1-standard-8',
@@ -363,6 +385,8 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      num_workers=num_workers,
                                      image_version=image_version,
                                      zone=zone,
+                                     subnetwork_uri=subnetwork_uri,
+                                     internal_ip_only=internal_ip_only,
                                      idle_delete_ttl=idle_delete_ttl,
                                      auto_delete_ttl=auto_delete_ttl,
                                      master_machine_type=master_machine_type,
@@ -410,6 +434,8 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               num_workers=2,
                               image_version='1.4',
                               zone='us-west1-b',
+                              subnetwork_uri=None,
+                              internal_ip_only=None,
                               idle_delete_ttl='14400',
                               auto_delete_ttl='28800',
                               master_machine_type='n1-standard-8',
@@ -486,6 +512,8 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      num_workers=num_workers,
                                      image_version=image_version,
                                      zone=zone,
+                                     subnetwork_uri=subnetwork_uri,
+                                     internal_ip_only=internal_ip_only,
                                      idle_delete_ttl=idle_delete_ttl,
                                      auto_delete_ttl=auto_delete_ttl,
                                      master_machine_type=master_machine_type,

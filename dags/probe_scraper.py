@@ -63,7 +63,6 @@ with DAG('probe_scraper',
         # Give additional time since we will likely always scale up when running this job
         startup_timeout_seconds=360,
         image=probe_scraper_image,
-        is_delete_operator_pod=True,
         arguments=probe_scraper_args,
         email=['telemetry-client-dev@mozilla.com', 'aplacitelli@mozilla.com', 'frank@mozilla.com', 'hwoo@mozilla.com'],
         env_vars={
@@ -82,7 +81,6 @@ with DAG('probe_scraper',
         name='schema-generator-1',
         namespace='default',
         image='mozilla/mozilla-schema-generator:latest',
-        is_delete_operator_pod=True,
         image_pull_policy='Always',
         env_vars={
             "MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}",
