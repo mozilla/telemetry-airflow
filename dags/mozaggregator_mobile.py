@@ -107,6 +107,7 @@ mobile_aggregate_view_dataproc = SubDagOperator(
 if EXPORT_TO_AVRO:
     gke_command(
         task_id="export_mobile_metrics_avro",
+        cmds=["bash"],
         command=[
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
@@ -122,6 +123,7 @@ if EXPORT_TO_AVRO:
 
     gke_command(
         task_id="export_saved_session_avro",
+        cmds=["bash"],
         command=[
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
