@@ -70,7 +70,8 @@ mobile_aggregate_view_dataproc = SubDagOperator(
             "gs://dataproc-initialization-actions/python/pip-install.sh"
         ],
         additional_properties={
-            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
         },
         additional_metadata={
             "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git"
