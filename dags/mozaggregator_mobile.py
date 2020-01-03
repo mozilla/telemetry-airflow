@@ -87,14 +87,16 @@ mobile_aggregate_view_dataproc = SubDagOperator(
             "--num-partitions",
             str(5 * 32),
         ]
-        + ["--source", "bigquery", "--project-id", "moz-fx-data-shared-prod"]
-        if not EXPORT_TO_AVRO
-        else [
-            "--source",
-            "avro",
-            "--avro-prefix",
-            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/moz-fx-data-shared-prod",
-        ],
+        + (
+            ["--source", "bigquery", "--project-id", "moz-fx-data-shared-prod"]
+            if not EXPORT_TO_AVRO
+            else [
+                "--source",
+                "avro",
+                "--avro-prefix",
+                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/moz-fx-data-shared-prod",
+            ]
+        ),
         gcp_conn_id=gcp_conn.gcp_conn_id,
         service_account=client_email,
         artifact_bucket=artifact_bucket,
