@@ -14,7 +14,7 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG("clean-pods", default_args=default_args, schedule_interval="@weekly")
+dag = DAG("clean-pods", default_args=default_args, schedule_interval="@daily")
 
 gcp_conn_id = "google_cloud_derived_datasets"
 connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
@@ -29,7 +29,7 @@ docker_args = [
     '--project', 'moz-fx-data-derived-datasets',
     '--gke-cluster', gke_cluster_name,
     '--region', gke_location,
-    '--retention-days', '14',
+    '--retention-days', '7',
     '--dry-run', 'False'
 ]
 
