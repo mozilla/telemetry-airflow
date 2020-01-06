@@ -44,10 +44,10 @@ class DataProcHelper:
                  gcp_conn_id='google_cloud_airflow_dataproc',
                  artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                  storage_bucket='moz-fx-data-prod-dataproc-scratch',
-                 master_disk_type='pd-standard',
-                 master_disk_size=1024,
-                 worker_disk_type='pd-standard',
-                 worker_disk_size=1024,
+                 master_disk_type=None,
+                 master_disk_size=None,
+                 worker_disk_type=None,
+                 worker_disk_size=None,
                 ):
 
         self.cluster_name = cluster_name
@@ -124,6 +124,11 @@ class DataProcHelper:
             }
         metadata.update(self.additional_metadata)
 
+        disk_kwargs = {}
+        for key in ['master_disk_type', 'master_disk_size', 'worker_disk_type', 'worker_disk_size']:
+            if getattr(self, key, None) is not None:
+                disk_kwargs[key] = getattr(self, key)
+
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
             cluster_name=self.cluster_name,
@@ -145,11 +150,8 @@ class DataProcHelper:
             optional_components = self.optional_components,
             install_component_gateway = self.install_component_gateway,
             init_actions_uris=self.init_actions_uris,
-            master_disk_type=self.master_disk_type,
-            master_disk_size=self.master_disk_size,
-            worker_disk_type=self.worker_disk_type,
-            worker_disk_size=self.worker_disk_size,
             metadata=metadata,
+            **disk_kwargs,
         )
 
     def delete_cluster(self):
@@ -191,10 +193,10 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 gcp_conn_id='google_cloud_airflow_dataproc',
                                 artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                                 storage_bucket='moz-fx-data-prod-dataproc-scratch',
-                                master_disk_type='pd-standard',
-                                worker_disk_type='pd-standard',
-                                master_disk_size=1024,
-                                worker_disk_size=1024,
+                                master_disk_type=None,
+                                worker_disk_type=None,
+                                master_disk_size=None,
+                                worker_disk_size=None,
                             ):
 
     """
