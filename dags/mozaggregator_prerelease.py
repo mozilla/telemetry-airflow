@@ -5,7 +5,11 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
+from operators.gcs import GoogleCloudStorageDeleteOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
+from utils.gcp import gke_command
+
+EXPORT_TO_AVRO = True
 
 default_args = {
     "owner": "frank@mozilla.com",
@@ -70,7 +74,8 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
             "gs://dataproc-initialization-actions/python/pip-install.sh"
         ],
         additional_properties={
-            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
         },
         additional_metadata={
             "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git"
@@ -96,11 +101,17 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
             "{{ var.value.mozaggregator_postgres_ro_host }}",
             "--num-partitions",
             str(10 * 32),
-            "--source",
-            "bigquery",
-            "--project-id",
-            "moz-fx-data-shared-prod",
-        ],
+        ]
+        + (
+            ["--source", "bigquery", "--project-id", "moz-fx-data-shared-prod"]
+            if not EXPORT_TO_AVRO
+            else [
+                "--source",
+                "avro",
+                "--avro-prefix",
+                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/moz-fx-data-shared-prod",
+            ]
+        ),
         gcp_conn_id=gcp_conn.gcp_conn_id,
         service_account=client_email,
         artifact_bucket=artifact_bucket,
@@ -108,6 +119,33 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
         default_args=subdag_args,
     ),
 )
+
+# export to avro, if necessary
+if EXPORT_TO_AVRO:
+    gke_command(
+        task_id="export_main_avro",
+        cmds=["bash"],
+        command=[
+            "bin/export-avro.sh",
+            "moz-fx-data-shared-prod",
+            "moz-fx-data-shared-prod:analysis",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator",
+            "main_v4",
+            "'nightly', 'beta'",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/python_mozaggregator:latest",
+        dag=dag,
+    ).set_downstream(prerelease_telemetry_aggregate_view_dataproc)
+
+    # Delete the GCS data
+    GoogleCloudStorageDeleteOperator(
+        task_id="delete_main_avro",
+        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        prefix="avro/mozaggregator/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v4",
+        gcp_conn_id=gcp_conn.gcp_conn_id,
+        dag=dag,
+    ).set_upstream(prerelease_telemetry_aggregate_view_dataproc)
 
 # copy over artifacts if we're running in dev
 if is_dev:
