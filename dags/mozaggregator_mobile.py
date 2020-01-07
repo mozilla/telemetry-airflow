@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
+from operators.gcs import GoogleCloudStorageDeleteOperator
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.status import register_status
 from utils.gcp import gke_command
@@ -140,6 +141,21 @@ if EXPORT_TO_AVRO:
         dag=dag,
     ).set_downstream(mobile_aggregate_view_dataproc)
 
+    GoogleCloudStorageDeleteOperator(
+        task_id="delete_mobile_metrics_avro",
+        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        prefix="avro/mozaggregator/moz-fx-data-shared-prod/{{ ds_nodash }}/mobile_metrics_v1",
+        gcp_conn_id=gcp_conn.gcp_conn_id,
+        dag=dag
+    ).set_upstream(mobile_aggregate_view_dataproc)
+
+    GoogleCloudStorageDeleteOperator(
+        task_id="delete_saved_session_avro",
+        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        prefix="avro/mozaggregator/moz-fx-data-shared-prod/{{ ds_nodash }}/saved_session_v4",
+        gcp_conn_id=gcp_conn.gcp_conn_id,
+        dag=dag
+    ).set_upstream(mobile_aggregate_view_dataproc)
 
 register_status(
     mobile_aggregate_view_dataproc,
