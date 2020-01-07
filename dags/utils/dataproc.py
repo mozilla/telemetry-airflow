@@ -17,6 +17,7 @@ Note: We are currently deployed on v1.10.2, and when we upgrade, the functionali
 for the DataProcPySparkOperator and DataProcSparkOperator will change.
 """
 
+
 class DataProcHelper:
     """
     This is a helper class for creating/deleting dataproc clusters.
@@ -271,6 +272,20 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param list optional_components:      List of optional components to install on cluster
                                           Defaults to ['ANACONDA'] for now since JUPYTER is broken.
     :param str install_component_gateway: Enable alpha feature component gateway.
+    :param master_disk_type:              Type of the boot disk for the master node
+                                            (default is ``pd-standard``).
+                                            Valid values: ``pd-ssd`` (Persistent Disk Solid State Drive) or
+                                            ``pd-standard`` (Persistent Disk Hard Disk Drive).
+    :type master_disk_type: str
+    :param master_disk_size:              Disk size for the master node
+    :type master_disk_size: int
+    :param worker_disk_type:              Type of the boot disk for the worker node
+                                            (default is ``pd-standard``).
+                                            Valid values: ``pd-ssd`` (Persistent Disk Solid State Drive) or
+                                            ``pd-standard`` (Persistent Disk Hard Disk Drive).
+    :type worker_disk_type: str
+    :param worker_disk_size:              Disk size for the worker node
+    :type worker_disk_size: int
 
     Pyspark related args:
     ---
@@ -450,6 +465,7 @@ def _format_envvar(env=None):
     # Use a default value if an environment dictionary isn't supplied
     return ' '.join(['{}={}'.format(k, v) for k, v in (env or {}).items()])
 
+
 def moz_dataproc_scriptrunner(parent_dag_name=None,
                               dag_name='run_script_on_dataproc',
                               default_args=None,
@@ -625,6 +641,7 @@ def copy_artifacts_dev(dag, project_id, artifact_bucket, storage_bucket):
         },
         dag=dag,
     )
+
 
 # parameters that can be used to reconfigure a dataproc job for dev testing
 DataprocParameters = namedtuple(
