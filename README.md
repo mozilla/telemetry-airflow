@@ -118,20 +118,6 @@ prevent broken workflows. To test this, run `bin/test-parse` to check for errors
 test this by restarting the orchestrated containers and checking for error messages within the main
 administration UI at `localhost:8000`.
 
-### Testing main_summary
-
-`main_summary` can be a good test case for any large changes to telemetry-batch-view, launch in dev as:
-
-```bash
-export DEV_USERNAME=...
-export AWS_SECRET_ACCESS_KEY=...
-export AWS_ACCESS_KEY_ID=...
-make run COMMAND="test main_summary main_summary 20180803"
-```
-
-See the next section for info on how to configure a full DAG run,
-though this should only be needed to significant changes affecting many view definitions.
-
 ### Local Deployment
 
 Assuming you're using macOS and Docker for macOS, start the docker service,
