@@ -23,7 +23,6 @@ class MozDatabricksSubmitRunOperator(DatabricksSubmitRunOperator):
 
     # constants
     mozilla_slug = 'mozilla'
-    telemetry_streaming_slug = 'telemetry-streaming'
     telemetry_batch_view_slug = 'telemetry-batch-view'
 
     def __init__(self, job_name, env, instance_count,

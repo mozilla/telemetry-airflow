@@ -50,7 +50,6 @@ class EMRSparkOperator(BaseOperator):
 
     # constants
     mozilla_slug = 'mozilla'
-    telemetry_streaming_slug = 'telemetry-streaming'
     telemetry_batch_view_slug = 'telemetry-batch-view'
 
     def __del__(self):
