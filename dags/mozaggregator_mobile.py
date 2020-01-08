@@ -116,7 +116,7 @@ if EXPORT_TO_AVRO:
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
-            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/mobile",
             "mobile_metrics_v1",
             '""',
             "{{ ds }}",
@@ -132,7 +132,7 @@ if EXPORT_TO_AVRO:
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
-            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/mobile",
             "saved_session_v4",
             "'nightly', 'beta'",
             "{{ ds }}",
@@ -144,7 +144,7 @@ if EXPORT_TO_AVRO:
     GoogleCloudStorageDeleteOperator(
         task_id="delete_mobile_metrics_avro",
         bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
-        prefix="avro/mozaggregator/moz-fx-data-shared-prod/{{ ds_nodash }}/mobile_metrics_v1",
+        prefix="avro/mozaggregator/mobile/moz-fx-data-shared-prod/{{ ds_nodash }}/mobile_metrics_v1",
         gcp_conn_id=gcp_conn.gcp_conn_id,
         dag=dag
     ).set_upstream(mobile_aggregate_view_dataproc)
@@ -152,7 +152,7 @@ if EXPORT_TO_AVRO:
     GoogleCloudStorageDeleteOperator(
         task_id="delete_saved_session_avro",
         bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
-        prefix="avro/mozaggregator/moz-fx-data-shared-prod/{{ ds_nodash }}/saved_session_v4",
+        prefix="avro/mozaggregator/mobile/moz-fx-data-shared-prod/{{ ds_nodash }}/saved_session_v4",
         gcp_conn_id=gcp_conn.gcp_conn_id,
         dag=dag
     ).set_upstream(mobile_aggregate_view_dataproc)

@@ -109,7 +109,7 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
                 "--source",
                 "avro",
                 "--avro-prefix",
-                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/moz-fx-data-shared-prod",
+                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/prerelease/moz-fx-data-shared-prod",
             ]
         ),
         gcp_conn_id=gcp_conn.gcp_conn_id,
@@ -129,8 +129,24 @@ if EXPORT_TO_AVRO:
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
-            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/prerelease",
             "main_v4",
+            "'nightly', 'beta'",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/python_mozaggregator:latest",
+        dag=dag,
+    ).set_downstream(prerelease_telemetry_aggregate_view_dataproc)
+
+    gke_command(
+        task_id="export_saved_session_avro",
+        cmds=["bash"],
+        command=[
+            "bin/export-avro.sh",
+            "moz-fx-data-shared-prod",
+            "moz-fx-data-shared-prod:analysis",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/prerelease",
+            "saved_session_v4",
             "'nightly', 'beta'",
             "{{ ds }}",
         ],
@@ -142,9 +158,17 @@ if EXPORT_TO_AVRO:
     GoogleCloudStorageDeleteOperator(
         task_id="delete_main_avro",
         bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
-        prefix="avro/mozaggregator/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v4",
+        prefix="avro/mozaggregator/prerelease/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v4",
         gcp_conn_id=gcp_conn.gcp_conn_id,
         dag=dag,
+    ).set_upstream(prerelease_telemetry_aggregate_view_dataproc)
+
+    GoogleCloudStorageDeleteOperator(
+        task_id="delete_saved_session_avro",
+        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        prefix="avro/mozaggregator/prerelease/moz-fx-data-shared-prod/{{ ds_nodash }}/saved_session_v4",
+        gcp_conn_id=gcp_conn.gcp_conn_id,
+        dag=dag
     ).set_upstream(prerelease_telemetry_aggregate_view_dataproc)
 
 # copy over artifacts if we're running in dev
