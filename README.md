@@ -170,7 +170,7 @@ docker-compose exec web airflow test example spark 20180101
 
 ### Testing Dev Changes
 
-*Note: This only works for `telemetry-batch-view` and `telemetry-streaming` jobs*
+*Note: This only works for `telemetry-batch-view` jobs*
 
 A dev changes can be run by simply changing the `DEPLOY_TAG` environment variable
 to whichever upstream branch you've pushed your local changes to.
