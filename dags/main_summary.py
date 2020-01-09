@@ -43,7 +43,7 @@ default_args = {
 
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
-dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *')
+dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *', max_active_runs=5)
 
 # We copy yesterday's main pings from telemetry_live to telemetry_stable
 # at the root of this DAG because telemetry_stable.main_v4 will become
