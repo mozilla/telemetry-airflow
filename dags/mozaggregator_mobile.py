@@ -96,7 +96,7 @@ mobile_aggregate_view_dataproc = SubDagOperator(
                 "--source",
                 "avro",
                 "--avro-prefix",
-                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/moz-fx-data-shared-prod",
+                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/mobile/moz-fx-data-shared-prod",
             ]
         ),
         gcp_conn_id=gcp_conn.gcp_conn_id,
