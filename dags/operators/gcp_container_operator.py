@@ -27,6 +27,9 @@ class GKEPodOperator(UpstreamGKEPodOperator):
     - Preserve XCOM result when xcom_push is True.
 
     """
+    def __init__(self, image_pull_policy='Always', *args,  **kwargs):
+        super(GKEPodOperator, self).__init__(image_pull_policy=image_pull_policy, *args, **kwargs)
+
     def execute(self, context):
         # If gcp_conn_id is not specified gcloud will use the default
         # service account credentials.
