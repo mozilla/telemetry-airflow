@@ -23,7 +23,7 @@ gke_location="us-central1-a"
 gke_cluster_name="bq-load-gke-1"
 
 # Built from cloudops-infra repo, projects/airflow/pod-clean
-docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/airflow-pod-clean:latest'
+docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/airflow-pod-clean:1.0'
 
 docker_args = [
     '--project', 'moz-fx-data-derived-datasets',
