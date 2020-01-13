@@ -47,7 +47,9 @@ with models.DAG(
         destination_table="event_events_v1",
         dataset_id="telemetry_derived",
         owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
+    )
 
     copy_deduplicate_all >> event_events
 

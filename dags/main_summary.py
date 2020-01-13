@@ -66,7 +66,9 @@ bq_main_events = bigquery_etl_query(
     dataset_id="telemetry_derived",
     owner="ssuh@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-    dag=dag)
+    dag=dag,
+    arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
+)
 
 main_summary = bigquery_etl_query(
     task_id="main_summary",
