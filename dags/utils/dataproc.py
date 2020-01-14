@@ -367,7 +367,12 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             jar_args=None,
                             job_name=None,
                             aws_conn_id=None,
-                            gcp_conn_id='google_cloud_airflow_dataproc'):
+                            gcp_conn_id='google_cloud_airflow_dataproc',
+                            master_disk_type='pd-standard',
+                            worker_disk_type='pd-standard',
+                            master_disk_size=1024,
+                            worker_disk_size=1024,
+                            ):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -433,7 +438,12 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+                                     gcp_conn_id=gcp_conn_id,
+                                     master_disk_type=master_disk_type,
+                                     master_disk_size=master_disk_size,
+                                     worker_disk_type=worker_disk_type,
+                                     worker_disk_size=worker_disk_size,
+                                     )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
 
@@ -487,7 +497,12 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               arguments=None,
                               job_name=None,
                               aws_conn_id=None,
-                              gcp_conn_id='google_cloud_airflow_dataproc'):
+                              gcp_conn_id='google_cloud_airflow_dataproc',
+                              master_disk_type='pd-standard',
+                              worker_disk_type='pd-standard',
+                              master_disk_size=1024,
+                              worker_disk_size=1024,
+                              ):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -561,7 +576,12 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+                                     gcp_conn_id=gcp_conn_id,
+                                     master_disk_type=master_disk_type,
+                                     master_disk_size=master_disk_size,
+                                     worker_disk_type=worker_disk_type,
+                                     worker_disk_size=worker_disk_size,
+                                     )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
     environment = _format_envvar(env)
