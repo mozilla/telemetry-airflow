@@ -1,7 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from itertools import chain
-from operators.emr_spark_operator import EMRSparkOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
@@ -29,6 +28,7 @@ taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).ge
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
+taar_dynamo_cluster_name = "dataproc-taar-dynamo"
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -300,20 +300,35 @@ devtools_panel_usage = bigquery_etl_query(
     start_date=datetime(2019, 11, 25),
     dag=dag)
 
-taar_dynamo = EMRSparkOperator(
-    task_id="taar_dynamo",
-    job_name="TAAR DynamoDB loader",
-    execution_timeout=timedelta(hours=14),
-    instance_count=6,
-    disable_on_dev=True,
-    owner="vng@mozilla.com",
-    email=["mlopatka@mozilla.com", "vng@mozilla.com", "sbird@mozilla.com"],
-    env=mozetl_envvar("taar_dynamo", {
-        "date": "{{ ds_nodash }}"
-    }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
+
+taar_dynamo_job = SubDagOperator(
+    task_id="taar_dynamo_job",
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name=dag.dag_id,
+        dag_name="taar_dynamo_job",
+        default_args=default_args,
+        master_machine_type='n1-standard-32',
+        worker_machine_type='n1-standard-32',
+        cluster_name=taar_dynamo_cluster_name,
+        job_name="TAAR_Dynamo",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_dynamo.py",
+        num_workers=12,
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--aws_access_key_id",
+            taar_aws_access_key,
+            "--aws_secret_access_key",
+            taar_aws_secret_key,
+        ],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        master_disk_type='pd-ssd',
+        worker_disk_type='pd-ssd',
+    ),
+    dag=dag,
+)
+
 
 
 taar_locale_job = SubDagOperator(
@@ -552,7 +567,7 @@ addon_aggregates.set_upstream(copy_deduplicate_main_ping)
 main_summary_experiments.set_upstream(main_summary)
 main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
 
-taar_dynamo.set_upstream(main_summary_export)
+taar_dynamo_job.set_upstream(main_summary_export)
 taar_similarity.set_upstream(clients_daily_export)
 
 clients_last_seen.set_upstream(clients_daily)
