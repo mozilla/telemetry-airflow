@@ -91,3 +91,22 @@ with DAG('probe_scraper',
         dag=dag)
 
     schema_generator.set_upstream(probe_scraper)
+
+    probe_expiry_alerts = GKEPodOperator(
+        task_id="probe-expiry-alerts",
+        gcp_conn_id=gcp_conn_id,
+        project_id=connection.project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        name="probe-expiry-alerts",
+        namespace='default',
+        image=probe_scraper_image,
+        arguments=["python3", "-m", "probe_scraper.probe_expiry_alert"],
+        email=["bewu@mozilla.com"],
+        env_vars={
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_key
+        },
+        dag=dag)
+
+    probe_expiry_alerts.set_upstream(probe_scraper)

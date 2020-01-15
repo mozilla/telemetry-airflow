@@ -17,6 +17,7 @@ Note: We are currently deployed on v1.10.2, and when we upgrade, the functionali
 for the DataProcPySparkOperator and DataProcSparkOperator will change.
 """
 
+
 class DataProcHelper:
     """
     This is a helper class for creating/deleting dataproc clusters.
@@ -44,6 +45,10 @@ class DataProcHelper:
                  gcp_conn_id='google_cloud_airflow_dataproc',
                  artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                  storage_bucket='moz-fx-data-prod-dataproc-scratch',
+                 master_disk_type='pd-standard',
+                 master_disk_size=1024,
+                 worker_disk_type='pd-standard',
+                 worker_disk_size=1024,
                 ):
 
         self.cluster_name = cluster_name
@@ -61,6 +66,11 @@ class DataProcHelper:
         # The bucket with a default dataproc init script
         self.artifact_bucket = artifact_bucket
         self.storage_bucket = storage_bucket
+
+        self.master_disk_type = master_disk_type
+        self.master_disk_size = master_disk_size
+        self.worker_disk_type = worker_disk_type
+        self.worker_disk_size = worker_disk_size
 
         if init_actions_uris is None:
             self.init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)]
@@ -136,6 +146,10 @@ class DataProcHelper:
             optional_components = self.optional_components,
             install_component_gateway = self.install_component_gateway,
             init_actions_uris=self.init_actions_uris,
+            master_disk_type=self.master_disk_type,
+            master_disk_size=self.master_disk_size,
+            worker_disk_type=self.worker_disk_type,
+            worker_disk_size=self.worker_disk_size,
             metadata=metadata,
         )
 
@@ -178,6 +192,10 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 gcp_conn_id='google_cloud_airflow_dataproc',
                                 artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                                 storage_bucket='moz-fx-data-prod-dataproc-scratch',
+                                master_disk_type='pd-standard',
+                                worker_disk_type='pd-standard',
+                                master_disk_size=1024,
+                                worker_disk_size=1024,
                             ):
 
     """
@@ -252,6 +270,20 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param list optional_components:      List of optional components to install on cluster
                                           Defaults to ['ANACONDA'] for now since JUPYTER is broken.
     :param str install_component_gateway: Enable alpha feature component gateway.
+    :param master_disk_type:              Type of the boot disk for the master node
+                                            (default is ``pd-standard``).
+                                            Valid values: ``pd-ssd`` (Persistent Disk Solid State Drive) or
+                                            ``pd-standard`` (Persistent Disk Hard Disk Drive).
+    :type master_disk_type: str
+    :param master_disk_size:              Disk size for the master node
+    :type master_disk_size: int
+    :param worker_disk_type:              Type of the boot disk for the worker node
+                                            (default is ``pd-standard``).
+                                            Valid values: ``pd-ssd`` (Persistent Disk Solid State Drive) or
+                                            ``pd-standard`` (Persistent Disk Hard Disk Drive).
+    :type worker_disk_type: str
+    :param worker_disk_size:              Disk size for the worker node
+    :type worker_disk_size: int
 
     Pyspark related args:
     ---
@@ -285,6 +317,10 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      gcp_conn_id=gcp_conn_id,
                                      artifact_bucket=artifact_bucket,
                                      storage_bucket=storage_bucket,
+                                     master_disk_type=master_disk_type,
+                                     master_disk_size=master_disk_size,
+                                     worker_disk_type=worker_disk_type,
+                                     worker_disk_size=worker_disk_size,
                                      )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
@@ -331,7 +367,12 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             jar_args=None,
                             job_name=None,
                             aws_conn_id=None,
-                            gcp_conn_id='google_cloud_airflow_dataproc'):
+                            gcp_conn_id='google_cloud_airflow_dataproc',
+                            master_disk_type='pd-standard',
+                            worker_disk_type='pd-standard',
+                            master_disk_size=1024,
+                            worker_disk_size=1024,
+                            ):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -397,7 +438,12 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+                                     gcp_conn_id=gcp_conn_id,
+                                     master_disk_type=master_disk_type,
+                                     master_disk_size=master_disk_size,
+                                     worker_disk_type=worker_disk_type,
+                                     worker_disk_size=worker_disk_size,
+                                     )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
 
@@ -427,6 +473,7 @@ def _format_envvar(env=None):
     # Use a default value if an environment dictionary isn't supplied
     return ' '.join(['{}={}'.format(k, v) for k, v in (env or {}).items()])
 
+
 def moz_dataproc_scriptrunner(parent_dag_name=None,
                               dag_name='run_script_on_dataproc',
                               default_args=None,
@@ -450,7 +497,12 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               arguments=None,
                               job_name=None,
                               aws_conn_id=None,
-                              gcp_conn_id='google_cloud_airflow_dataproc'):
+                              gcp_conn_id='google_cloud_airflow_dataproc',
+                              master_disk_type='pd-standard',
+                              worker_disk_type='pd-standard',
+                              master_disk_size=1024,
+                              worker_disk_size=1024,
+                              ):
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
@@ -524,7 +576,12 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      optional_components=optional_components,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
-                                     gcp_conn_id=gcp_conn_id)
+                                     gcp_conn_id=gcp_conn_id,
+                                     master_disk_type=master_disk_type,
+                                     master_disk_size=master_disk_size,
+                                     worker_disk_type=worker_disk_type,
+                                     worker_disk_size=worker_disk_size,
+                                     )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
     environment = _format_envvar(env)
@@ -602,6 +659,7 @@ def copy_artifacts_dev(dag, project_id, artifact_bucket, storage_bucket):
         },
         dag=dag,
     )
+
 
 # parameters that can be used to reconfigure a dataproc job for dev testing
 DataprocParameters = namedtuple(
