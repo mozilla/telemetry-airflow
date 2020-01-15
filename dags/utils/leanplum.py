@@ -16,7 +16,6 @@ def export(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/leanplum-data-export:latest",
-    image_pull_policy="Always",
     **kwargs
 ):
     """ Export a day of data from Leanplum for a single application,
@@ -38,8 +37,6 @@ def export(
     :param str gke_cluster_name:     GKE cluster name
     :param str gke_namespace:        GKE cluster namespace
     :param str docker_image:         docker image to use
-    :param str image_pull_policy:    Kubernetes policy for when to pull
-                                     docker_image
     :param Dict[str, Any] kwargs:    Additional keyword arguments for
                                      GKEPodOperator
 
@@ -73,6 +70,5 @@ def export(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        image_pull_policy=image_pull_policy,
         arguments=args,
         **kwargs)

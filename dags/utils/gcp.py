@@ -452,7 +452,6 @@ def bigquery_etl_query(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     docker_image="mozilla/bigquery-etl:latest",
-    image_pull_policy="Always",
     date_partition_parameter="submission_date",
     multipart=False,
     **kwargs
@@ -471,8 +470,6 @@ def bigquery_etl_query(
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
     :param str docker_image:                       docker image to use
-    :param str image_pull_policy:                  Kubernetes policy for when to pull
-                                                   docker_image
     :param Optional[str] date_partition_parameter: Parameter for indicating destination
                                                    partition to generate, if None
                                                    destination should be whole table
@@ -502,7 +499,6 @@ def bigquery_etl_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [sql_file_path],
-        image_pull_policy=image_pull_policy,
         **kwargs
     )
 
@@ -521,7 +517,6 @@ def bigquery_etl_copy_deduplicate(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     docker_image="mozilla/bigquery-etl:latest",
-    image_pull_policy="Always",
     **kwargs
 ):
     """ Copy a day's data from live ping tables to stable ping tables,
@@ -540,8 +535,6 @@ def bigquery_etl_copy_deduplicate(
     :param str gke_cluster_name:     GKE cluster name
     :param str gke_namespace:        GKE cluster namespace
     :param str docker_image:         docker image to use
-    :param str image_pull_policy:    Kubernetes policy for when to pull
-                                     docker_image
     :param Dict[str, Any] kwargs:    Additional keyword arguments for
                                      GKEPodOperator
 
@@ -571,7 +564,6 @@ def bigquery_etl_copy_deduplicate(
         + (["--hourly"] if hourly else [])
         + (["--slices={}".format(slices)] if slices is not None else [])
         + table_qualifiers,
-        image_pull_policy=image_pull_policy,
         **kwargs
     )
 
@@ -588,7 +580,6 @@ def bigquery_xcom_query(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     docker_image="mozilla/bigquery-etl:latest",
-    image_pull_policy="Always",
     date_partition_parameter="submission_date",
     **kwargs
 ):
@@ -605,8 +596,6 @@ def bigquery_xcom_query(
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
     :param str docker_image:                       docker image to use
-    :param str image_pull_policy:                  Kubernetes policy for when to pull
-                                                   docker_image
     :param Optional[str] date_partition_parameter: Parameter for indicating destination
                                                    partition to generate, if None
                                                    destination should be whole table
@@ -637,7 +626,6 @@ def bigquery_xcom_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [query],
-        image_pull_policy=image_pull_policy,
         **kwargs
     )
 
@@ -665,7 +653,6 @@ def gke_command(
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
-    image_pull_policy="Always",
     xcom_push=False,
     env_vars={},
     **kwargs
@@ -680,8 +667,6 @@ def gke_command(
     :param str gke_location:       GKE cluster location
     :param str gke_cluster_name:   GKE cluster name
     :param str gke_namespace:      GKE cluster namespace
-    :param str image_pull_policy:  Kubernetes policy for when to pull
-                                   docker_image
     :param bool xcom_push:         Return the output of this command as an xcom
     :param Dict[str, Any] kwargs:  Additional keyword arguments for
                                    GKEPodOperator
@@ -708,7 +693,6 @@ def gke_command(
         namespace=gke_namespace,
         image=docker_image,
         arguments=command,
-        image_pull_policy=image_pull_policy,
         xcom_push=xcom_push,
         env_vars=context_env_vars,
         **kwargs
