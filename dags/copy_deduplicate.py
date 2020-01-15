@@ -2,6 +2,7 @@ import datetime
 
 from airflow import models
 from airflow.executors import GetDefaultExecutor
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.forecasting import simpleprophet_forecast
 from utils.gcp import (bigquery_etl_copy_deduplicate,
@@ -55,6 +56,13 @@ with models.DAG(
 
     # Experiment enrollment aggregates chain (depends on events)
 
+    wait_for_main_events = ExternalTaskSensor(
+        task_id="wait_for_main_events",
+        external_dag_id="main_summary",
+        external_task_id="bq_main_events",
+        dag=dag)
+
+
     experiment_enrollment_aggregates = bigquery_etl_query(
         task_id="experiment_enrollment_aggregates",
         project_id="moz-fx-data-shared-prod",
@@ -88,6 +96,7 @@ with models.DAG(
         owner="ssuh@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
 
+    wait_for_main_events >> experiment_enrollment_aggregates
     (event_events >>
      experiment_enrollment_aggregates >>
      experiment_enrollment_aggregates_live_generate_query >>
