@@ -2,9 +2,9 @@ from airflow import models
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
+from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
 from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
 from operators.bq_sensor import BigQuerySQLSensorOperator
-from operators.gcs import GoogleCloudStorageDeleteOperator
 from os import environ
 
 
@@ -125,7 +125,7 @@ def export_to_amplitude(
             task_id='delete_gcs_data',
             bucket_name=gcs_bucket,
             prefix=directory,
-            gcp_conn_id=gcp_conn_id
+            google_cloud_storage_conn_id=gcp_conn_id
         )
 
         wait_for_data >> create_table >> table_extract >> s3_push

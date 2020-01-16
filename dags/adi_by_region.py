@@ -3,7 +3,7 @@ from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from operators.gcp_container_operator import GKEPodOperator
 
-from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
+from airflow.contrib.operators.gcp_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 
 # The adi_dimensional_by_date bq table is loaded in mango_log_processing.py
 
@@ -31,9 +31,6 @@ connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
 aws_conn_id = 'aws_data_iam_blpadi'
 
-location='us-central1-a'
-cluster_name='bq-load-gke-1'
-
 # Calculate run month and year. Execution date is the previous period (month)
 run_month = '{{ (execution_date.replace(day=1)).strftime("%m") }}'
 run_year = '{{ (execution_date.replace(day=1)).strftime("%Y") }}'
@@ -57,6 +54,7 @@ s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
     project_id=connection.project_id,
     object_conditions=gcstj_object_conditions,
     transfer_options=gcstj_transfer_options,
+    timeout=720,
     dag=blp_dag
 )
 
@@ -71,12 +69,7 @@ delete_args = [
 
 delete_from_table = GKEPodOperator(
     task_id='delete_from_adi_by_region',
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location=location,
-    cluster_name=cluster_name,
     name='delete-from-adi-by-region-table',
-    namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
     arguments=delete_args,
     dag=blp_dag
@@ -96,12 +89,7 @@ load_args = [
 
 load_bq = GKEPodOperator(
     task_id='bq_load_adi_by_region',
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location=location,
-    cluster_name=cluster_name,
     name='bq-load-adi-by-region',
-    namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
     arguments=load_args,
     dag=blp_dag
