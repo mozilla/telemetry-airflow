@@ -3,11 +3,9 @@ from os import environ
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from operators.gcp_container_operator import (
-    GKEClusterCreateOperator,
-    GKEClusterDeleteOperator,
-    GKEPodOperator,
-)
+from airflow.contrib.operators.gcp_container_operator import GKEClusterCreateOperator, GKEClusterDeleteOperator
+from operators.gcp_container_operator import GKEPodOperator
+
 from utils.gke import create_gke_config
 from airflow.operators.bash_operator import BashOperator
 

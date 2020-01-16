@@ -2,42 +2,70 @@ import os
 import subprocess
 import tempfile
 
+from google.auth.environment_vars import CREDENTIALS
+
 from airflow import AirflowException
 
 from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
 
-from airflow.contrib.operators.gcp_container_operator import GKEPodOperator as UpstreamGKEPodOperator, GKEClusterCreateOperator, GKEClusterDeleteOperator
-
+# We import upstream GKEPodOperator/KubernetesPodOperator from 1.10.7, modified to point to kube_client
+# from 1.10.2, because of some Xcom push breaking changes when using GKEPodOperator.
+from backport.gcp_container_operator_1_10_7 import GKEPodOperator as UpstreamGKEPodOperator
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
-G_APP_CRED = "GOOGLE_APPLICATION_CREDENTIALS"
-GCLOUD_APP_CRED = "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE"
 
+# Note: In the next version of airflow this will change.
+# This module is deprecated. Please use `airflow.providers.google.cloud.operators.kubernetes_engine`.
 
 class GKEPodOperator(UpstreamGKEPodOperator):
     """
     We override execute and _set_env_from_extras methods to support:
 
-    - `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE` environment variable that is
-        set to the path of the Service Account JSON key file. This is neccesary
-        for gcloud to operate.
-
     - Adjust when NamedTemporaryFile file descriptor is closed.
 
     - Preserve XCOM result when xcom_push is True.
 
+    - Override init to default image_pull_policy=Always, in_cluster=False, xcom_push=False and GKE params
+
     """
-    def __init__(self, image_pull_policy='Always', *args,  **kwargs):
-        super(GKEPodOperator, self).__init__(image_pull_policy=image_pull_policy, *args, **kwargs)
+    def __init__(self,
+                 image_pull_policy='Always',
+                 in_cluster=False,
+                 xcom_push=False,
+                 # Defined in Airflow's UI -> Admin -> Connections
+                 gcp_conn_id='google_cloud_derived_datasets',
+                 project_id='moz-fx-data-derived-datasets',
+                 location='us-central1-a',
+                 cluster_name='bq-load-gke-1',
+                 namespace='default',
+                 *args,
+                 **kwargs):
+
+        super(GKEPodOperator, self).__init__(
+            image_pull_policy=image_pull_policy,
+            in_cluster=in_cluster,
+            xcom_push=xcom_push,
+            gcp_conn_id=gcp_conn_id,
+            project_id=project_id,
+            location=location,
+            cluster_name=cluster_name,
+            namespace=namespace,
+            *args,
+            **kwargs)
 
     def execute(self, context):
+        # We can remove this override once upgraded to 2.0.  https://issues.apache.org/jira/browse/AIRFLOW-4072
+
+        # Moz specific - Commented out key_file references (Jason fixed auth behaviour with 1.10.2)
+        # key_file = None
+
         # If gcp_conn_id is not specified gcloud will use the default
         # service account credentials.
         if self.gcp_conn_id:
             from airflow.hooks.base_hook import BaseHook
             # extras is a deserialized json object
             extras = BaseHook.get_connection(self.gcp_conn_id).extra_dejson
-            self._set_env_from_extras(extras=extras)
+            self._set_env_from_extras(extras=extras) # Moz specific since func no longer returns value
 
         # Write config to a temp file and set the environment variable to point to it.
         # This is to avoid race conditions of reading/writing a single file
@@ -55,16 +83,19 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                  "--zone", self.location,
                  "--project", self.project_id])
 
+            # if key_file: # Moz specific commented out
+            #    key_file.close() # Moz specific commented out
+
             # Tell `KubernetesPodOperator` where the config file is located
             self.config_file = os.environ[KUBE_CONFIG_ENV_VAR]
-            result = super(UpstreamGKEPodOperator, self).execute(context)
-            if self.xcom_push:
-                return result
+            result = super(UpstreamGKEPodOperator, self).execute(context) # Moz specific
+            if self.xcom_push: # Moz specific
+                return result # Moz specific
+
 
     def _set_env_from_extras(self, extras):
         """
-        Sets the environment variable `GOOGLE_APPLICATION_CREDENTIALS` and
-        `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE` with either:
+        Sets the environment variable `GOOGLE_APPLICATION_CREDENTIALS` with either:
 
         - The path to the keyfile from the specified connection id
         - A generated file's path if the user specified JSON in the connection id. The
@@ -80,57 +111,13 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         if not key_path and not keyfile_json_str:
             self.log.info('Using gcloud with application default credentials.')
         elif key_path:
-            os.environ[G_APP_CRED] = key_path
-            os.environ[GCLOUD_APP_CRED] = key_path
+            os.environ[CREDENTIALS] = key_path
+            return None
         else:
             # Write service account JSON to secure file for gcloud to reference
             service_key = tempfile.NamedTemporaryFile(delete=False)
-            service_key.write(keyfile_json_str)
-            os.environ[G_APP_CRED] = service_key.name
-            os.environ[GCLOUD_APP_CRED] = service_key.name
-            service_key.close()
-
-class GKEClusterCreateOperator(GKEClusterCreateOperator):
-    """
-    We override methods to fix https://issues.apache.org/jira/browse/AIRFLOW-4518
-    The GKEClusterHook constructor call wasn't updated to reflect a code change
-
-    """
-    def _check_input(self):
-        if all([self.gcp_conn_id, self.project_id, self.location, self.body]):
-            if isinstance(self.body, dict) and 'name' in self.body:
-                # Don't throw error
-                return
-            # If not dict, then must
-            elif self.body.name and self.body.initial_node_count:
-                return
-
-        self.log.error(
-            'One of (gcp_conn_id, project_id, location, body, body[\'name\'], '
-            'body[\'initial_node_count\']) is missing or incorrect')
-        raise AirflowException('Operator has incorrect or missing input.')
-
-    def execute(self, context):
-        self._check_input()
-        hook = GKEClusterHook(gcp_conn_id=self.gcp_conn_id, location=self.location)
-        create_op = hook.create_cluster(cluster=self.body)
-        return create_op
-
-class GKEClusterDeleteOperator(GKEClusterDeleteOperator):
-    """
-    We override methods to fix https://issues.apache.org/jira/browse/AIRFLOW-4518
-    The GKEClusterHook constructor call wasn't updated to reflect a code change
-
-    """
-    def _check_input(self):
-        if not all([self.gcp_conn_id, self.project_id, self.name, self.location]):
-            self.log.error(
-                'One of (gcp_conn_id, project_id, name, location) is missing or incorrect')
-            raise AirflowException('Operator has incorrect or missing input.')
-
-
-    def execute(self, context):
-        self._check_input()
-        hook = GKEClusterHook(gcp_conn_id=self.gcp_conn_id, location=self.location)
-        delete_result = hook.delete_cluster(name=self.name)
-        return delete_result
+            service_key.write(keyfile_json_str.encode('utf-8'))
+            os.environ[CREDENTIALS] = service_key.name
+            # Return file object to have a pointer to close after use,
+            # thus deleting from file system.
+            service_key.close() # Moz specific instead of return service_key

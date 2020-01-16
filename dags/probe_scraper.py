@@ -4,7 +4,6 @@ from operators.gcp_container_operator import GKEPodOperator
 
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.kubernetes.pod import Resources
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -20,14 +19,8 @@ with DAG('probe_scraper',
          default_args=default_args,
          schedule_interval='@daily') as dag:
 
-    gcp_conn_id = "google_cloud_derived_datasets"
-    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
-
     aws_conn_id='aws_prod_probe_scraper'
     aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
-
-    gke_location="us-central1-a"
-    gke_cluster_name="bq-load-gke-1"
 
     # Built from repo https://github.com/mozilla/probe-scraper
     probe_scraper_image='gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest'
@@ -41,17 +34,12 @@ with DAG('probe_scraper',
     ]
 
     # Cluster autoscaling works on pod resource requests, instead of usage
-    resources = Resources(request_memory='13312Mi', request_cpu=None,
-                         limit_memory='20480Mi', limit_cpu=None)
+    resources = {'request_memory':'13312Mi', 'request_cpu': None,
+                 'limit_memory':'20480Mi', 'limit_cpu': None, 'limit_gpu': None}
 
     probe_scraper = GKEPodOperator(
         task_id="probe_scraper",
-        gcp_conn_id=gcp_conn_id,
-        project_id=connection.project_id,
-        location=gke_location,
-        cluster_name=gke_cluster_name,
         name='probe-scraper',
-        namespace='default',
         # Needed to scale the highmem pool from 0 -> 1
         resources=resources,
         # This python job requires 13 GB of memory, thus the highmem node pool
@@ -74,12 +62,7 @@ with DAG('probe_scraper',
     schema_generator = GKEPodOperator(
         email=['frank@mozilla.com'],
         task_id='mozilla_schema_generator',
-        gcp_conn_id=gcp_conn_id,
-        project_id=connection.project_id,
-        location=gke_location,
-        cluster_name=gke_cluster_name,
         name='schema-generator-1',
-        namespace='default',
         image='mozilla/mozilla-schema-generator:latest',
         env_vars={
             "MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}",
@@ -93,12 +76,7 @@ with DAG('probe_scraper',
 
     probe_expiry_alerts = GKEPodOperator(
         task_id="probe-expiry-alerts",
-        gcp_conn_id=gcp_conn_id,
-        project_id=connection.project_id,
-        location=gke_location,
-        cluster_name=gke_cluster_name,
         name="probe-expiry-alerts",
-        namespace='default',
         image=probe_scraper_image,
         arguments=["python3", "-m", "probe_scraper.probe_expiry_alert"],
         email=["bewu@mozilla.com"],

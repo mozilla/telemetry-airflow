@@ -5,7 +5,7 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.operators.sensors import ExternalTaskSensor
 
-from operators.gcs import GoogleCloudStorageDeleteOperator
+from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
 from utils.gcp import bigquery_etl_query
 
 
@@ -284,7 +284,7 @@ glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
     task_id="glam_gcs_delete_old_extracts",
     bucket_name=glam_bucket,
     prefix="extract-",
-    gcp_conn_id=gcp_conn.gcp_conn_id,
+    google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
     dag=dag)
 
 gcs_destination = "{}/extract-*.csv".format(glam_bucket)
