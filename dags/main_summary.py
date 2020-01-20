@@ -27,6 +27,7 @@ taar_aws_conn_id = "airflow_taar_rw_s3"
 taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
+taar_similarity_cluster_name = "dataproc-taar-similarity"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 taar_dynamo_cluster_name = "dataproc-taar-dynamo"
 
@@ -368,7 +369,7 @@ taar_similarity = SubDagOperator(
         parent_dag_name=dag.dag_id,
         dag_name="taar_similarity",
         default_args=taar_similarity_args,
-        cluster_name=taar_locale_cluster_name,
+        cluster_name=taar_similarity_cluster_name,
         job_name="TAAR_similarity",
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
         num_workers=12,
