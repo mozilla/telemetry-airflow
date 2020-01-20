@@ -26,7 +26,6 @@ from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
 from pyspark.statcounter import StatCounter
 from scipy.spatial import distance
-from mozetl.utils import stop_session_safely
 import boto3
 
 
@@ -38,7 +37,7 @@ def aws_env_credentials():
         "aws_access_key_id": os.environ.get("AWS_ACCESS_KEY_ID", None),
         "aws_secret_access_key": os.environ.get("AWS_SECRET_ACCESS_KEY", None),
     }
-    logging.info("Loading AWS credentials from enviroment: {}".format(str(result)))
+    # logging.info("Loading AWS credentials from enviroment: {}".format(str(result)))
     return result
 
 
@@ -511,4 +510,8 @@ def main(
     donors = format_donors_dictionary(donors_df)
     store_json_to_s3(json.dumps(donors, indent=2), "donors", date, prefix, bucket)
     store_json_to_s3(json.dumps(lr_curves, indent=2), "lr_curves", date, prefix, bucket)
-    stop_session_safely(spark)
+    spark.stop()
+
+
+if __name__ == "__main__":
+    main()
