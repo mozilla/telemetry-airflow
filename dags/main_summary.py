@@ -359,25 +359,31 @@ taar_locale_job = SubDagOperator(
     dag=dag,
 )
 
-
-taar_similarity = MozDatabricksSubmitRunOperator(
+taar_similarity_args = default_args.copy()
+taar_similarity_args["owner"] = "vng@mozilla.com"
+taar_similarity_args["email"] = ["vng@mozilla.com", "mlopatka@mozilla.com", "akomar@mozilla.com"]
+taar_similarity = SubDagOperator(
     task_id="taar_similarity",
-    job_name="Taar Similarity model",
-    owner="akomar@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com", "akomar@mozilla.com"],
-    execution_timeout=timedelta(hours=2),
-    instance_count=11,
-    instance_type="i3.8xlarge",
-    driver_instance_type="i3.xlarge",
-    env=mozetl_envvar("taar_similarity",
-        options={
-            "date": "{{ ds_nodash }}",
-            "bucket": "{{ task.__class__.private_output_bucket }}",
-            "prefix": "taar/similarity/"
-        }),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh",
-    output_visibility="private",
-    dag=dag)
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name=dag.dag_id,
+        dag_name="taar_similarity",
+        default_args=taar_similarity_args,
+        cluster_name=taar_locale_cluster_name,
+        job_name="TAAR_similarity",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
+        num_workers=12,
+        py_args=[
+            "--date", "{{ ds_nodash }}",
+            "--bucket", "telemetry-private-analysis-2",
+            "--prefix", "taar/similarity/",
+            "--aws_access_key_id", taar_aws_access_key,
+            "--aws_secret_access_key", taar_aws_secret_key,
+        ],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+    ),
+    dag=dag,
+)
 
 taar_collaborative_recommender = SubDagOperator(
     task_id="addon_recommender",
