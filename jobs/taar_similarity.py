@@ -37,7 +37,6 @@ def aws_env_credentials():
         "aws_access_key_id": os.environ.get("AWS_ACCESS_KEY_ID", None),
         "aws_secret_access_key": os.environ.get("AWS_SECRET_ACCESS_KEY", None),
     }
-    # logging.info("Loading AWS credentials from enviroment: {}".format(str(result)))
     return result
 
 
