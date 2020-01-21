@@ -137,7 +137,7 @@ logging.getLogger("py4j").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
-def get_samples(spark, date_from):
+def get_samples(spark, date_from, clients_daily_gcs_bucket):
     """
     Get a DataFrame with a valid set of sample to base the next
     processing on.
@@ -152,8 +152,8 @@ def get_samples(spark, date_from):
     BUG 1485152: PR include active_addons to clients_daily table:
     https://github.com/mozilla/telemetry-batch-view/pull/490
     """
-    gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
-        date_from
+    gs_url = "gs://{}/clients_daily/v6/submission_date_s3={}".format(
+        clients_daily_gcs_bucket, date_from
     )
     parquetFile = spark.read.parquet(gs_url)
 
@@ -282,10 +282,10 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
 
 
 def get_donors(
-    spark, num_clusters, num_donors, addon_whitelist, date_from, random_seed=None
+    spark, num_clusters, num_donors, addon_whitelist, date_from, clients_daily_gcs_bucket, random_seed=None
 ):
     # Get the data for the potential add-on donors.
-    users_sample = get_samples(spark, date_from)
+    users_sample = get_samples(spark, date_from, clients_daily_gcs_bucket)
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
     addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
@@ -463,6 +463,7 @@ def today_minus_90_days():
 @click.option("--kernel_bandwidth", default=0.35)
 @click.option("--num_pdf_points", default=1000)
 @click.option("--clients_sample_date_from", default=today_minus_90_days())
+@click.option("--clients_daily_gcs_bucket", default="moz-fx-data-derived-datasets-parquet")
 def main(
     date,
     aws_access_key_id,
@@ -474,6 +475,7 @@ def main(
     kernel_bandwidth,
     num_pdf_points,
     clients_sample_date_from,
+    clients_daily_gcs_bucket,
 ):
     logger.info("Sampling clients since {}".format(clients_sample_date_from))
 
@@ -500,7 +502,7 @@ def main(
 
     # Compute the donors clusters and the LR curves.
     cluster_ids, donors_df = get_donors(
-        spark, num_clusters, num_donors, whitelist, clients_sample_date_from
+        spark, num_clusters, num_donors, whitelist, clients_sample_date_from, clients_daily_gcs_bucket
     )
     donors_df.cache()
     lr_curves = get_lr_curves(
