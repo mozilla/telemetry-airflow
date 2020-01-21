@@ -6,6 +6,8 @@ active add-ons. A representative users sample is selected from
 each cluster ("donors") and is saved to a model file along
 with a feature vector that will be used, by the TAAR library
 module, to perform recommendations.
+
+Migrated from https://github.com/mozilla/python_mozetl/blob/3d1ca45f7460c3efa3336abaf18685598219125c/mozetl/taar/taar_similarity.py
 """
 
 from datetime import date, timedelta
