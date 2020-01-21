@@ -49,7 +49,7 @@ with DAG('missioncontrol',
         # Due to the nature of the container run, we set get_logs to False,
         # To avoid urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes read)' errors
         # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
-        # get_logs=False,
+        get_logs=False,
         # Give additional time since we will likely always scale up when running this job
         startup_timeout_seconds=360,
         image=docker_image,
