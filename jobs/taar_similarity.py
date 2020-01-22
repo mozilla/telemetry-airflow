@@ -152,7 +152,7 @@ def get_samples(spark, date_from, clients_daily_gcs_bucket):
     BUG 1485152: PR include active_addons to clients_daily table:
     https://github.com/mozilla/telemetry-batch-view/pull/490
     """
-    gs_url = "gs://{}/clients_daily/v6/submission_date_s3={}".format(
+    gs_url = "gs://{}/clients_daily/v6/".format(
         clients_daily_gcs_bucket, date_from
     )
     parquetFile = spark.read.parquet(gs_url)
