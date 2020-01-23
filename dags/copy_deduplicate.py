@@ -82,6 +82,8 @@ with models.DAG(
             "--submission-date",
             "{{ ds }}",
             "--json-output",
+            "--wait-seconds",
+            "15",
         ],
         docker_image="mozilla/bigquery-etl:latest",
         xcom_push=True,
