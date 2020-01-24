@@ -230,6 +230,12 @@ with models.DAG(
      fenix_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
+    (copy_deduplicate_all >>
+     [vrbrowser_baseline_daily, vrbrowser_metrics_daily] >>
+     vrbrowser_clients_daily >>
+     vrbrowser_clients_last_seen >>
+     nondesktop_aggregate_tasks)
+
     # Nondesktop forecasts.
 
     simpleprophet_forecasts_mobile = simpleprophet_forecast(
