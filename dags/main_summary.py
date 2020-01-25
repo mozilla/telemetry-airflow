@@ -372,7 +372,9 @@ taar_similarity = SubDagOperator(
         cluster_name=taar_similarity_cluster_name,
         job_name="TAAR_similarity",
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
-        num_workers=12,
+        num_workers=4,
+        worker_machine_type="n1-highmem-96",
+        master_machine_type='n1-standard-8',
         py_args=[
             "--date", "{{ ds_nodash }}",
             "--bucket", "telemetry-private-analysis-2",
