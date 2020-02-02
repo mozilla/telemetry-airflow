@@ -206,6 +206,16 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
+    smoot_usage_nondesktop_compressed_v2 = bigquery_etl_query(
+        task_id='smoot_usage_nondesktop_compressed_v2',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='smoot_usage_nondesktop_compressed_v2',
+        dataset_id='telemetry_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+    )
+
+    smoot_usage_nondesktop_v2 >> smoot_usage_nondesktop_compressed_v2
+
     firefox_nondesktop_exact_mau28_by_client_count_dimensions = bigquery_etl_query(
         task_id='firefox_nondesktop_exact_mau28_by_client_count_dimensions',
         project_id='moz-fx-data-shared-prod',

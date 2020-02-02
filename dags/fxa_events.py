@@ -88,7 +88,14 @@ with models.DAG(
         dataset_id='telemetry_derived',
     )
 
-    fxa_users_last_seen >> smoot_usage_fxa_v2
+    smoot_usage_fxa_compressed_v2 = bigquery_etl_query(
+        task_id='smoot_usage_fxa_compressed_v2',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='smoot_usage_fxa_compressed_v2',
+        dataset_id='telemetry_derived',
+    )
+
+    fxa_users_last_seen >> smoot_usage_fxa_v2 >> smoot_usage_fxa_compressed_v2
 
     simpleprophet_forecasts_fxa = simpleprophet_forecast(
         task_id="fxa_simpleprophet_forecasts",
