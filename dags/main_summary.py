@@ -1,6 +1,5 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from itertools import chain
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import GetDefaultExecutor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
@@ -23,13 +22,6 @@ from utils.gcp import (
 )
 from utils.forecasting import simpleprophet_forecast
 
-taar_aws_conn_id = "airflow_taar_rw_s3"
-taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
-taarlite_cluster_name = "dataproc-taarlite-guidguid"
-taar_locale_cluster_name = "dataproc-taar-locale"
-taar_similarity_cluster_name = "dataproc-taar-similarity"
-taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
-taar_dynamo_cluster_name = "dataproc-taar-dynamo"
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -311,130 +303,6 @@ devtools_panel_usage = bigquery_etl_query(
     dag=dag)
 
 
-taar_dynamo_job = SubDagOperator(
-    task_id="taar_dynamo_job",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="taar_dynamo_job",
-        default_args=default_args,
-        master_machine_type='n1-standard-32',
-        worker_machine_type='n1-standard-32',
-        cluster_name=taar_dynamo_cluster_name,
-        job_name="TAAR_Dynamo",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_dynamo.py",
-        num_workers=12,
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--aws_access_key_id",
-            taar_aws_access_key,
-            "--aws_secret_access_key",
-            taar_aws_secret_key,
-        ],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-        master_disk_type='pd-ssd',
-        worker_disk_type='pd-ssd',
-    ),
-    dag=dag,
-)
-
-
-
-taar_locale_job = SubDagOperator(
-    task_id="taar_locale_job",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="taar_locale_job",
-        default_args=default_args,
-        cluster_name=taar_locale_cluster_name,
-        job_name="TAAR_Locale",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_locale.py",
-        num_workers=12,
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--aws_access_key_id",
-            taar_aws_access_key,
-            "--aws_secret_access_key",
-            taar_aws_secret_key,
-            "--bucket",
-            "telemetry-private-analysis-2",
-            "--prefix",
-            "taar/locale/",
-        ],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-    ),
-    dag=dag,
-)
-
-taar_similarity_args = default_args.copy()
-taar_similarity_args["owner"] = "vng@mozilla.com"
-taar_similarity_args["email"] = ["vng@mozilla.com", "mlopatka@mozilla.com", "akomar@mozilla.com"]
-taar_similarity = SubDagOperator(
-    task_id="taar_similarity",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="taar_similarity",
-        default_args=taar_similarity_args,
-        cluster_name=taar_similarity_cluster_name,
-        job_name="TAAR_similarity",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
-        num_workers=4,
-        worker_machine_type="n1-highmem-96",
-        master_machine_type='n1-standard-8',
-        py_args=[
-            "--date", "{{ ds_nodash }}",
-            "--bucket", "telemetry-private-analysis-2",
-            "--prefix", "taar/similarity/",
-            "--aws_access_key_id", taar_aws_access_key,
-            "--aws_secret_access_key", taar_aws_secret_key,
-        ],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-    ),
-    dag=dag,
-)
-
-taar_collaborative_recommender = SubDagOperator(
-    task_id="addon_recommender",
-    subdag=moz_dataproc_jar_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="addon_recommender",
-        job_name="Train_the_Collaborative_Addon_Recommender",
-        main_class="com.mozilla.telemetry.ml.AddonRecommender",
-        jar_urls=[
-            "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
-            "/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
-        ],
-        jar_args=[
-          "train",
-          "--runDate={{ds_nodash}}",
-          "--inputTable=gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6",
-          "--privateBucket=s3a://telemetry-parquet",
-          "--publicBucket=s3a://telemetry-public-analysis-2",
-        ],
-        cluster_name="addon-recommender-{{ds_nodash}}",
-        image_version="1.3",
-        worker_machine_type="n1-standard-8",
-        num_workers=20,
-        optional_components=[],
-        install_component_gateway=False,
-        init_actions_uris=[],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-        default_args={
-            key: value
-            for key, value in chain(default_args.items(), [
-                ("owner", "mlopatka@mozilla.com"),
-                ("email", ["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "vng@mozilla.com"]),
-            ])
-        },
-    ),
-    dag=dag,
-)
-
 subdag_args = default_args.copy()
 subdag_args["retries"] = 0
 task_id = "bgbb_pred_dataproc"
@@ -540,30 +408,6 @@ search_clients_last_seen = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     dag=dag)
 
-taar_lite = SubDagOperator(
-    task_id="taar_lite",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="taar_lite",
-        default_args=default_args,
-        cluster_name=taarlite_cluster_name,
-        job_name="TAAR_Lite_GUID_GUID",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
-        num_workers=8,
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--aws_access_key_id",
-            taar_aws_access_key,
-            "--aws_secret_access_key",
-            taar_aws_secret_key,
-        ],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-    ),
-    dag=dag,
-)
-
 experiments_daily_active_clients = bigquery_etl_query(
     task_id="experiments_daily_active_clients",
     destination_table="experiments_daily_active_clients_v1",
@@ -585,9 +429,6 @@ addon_aggregates.set_upstream(copy_deduplicate_main_ping)
 main_summary_experiments.set_upstream(main_summary)
 main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
 
-taar_dynamo_job.set_upstream(main_summary_export)
-taar_similarity.set_upstream(clients_daily_export)
-
 clients_last_seen.set_upstream(clients_daily)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
@@ -596,18 +437,12 @@ smoot_usage_desktop_compressed_v2.set_upstream(smoot_usage_desktop_v2)
 simpleprophet_forecasts_desktop.set_upstream(exact_mau_by_dimensions)
 devtools_panel_usage.set_upstream(clients_daily)
 
-taar_locale_job.set_upstream(clients_daily_export)
-taar_collaborative_recommender.set_upstream(clients_daily_export)
-
 bgbb_pred_dataproc.set_upstream(clients_daily)
 bgbb_pred_bigquery_load.set_upstream(bgbb_pred_dataproc)
 
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 search_clients_last_seen.set_upstream(search_clients_daily_bigquery)
-
-# Set a dependency on clients_daily from taar_lite
-taar_lite.set_upstream(clients_daily_export)
 
 bq_main_events.set_upstream(copy_deduplicate_main_ping)
 
