@@ -42,7 +42,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("taar_daily", default_args=default_args, schedule_interval="@daily")
+dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 1 * * *")
 
 amodump = GKEPodOperator(
     task_id="taar_amodump",
