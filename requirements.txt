@@ -10,3 +10,4 @@ requests
 jsonschema
 Flask-OAuthlib
 pytz
+werkzeug==0.16.0
