@@ -155,7 +155,7 @@ addon_aggregates = bigquery_etl_query(
 
 main_summary_experiments_get_experiment_list = gke_command(
     task_id="main_summary_experiments_get_experiment_list",
-    command=["python3", "templates/telemetry_derived/experiments_v1/get_experiment_list.py", "{{ds}}"],
+    command=["python3", "sql/telemetry_derived/experiments_v1/get_experiment_list.py", "{{ds}}"],
     docker_image="mozilla/bigquery-etl:latest",
     xcom_push=True,
     owner="ssuh@mozilla.com",
