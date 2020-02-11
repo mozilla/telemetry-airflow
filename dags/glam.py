@@ -133,6 +133,66 @@ clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
     arguments=('--append_table','--noreplace',),
     dag=dag)
 
+clients_histogram_aggregates_new = bigquery_etl_query(
+    task_id="clients_histogram_aggregates_new",
+    destination_table="clients_histogram_aggregates_new_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
+    arguments=('--replace',),
+    dag=dag)
+
+clients_histogram_aggregates_old = bigquery_etl_query(
+    task_id="clients_histogram_aggregates_old",
+    destination_table="clients_histogram_aggregates_old_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    depends_on_past=True,
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
+clients_histogram_aggregates_merged_nightly = bigquery_etl_query(
+    task_id="clients_histogram_aggregates_merged_nightly",
+    destination_table="clients_histogram_aggregates_merged_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    parameters=("channel_enum:INT64:0",),
+    arguments=('--replace',),
+    dag=dag)
+
+clients_histogram_aggregates_merged_beta = bigquery_etl_query(
+    task_id="clients_histogram_aggregates_merged_beta",
+    destination_table="clients_histogram_aggregates_merged_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    parameters=("channel_enum:INT64:1",),
+    arguments=('--append_table','--noreplace',),
+    dag=dag)
+
+clients_histogram_aggregates_merged_release = bigquery_etl_query(
+    task_id="clients_histogram_aggregates_merged_release",
+    destination_table="clients_histogram_aggregates_merged_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="msamuel@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    date_partition_parameter=None,
+    parameters=("channel_enum:INT64:2",),
+    arguments=('--append_table','--noreplace',),
+    dag=dag)
+
 clients_histogram_aggregates = bigquery_etl_query(
     task_id="clients_histogram_aggregates",
     destination_table="clients_histogram_aggregates_v1",
@@ -140,9 +200,7 @@ clients_histogram_aggregates = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    depends_on_past=True,
     date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
     arguments=('--replace',),
     dag=dag)
 
@@ -216,7 +274,16 @@ clients_scalar_aggregates >> scalar_percentiles
 
 latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
-clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
+clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates_new
+clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates_old
+
+clients_histogram_aggregates_old >> clients_histogram_aggregates_merged_nightly
+clients_histogram_aggregates_new >> clients_histogram_aggregates_merged_nightly
+clients_histogram_aggregates_merged_nightly >> clients_histogram_aggregates_merged_beta
+clients_histogram_aggregates_merged_nightly >> clients_histogram_aggregates_merged_release
+
+clients_histogram_aggregates_merged_beta >> clients_histogram_aggregates
+clients_histogram_aggregates_merged_release >> clients_histogram_aggregates
 
 clients_scalar_bucket_counts >> client_scalar_probe_counts
 client_scalar_probe_counts >> client_histogram_probe_counts
