@@ -1,7 +1,12 @@
-from airflow import DAG
 from datetime import datetime, timedelta
-from utils.gcp import bigquery_etl_query
+
+from airflow import DAG
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.operators.sensors import ExternalTaskSensor
+
+from operators.gcs import GoogleCloudStorageDeleteOperator
+from utils.gcp import bigquery_etl_query
 
 
 dataset_id = "telemetry_derived"
@@ -15,8 +20,11 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=30),
 }
+glam_bucket = "gs://glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
 dag = DAG('glam', default_args=default_args, schedule_interval='@daily')
+
+gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskSensor(
@@ -262,6 +270,33 @@ client_histogram_probe_counts = bigquery_etl_query(
     arguments=('--append_table','--noreplace',),
     dag=dag)
 
+glam_client_probe_counts_extract = bigquery_etl_query(
+    task_id="glam_client_probe_counts_extract",
+    destination_table="glam_client_probe_counts_extract_v1",
+    dataset_id=dataset_id,
+    project_id="moz-fx-data-shared-prod",
+    owner="robhudson@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com", "robhudson@mozilla.com"],
+    date_partition_parameter=None,
+    arguments=('--replace',),
+    dag=dag)
+
+glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
+    task_id="glam_gcs_delete_old_extracts",
+    bucket_name=glam_bucket,
+    prefix="extract-",
+    gcp_conn_id=gcp_conn.gcp_conn_id,
+    dag=dag)
+
+gcs_destination = "{}/extract-*.csv".format(glam_bucket)
+glam_extract_to_csv = BigQueryToCloudStorageOperator(
+    task_id="glam_extract_to_csv",
+    source_project_dataset_table="glam_client_probe_counts_extract_v1",
+    destination_cloud_storage_uris=gcs_destination,
+    export_format="CSV",
+    print_header=False,
+    dag=dag)
+
 wait_for_main_ping >> latest_versions
 
 latest_versions >> clients_daily_scalar_aggregates
@@ -293,3 +328,8 @@ client_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 clients_histogram_aggregates >> glam_user_counts
+
+glam_user_counts >> glam_client_probe_counts_extract
+histogram_percentiles >> glam_client_probe_counts_extract
+glam_client_probe_counts_extract >> glam_gcs_delete_old_extracts
+glam_gcs_delete_old_extracts >> glam_extract_to_csv
