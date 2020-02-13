@@ -35,7 +35,7 @@ default_args = {
     "owner": "vng@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 7),
-    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com", "vng@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 3,
