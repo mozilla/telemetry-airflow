@@ -6,6 +6,16 @@ from airflow.operators.sensors import ExternalTaskSensor
 from datetime import datetime, timedelta
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from utils.mozetl import mozetl_envvar
+from airflow.operators.subdag_operator import SubDagOperator
+from utils.dataproc import moz_dataproc_pyspark_runner
+from airflow.contrib.hooks.aws_hook import AwsHook
+
+taar_aws_conn_id = "airflow_taar_rw_s3"
+taar_aws_access_key, taar_aws_secret_key, session = AwsHook(
+    taar_aws_conn_id
+).get_credentials()
+taar_ensemble_cluster_name = "dataproc-taar-ensemble"
+taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 
 default_args_weekly = {
     "owner": "vng@mozilla.com",
@@ -23,38 +33,46 @@ taar_weekly = DAG(
     "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly"
 )
 
-wait_for_clients_daily = ExternalTaskSensor(
-    task_id="clients_daily",
-    external_dag_id="main_summary",
-    external_task_id="clients_daily_export",
-    execution_delta=timedelta(
-        days=-7, hours=-1
-    ),  # main_summary waits one hour, execution date is beginning of the week
+taar_ensemble = SubDagOperator(
+    task_id="taar_ensemble",
+    subdag=moz_dataproc_pyspark_runner(
+        parent_dag_name=taar_weekly.dag_id,
+        dag_name="taar_ensemble",
+        default_args=default_args_weekly,
+        cluster_name=taar_ensemble_cluster_name,
+        job_name="TAAR_ensemble",
+        python_driver_code="gs://temp-hwoo-removemelater/taar_ensemble.py",
+        additional_properties={
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+            "spark:spark.hadoop.fs.s3a.access.key": taar_aws_access_key,
+            "spark:spark.hadoop.fs.s3a.secret.key": taar_aws_secret_key,
+            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
+            "spark:spark.python.profile": "true",
+        },
+        num_workers=35,
+        worker_machine_type="n1-standard-8",
+        master_machine_type="n1-standard-8",
+        init_actions_uris=["gs://temp-hwoo-removemelater/pip-install.sh"],
+        additional_metadata={
+            "PIP_PACKAGES": "mozilla-taar3==0.4.8 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
+        },
+        optional_components=["ANACONDA", "JUPYTER"],
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--aws_access_key_id",
+            taar_aws_access_key,
+            "--aws_secret_access_key",
+            taar_aws_secret_key,
+            "--sample_rate",
+            "0.001",
+        ],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        master_disk_type="pd-ssd",
+        worker_disk_type="pd-ssd",
+        master_disk_size=1024,
+        worker_disk_size=1024,
+    ),
     dag=taar_weekly,
 )
-
-
-taar_ensemble = MozDatabricksSubmitRunOperator(
-    task_id="taar_ensemble",
-    job_name="TAAR Ensemble Model",
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com"],
-    execution_timeout=timedelta(hours=11),
-    instance_count=5,
-    instance_type="i3.2xlarge",
-    spot_bid_price_percent=100,
-    max_instance_count=60,
-    enable_autoscale=True,
-    pypi_libs=[
-        "mozilla-taar3==0.4.5",
-        "mozilla-srgutil==0.1.10",
-        "python-decouple==3.1",
-    ],
-    env=mozetl_envvar("taar_ensemble", {"date": "{{ ds_nodash }}"}),
-    start_date=datetime(2019, 7, 14),
-    uri="https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-databricks.py",
-    output_visibility="private",
-)
-
-
-taar_ensemble.set_upstream(wait_for_clients_daily)
