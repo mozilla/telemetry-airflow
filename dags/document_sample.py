@@ -6,7 +6,7 @@ from utils.gcp import bigquery_etl_query
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2019, 12, 4),
+    "start_date": datetime(2020, 2, 17),
     "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -20,5 +20,7 @@ document_sample_nonprod_v1 = bigquery_etl_query(
     destination_table="document_sample_nonprod_v1",
     dataset_id="monitoring",
     project_id="moz-fx-data-shared-prod",
+    date_partition_parameter=None,
+    arguments=("--append_table"),
     dag=dag,
 )
