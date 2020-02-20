@@ -4,8 +4,10 @@ from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.operators.sensors import ExternalTaskSensor
+from airflow.operators.subdag_operator import SubDagOperator
 
 from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
+from glam_subdags.histograms import histogram_aggregates_subdag
 from utils.gcp import bigquery_etl_query
 
 
@@ -22,7 +24,10 @@ default_args = {
 }
 glam_bucket = "gs://glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
-dag = DAG('glam', default_args=default_args, schedule_interval='@daily')
+GLAM_DAG = 'glam'
+GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = 'clients_histogram_aggregates'
+
+dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval='@daily')
 
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 
@@ -141,52 +146,15 @@ clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
     arguments=('--append_table','--noreplace',),
     dag=dag)
 
-clients_histogram_aggregates_new = bigquery_etl_query(
-    task_id="clients_histogram_aggregates_new",
-    destination_table="clients_histogram_aggregates_new_v1",
-    dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
-    owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=('--replace',),
-    dag=dag)
-
-clients_histogram_aggregates_old_0 = bigquery_etl_query(
-    task_id="clients_histogram_aggregates_old_0",
-    destination_table="clients_histogram_aggregates_old_v1",
-    dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
-    owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    depends_on_past=True,
-    date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
-
-clients_histogram_aggregates_merged_0 = bigquery_etl_query(
-    task_id="clients_histogram_aggregates_merged_0",
-    destination_table="clients_histogram_aggregates_merged_v1",
-    dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
-    owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    date_partition_parameter=None,
-    parameters=("min_sample_id:INT64:0", "max_sample_id:INT64:24",),
-    arguments=('--replace',),
-    dag=dag)
-
-clients_histogram_aggregates_0 = bigquery_etl_query(
-    task_id="clients_histogram_aggregates_0",
-    destination_table="clients_histogram_aggregates_v1",
-    dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
-    owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+clients_histogram_aggregates = SubDagOperator(
+  subdag=histogram_aggregates_subdag(
+    GLAM_DAG,
+    GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
+    default_args,
+    dag.schedule_interval,
+    dataset_id),
+  task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
+  dag=dag)
 
 clients_histogram_bucket_counts = bigquery_etl_query(
     task_id="clients_histogram_bucket_counts",
@@ -199,9 +167,9 @@ clients_histogram_bucket_counts = bigquery_etl_query(
     arguments=('--replace',),
     dag=dag)
 
-glam_user_counts = bigquery_etl_query(
-    task_id="glam_user_counts",
-    destination_table="glam_user_counts_v1",
+histogram_percentiles = bigquery_etl_query(
+    task_id="histogram_percentiles",
+    destination_table="histogram_percentiles_v1",
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
@@ -210,70 +178,9 @@ glam_user_counts = bigquery_etl_query(
     arguments=('--replace',),
     dag=dag)
 
-NUM_PARTITIONS = 4
-NUM_SAMPLE_IDS = 100
-PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
-for partition in range(1, NUM_PARTITIONS):
-    min_param = partition * PARTITION_SIZE
-    max_param = min_param + PARTITION_SIZE - 1
-
-    clients_histogram_aggregates_old = bigquery_etl_query(
-        task_id="clients_histogram_aggregates_old_{}".format(partition),
-        destination_table="clients_histogram_aggregates_old_v1",
-        dataset_id=dataset_id,
-        project_id="moz-fx-data-shared-prod",
-        owner="msamuel@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-        depends_on_past=True,
-        date_partition_parameter=None,
-        parameters=(
-            "min_sample_id:INT64:{}".format(min_param),
-            "max_sample_id:INT64:{}".format(max_param),
-        ),
-        arguments=('--append_table','--noreplace',),
-        dag=dag)
-    clients_histogram_aggregates_old_0 >> clients_histogram_aggregates_old
-    clients_histogram_aggregates_old >> clients_histogram_aggregates_merged_0
-
-    clients_histogram_aggregates_merged = bigquery_etl_query(
-        task_id="clients_histogram_aggregates_merged_{}".format(partition),
-        destination_table="clients_histogram_aggregates_merged_v1",
-        dataset_id=dataset_id,
-        project_id="moz-fx-data-shared-prod",
-        owner="msamuel@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-        date_partition_parameter=None,
-        parameters=(
-            "min_sample_id:INT64:{}".format(min_param),
-            "max_sample_id:INT64:{}".format(max_param),
-        ),
-        arguments=('--append_table','--noreplace',),
-        dag=dag)
-    clients_histogram_aggregates_merged_0 >> clients_histogram_aggregates_merged
-    clients_histogram_aggregates_merged >> clients_histogram_aggregates_0
-
-    clients_histogram_aggregates = bigquery_etl_query(
-        task_id="clients_histogram_aggregates_{}".format(partition),
-        destination_table="clients_histogram_aggregates_v1",
-        dataset_id=dataset_id,
-        project_id="moz-fx-data-shared-prod",
-        owner="msamuel@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-        date_partition_parameter=None,
-        parameters=(
-            "min_sample_id:INT64:{}".format(min_param),
-            "max_sample_id:INT64:{}".format(max_param),
-        ),
-        arguments=('--append_table','--noreplace',),
-        dag=dag)
-    clients_histogram_aggregates_0 >> clients_histogram_aggregates
-    clients_histogram_aggregates >> clients_histogram_bucket_counts
-    clients_histogram_aggregates >> glam_valid_builds
-    clients_histogram_aggregates >> glam_user_counts
-
-histogram_percentiles = bigquery_etl_query(
-    task_id="histogram_percentiles",
-    destination_table="histogram_percentiles_v1",
+glam_user_counts = bigquery_etl_query(
+    task_id="glam_user_counts",
+    destination_table="glam_user_counts_v1",
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
@@ -346,10 +253,10 @@ clients_scalar_aggregates >> scalar_percentiles
 
 latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
-clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates_new
-clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates_old_0
+clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
-clients_histogram_aggregates_new >> clients_histogram_aggregates_merged_0
+clients_histogram_aggregates >> clients_histogram_bucket_counts
+clients_histogram_aggregates >> glam_user_counts
 
 clients_scalar_bucket_counts >> client_scalar_probe_counts
 client_scalar_probe_counts >> client_histogram_probe_counts
