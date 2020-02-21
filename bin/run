@@ -82,6 +82,7 @@ init_connections() {
       "google_cloud_prio_a"
       "google_cloud_prio_admin"
       "google_cloud_prio_b"
+      "google_cloud_glam_fenix_dev"
     )
     for conn_id in "${gcp_conn[@]}"; do
         airflow connections --delete --conn_id "${conn_id}"
