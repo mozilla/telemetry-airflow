@@ -21,6 +21,6 @@ document_sample_nonprod_v1 = bigquery_etl_query(
     dataset_id="monitoring",
     project_id="moz-fx-data-shared-prod",
     date_partition_parameter=None,
-    arguments=("--append_table"),
+    arguments=("--append_table",),
     dag=dag,
 )
