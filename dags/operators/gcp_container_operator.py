@@ -13,6 +13,7 @@ from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
 from backport.gcp_container_operator_1_10_7 import GKEPodOperator as UpstreamGKEPodOperator
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
+GCLOUD_APP_CRED = "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE"
 
 # Note: In the next version of airflow this will change.
 # This module is deprecated. Please use `airflow.providers.google.cloud.operators.kubernetes_engine`.
@@ -20,6 +21,10 @@ KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
 class GKEPodOperator(UpstreamGKEPodOperator):
     """
     We override execute and _set_env_from_extras methods to support:
+
+    - `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE` environment variable that is
+        set to the path of the Service Account JSON key file. This is neccesary
+        for gcloud to operate.
 
     - Adjust when NamedTemporaryFile file descriptor is closed.
 
@@ -95,7 +100,8 @@ class GKEPodOperator(UpstreamGKEPodOperator):
 
     def _set_env_from_extras(self, extras):
         """
-        Sets the environment variable `GOOGLE_APPLICATION_CREDENTIALS` with either:
+        Sets the environment variable `GOOGLE_APPLICATION_CREDENTIALS` and
+        `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`with either:
 
         - The path to the keyfile from the specified connection id
         - A generated file's path if the user specified JSON in the connection id. The
@@ -112,12 +118,14 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             self.log.info('Using gcloud with application default credentials.')
         elif key_path:
             os.environ[CREDENTIALS] = key_path
+            os.environ[GCLOUD_APP_CRED] = key_path
             return None
         else:
             # Write service account JSON to secure file for gcloud to reference
             service_key = tempfile.NamedTemporaryFile(delete=False)
             service_key.write(keyfile_json_str.encode('utf-8'))
             os.environ[CREDENTIALS] = service_key.name
+            os.environ[GCLOUD_APP_CRED] = service_key.name
             # Return file object to have a pointer to close after use,
             # thus deleting from file system.
             service_key.close() # Moz specific instead of return service_key
