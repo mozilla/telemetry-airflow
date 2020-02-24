@@ -26,7 +26,7 @@ def repeated_subdag(
         dag=dag,
     )
 
-    NUM_PARTITIONS = 20
+    NUM_PARTITIONS = 4
     NUM_SAMPLE_IDS = 100
     PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
     for partition in range(1, NUM_PARTITIONS):
