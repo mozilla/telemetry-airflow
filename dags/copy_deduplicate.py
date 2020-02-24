@@ -1,7 +1,6 @@
 import datetime
 
 from airflow import models
-from airflow.executors import GetDefaultExecutor
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.forecasting import simpleprophet_forecast

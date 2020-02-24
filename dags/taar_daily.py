@@ -13,15 +13,9 @@ from utils.dataproc import (
     moz_dataproc_jar_runner,
 )
 
-gke_cluster_name = "bq-load-gke-1"
-
-# Defined in Airflow's UI -> Admin -> Connections
-gcp_conn_id = "google_cloud_derived_datasets"
-connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
 # Dataproc connection to GCP
 gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
-
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
 taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
@@ -46,12 +40,7 @@ dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 1 * * *"
 
 amodump = GKEPodOperator(
     task_id="taar_amodump",
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location="us-central1-a",
-    cluster_name=gke_cluster_name,
     name="taar-amodump",
-    namespace="default",
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.1",
     owner="vng@mozilla.com",
@@ -66,12 +55,7 @@ amodump = GKEPodOperator(
 
 amowhitelist = GKEPodOperator(
     task_id="taar_amowhitelist",
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location="us-central1-a",
-    cluster_name=gke_cluster_name,
     name="taar-amowhitelist",
-    namespace="default",
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.1",
     owner="vng@mozilla.com",
@@ -89,12 +73,7 @@ amowhitelist = GKEPodOperator(
 
 editorial_whitelist = GKEPodOperator(
     task_id="taar_update_whitelist",
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location="us-central1-a",
-    cluster_name=gke_cluster_name,
     name="taar-update-whitelist",
-    namespace="default",
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.1",
     owner="vng@mozilla.com",

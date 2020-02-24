@@ -256,6 +256,23 @@ docker stop $(docker ps -aq)
 
 # Remove any leftover docker volumes:
 docker volume rm $(docker volume ls -qf dangling=true)
+
+# Purge docker volumes (helps with mysql container failing to start)
+# Careful as this will purge all local volumes not used by at least one container.
+docker volume prune
+```
+
+Failing CircleCI 'test-environment' check:
+
+```bash
+# These commands are from the bin/test-parse script (get_errors_in_listing)
+# If --detach is unavailable,  make sure you are running the latest version of docker-compose
+docker-compose up --detach
+
+docker-compose logs --follow --tail 0 | sed -n '/\[testing_stage_0\]/q'
+
+# Don't pipe to grep to see the full output including your errors
+docker-compose exec web airflow list_dags
 ```
 
 ### Triggering a task to re-run within the Airflow UI

@@ -3,7 +3,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator # noqa
-from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
+from airflow.contrib.operators.gcp_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa
 
 from datetime import datetime, timedelta
 
@@ -55,6 +55,7 @@ read_aws_conn_id='aws_socorro_readonly_s3'
 # We use an application-specific gcs bucket since the copy operator can't set the destination
 # bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead 
 # of having the dataset name come first
+
 gcs_data_bucket = 'moz-fx-data-prod-socorro-data'
 
 dataset = 'socorro_crash'
@@ -81,6 +82,7 @@ s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
     transfer_options={
         'deleteObjectsUniqueInSink': True
     },
+    timeout=3600,
     dag=dag,
 )
 
@@ -107,10 +109,10 @@ crash_report_parquet = SubDagOperator(
         gcp_conn_id=gcp_conn_id)
 )
 
+
 bq_gcp_conn_id= 'google_cloud_derived_datasets'
 bq_connection = GoogleCloudBaseHook(gcp_conn_id=bq_gcp_conn_id)
-gke_location="us-central1-a"
-gke_cluster_name="bq-load-gke-1"
+
 dest_s3_key="s3://telemetry-parquet"
 
 # Not using load_to_bigquery since our source data is on GCS.
@@ -142,10 +144,7 @@ bq_load = GKEPodOperator(
     task_id='bigquery_load',
     gcp_conn_id=bq_gcp_conn_id,
     project_id=bq_connection.project_id,
-    location=gke_location,
-    cluster_name=gke_cluster_name,
     name='load-socorro-crash-parquet-to-bq',
-    namespace='default',
     image=docker_image,
     arguments=gke_args,
     dag=dag,

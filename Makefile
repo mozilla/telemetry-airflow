@@ -16,8 +16,9 @@ help:
 build:
 	docker-compose build
 
-clean: stop
+clean:	stop
 	docker-compose rm -f
+	rm -rf logs/*
 
 shell:
 	docker-compose run web bash

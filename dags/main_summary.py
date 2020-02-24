@@ -1,7 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.executors import GetDefaultExecutor
+from airflow.executors import get_default_executor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
@@ -134,7 +134,7 @@ main_summary_export = SubDagOperator(
         default_args=default_args,
         num_workers=40),
     task_id="main_summary_export",
-    executor=GetDefaultExecutor(),
+    executor=get_default_executor(),
     dag=dag)
 
 register_status(main_summary, "Main Summary", "A summary view of main pings.")
@@ -231,7 +231,7 @@ clients_daily_export = SubDagOperator(
         default_args=default_args,
         num_preemptible_workers=10),
     task_id="clients_daily_export",
-    executor=GetDefaultExecutor(),
+    executor=get_default_executor(),
     dag=dag)
 
 register_status(clients_daily, "Clients Daily", "A view of main pings with one row per client per day.")

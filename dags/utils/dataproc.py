@@ -9,12 +9,12 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator
 from airflow.exceptions import AirflowException
 
-# Our own dataproc operator used to install optional components and component gateway
+# Our own dataproc operator used to install component gateway
 from operators.moz_dataproc_operator import DataprocClusterCreateOperator
 
 """
-Note: We are currently deployed on v1.10.2, and when we upgrade, the functionality
-for the DataProcPySparkOperator and DataProcSparkOperator will change.
+Note: We are currently on 1.10.7 and when we upgrade, the spark operators will move.
+This module is deprecated. Please use `airflow.providers.google.cloud.operators.dataproc
 """
 
 
@@ -450,9 +450,6 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        # Note - When we upgrade to a later version of Airflow that pulls in latest
-        # DataProcSparkOperator code, use the argument main_jar=jar_url instead, and
-        # remove arguments main_class and dataproc_spark_jars.
         run_jar_on_dataproc = DataProcSparkOperator(
             cluster_name=cluster_name,
             task_id='run_jar_on_dataproc',
@@ -603,9 +600,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         # Run DataprocSparkOperator with script-runner.jar pointing to airflow_gcp.sh.
-        # Note - When we upgrade to a later version of Airflow that pulls in latest
-        # DataProcSparkOperator code, use the argument main_jar=jar_url instead, and
-        # remove arguments main_class and dataproc_spark_jars.
+
         run_script_on_dataproc = DataProcSparkOperator(
             cluster_name=cluster_name,
             task_id='run_script_on_dataproc',
