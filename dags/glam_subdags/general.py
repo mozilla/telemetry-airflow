@@ -12,6 +12,9 @@ def repeated_subdag(
         schedule_interval=schedule_interval,
     )
 
+    NUM_PARTITIONS = 4
+    NUM_SAMPLE_IDS = 100
+    PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
     task_0 = bigquery_etl_query(
         task_id="{dag_name}_0".format(dag_name=child_dag_name),
         destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
@@ -22,13 +25,14 @@ def repeated_subdag(
         email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
         depends_on_past=True,
         date_partition_parameter=None,
+        parameters=(
+            "min_sample_id:INT64:0",
+            "max_sample_id:INT64:{}".format(PARTITION_SIZE - 1),
+        ),
         arguments=("--replace",),
         dag=dag,
     )
 
-    NUM_PARTITIONS = 4
-    NUM_SAMPLE_IDS = 100
-    PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
     for partition in range(1, NUM_PARTITIONS):
         min_param = partition * PARTITION_SIZE
         max_param = min_param + PARTITION_SIZE - 1
