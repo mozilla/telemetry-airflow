@@ -4,7 +4,7 @@ from utils.gcp import bigquery_etl_query
 
 
 def repeated_subdag(
-    parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id, sql_file_path=None
+    parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id
 ):
     dag = DAG(
         "%s.%s" % (parent_dag_name, child_dag_name),
@@ -18,7 +18,6 @@ def repeated_subdag(
     task_0 = bigquery_etl_query(
         task_id="{dag_name}_0".format(dag_name=child_dag_name),
         destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
-        sql_file_path=sql_file_path,
         dataset_id=dataset_id,
         project_id="moz-fx-data-shared-prod",
         owner="msamuel@mozilla.com",
@@ -40,7 +39,6 @@ def repeated_subdag(
         task = bigquery_etl_query(
             task_id="{}_{}".format(child_dag_name, partition),
             destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
-            sql_file_path=sql_file_path,
             dataset_id=dataset_id,
             project_id="moz-fx-data-shared-prod",
             owner="msamuel@mozilla.com",
