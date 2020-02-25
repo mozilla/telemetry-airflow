@@ -59,7 +59,6 @@ DEFAULT_ARGS = {
     "email_on_retry": True,
     "retries": 0,
     "retry_delay": timedelta(minutes=5),
-    "schedule_interval": "@daily",
     "dagrun_timeout": timedelta(hours=4),
 }
 
@@ -94,8 +93,7 @@ BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
 
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
-dag = DAG(dag_id="prio_processor", max_active_runs=1, default_args=DEFAULT_ARGS)
-
+dag = DAG(dag_id="prio_processor", max_active_runs=1, default_args=DEFAULT_ARGS, schedule_interval="@daily")
 
 # Copy the dependencies necessary for running the `prio-processor staging` job
 # into the relevant GCS locations. This includes the runner and the egg

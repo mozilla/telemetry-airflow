@@ -12,14 +12,14 @@ default_args = {
     'email_on_retry': True,
     'retries': 2,
     'retry_delay': datetime.timedelta(minutes=10),
-    'schedule_interval': '0 1 * * *',
 }
 
 dag_name = 'bq_events_to_amplitude'
 
 with models.DAG(
         dag_name,
-        default_args=default_args) as dag:
+        default_args=default_args,
+        schedule_interval='0 1 * * *') as dag:
 
     fenix_task_id = 'fenix_amplitude_export'
     SubDagOperator(
