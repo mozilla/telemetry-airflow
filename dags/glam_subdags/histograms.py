@@ -8,7 +8,7 @@ from utils.gcp import bigquery_etl_query
 
 GLAM_HISTOGRAM_AGGREGATES_OLD_SUBDAG = "clients_histogram_aggregates_old"
 GLAM_HISTOGRAM_AGGREGATES_MERGED_SUBDAG = "clients_histogram_aggregates_merged"
-GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG = "clients_histogram_aggregates_final"
+GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG = "clients_histogram_aggregates"
 
 
 def histogram_aggregates_subdag(
@@ -59,7 +59,6 @@ def histogram_aggregates_subdag(
         dag=dag,
     )
 
-    sql_file_path = "sql/{}/{}_v1/query.sql".format(dataset_id, child_dag_name)
     clients_histogram_aggregates_final = SubDagOperator(
         subdag=repeated_subdag(
             GLAM_HISTOGRAM_AGGREGATES_SUBDAG,
@@ -67,7 +66,6 @@ def histogram_aggregates_subdag(
             default_args,
             dag.schedule_interval,
             dataset_id,
-            sql_file_path,
         ),
         task_id=GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG,
         dag=dag,
