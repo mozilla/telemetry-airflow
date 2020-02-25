@@ -39,6 +39,7 @@ RUN chown -R 10001:10001 /app
 USER 10001
 
 ENV PYTHONUNBUFFERED=1 \
+    PORT=8000
     # AWS_REGION= \
     # AWS_ACCESS_KEY_ID= \
     # AWS_SECRET_ACCESS_KEY= \
@@ -54,9 +55,10 @@ ENV PYTHONUNBUFFERED=1 \
     # DEPLOY_TAG = \
     # ARTIFACTS_BUCKET = \
     # DATABRICKS_DEFAULT_IAM \
-    PORT=8000
+
 
 ENV AIRFLOW_HOME=/app \
+    AIRFLOW_EMAIL_BACKEND="airflow.utils.email.send_email_smtp"
     # AIRFLOW_AUTHENTICATE= \
     # AIRFLOW_AUTH_BACKEND= \
     # AIRFLOW_BROKER_URL= \
@@ -69,7 +71,7 @@ ENV AIRFLOW_HOME=/app \
     # AIRFLOW_SMTP_USER= \
     # AIRFLOW_SMTP_PASSWORD= \
     # AIRFLOW_SMTP_FROM= \
-    AIRFLOW_EMAIL_BACKEND="airflow.utils.email.send_email_smtp"
+
 
 EXPOSE $PORT
 

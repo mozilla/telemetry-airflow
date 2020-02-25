@@ -1,9 +1,11 @@
 import os
 import re
+import time
 import uuid
 from datetime import timedelta
 
 from airflow.contrib.hooks.gcp_dataproc_hook import DataProcHook
+from airflow.contrib.operators.dataproc_operator import DataprocOperationBaseOperator
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -11,55 +13,24 @@ from airflow.utils import timezone
 from airflow.version import version
 
 """
-We include DataprocOperationBaseOperator(unchanged) and DataprocClusterCreateOperator here to use
-the latest master branch code, which uses the v1beta2 rest api for creating clusters.
-V1beta2 allows us to install optional components e.g. Jupyter/Anaconda, and we have modified
-the cluster create operator to optionally do so. Component gateway will be installed by default.
+We overwrite DataprocClusterCreateOperator here to create clusters with an option to
+install component gateway, which we install by default. We also add labels to the gce
+cluster config.
 
-You can see the code at:
-https://github.com/apache/airflow/blob/1.10.4/airflow/contrib/operators/dataproc_operator.py
+Previously on 1.10.2, we had to include DataprocOperationBaseOperator from master
+which used the v1beta2 rest api for creating clusters allowing us to install optional
+components and component gateway, but this class has been updated since 1.10.4.
 
 """
-class DataprocOperationBaseOperator(BaseOperator):
-    """
-    The base class for operators that poll on a Dataproc Operation.
-    """
-    @apply_defaults
-    def __init__(self,
-                 project_id,
-                 region='global',
-                 gcp_conn_id='google_cloud_default',
-                 delegate_to=None,
-                 *args,
-                 **kwargs):
-        super(DataprocOperationBaseOperator, self).__init__(*args, **kwargs)
-        self.gcp_conn_id = gcp_conn_id
-        self.delegate_to = delegate_to
-        self.project_id = project_id
-        self.region = region
-        self.hook = DataProcHook(
-            gcp_conn_id=self.gcp_conn_id,
-            delegate_to=self.delegate_to,
-            api_version='v1beta2'
-        )
-
-    def execute(self, context):
-        # pylint: disable=no-value-for-parameter
-        self.hook.wait(self.start())
-
-    def start(self, context):
-        """
-        You are expected to override the method.
-        """
-        raise AirflowException('Please submit an operation')
-
 
 # pylint: disable=too-many-instance-attributes
 class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
     """
-    We modify the _build_gce_cluster_config method to install optional components
-    and component gateway.
+    --
+    Pulled from 1.10.7
 
+    We modify the _build_gce_cluster_config method to install component gateway.
+    --
     Create a new cluster on Google Cloud Dataproc. The operator will wait until the
     creation is successful or an error occurs in the creation process.
 
@@ -95,6 +66,9 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
     :param custom_image: custom Dataproc image for more info see
         https://cloud.google.com/dataproc/docs/guides/dataproc-images
     :type custom_image: str
+    :param custom_image_project_id: project id for the custom Dataproc image, for more info see
+        https://cloud.google.com/dataproc/docs/guides/dataproc-images
+    :type custom_image_project_id: str
     :param autoscaling_policy: The autoscaling policy used by the cluster. Only resource names
         including projectid and location (region) are valid. Example:
         ``projects/[projectId]/locations/[dataproc_region]/autoscalingPolicies/[policy_id]``
@@ -103,6 +77,11 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         config files (e.g. spark-defaults.conf), see
         https://cloud.google.com/dataproc/docs/reference/rest/v1/projects.regions.clusters#SoftwareConfig
     :type properties: dict
+    :param optional_components: List of optional cluster components, for more info see
+        https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig#Component
+    :type optional_components: list[str]
+    :param num_masters: The # of master nodes to spin up
+    :type num_masters: int
     :param master_machine_type: Compute engine machine type to use for the master node
     :type master_machine_type: str
     :param master_disk_type: Type of the boot disk for the master node
@@ -165,11 +144,10 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         ``projects/[PROJECT_STORING_KEYS]/locations/[LOCATION]/keyRings/[KEY_RING_NAME]/cryptoKeys/[KEY_NAME]`` # noqa # pylint: disable=line-too-long
     :type customer_managed_key: str
 
-    :param optional_components: A list of optional components to install e.g. ['ANACONDA','JUPYTER'] via the beta api.
-        Defaults to just ['ANACONDA'] for now, since Jupyter used to work but is now broken.
-    :type optional_components: list
+    Moz specific
     :param install_component_gateway: Install alpha feature component gateway.
     :type install_component_gateway: boolean
+
     """
 
     template_fields = ['cluster_name', 'project_id', 'zone', 'region']
@@ -190,15 +168,18 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                  init_action_timeout="10m",
                  metadata=None,
                  custom_image=None,
+                 custom_image_project_id=None,
                  image_version=None,
                  autoscaling_policy=None,
                  properties=None,
+                 optional_components=['ANACONDA'], # Moz specific
+                 num_masters=1,
                  master_machine_type='n1-standard-4',
                  master_disk_type='pd-standard',
-                 master_disk_size=1024,
+                 master_disk_size=500,
                  worker_machine_type='n1-standard-4',
                  worker_disk_type='pd-standard',
-                 worker_disk_size=1024,
+                 worker_disk_size=500,
                  num_preemptible_workers=0,
                  labels=None,
                  region='global',
@@ -208,13 +189,14 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                  auto_delete_time=None,
                  auto_delete_ttl=None,
                  customer_managed_key=None,
-                 optional_components=['ANACONDA'],
-                 install_component_gateway=True,
+                 install_component_gateway=True, # Moz specific
                  *args,
                  **kwargs):
 
-        super(DataprocClusterCreateOperator, self).__init__(project_id=project_id, region=region, *args, **kwargs)
+        super(DataprocClusterCreateOperator, self).__init__(
+            project_id=project_id, region=region, *args, **kwargs)
         self.cluster_name = cluster_name
+        self.num_masters = num_masters
         self.num_workers = num_workers
         self.num_preemptible_workers = num_preemptible_workers
         self.storage_bucket = storage_bucket
@@ -222,8 +204,10 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         self.init_action_timeout = init_action_timeout
         self.metadata = metadata
         self.custom_image = custom_image
+        self.custom_image_project_id = custom_image_project_id
         self.image_version = image_version
         self.properties = properties or dict()
+        self.optional_components = optional_components
         self.master_machine_type = master_machine_type
         self.master_disk_type = master_disk_type
         self.master_disk_size = master_disk_size
@@ -244,9 +228,7 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         self.auto_delete_ttl = auto_delete_ttl
         self.customer_managed_key = customer_managed_key
         self.single_node = num_workers == 0
-
-        self.optional_components = optional_components
-        self.install_component_gateway = install_component_gateway
+        self.install_component_gateway = install_component_gateway # Moz specific
 
         assert not (self.custom_image and self.image_version), \
             "custom_image and image_version can't be both set"
@@ -272,27 +254,18 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
 
     def _build_gce_cluster_config(self, cluster_data):
         """
-        We are going to modify this method to optionally install components (e.g. jupyter,
-        anaconda) because the original operator doesnt support it.
-
-        We also optionally add alpha feature enable component gateway
-        note this is only available via the v1beta2 rest api, which the DataprocOperationBaseOperator
-        uses in master branch, and not in 1.10.2
+        We optionally add alpha feature 'enable component gateway'
 
         """
 
-        # Fetch current nested dict and add nested keys
-        cluster_config_new = cluster_data['config']
-
-        software_config_new = cluster_config_new['softwareConfig']
-        software_config_new.update({'optionalComponents': self.optional_components })
-        cluster_config_new.update({'softwareConfig': software_config_new})
-
-        if self.install_component_gateway:
+        if self.install_component_gateway: # Moz specific start
+            # Fetch current nested dict and add nested keys
+            cluster_config_new = cluster_data['config']
             cluster_config_new.update({'endpointConfig' : {'enableHttpPortAccess' : True}})
 
-        # Overwrite the config key with newly created
-        cluster_data.update({'config' : cluster_config_new})
+            # Overwrite the config key with newly created
+            cluster_data.update({'config' : cluster_config_new}) # Moz specific end
+
 
         if self.zone:
             zone_uri = \
@@ -360,15 +333,15 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         cluster_data = {
             'projectId': self.project_id,
             'clusterName': self.cluster_name,
-            'labels': {
+            'labels': { # Moz specific start
                 'owner': self.owner,
                 'env': os.getenv('DEPLOY_ENVIRONMENT', 'env_not_set')
-            },
+            }, # Moz specific end
             'config': {
                 'gceClusterConfig': {
                 },
                 'masterConfig': {
-                    'numInstances': 1,
+                    'numInstances': self.num_masters,
                     'machineTypeUri': master_type_uri,
                     'diskConfig': {
                         'bootDiskType': self.master_disk_type,
@@ -415,8 +388,9 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
             cluster_data['config']['softwareConfig']['imageVersion'] = self.image_version
 
         elif self.custom_image:
+            project_id = self.custom_image_project_id if (self.custom_image_project_id) else self.project_id
             custom_image_url = 'https://www.googleapis.com/compute/beta/projects/' \
-                               '{}/global/images/{}'.format(self.project_id,
+                               '{}/global/images/{}'.format(project_id,
                                                             self.custom_image)
             cluster_data['config']['masterConfig']['imageUri'] = custom_image_url
             if not self.single_node:
@@ -429,6 +403,9 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
 
         if self.properties:
             cluster_data['config']['softwareConfig']['properties'] = self.properties
+
+        if self.optional_components:
+            cluster_data['config']['softwareConfig']['optionalComponents'] = self.optional_components
 
         cluster_data = self._build_lifecycle_config(cluster_data)
 
@@ -463,3 +440,4 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                 body=cluster_data,
                 requestId=str(uuid.uuid4()),
             ).execute())
+

@@ -16,14 +16,11 @@ default_args = {
 
 dag = DAG("clean-gke-pods", default_args=default_args, schedule_interval="@daily")
 
-gcp_conn_id = "google_cloud_derived_datasets"
-connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
-
-gke_location="us-central1-a"
-gke_cluster_name="bq-load-gke-1"
-
 # Built from cloudops-infra repo, projects/airflow/pod-clean
 docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/gke-pod-clean:1.0'
+
+gke_cluster_name='bq-load-gke-1'
+gke_location='us-central1-a'
 
 docker_args = [
     '--project', 'moz-fx-data-derived-datasets',
@@ -34,14 +31,8 @@ docker_args = [
 
 clean_gke_pods = GKEPodOperator(
     task_id="clean-gke-pods",
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location=gke_location,
-    cluster_name=gke_cluster_name,
     name='clean-gke-pods',
-    namespace='default',
     image=docker_image,
     arguments=docker_args,
-    email=['hwoo@mozilla.com'],
     dag=dag)
 

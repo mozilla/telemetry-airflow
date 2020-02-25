@@ -9,9 +9,8 @@ from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOpe
 from operators.gcp_container_operator import GKEPodOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
-from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
-from operators.dataproc_hadoop_with_aws import DataProcHadoopOperatorWithAws
-from operators.gcs import GoogleCloudStorageDeleteOperator
+from airflow.contrib.operators.gcp_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
+from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
 
 import json
 import re
@@ -150,6 +149,7 @@ def load_to_bigquery(parent_dag_name=None,
                 project_id=connection.project_id,
                 object_conditions=gcstj_object_conditions,
                 transfer_options=gcstj_transfer_options,
+                timeout=3600,
             )
         else:
             s3_to_gcs = DummyOperator(task_id='no_s3_to_gcs')
@@ -430,7 +430,7 @@ def export_to_parquet(
                 task_id="avro_delete",
                 bucket_name=gcs_output_bucket,
                 prefix=avro_prefix,
-                gcp_conn_id=gcp_conn_id,
+                google_cloud_storage_conn_id=gcp_conn_id,
                 trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
             )
             avro_export >> run_dataproc_pyspark >> avro_delete

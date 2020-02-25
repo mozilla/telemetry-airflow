@@ -74,7 +74,7 @@ init_connections() {
         --conn_id databricks_default \
         --conn_type databricks \
         --conn_host https://dbc-caf9527b-e073.cloud.databricks.com \
-        --conn_extra "{\"token\":\"${DB_TOKEN}\"}"
+        --conn_extra "{\"token\":\"${DB_TOKEN}\", \"host\": \"\"}"
 
     gcp_conn=(
       "google_cloud_airflow_dataproc"

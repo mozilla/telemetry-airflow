@@ -5,7 +5,7 @@ from operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from operators.gcp_container_operator import GKEPodOperator
 
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.s3_to_gcs_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
+from airflow.contrib.operators.gcp_transfer_operator import S3ToGoogleCloudStorageTransferOperator # noqa
 from airflow.contrib.sensors.emr_job_flow_sensor import EmrJobFlowSensor
 
 from utils.status import register_status
@@ -188,17 +188,13 @@ s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
     project_id=connection.project_id,
     object_conditions=gcstj_object_conditions,
     transfer_options=gcstj_transfer_options,
+    timeout=720,
     dag=blp_dag
 )
 
 load_blpadi_to_bq = GKEPodOperator(
     task_id='bigquery_load',
-    gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
-    location='us-central1-a',
-    cluster_name='bq-load-gke-1',
     name='load-blpadi-to-bq',
-    namespace='default',
     image='google/cloud-sdk:242.0.0-alpine',
     arguments=bq_args,
     dag=blp_dag
