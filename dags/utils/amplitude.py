@@ -1,6 +1,9 @@
 from airflow import models
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.bigquery_operator import BigQueryOperator
+
+# Backported 1.10.2 bqoperator
+from operators.backport.bigquery_operator_1_10_2 import BigQueryOperator
+
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
 from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
