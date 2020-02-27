@@ -5,6 +5,7 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.executors import get_default_executor
 
 from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
 from glam_subdags.histograms import histogram_aggregates_subdag
@@ -154,6 +155,7 @@ clients_histogram_aggregates = SubDagOperator(
     dag.schedule_interval,
     dataset_id),
   task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
+  executor=get_default_executor(),
   dag=dag)
 
 clients_histogram_bucket_counts = bigquery_etl_query(
