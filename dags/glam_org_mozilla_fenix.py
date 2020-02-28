@@ -25,6 +25,7 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_all",
+    execution_delta=timedelta(hours=-1),
     check_existence=True,
     dag=dag,
 )
