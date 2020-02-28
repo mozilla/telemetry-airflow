@@ -9,7 +9,7 @@ from airflow.contrib.operators.gcs_to_gcs import GoogleCloudStorageToGoogleCloud
 default_args = {
     'owner': 'frank@mozilla.com',
     'depends_on_past': False,
-    'start_date': datetime(2020, 02, 28),
+    'start_date': datetime(2020, 02, 27),
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
@@ -60,3 +60,5 @@ with DAG('incline_dashboard',
         destination_object=incline_prefix + '/{{ ds_nodash }}',
         gcp_conn_id=gcp_conn_id
     )
+
+    wait_for_data >> table_extract >> copy_table
