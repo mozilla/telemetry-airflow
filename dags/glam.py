@@ -239,6 +239,7 @@ glam_extract_to_csv = BigQueryToCloudStorageOperator(
     task_id="glam_extract_to_csv",
     source_project_dataset_table="glam_client_probe_counts_extract_v1",
     destination_cloud_storage_uris=gcs_destination,
+    bigquery_conn_id=gcp_conn.gcp_conn_id,
     export_format="CSV",
     print_header=False,
     dag=dag)
