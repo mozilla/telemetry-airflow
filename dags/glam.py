@@ -23,7 +23,7 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=30),
 }
-glam_bucket = "gs://glam-dev-bespoke-nonprod-dataops-mozgcp-net"
+glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
 GLAM_DAG = 'glam'
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = 'clients_histogram_aggregates'
@@ -234,7 +234,7 @@ glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
     google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
     dag=dag)
 
-gcs_destination = "{}/extract-*.csv".format(glam_bucket)
+gcs_destination = "gs://{}/extract-*.csv".format(glam_bucket)
 glam_extract_to_csv = BigQueryToCloudStorageOperator(
     task_id="glam_extract_to_csv",
     source_project_dataset_table="glam_client_probe_counts_extract_v1",
