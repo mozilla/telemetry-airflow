@@ -14,6 +14,7 @@ from glam_subdags.histograms import histogram_aggregates_subdag
 from utils.gcp import bigquery_etl_query
 
 
+project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
 default_args = {
     "owner": "msamuel@mozilla.com",
@@ -41,7 +42,7 @@ gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     external_dag_id="main_summary",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=-1),
@@ -53,7 +54,7 @@ latest_versions = bigquery_etl_query(
     task_id="latest_versions",
     destination_table="latest_versions",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace",),
@@ -71,7 +72,7 @@ clients_daily_scalar_aggregates = bigquery_etl_query(
     task_id="clients_daily_scalar_aggregates",
     destination_table="clients_daily_scalar_aggregates_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -89,7 +90,7 @@ clients_daily_keyed_scalar_aggregates = bigquery_etl_query(
     destination_table="clients_daily_scalar_aggregates_v1",
     sql_file_path=sql_file_path,
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -108,7 +109,7 @@ clients_daily_keyed_boolean_aggregates = bigquery_etl_query(
     destination_table="clients_daily_scalar_aggregates_v1",
     sql_file_path=sql_file_path,
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -123,7 +124,7 @@ clients_scalar_aggregates = bigquery_etl_query(
     task_id="clients_scalar_aggregates",
     destination_table="clients_scalar_aggregates_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -141,7 +142,7 @@ scalar_percentiles = bigquery_etl_query(
     task_id="scalar_percentiles",
     destination_table="scalar_percentiles_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -157,7 +158,7 @@ clients_scalar_bucket_counts = bigquery_etl_query(
     task_id="clients_scalar_bucket_counts",
     destination_table="clients_scalar_bucket_counts_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -175,7 +176,7 @@ clients_daily_histogram_aggregates = bigquery_etl_query(
     task_id="clients_daily_histogram_aggregates",
     destination_table="clients_daily_histogram_aggregates_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -193,7 +194,7 @@ clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
     destination_table="clients_daily_histogram_aggregates_v1",
     sql_file_path=sql_file_path,
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -221,7 +222,7 @@ clients_histogram_bucket_counts = bigquery_etl_query(
     task_id="clients_histogram_bucket_counts",
     destination_table="clients_histogram_bucket_counts_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -237,7 +238,7 @@ histogram_percentiles = bigquery_etl_query(
     task_id="histogram_percentiles",
     destination_table="histogram_percentiles_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -253,7 +254,7 @@ glam_user_counts = bigquery_etl_query(
     task_id="glam_user_counts",
     destination_table="glam_user_counts_v1",
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -273,7 +274,7 @@ client_scalar_probe_counts = bigquery_etl_query(
     destination_table="client_probe_counts_v1",
     sql_file_path=sql_file_path,
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -292,7 +293,7 @@ client_histogram_probe_counts = bigquery_etl_query(
     destination_table="client_probe_counts_v1",
     sql_file_path=sql_file_path,
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -309,7 +310,7 @@ glam_client_probe_counts_extract = bigquery_etl_query(
     task_id="glam_client_probe_counts_extract",
     destination_table=bq_extract_table,
     dataset_id=dataset_id,
-    project_id="moz-fx-data-shared-prod",
+    project_id=project_id,
     owner="robhudson@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -332,7 +333,9 @@ glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
 gcs_destination = "gs://{}/extract-*.csv".format(glam_bucket)
 glam_extract_to_csv = BigQueryToCloudStorageOperator(
     task_id="glam_extract_to_csv",
-    source_project_dataset_table="{}.{}".format(dataset_id, bq_extract_table),
+    source_project_dataset_table="{}.{}.{}".format(
+        project_id, dataset_id, bq_extract_table
+    ),
     destination_cloud_storage_uris=gcs_destination,
     bigquery_conn_id=gcp_conn.gcp_conn_id,
     export_format="CSV",
