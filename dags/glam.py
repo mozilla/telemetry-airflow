@@ -2,12 +2,14 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
+from airflow.contrib.operators.bigquery_to_gcs import \
+    BigQueryToCloudStorageOperator
+from airflow.contrib.operators.gcs_delete_operator import \
+    GoogleCloudStorageDeleteOperator
+from airflow.executors import get_default_executor
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
-from airflow.executors import get_default_executor
 
-from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
 from glam_subdags.histograms import histogram_aggregates_subdag
 from utils.gcp import bigquery_etl_query
 
