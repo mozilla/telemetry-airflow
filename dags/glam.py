@@ -304,9 +304,10 @@ client_histogram_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
+bq_extract_table = "glam_client_probe_counts_extract_v1"
 glam_client_probe_counts_extract = bigquery_etl_query(
     task_id="glam_client_probe_counts_extract",
-    destination_table="glam_client_probe_counts_extract_v1",
+    destination_table=bq_extract_table,
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="robhudson@mozilla.com",
@@ -331,7 +332,7 @@ glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
 gcs_destination = "gs://{}/extract-*.csv".format(glam_bucket)
 glam_extract_to_csv = BigQueryToCloudStorageOperator(
     task_id="glam_extract_to_csv",
-    source_project_dataset_table="glam_client_probe_counts_extract_v1",
+    source_project_dataset_table="{}.{}".format(dataset_id, bq_extract_table),
     destination_cloud_storage_uris=gcs_destination,
     bigquery_conn_id=gcp_conn.gcp_conn_id,
     export_format="CSV",
