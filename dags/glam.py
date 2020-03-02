@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.bigquery_to_gcs import \
-    BigQueryToCloudStorageOperator
-from airflow.contrib.operators.gcs_delete_operator import \
-    GoogleCloudStorageDeleteOperator
+from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
+from airflow.contrib.operators.gcs_delete_operator import (
+    GoogleCloudStorageDeleteOperator,
+)
 from airflow.executors import get_default_executor
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
@@ -16,21 +16,21 @@ from utils.gcp import bigquery_etl_query
 
 dataset_id = "telemetry_derived"
 default_args = {
-    'owner': 'msamuel@mozilla.com',
-    'depends_on_past': False,
-    'start_date': datetime(2019, 10, 22),
-    'email': ['telemetry-alerts@mozilla.com', 'msamuel@mozilla.com'],
-    'email_on_failure': True,
-    'email_on_retry': True,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=30),
+    "owner": "msamuel@mozilla.com",
+    "depends_on_past": False,
+    "start_date": datetime(2019, 10, 22),
+    "email": ["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    "email_on_failure": True,
+    "email_on_retry": True,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=30),
 }
 glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
-GLAM_DAG = 'glam'
-GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = 'clients_histogram_aggregates'
+GLAM_DAG = "glam"
+GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 
-dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval='@daily')
+dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="@daily")
 
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 
@@ -52,9 +52,10 @@ latest_versions = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
-    arguments=('--replace',),
+    arguments=("--replace",),
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    dag=dag)
+    dag=dag,
+)
 
 # This task runs first and replaces the relevant partition, followed
 # by the next two tasks that append to the same partition of the same table.
@@ -65,9 +66,12 @@ clients_daily_scalar_aggregates = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    dag=dag)
+    dag=dag,
+)
 
-sql_file_path = "sql/{}/{}/query.sql".format(dataset_id, "clients_daily_keyed_scalar_aggregates_v1")
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_daily_keyed_scalar_aggregates_v1"
+)
 clients_daily_keyed_scalar_aggregates = bigquery_etl_query(
     task_id="clients_daily_keyed_scalar_aggregates",
     destination_table="clients_daily_scalar_aggregates_v1",
@@ -76,10 +80,13 @@ clients_daily_keyed_scalar_aggregates = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    arguments=('--append_table', '--noreplace',),
-    dag=dag)
+    arguments=("--append_table", "--noreplace",),
+    dag=dag,
+)
 
-sql_file_path = "sql/{}/{}/query.sql".format(dataset_id, "clients_daily_keyed_boolean_aggregates_v1")
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_daily_keyed_boolean_aggregates_v1"
+)
 clients_daily_keyed_boolean_aggregates = bigquery_etl_query(
     task_id="clients_daily_keyed_boolean_aggregates",
     destination_table="clients_daily_scalar_aggregates_v1",
@@ -88,8 +95,9 @@ clients_daily_keyed_boolean_aggregates = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    arguments=('--append_table','--noreplace',),
-    dag=dag)
+    arguments=("--append_table", "--noreplace",),
+    dag=dag,
+)
 
 clients_scalar_aggregates = bigquery_etl_query(
     task_id="clients_scalar_aggregates",
@@ -101,8 +109,9 @@ clients_scalar_aggregates = bigquery_etl_query(
     depends_on_past=True,
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
 scalar_percentiles = bigquery_etl_query(
     task_id="scalar_percentiles",
@@ -112,8 +121,9 @@ scalar_percentiles = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
 clients_scalar_bucket_counts = bigquery_etl_query(
     task_id="clients_scalar_bucket_counts",
@@ -123,8 +133,9 @@ clients_scalar_bucket_counts = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
@@ -135,9 +146,12 @@ clients_daily_histogram_aggregates = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    dag=dag)
+    dag=dag,
+)
 
-sql_file_path = "sql/{}/{}/query.sql".format(dataset_id, "clients_daily_keyed_histogram_aggregates_v1")
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_daily_keyed_histogram_aggregates_v1"
+)
 clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
     task_id="clients_daily_keyed_histogram_aggregates",
     destination_table="clients_daily_histogram_aggregates_v1",
@@ -146,19 +160,22 @@ clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
-    arguments=('--append_table','--noreplace',),
-    dag=dag)
+    arguments=("--append_table", "--noreplace",),
+    dag=dag,
+)
 
 clients_histogram_aggregates = SubDagOperator(
-  subdag=histogram_aggregates_subdag(
-    GLAM_DAG,
-    GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-    default_args,
-    dag.schedule_interval,
-    dataset_id),
-  task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-  executor=get_default_executor(),
-  dag=dag)
+    subdag=histogram_aggregates_subdag(
+        GLAM_DAG,
+        GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
+        default_args,
+        dag.schedule_interval,
+        dataset_id,
+    ),
+    task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
+    executor=get_default_executor(),
+    dag=dag,
+)
 
 clients_histogram_bucket_counts = bigquery_etl_query(
     task_id="clients_histogram_bucket_counts",
@@ -168,8 +185,9 @@ clients_histogram_bucket_counts = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
 histogram_percentiles = bigquery_etl_query(
     task_id="histogram_percentiles",
@@ -179,8 +197,9 @@ histogram_percentiles = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
 glam_user_counts = bigquery_etl_query(
     task_id="glam_user_counts",
@@ -190,10 +209,13 @@ glam_user_counts = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
-sql_file_path = "sql/{}/{}/query.sql".format(dataset_id, "clients_scalar_probe_counts_v1")
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_scalar_probe_counts_v1"
+)
 client_scalar_probe_counts = bigquery_etl_query(
     task_id="client_scalar_probe_counts",
     destination_table="client_probe_counts_v1",
@@ -203,9 +225,12 @@ client_scalar_probe_counts = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    dag=dag)
+    dag=dag,
+)
 
-sql_file_path = "sql/{}/{}/query.sql".format(dataset_id, "clients_histogram_probe_counts_v1")
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_histogram_probe_counts_v1"
+)
 client_histogram_probe_counts = bigquery_etl_query(
     task_id="client_histogram_probe_counts",
     destination_table="client_probe_counts_v1",
@@ -215,8 +240,9 @@ client_histogram_probe_counts = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
     date_partition_parameter=None,
-    arguments=('--append_table','--noreplace',),
-    dag=dag)
+    arguments=("--append_table", "--noreplace",),
+    dag=dag,
+)
 
 glam_client_probe_counts_extract = bigquery_etl_query(
     task_id="glam_client_probe_counts_extract",
@@ -224,17 +250,23 @@ glam_client_probe_counts_extract = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="robhudson@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com", "robhudson@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
-    arguments=('--replace',),
-    dag=dag)
+    arguments=("--replace",),
+    dag=dag,
+)
 
 glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
     task_id="glam_gcs_delete_old_extracts",
     bucket_name=glam_bucket,
     prefix="extract-",
     google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
-    dag=dag)
+    dag=dag,
+)
 
 gcs_destination = "gs://{}/extract-*.csv".format(glam_bucket)
 glam_extract_to_csv = BigQueryToCloudStorageOperator(
@@ -244,7 +276,8 @@ glam_extract_to_csv = BigQueryToCloudStorageOperator(
     bigquery_conn_id=gcp_conn.gcp_conn_id,
     export_format="CSV",
     print_header=False,
-    dag=dag)
+    dag=dag,
+)
 
 wait_for_main_ping >> latest_versions
 
