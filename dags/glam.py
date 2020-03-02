@@ -19,7 +19,11 @@ default_args = {
     "owner": "msamuel@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
-    "email": ["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    "email": [
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
@@ -53,7 +57,11 @@ latest_versions = bigquery_etl_query(
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace",),
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     dag=dag,
 )
 
@@ -65,7 +73,11 @@ clients_daily_scalar_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     dag=dag,
 )
 
@@ -79,7 +91,11 @@ clients_daily_keyed_scalar_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     arguments=("--append_table", "--noreplace",),
     dag=dag,
 )
@@ -94,7 +110,11 @@ clients_daily_keyed_boolean_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     arguments=("--append_table", "--noreplace",),
     dag=dag,
 )
@@ -105,7 +125,11 @@ clients_scalar_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     depends_on_past=True,
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
@@ -119,7 +143,11 @@ scalar_percentiles = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -131,7 +159,11 @@ clients_scalar_bucket_counts = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -145,7 +177,11 @@ clients_daily_histogram_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     dag=dag,
 )
 
@@ -159,7 +195,11 @@ clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     arguments=("--append_table", "--noreplace",),
     dag=dag,
 )
@@ -183,7 +223,11 @@ clients_histogram_bucket_counts = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -195,7 +239,11 @@ histogram_percentiles = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -207,7 +255,11 @@ glam_user_counts = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -223,7 +275,11 @@ client_scalar_probe_counts = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     dag=dag,
 )
@@ -238,7 +294,11 @@ client_histogram_probe_counts = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id="moz-fx-data-shared-prod",
     owner="msamuel@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
     date_partition_parameter=None,
     arguments=("--append_table", "--noreplace",),
     dag=dag,
