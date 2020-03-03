@@ -71,7 +71,7 @@ main_summary = bigquery_etl_query(
     sql_file_path="sql/telemetry_derived/main_summary_v4/",
     multipart=True,
     owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "pmcdermott@mozilla.com", "dzielaski@mozilla.com", "jmundi@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     start_date=datetime(2019, 10, 25),
     dag=dag)
 
@@ -159,7 +159,7 @@ clients_daily = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
     owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "pmcdermott@mozilla.com", "dzielaski@mozilla.com", "jmundi@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     start_date=datetime(2019, 11, 5),
     dag=dag)
 
@@ -221,7 +221,7 @@ clients_last_seen = bigquery_etl_query(
     project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
     owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com", "pmcdermott@mozilla.com", "dzielaski@mozilla.com", "jmundi@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
     depends_on_past=True,
     start_date=datetime(2019, 4, 15),
     dag=dag)
@@ -231,7 +231,7 @@ exact_mau_by_dimensions = bigquery_etl_query(
     destination_table="firefox_desktop_exact_mau28_by_dimensions_v1",
     dataset_id="telemetry",
     owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "pmcdermott@mozilla.com", "dzielaski@mozilla.com", "jmundi@mozilla.com"],
+    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
     dag=dag)
 
 exact_mau_by_client_count_dimensions = bigquery_etl_query(
