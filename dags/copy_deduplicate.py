@@ -122,7 +122,7 @@ with models.DAG(
         project_id='moz-fx-data-shared-prod',
         destination_table='core_clients_daily_v1',
         dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     core_clients_last_seen = bigquery_etl_query(
@@ -131,7 +131,7 @@ with models.DAG(
         destination_table='core_clients_last_seen_v1',
         dataset_id='telemetry_derived',
         depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     # Daily and last seen views on top of Fenix pings (deprecated);
@@ -144,7 +144,7 @@ with models.DAG(
         project_id='moz-fx-data-shared-prod',
         destination_table='clients_daily_v1',
         dataset_id='org_mozilla_fenix_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     fenix_clients_last_seen = bigquery_etl_query(
@@ -153,7 +153,7 @@ with models.DAG(
         destination_table='clients_last_seen_v1',
         dataset_id='org_mozilla_fenix_derived',
         depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     # Daily and last seen views on top of Fenix pings;
@@ -225,7 +225,7 @@ with models.DAG(
         task_id='firefox_nondesktop_exact_mau28',
         destination_table='firefox_nondesktop_exact_mau28_raw_v1',
         dataset_id='telemetry',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     smoot_usage_nondesktop_v2 = bigquery_etl_query(
