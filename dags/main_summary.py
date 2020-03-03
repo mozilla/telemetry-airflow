@@ -153,27 +153,6 @@ addon_aggregates = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
     dag=dag)
 
-main_summary_experiments_get_experiment_list = gke_command(
-    task_id="main_summary_experiments_get_experiment_list",
-    command=["python3", "sql/telemetry_derived/experiments_v1/get_experiment_list.py", "{{ds}}"],
-    docker_image="mozilla/bigquery-etl:latest",
-    xcom_push=True,
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    dag=dag)
-
-main_summary_experiments = bigquery_etl_query(
-    task_id="main_summary_experiments",
-    destination_table="experiments_v1",
-    parameters=(
-        "experiment_list:ARRAY<STRING>:{{task_instance.xcom_pull('main_summary_experiments_get_experiment_list') | tojson}}",
-    ),
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com", "ssuh@mozilla.com", "robhudson@mozilla.com"],
-    dag=dag)
-
 clients_daily = bigquery_etl_query(
     task_id="clients_daily",
     destination_table="clients_daily_v6",
@@ -425,9 +404,6 @@ clients_daily_export.set_upstream(clients_daily)
 
 addons.set_upstream(copy_deduplicate_main_ping)
 addon_aggregates.set_upstream(copy_deduplicate_main_ping)
-
-main_summary_experiments.set_upstream(main_summary)
-main_summary_experiments.set_upstream(main_summary_experiments_get_experiment_list)
 
 clients_last_seen.set_upstream(clients_daily)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
