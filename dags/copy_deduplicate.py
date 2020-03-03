@@ -134,7 +134,10 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
     )
 
-    # Daily and last seen views on top of glean pings.
+    # Daily and last seen views on top of Fenix pings (deprecated);
+    # these legacy tables consider both baseline and metrics pings as activity
+    # and should be removed once GUD and KPI reporting consistently use the
+    # new org_mozilla_firefox tables.
 
     fenix_clients_daily = bigquery_etl_query(
         task_id='fenix_clients_daily',
@@ -151,6 +154,34 @@ with models.DAG(
         dataset_id='org_mozilla_fenix_derived',
         depends_on_past=True,
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'pmcdermott@mozilla.com', 'dzielaski@mozilla.com', 'jmundi@mozilla.com'],
+    )
+
+    # Daily and last seen views on top of Fenix pings;
+    # these will replace the above
+
+    org_mozilla_firefox_baseline_daily = bigquery_etl_query(
+        task_id='org_mozilla_firefox_baseline_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='baseline_daily_v1',
+        dataset_id='org_mozilla_firefox_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+    )
+
+    org_mozilla_firefox_metrics_daily = bigquery_etl_query(
+        task_id='org_mozilla_firefox_metrics_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='metrics_daily_v1',
+        dataset_id='org_mozilla_firefox_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+    )
+
+    org_mozilla_firefox_clients_last_seen = bigquery_etl_query(
+        task_id='org_mozilla_firefox_clients_last_seen',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='clients_last_seen_v1',
+        dataset_id='org_mozilla_firefox_derived',
+        depends_on_past=True,
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
     # Daily and last seen views on top of VR browser pings.
@@ -234,9 +265,15 @@ with models.DAG(
      core_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
+    # TODO: Remove this dependency chain once we retire fenix_* tasks.
     (copy_deduplicate_all >>
      fenix_clients_daily >>
      fenix_clients_last_seen >>
+     nondesktop_aggregate_tasks)
+
+    (copy_deduplicate_all >>
+     [org_mozilla_firefox_baseline_daily, org_mozilla_firefox_metrics_daily] >>
+     org_mozilla_firefox_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
     (copy_deduplicate_all >>
