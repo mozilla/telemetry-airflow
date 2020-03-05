@@ -387,6 +387,16 @@ search_clients_last_seen = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
     dag=dag)
 
+search_rfm = bigquery_etl_query(
+    task_id="search_rfm",
+    destination_table="search_rfm_v1",
+    dataset_id="search",
+    project_id="moz-fx-data-shared-prod",
+    depends_on_past=True,
+    owner="frank@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
+    dag=dag)
+
 experiments_daily_active_clients = bigquery_etl_query(
     task_id="experiments_daily_active_clients",
     destination_table="experiments_daily_active_clients_v1",
@@ -419,6 +429,7 @@ bgbb_pred_bigquery_load.set_upstream(bgbb_pred_dataproc)
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
 search_clients_last_seen.set_upstream(search_clients_daily_bigquery)
+search_rfm.set_upstream(search_clients_last_seen)
 
 bq_main_events.set_upstream(copy_deduplicate_main_ping)
 
