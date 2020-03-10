@@ -109,7 +109,7 @@ with models.DAG(
         task_id='impression_stats_flat',
         project_id='moz-fx-data-shared-prod',
         destination_table='impression_stats_flat_v1',
-        dataset_id='activity_stream_derived',
+        dataset_id='activity_stream_bi',
         email=['jklukas@mozilla.com'],
     )
 
