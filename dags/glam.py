@@ -10,10 +10,6 @@ from airflow.executors import get_default_executor
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
-from glam_subdags.daily_aggregates import (
-    daily_scalar_aggregates_subdag,
-    daily_histogram_aggregates_subdag,
-)
 from glam_subdags.histograms import histogram_aggregates_subdag
 from utils.gcp import bigquery_etl_query
 
@@ -38,8 +34,6 @@ glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
 GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
-GLAM_CLIENTS_DAILY_SCALAR_AGGREGATES_SUBDAG = "clients_daily_scalar_aggregates"
-GLAM_CLIENTS_DAILY_HISTOGRAM_AGGREGATES_SUBDAG = "clients_daily_histogram_aggregates"
 
 dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="@daily")
 
@@ -72,16 +66,57 @@ latest_versions = bigquery_etl_query(
     dag=dag,
 )
 
-clients_daily_scalar_aggregates = SubDagOperator(
-    subdag=daily_scalar_aggregates_subdag(
-        GLAM_DAG,
-        GLAM_CLIENTS_DAILY_SCALAR_AGGREGATES_SUBDAG,
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-    ),
-    task_id=GLAM_CLIENTS_DAILY_SCALAR_AGGREGATES_SUBDAG,
-    executor=get_default_executor(),
+# This task runs first and replaces the relevant partition, followed
+# by the next two tasks that append to the same partition of the same table.
+clients_daily_scalar_aggregates = bigquery_etl_query(
+    task_id="clients_daily_scalar_aggregates",
+    destination_table="clients_daily_scalar_aggregates_v1",
+    dataset_id=dataset_id,
+    project_id=project_id,
+    owner="msamuel@mozilla.com",
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
+    dag=dag,
+)
+
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_daily_keyed_scalar_aggregates_v1"
+)
+clients_daily_keyed_scalar_aggregates = bigquery_etl_query(
+    task_id="clients_daily_keyed_scalar_aggregates",
+    destination_table="clients_daily_scalar_aggregates_v1",
+    sql_file_path=sql_file_path,
+    dataset_id=dataset_id,
+    project_id=project_id,
+    owner="msamuel@mozilla.com",
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
+    arguments=("--append_table", "--noreplace",),
+    dag=dag,
+)
+
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_daily_keyed_boolean_aggregates_v1"
+)
+clients_daily_keyed_boolean_aggregates = bigquery_etl_query(
+    task_id="clients_daily_keyed_boolean_aggregates",
+    destination_table="clients_daily_scalar_aggregates_v1",
+    sql_file_path=sql_file_path,
+    dataset_id=dataset_id,
+    project_id=project_id,
+    owner="msamuel@mozilla.com",
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
+    arguments=("--append_table", "--noreplace",),
     dag=dag,
 )
 
@@ -135,16 +170,38 @@ clients_scalar_bucket_counts = bigquery_etl_query(
     dag=dag,
 )
 
-clients_daily_histogram_aggregates = SubDagOperator(
-    subdag=daily_histogram_aggregates_subdag(
-        GLAM_DAG,
-        GLAM_CLIENTS_DAILY_HISTOGRAM_AGGREGATES_SUBDAG,
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-    ),
-    task_id=GLAM_CLIENTS_DAILY_HISTOGRAM_AGGREGATES_SUBDAG,
-    executor=get_default_executor(),
+# This task runs first and replaces the relevant partition, followed
+# by the next task below that appends to the same partition of the same table.
+clients_daily_histogram_aggregates = bigquery_etl_query(
+    task_id="clients_daily_histogram_aggregates",
+    destination_table="clients_daily_histogram_aggregates_v1",
+    dataset_id=dataset_id,
+    project_id=project_id,
+    owner="msamuel@mozilla.com",
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
+    dag=dag,
+)
+
+sql_file_path = "sql/{}/{}/query.sql".format(
+    dataset_id, "clients_daily_keyed_histogram_aggregates_v1"
+)
+clients_daily_keyed_histogram_aggregates = bigquery_etl_query(
+    task_id="clients_daily_keyed_histogram_aggregates",
+    destination_table="clients_daily_histogram_aggregates_v1",
+    sql_file_path=sql_file_path,
+    dataset_id=dataset_id,
+    project_id=project_id,
+    owner="msamuel@mozilla.com",
+    email=[
+        "telemetry-alerts@mozilla.com",
+        "msamuel@mozilla.com",
+        "robhudson@mozilla.com",
+    ],
+    arguments=("--append_table", "--noreplace",),
     dag=dag,
 )
 
@@ -289,12 +346,16 @@ glam_extract_to_csv = BigQueryToCloudStorageOperator(
 wait_for_main_ping >> latest_versions
 
 latest_versions >> clients_daily_scalar_aggregates
-clients_daily_scalar_aggregates >> clients_scalar_aggregates
+clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
+clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
+clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
+clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
 clients_scalar_aggregates >> clients_scalar_bucket_counts
 clients_scalar_aggregates >> scalar_percentiles
 
 latest_versions >> clients_daily_histogram_aggregates
-clients_daily_histogram_aggregates >> clients_histogram_aggregates
+clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
+clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
