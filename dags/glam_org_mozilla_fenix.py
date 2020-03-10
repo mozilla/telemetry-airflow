@@ -37,7 +37,7 @@ run_sql = gke_command(
     env_vars={"DATASET": "glam_etl", "SUBMISSION_DATE": "{{ ds }}"},
     command=["script/glam/run_fenix_sql"],
     docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_glam_fenix_dev",
+    gcp_conn_id="google_cloud_derived_datasets",
     dag=dag,
 )
 
