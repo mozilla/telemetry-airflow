@@ -115,6 +115,74 @@ with models.DAG(
 
     copy_deduplicate_all >> impression_stats_flat
 
+    # Derived tables for messaging-system.
+
+    # CFR
+    messaging_system_cfr_users_daily = bigquery_etl_query(
+        task_id='messaging_system_cfr_users_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='cfr_users_daily_v1',
+        dataset_id='messaging_system_derived',
+        email=['najiang@mozilla.com'],
+    )
+
+    messaging_system_cfr_users_last_seen = bigquery_etl_query(
+        task_id='messaging_system_cfr_users_last_seen',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='cfr_users_last_seen_v1',
+        dataset_id='messaging_system_derived',
+        depends_on_past=True,
+        email=['najiang@mozilla.com'],
+    )
+
+    (copy_deduplicate_all >>
+     messaging_system_cfr_users_daily >>
+     messaging_system_cfr_users_last_seen)
+
+    # Onboarding
+    messaging_system_onboarding_users_daily = bigquery_etl_query(
+        task_id='messaging_system_onboarding_users_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='onboarding_users_daily_v1',
+        dataset_id='messaging_system_derived',
+        email=['najiang@mozilla.com'],
+    )
+
+    messaging_system_onboarding_users_last_seen = bigquery_etl_query(
+        task_id='messaging_system_onboarding_users_last_seen',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='onboarding_users_last_seen_v1',
+        dataset_id='messaging_system_derived',
+        depends_on_past=True,
+        email=['najiang@mozilla.com'],
+    )
+
+    (copy_deduplicate_all >>
+     messaging_system_onboarding_users_daily >>
+     messaging_system_onboarding_users_last_seen)
+
+    # Snippets
+    messaging_system_snippets_users_daily = bigquery_etl_query(
+        task_id='messaging_system_snippets_users_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='snippets_users_daily_v1',
+        dataset_id='messaging_system_derived',
+        email=['najiang@mozilla.com'],
+    )
+
+    messaging_system_snippets_users_last_seen = bigquery_etl_query(
+        task_id='messaging_system_snippets_users_last_seen',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='snippets_users_last_seen_v1',
+        dataset_id='messaging_system_derived',
+        depends_on_past=True,
+        email=['najiang@mozilla.com'],
+    )
+
+    (copy_deduplicate_all >>
+     messaging_system_snippets_users_daily >>
+     messaging_system_snippets_users_last_seen)
+
     # Daily and last seen views on top of core pings.
 
     core_clients_daily = bigquery_etl_query(
