@@ -38,6 +38,7 @@ def load_to_bigquery(parent_dag_name=None,
                      bigquery_dataset='telemetry',
                      dataset_gcs_bucket='moz-fx-data-derived-datasets-parquet',
                      gcp_conn_id='google_cloud_derived_datasets',
+                     env_vars={},
                      cluster_by=(),
                      drop=(),
                      rename={},
@@ -70,6 +71,7 @@ def load_to_bigquery(parent_dag_name=None,
     :param bool reprocess:                 enable dataset reprocessing defaults to False
     :param str objects_prefix:             custom objects_prefix to override defaults
     :param str spark_gs_dataset_location:  custom spark dataset load location to override defaults
+    :param Dict[str, str] env_vars:        environment variables to be passed into GKE
     :param List[str] cluster_by:           top level fields to cluster by when creating destination table
     :param List[str] drop:                 top level fields to exclude from destination table
     :param Dict[str, str] rename:          top level fields to rename in destination table
@@ -185,6 +187,7 @@ def load_to_bigquery(parent_dag_name=None,
             namespace=gke_namespace,
             image=docker_image,
             arguments=gke_args,
+            env_vars=env_vars
             )
 
         s3_to_gcs >> reprocess >> remove_bq_table >> bulk_load
