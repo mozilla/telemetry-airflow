@@ -70,7 +70,6 @@ clients_daily_scalar_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id=project_id,
     owner="msamuel@mozilla.com",
-    docker_image="gcr.io/moz-fx-dataops-images-global/bigquery-etl:1.0",
     email=[
         "telemetry-alerts@mozilla.com",
         "msamuel@mozilla.com",
@@ -175,7 +174,6 @@ clients_daily_histogram_aggregates = bigquery_etl_query(
     dataset_id=dataset_id,
     project_id=project_id,
     owner="msamuel@mozilla.com",
-    docker_image="gcr.io/moz-fx-dataops-images-global/bigquery-etl:1.0",
     email=[
         "telemetry-alerts@mozilla.com",
         "msamuel@mozilla.com",
