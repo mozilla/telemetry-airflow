@@ -49,7 +49,7 @@ def create_gke_config(
                     "service_account": service_account,
                     "labels": {"owner": owner_label, "team": team_label},
                     "preemptible": preemptible,
-                    "diskType": disk_type,
+                    "disk_type": disk_type,
                 },
                 "initial_node_count": 1,
                 "autoscaling": {
