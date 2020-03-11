@@ -357,6 +357,8 @@ bgbb_pred_bigquery_load = SubDagOperator(
         cluster_by=["sample_id"],
         rename={"submission_date_s3": "submission_date"},
         replace=["SAFE_CAST(sample_id AS INT64) AS sample_id"],
+        env_vars={"GOOGLE_CLOUD_PROJECT":
+                  "{{ var.value.gcp_shared_prod_project }}"},
         ),
     task_id="bgbb_pred_bigquery_load",
     dag=dag)

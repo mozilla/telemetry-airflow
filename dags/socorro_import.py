@@ -14,7 +14,7 @@ from utils.dataproc import moz_dataproc_pyspark_runner
 
 """
 Originally, this job read json (non-ndjson) from aws prod at:
-s3://crashstats-telemetry-crashes-prod-us-west-2/v1/crash_report 
+s3://crashstats-telemetry-crashes-prod-us-west-2/v1/crash_report
 and wrote the data to parquet format in aws dev at:
 s3://telemetry-parquet/socorro_crash/v2
 
@@ -53,7 +53,7 @@ connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 read_aws_conn_id='aws_socorro_readonly_s3'
 
 # We use an application-specific gcs bucket since the copy operator can't set the destination
-# bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead 
+# bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead
 # of having the dataset name come first
 
 gcs_data_bucket = 'moz-fx-data-prod-socorro-data'
@@ -147,6 +147,8 @@ bq_load = GKEPodOperator(
     name='load-socorro-crash-parquet-to-bq',
     image=docker_image,
     arguments=gke_args,
+    env_vars={"GOOGLE_CLOUD_PROJECT":
+              "{{ var.value.gcp_shared_prod_project }}"},
     dag=dag,
 )
 
