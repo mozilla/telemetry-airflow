@@ -5,11 +5,7 @@ from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": [
-        "ascholtz@mozilla.com",
-        "ssuh@mozilla.com",
-        "tdsmith@mozilla.com",
-    ],
+    "email": ["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),
     "email_on_failure": True,
@@ -18,9 +14,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG(
-    "pensieve", default_args=default_args, schedule_interval="0 1 * * *"
-) as dag:
+with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") as dag:
 
     # Built from repo https://github.com/mozilla/pensieve
     pensieve_image = "gcr.io/moz-fx-data-experiments/pensieve:latest"
@@ -29,11 +23,7 @@ with DAG(
         task_id="pensieve",
         name="pensieve",
         image=pensieve_image,
-        email=[
-            "ascholtz@mozilla.com",
-            "ssuh@mozilla.com",
-            "tdsmith@mozilla.com",
-        ],
+        email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
         arguments=["--date={{ds}}"],
         dag=dag,
     )
@@ -66,7 +56,11 @@ with DAG(
         dag=dag,
     )
 
-    pensieve.set_upstream(wait_for_clients_daily_export)
-    pensieve.set_upstream(wait_for_main_summary_export)
-    pensieve.set_upstream(wait_for_search_clients_daily)
-    pensieve.set_upstream(wait_for_event_events)
+    pensieve.set_upstream(
+        [
+            wait_for_clients_daily_export,
+            wait_for_main_summary_export,
+            wait_for_search_clients_daily,
+            wait_for_event_events,
+        ]
+    )
