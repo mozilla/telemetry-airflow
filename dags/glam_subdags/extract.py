@@ -68,7 +68,9 @@ def extract_channel_subdag(
         ],
         date_partition_parameter=None,
         arguments=("--replace",),
-        sql_file_path="glam_client_probe_counts_extract_v1",
+        sql_file_path="sql/{}/glam_client_probe_counts_extract_v1/query.sql".format(
+            dataset_id
+        ),
         parameters=("channel:STRING:{}".format(channel),),
         dag=dag,
     )
