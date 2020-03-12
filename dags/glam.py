@@ -2,14 +2,11 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
-from airflow.contrib.operators.gcs_delete_operator import (
-    GoogleCloudStorageDeleteOperator,
-)
 from airflow.executors import get_default_executor
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
+from glam_subdags.extract import extracts_subdag
 from glam_subdags.histograms import histogram_aggregates_subdag
 from utils.gcp import bigquery_etl_query
 
@@ -30,7 +27,6 @@ default_args = {
     "retries": 1,
     "retry_delay": timedelta(minutes=30),
 }
-glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
 GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
@@ -305,43 +301,19 @@ client_histogram_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
-bq_extract_table = "glam_client_probe_counts_extract_v1"
-glam_client_probe_counts_extract = bigquery_etl_query(
-    task_id="glam_client_probe_counts_extract",
-    destination_table=bq_extract_table,
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="robhudson@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-    ],
-    date_partition_parameter=None,
-    arguments=("--replace",),
-    dag=dag,
-)
-
-glam_gcs_delete_old_extracts = GoogleCloudStorageDeleteOperator(
-    task_id="glam_gcs_delete_old_extracts",
-    bucket_name=glam_bucket,
-    prefix="extract-",
-    google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
-    dag=dag,
-)
-
-gcs_destination = "gs://{}/extract-*.csv".format(glam_bucket)
-glam_extract_to_csv = BigQueryToCloudStorageOperator(
-    task_id="glam_extract_to_csv",
-    source_project_dataset_table="{}.{}.{}".format(
-        project_id, dataset_id, bq_extract_table
+extracts_per_channel = SubDagOperator(
+    subdag=extracts_subdag(
+        GLAM_DAG,
+        "extracts",
+        default_args,
+        dag.schedule_interval,
+        dataset_id
     ),
-    destination_cloud_storage_uris=gcs_destination,
-    bigquery_conn_id=gcp_conn.gcp_conn_id,
-    export_format="CSV",
-    print_header=False,
+    task_id="extracts",
+    executor=get_default_executor(),
     dag=dag,
 )
+
 
 wait_for_main_ping >> latest_versions
 
@@ -367,7 +339,5 @@ client_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 
-glam_user_counts >> glam_client_probe_counts_extract
-histogram_percentiles >> glam_client_probe_counts_extract
-glam_client_probe_counts_extract >> glam_gcs_delete_old_extracts
-glam_gcs_delete_old_extracts >> glam_extract_to_csv
+glam_user_counts >> extracts_per_channel
+histogram_percentiles >> extracts_per_channel
