@@ -135,9 +135,18 @@ with models.DAG(
         email=['najiang@mozilla.com'],
     )
 
+    messaging_system_cfr_exact_mau28_by_dimensions = bigquery_etl_query(
+        task_id='messaging_system_cfr_exact_mau28_by_dimensions',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='cfr_exact_mau28_by_dimensions_v1',
+        dataset_id='messaging_system_derived',
+        email=['najiang@mozilla.com'],
+    )
+
     (copy_deduplicate_all >>
      messaging_system_cfr_users_daily >>
-     messaging_system_cfr_users_last_seen)
+     messaging_system_cfr_users_last_seen >>
+     messaging_system_cfr_exact_mau28_by_dimensions)
 
     # Onboarding
     messaging_system_onboarding_users_daily = bigquery_etl_query(
@@ -157,9 +166,18 @@ with models.DAG(
         email=['najiang@mozilla.com'],
     )
 
+    messaging_system_onboarding_exact_mau28_by_dimensions = bigquery_etl_query(
+        task_id='messaging_system_onboarding_exact_mau28_by_dimensions',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='onboarding_exact_mau28_by_dimensions_v1',
+        dataset_id='messaging_system_derived',
+        email=['najiang@mozilla.com'],
+    )
+
     (copy_deduplicate_all >>
      messaging_system_onboarding_users_daily >>
-     messaging_system_onboarding_users_last_seen)
+     messaging_system_onboarding_users_last_seen >>
+     messaging_system_onboarding_exact_mau28_by_dimensions)
 
     # Snippets
     messaging_system_snippets_users_daily = bigquery_etl_query(
@@ -179,9 +197,18 @@ with models.DAG(
         email=['najiang@mozilla.com'],
     )
 
+    messaging_system_snippets_exact_mau28_by_dimensions = bigquery_etl_query(
+        task_id='messaging_system_snippets_exact_mau28_by_dimensions',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='snippets_exact_mau28_by_dimensions_v1',
+        dataset_id='messaging_system_derived',
+        email=['najiang@mozilla.com'],
+    )
+
     (copy_deduplicate_all >>
      messaging_system_snippets_users_daily >>
-     messaging_system_snippets_users_last_seen)
+     messaging_system_snippets_users_last_seen >>
+     messaging_system_snippets_exact_mau28_by_dimensions)
 
     # Daily and last seen views on top of core pings.
 
