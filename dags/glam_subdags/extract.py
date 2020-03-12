@@ -54,7 +54,7 @@ def extract_channel_subdag(
         schedule_interval=schedule_interval,
     )
 
-    bq_extract_table = "glam_client_probe_counts_{}_extract_v1".format(channel)
+    bq_extract_table = "glam_extract_firefox_{}_v1".format(channel)
     glam_client_probe_counts_extract = bigquery_etl_query(
         task_id="glam_client_probe_counts_{}_extract".format(channel),
         destination_table=bq_extract_table,
@@ -68,6 +68,10 @@ def extract_channel_subdag(
         ],
         date_partition_parameter=None,
         arguments=("--replace",),
+        sql_file_path="sql/{}/glam_client_probe_counts_extract_v1/query.sql".format(
+            dataset_id
+        ),
+        parameters=("channel:STRING:{}".format(channel),),
         dag=dag,
     )
 
@@ -79,7 +83,9 @@ def extract_channel_subdag(
         dag=dag,
     )
 
-    gcs_destination = "gs://{}/extract-desktop-{}-*.csv".format(glam_bucket, channel)
+    gcs_destination = "gs://{}/glam-extract-firefox-{}-*.csv".format(
+        glam_bucket, channel
+    )
     glam_extract_to_csv = BigQueryToCloudStorageOperator(
         task_id="glam_extract_{}_to_csv".format(channel),
         source_project_dataset_table="{}.{}.{}".format(
