@@ -142,12 +142,14 @@ register_status(main_summary, "Main Summary", "A summary view of main pings.")
 addons = bigquery_etl_query(
     task_id="addons",
     destination_table="addons_v2",
+    project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
     dag=dag)
 
 addon_aggregates = bigquery_etl_query(
     task_id="addon_aggregates",
     destination_table="addon_aggregates_v2",
+    project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
     owner="bmiroglio@mozilla.com",
     email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
