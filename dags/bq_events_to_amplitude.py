@@ -27,7 +27,7 @@ with models.DAG(
             dag_name=fenix_task_id,
             parent_dag_name=dag_name,
             default_args=default_args,
-            project='moz-fx-data-derived-datasets',
+            project='moz-fx-data-shared-prod',
             dataset='telemetry',
             table_or_view='fenix_events_v1',
             s3_prefix='fenix',
