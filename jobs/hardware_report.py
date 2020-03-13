@@ -717,7 +717,7 @@ def get_data_bigquery(spark, chunk_start, chunk_end):
 
     print("Query is: " + filtered_data_sql)
 
-    TABLE_PROJECT = "moz-fx-data-derived-datasets"
+    TABLE_PROJECT = "moz-fx-data-shared-prod"
     TABLE_DATASET = "analysis"
     TABLE_NAME = "hardware_report_filtered_data"
 
