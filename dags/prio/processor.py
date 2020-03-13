@@ -93,7 +93,12 @@ BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
 
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
-dag = DAG(dag_id="prio_processor", max_active_runs=1, default_args=DEFAULT_ARGS, schedule_interval="@daily")
+dag = DAG(
+    dag_id="prio_processor",
+    max_active_runs=1,
+    default_args=DEFAULT_ARGS,
+    schedule_interval="@daily",
+)
 
 # Copy the dependencies necessary for running the `prio-processor staging` job
 # into the relevant GCS locations. This includes the runner and the egg
@@ -255,9 +260,9 @@ processor_a = SubDagOperator(
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
             "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
             "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-            "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_A,
-            "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_A,
-            "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_B,
+            "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
+            "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
+            "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
             # 15 minutes of timeout
             "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
@@ -284,9 +289,9 @@ processor_b = SubDagOperator(
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
             "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
             "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
-            "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_B,
-            "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_B,
-            "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_A,
+            "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_B,
+            "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
+            "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
             # 15 minutes of time-out
             "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
