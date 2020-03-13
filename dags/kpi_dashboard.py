@@ -25,7 +25,8 @@ with models.DAG(
 
     kpi_dashboard = bigquery_etl_query(
         destination_table='firefox_kpi_dashboard_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
         date_partition_parameter=None,
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
     )

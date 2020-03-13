@@ -27,28 +27,32 @@ with models.DAG(
     fxa_auth_events = bigquery_etl_query(
         task_id='fxa_auth_events',
         destination_table='fxa_auth_events_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_auth_bounce_events = bigquery_etl_query(
         task_id='fxa_auth_bounce_events',
         destination_table='fxa_auth_bounce_events_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_content_events = bigquery_etl_query(
         task_id='fxa_content_events',
         destination_table='fxa_content_events_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_users_daily = bigquery_etl_query(
         task_id='fxa_users_daily',
         destination_table='fxa_users_daily_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
     )
 
     fxa_users_daily << fxa_auth_events
@@ -58,7 +62,8 @@ with models.DAG(
     fxa_users_last_seen = bigquery_etl_query(
         task_id='fxa_users_last_seen',
         destination_table='fxa_users_last_seen_raw_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
         depends_on_past=True,
         start_date=datetime.datetime(2019, 4, 23),
     )
@@ -68,7 +73,8 @@ with models.DAG(
     firefox_accounts_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_accounts_exact_mau28_raw',
         destination_table='firefox_accounts_exact_mau28_raw_v1',
-        dataset_id='telemetry',
+        dataset_id='telemetry_derived',
+        project_id='moz-fx-data-shared-prod',
     )
 
     fxa_users_last_seen >> firefox_accounts_exact_mau28_raw
