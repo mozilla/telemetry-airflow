@@ -75,6 +75,7 @@ clients_daily_scalar_aggregates = bigquery_etl_query(
         "msamuel@mozilla.com",
         "robhudson@mozilla.com",
     ],
+    arguments=("--replace",),
     dag=dag,
 )
 
@@ -179,6 +180,7 @@ clients_daily_histogram_aggregates = bigquery_etl_query(
         "msamuel@mozilla.com",
         "robhudson@mozilla.com",
     ],
+    arguments=("--replace",),
     dag=dag,
 )
 
