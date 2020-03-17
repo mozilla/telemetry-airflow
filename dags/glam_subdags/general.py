@@ -12,6 +12,8 @@ def repeated_subdag(
         schedule_interval=schedule_interval,
     )
 
+    # This task runs first and replaces the relevant partition, followed
+    # by the next tasks that append to the same partition of the same table.
     NUM_PARTITIONS = 4
     NUM_SAMPLE_IDS = 100
     PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
@@ -23,7 +25,6 @@ def repeated_subdag(
         owner="msamuel@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
         depends_on_past=True,
-        date_partition_parameter=None,
         parameters=(
             "min_sample_id:INT64:0",
             "max_sample_id:INT64:{}".format(PARTITION_SIZE - 1),
@@ -44,7 +45,6 @@ def repeated_subdag(
             owner="msamuel@mozilla.com",
             email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
             depends_on_past=True,
-            date_partition_parameter=None,
             parameters=(
                 "min_sample_id:INT64:{}".format(min_param),
                 "max_sample_id:INT64:{}".format(max_param),
