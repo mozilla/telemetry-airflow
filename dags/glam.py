@@ -228,6 +228,7 @@ clients_histogram_bucket_counts = bigquery_etl_query(
         "robhudson@mozilla.com",
     ],
     date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
 )
@@ -260,6 +261,7 @@ glam_user_counts = bigquery_etl_query(
         "robhudson@mozilla.com",
     ],
     date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
 )
