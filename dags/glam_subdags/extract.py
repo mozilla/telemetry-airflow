@@ -37,19 +37,6 @@ def extracts_subdag(
             dag=dag,
         )
 
-    SubDagOperator(
-        subdag=extract_user_counts(
-            dag_id,
-            "extract_user_counts",
-            default_args,
-            schedule_interval,
-            dataset_id
-        ),
-        task_id="extract_user_counts",
-        executor=get_default_executor(),
-        dag=dag
-    )
-
     return dag
 
 
