@@ -305,7 +305,7 @@ client_histogram_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
-extract_user_counts = SubDagOperator(
+extract_counts = SubDagOperator(
     subdag=extract_user_counts(
         GLAM_DAG,
         "extract_user_counts",
@@ -357,7 +357,7 @@ client_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 
-glam_user_counts >> extract_user_counts
+glam_user_counts >> extract_counts
 
-extract_user_counts >> extracts_per_channel
+extract_counts >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
