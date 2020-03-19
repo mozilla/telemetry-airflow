@@ -316,6 +316,7 @@ extracts_per_channel = SubDagOperator(
     task_id="extracts",
     executor=get_default_executor(),
     dag=dag,
+    ignore_first_depends_on_past=True,
 )
 
 
