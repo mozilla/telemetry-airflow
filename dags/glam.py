@@ -6,7 +6,7 @@ from airflow.executors import get_default_executor
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
-from glam_subdags.extract import extracts_subdag
+from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from utils.gcp import bigquery_etl_query
 
@@ -305,6 +305,20 @@ client_histogram_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
+extract_user_counts = SubDagOperator(
+    subdag=extract_user_counts(
+        GLAM_DAG,
+        "extract_user_counts",
+        default_args,
+        dag.schedule_interval,
+        dataset_id
+    ),
+    task_id="extract_user_counts",
+    executor=get_default_executor(),
+    dag=dag
+)
+
+
 extracts_per_channel = SubDagOperator(
     subdag=extracts_subdag(
         GLAM_DAG,
@@ -316,7 +330,6 @@ extracts_per_channel = SubDagOperator(
     task_id="extracts",
     executor=get_default_executor(),
     dag=dag,
-    ignore_first_depends_on_past=True,
 )
 
 
@@ -344,5 +357,7 @@ client_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 
-glam_user_counts >> extracts_per_channel
+glam_user_counts >> extract_user_counts
+
+extract_user_counts >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
