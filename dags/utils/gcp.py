@@ -488,7 +488,7 @@ def bigquery_etl_query(
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    return GKEPodOperator(
+    etl_operator = GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
         location=gke_location,
@@ -504,6 +504,20 @@ def bigquery_etl_query(
         + [sql_file_path],
         **kwargs
     )
+
+    publish_json_operator = publish_json(
+        destination_table=kwargs["task_id"],
+        dataset_id=dataset_id,
+        parameters=parameters,
+        arguments=arguments,
+        project_id=project_id,
+        sql_file_path=sql_file_path,
+        **kwargs
+    )
+
+    publish_json_operator.set_upstream(etl_operator)
+
+    return etl_operator
 
 
 def bigquery_etl_copy_deduplicate(
@@ -698,5 +712,67 @@ def gke_command(
         arguments=command,
         xcom_push=xcom_push,
         env_vars=context_env_vars,
+        **kwargs
+    )
+
+
+def publish_json(
+    destination_table,
+    dataset_id,
+    parameters=(),
+    arguments=(),
+    project_id=None,
+    sql_file_path=None,
+    target_bucket=None,     # todo: once available, set name here
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="mozilla/bigquery-etl:latest",
+    date_partition_parameter="submission_date",
+    **kwargs
+):
+    """
+    Publish query results as JSON to public Cloud Storage bucket.
+
+    :param str destination_table:                  [Required] BigQuery destination table
+    :param str dataset_id:                         [Required] BigQuery default dataset id
+    :param Tuple[str] parameters:                  Parameters passed to bq query
+    :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Optional[str] project_id:               BigQuery default project id
+    :param Optional[str] sql_file_path:            Optional override for path to the
+                                                   SQL query file to run
+    :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_location:                       GKE cluster location
+    :param str gke_cluster_name:                   GKE cluster name
+    :param str gke_namespace:                      GKE cluster namespace
+    :param str docker_image:                       docker image to use
+    :param Optional[str] date_partition_parameter: Parameter for indicating destination
+                                                   partition to generate, if None
+                                                   destination should be whole table
+                                                   rather than partition
+    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
+                                                   GKEPodOperator
+    """
+
+    kwargs["task_id"] = "publish_json_" + destination_table
+    kwargs["name"] = kwargs["task_id"].replace("_", "-")[:63]
+    sql_file_path = sql_file_path or "sql/{}/{}/query.sql".format(dataset_id, destination_table)
+    if date_partition_parameter is not None:
+        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+
+    return GKEPodOperator(
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=["script/publish_public_data_json"]
+        + ["--query_file=" + sql_file_path]
+        + (["--project_id=" + project_id] if project_id else [])
+        + (["--target_bucket=" + target_bucket] if target_bucket else [])
+        + ["--parameter=" + parameter for parameter in parameters]
+        + list(arguments),
         **kwargs
     )
