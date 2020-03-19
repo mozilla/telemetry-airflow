@@ -49,10 +49,17 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         dag=dag,
     )
 
-    wait_for_event_events = ExternalTaskSensor(
-        task_id="wait_for_event_events",
+    wait_for_bq_events = ExternalTaskSensor(
+        task_id="wait_for_bq_events",
         external_dag_id="main_summary",
         external_task_id="bq_main_events",
+        dag=dag,
+    )
+
+    wait_for_copy_deduplicate_events = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_events",
+        external_dag_id="copy_deduplicate",
+        external_task_id="event_events",
         dag=dag,
     )
 
@@ -61,6 +68,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
             wait_for_clients_daily_export,
             wait_for_main_summary_export,
             wait_for_search_clients_daily,
-            wait_for_event_events,
+            wait_for_bq_events,
+            wait_for_copy_deduplicate_events,
         ]
     )
