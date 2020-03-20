@@ -65,6 +65,7 @@ def main(
     submission_date,
     project_id,
     dataset_id,
+    source_qualified_table_id,
     intermediate_table_id,
     model_input_table_id,
     model_output_table_id,
@@ -92,11 +93,11 @@ def main(
     job_config.destination = table_ref
     job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 
-    query = """
+    query = f"""
 	SELECT
 	    *
 	FROM
-	    `moz-fx-data-shared-prod.search.search_rfm`
+	    `{source_qualified_table_id}`
 	WHERE
 	    submission_date = @submission_date
 	"""
@@ -132,7 +133,7 @@ def main(
         model_perf, model = train_metric(search_rfm_ds, metric, plot=False, penalty=0.8)
         model_perf["pct"] = model_perf.Model / (model_perf.Actual + 1) - 1
         model_perf["metric"] = metric
-        model_perf["date"] = d
+        model_perf["date"] = submission_date
         model_perf_data = pd.concat([model_perf_data, model_perf])
 
         # make predictions using model
@@ -189,6 +190,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--submission-date", default="2020-03-03")
     parser.add_argument("--project-id", default="moz-fx-data-bq-data-science")
+    parser.add_argument(
+        "--source-qualified-table-id",
+        default="moz-fx-data-shared-prod.search.search_rfm",
+    )
     parser.add_argument("--dataset-id", default="bmiroglio")
     parser.add_argument("--intermediate-table-id", default="search_rfm_day")
     parser.add_argument("--model-input-table-id", default="ltv_daily_model_perf_script")
