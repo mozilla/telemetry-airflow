@@ -1,12 +1,15 @@
-from lifetimes import BetaGeoFitter
-from google.cloud import bigquery
+import argparse
+import os
 from itertools import chain
-from pyspark.sql import SparkSession
-from pyspark.sql.types import DoubleType
-import pyspark.sql.functions as F
+
 import numpy as np
 import pandas as pd
-import os
+import pyspark.sql.functions as F
+from google.cloud import bigquery
+from pyspark.sql import SparkSession
+from pyspark.sql.types import DoubleType
+
+from lifetimes import BetaGeoFitter
 
 BACKFILL = False
 TRAINING_SAMPLE = 500_000
@@ -58,7 +61,15 @@ def ltv_predict(t, frequency, recency, T, model):
     return float(pred)
 
 
-if __name__ == "__main__":
+def main(
+    submission_date,
+    project_id,
+    dataset_id,
+    intermediate_table_id,
+    model_input_table_id,
+    model_output_table_id,
+    temporary_gcs_bucket,
+):
     """Model the lifetime-value (LTV) of clients based on search activity.
 
     This reads a single partition from a source table into an intermediate table
@@ -66,14 +77,6 @@ if __name__ == "__main__":
     inputs and predictions are then stored into separate tables in the same
     dataset.
     """
-    submission_date = os.environ.get("submission_date", "2020-03-03")
-    project_id = "moz-fx-data-bq-data-science"
-    dataset_id = "bmiroglio"
-    intermediate_table_id = "search_rfm_day"
-    model_input_table_id = "ltv_daily_model_perf_script"
-    model_output_table_id = "ltv_daily_script"
-    temporary_gcs_bucket = "moz-fx-data-bq-data-science-bmiroglio"
-
     print(f"Running ltv_daily job for {submission_date}")
 
     bq = bigquery.Client()
@@ -175,8 +178,24 @@ if __name__ == "__main__":
 
     (
         model_pred_data.write.format("bigquery")
-        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id")
+        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
         .mode("overwrite")
         .save()
     )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--submission-date", default="2020-03-03")
+    parser.add_argument("--project-id", default="moz-fx-data-bq-data-science")
+    parser.add_argument("--dataset-id", default="bmiroglio")
+    parser.add_argument("--intermediate-table-id", default="search_rfm_day")
+    parser.add_argument("--model-input-table-id", default="ltv_daily_model_perf_script")
+    parser.add_argument("--model-output-table-id", default="ltv_daily_script")
+    parser.add_argument(
+        "--temporary-gcs-bucket", default="moz-fx-data-bq-data-science-bmiroglio"
+    )
+    args = parser.parse_args()
+
+    main(**vars(args))
