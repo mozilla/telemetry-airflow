@@ -11,10 +11,6 @@ from pyspark.sql.types import DoubleType
 
 from lifetimes import BetaGeoFitter
 
-BACKFILL = False
-TRAINING_SAMPLE = 500_000
-PREDICTION_DAYS = 28
-
 
 def train_metric(d, metric, plot=True, penalty=0):
     frequency = metric + "_frequency"
@@ -70,6 +66,8 @@ def main(
     model_input_table_id,
     model_output_table_id,
     temporary_gcs_bucket,
+    training_sample,
+    prediction_days,
 ):
     """Model the lifetime-value (LTV) of clients based on search activity.
 
@@ -126,7 +124,7 @@ def main(
     model_perf_data = pd.DataFrame()
     model_pred_data = None
     pred_metrics = ["days_searched", "days_tagged_searched", "days_clicked_ads"]
-    search_rfm_ds = search_rfm_full.limit(TRAINING_SAMPLE).select(columns).toPandas()
+    search_rfm_ds = search_rfm_full.limit(training_sample).select(columns).toPandas()
     for metric in pred_metrics:
         print(metric)
         # train and extract model performace
@@ -142,7 +140,7 @@ def main(
             import lifetimes
 
             return ltv_predict(
-                PREDICTION_DAYS, metric.frequency, metric.recency, metric.T, model
+                prediction_days, metric.frequency, metric.recency, metric.T, model
             )
 
         # go back to full sample here
@@ -189,6 +187,8 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--submission-date", default="2020-03-03")
+    parser.add_argument("--training-sample", type=int, default=500_000)
+    parser.add_argument("--prediction-days", type=int, default=28)
     parser.add_argument("--project-id", default="moz-fx-data-bq-data-science")
     parser.add_argument(
         "--source-qualified-table-id",

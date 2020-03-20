@@ -68,6 +68,8 @@ ltv_daily = SubDagOperator(
         py_args=[
             "--submission-date",
             "{{ ds }}",
+            "--prediction-days",
+            "364",
             "--project-id",
             "moz-fx-data-shared-prod",
             "--source-qualified-table-id",
