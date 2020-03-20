@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
@@ -29,6 +30,14 @@ default_args = {
 
 dag = DAG("ltv_daily", default_args=default_args, schedule_interval="@daily")
 
+wait_for_search_clients_last_seen = ExternalTaskSensor(
+    task_id="wait_for_search_clients_last_seen",
+    external_dag_id="main_summary",
+    external_task_id="search_clients_last_seen",
+    execution_delta=timedelta(hours=-1),
+    check_existence=True,
+    dag=dag,
+)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
@@ -81,6 +90,8 @@ ltv_daily = SubDagOperator(
         default_args=subdag_args,
     ),
 )
+
+wait_for_search_clients_last_seen >> ltv_daily
 
 if params.is_dev:
     copy_to_dev = copy_artifacts_dev(
