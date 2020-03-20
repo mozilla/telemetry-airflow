@@ -1,6 +1,7 @@
 from lifetimes import BetaGeoFitter
 from google.cloud import bigquery
 from itertools import chain
+from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType
 import pyspark.sql.functions as F
 import numpy as np
@@ -8,7 +9,7 @@ import pandas as pd
 import os
 
 BACKFILL = False
-TRAINING_SAMPLE = 500000
+TRAINING_SAMPLE = 500_000
 PREDICTION_DAYS = 28
 
 
@@ -58,15 +59,37 @@ def ltv_predict(t, frequency, recency, T, model):
 
 
 if __name__ == "__main__":
-    print("Running job")
-    print("Processing", os.environ["submission_date"])
+    """Model the lifetime-value (LTV) of clients based on search activity.
+
+    This reads a single partition from a source table into an intermediate table
+    in an analysis dataset. The table is transformed for modeling. The model
+    inputs and predictions are then stored into separate tables in the same
+    dataset.
+    """
+    submission_date = os.environ.get("submission_date", "2020-03-03")
+    project_id = "moz-fx-data-bq-data-science"
+    dataset_id = "bmiroglio"
+    intermediate_table_id = "search_rfm_day"
+    model_input_table_id = "ltv_daily_model_perf_script"
+    model_output_table_id = "ltv_daily_script"
+    temporary_gcs_bucket = "moz-fx-data-bq-data-science-bmiroglio"
+
+    print(f"Running ltv_daily job for {submission_date}")
 
     bq = bigquery.Client()
+    table_ref = bq.dataset(dataset_id, project=project_id).table(intermediate_table_id)
 
-    # to be passed as environment variable eventually
-    submission_date = "2020-03-03"
+    # define the job configuration for the query
+    # set params and output destination for the materialized
+    # dataset
+    job_config = bigquery.QueryJobConfig()
+    job_config.query_parameters = [
+        bigquery.ScalarQueryParameter("submission_date", "STRING", submission_date)
+    ]
+    job_config.destination = table_ref
+    job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 
-    q = """
+    query = """
 	SELECT
 	    *
 	FROM
@@ -74,33 +97,13 @@ if __name__ == "__main__":
 	WHERE
 	    submission_date = @submission_date
 	"""
-
-    table_ref = bq.dataset("bmiroglio", project="moz-fx-data-bq-data-science").table(
-        "search_rfm_day"
-    )
-
-    # prepare the spec parameters for insertion into SQL
-    query_params = [
-        bigquery.ScalarQueryParameter("submission_date", "STRING", submission_date)
-    ]
-
-    # define the job configuration for the query
-    # set params and output destination for the materialized
-    # dataset
-    job_config = bigquery.QueryJobConfig()
-    job_config.query_parameters = query_params
-    job_config.destination = table_ref
-    job_config.write_disposition = (
-        bigquery.WriteDisposition.WRITE_TRUNCATE
-    )  # allows for overwriting
-
-    query_job = bq.query(q, job_config=job_config)
+    query_job = bq.query(query, job_config=job_config)
     query_job.result()
 
-    # lazy load
+    spark = SparkSession.builder.getOrCreate()
     search_rfm_full = (
         spark.read.format("bigquery")
-        .option("table", "moz-fx-data-bq-data-science.bmiroglio.search_rfm_day")
+        .option("table", f"{project_id}.{dataset_id}.{intermediate_table_id}")
         .load()
     )
 
@@ -164,18 +167,16 @@ if __name__ == "__main__":
 
     (
         model_perf_data_sdf.write.format("bigquery")
-        .option(
-            "table", "moz-fx-data-bq-data-science.bmiroglio.ltv_daily_model_perf_script"
-        )
-        .option("temporaryGcsBucket", "moz-fx-data-bq-data-science-bmiroglio")
+        .option("table", f"{project_id}.{dataset_id}.{model_input_table_id}")
+        .option("temporaryGcsBucket", temporary_gcs_bucket)
         .mode("overwrite")
         .save()
     )
 
     (
         model_pred_data.write.format("bigquery")
-        .option("table", "moz-fx-data-bq-data-science.bmiroglio.ltv_daily_script")
-        .option("temporaryGcsBucket", "moz-fx-data-bq-data-science-bmiroglio")
+        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id")
+        .option("temporaryGcsBucket", temporary_gcs_bucket)
         .mode("overwrite")
         .save()
     )
