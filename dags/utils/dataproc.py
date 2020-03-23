@@ -27,7 +27,7 @@ class DataProcHelper:
                  cluster_name=None,
                  num_workers=2,
                  image_version='1.4',
-                 zone='us-west1-b',
+                 region='us-west1',
                  subnetwork_uri=None,
                  internal_ip_only=None,
                  idle_delete_ttl='14400',
@@ -54,7 +54,7 @@ class DataProcHelper:
         self.cluster_name = cluster_name
         self.num_workers = num_workers
         self.image_version = image_version
-        self.zone = zone
+        self.region = region
         self.subnetwork_uri = subnetwork_uri
         self.internal_ip_only = internal_ip_only
         self.idle_delete_ttl = idle_delete_ttl
@@ -135,7 +135,7 @@ class DataProcHelper:
             num_workers=self.num_workers,
             image_version=self.image_version,
             properties=properties,
-            zone=self.zone,
+            region=self.region,
             subnetwork_uri=self.subnetwork_uri,
             internal_ip_only=self.internal_ip_only,
             idle_delete_ttl=self.idle_delete_ttl,
@@ -171,7 +171,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 cluster_name=None,
                                 num_workers=2,
                                 image_version='1.4',
-                                zone='us-west1-b',
+                                region='us-west1',
                                 subnetwork_uri=None,
                                 internal_ip_only=None,
                                 idle_delete_ttl='10800',
@@ -237,7 +237,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :param int num_workers:               The number of spark workers.
     :param str image_version:             The image version of software to use for dataproc
                                           cluster.
-    :param str zone:                      The zone where the dataproc cluster will be located.
+    :param str region:                    Region where the dataproc cluster will be located.
+                                          Zone will be chosen automatically
     :param str subnetwork_uri:            The subnetwork uri to be used for machine communication,
                                           cannot be specified with network_uri. Only need this if
                                           setting internal_ip_only = True. (See next parameter)
@@ -299,7 +300,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     dataproc_helper = DataProcHelper(cluster_name=cluster_name,
                                      num_workers=num_workers,
                                      image_version=image_version,
-                                     zone=zone,
+                                     region=region,
                                      subnetwork_uri=subnetwork_uri,
                                      internal_ip_only=internal_ip_only,
                                      idle_delete_ttl=idle_delete_ttl,
@@ -350,7 +351,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             cluster_name=None,
                             num_workers=2,
                             image_version='1.4',
-                            zone='us-west1-b',
+                            region='us-west1',
                             subnetwork_uri=None,
                             internal_ip_only=None,
                             idle_delete_ttl='14400',
@@ -425,7 +426,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
     dataproc_helper = DataProcHelper(cluster_name=cluster_name,
                                      num_workers=num_workers,
                                      image_version=image_version,
-                                     zone=zone,
+                                     region=region,
                                      subnetwork_uri=subnetwork_uri,
                                      internal_ip_only=internal_ip_only,
                                      idle_delete_ttl=idle_delete_ttl,
@@ -477,7 +478,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               cluster_name=None,
                               num_workers=2,
                               image_version='1.4',
-                              zone='us-west1-b',
+                              region='us-west1',
                               subnetwork_uri=None,
                               internal_ip_only=None,
                               idle_delete_ttl='14400',
@@ -560,7 +561,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
     dataproc_helper = DataProcHelper(cluster_name=cluster_name,
                                      num_workers=num_workers,
                                      image_version=image_version,
-                                     zone=zone,
+                                     region=region,
                                      subnetwork_uri=subnetwork_uri,
                                      internal_ip_only=internal_ip_only,
                                      idle_delete_ttl=idle_delete_ttl,
