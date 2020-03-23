@@ -47,7 +47,6 @@ crash_report_parquet = SubDagOperator(
         dag_name="update_orphaning_dashboard_etl",
         default_args=default_args,
         cluster_name=cluster_name,
-        zone='us-west1-a',
         job_name="update_orphaning_dashboard_etl",
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/update_orphaning_dashboard_etl.py",
         init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
