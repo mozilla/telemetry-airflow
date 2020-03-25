@@ -126,7 +126,6 @@ def main(
     pred_metrics = ["days_searched", "days_tagged_searched", "days_clicked_ads"]
     search_rfm_ds = search_rfm_full.limit(training_sample).select(columns).toPandas()
     for metric in pred_metrics:
-        print(metric)
         # train and extract model performace
         model_perf, model = train_metric(search_rfm_ds, metric, plot=False, penalty=0.8)
         model_perf["pct"] = model_perf.Model / (model_perf.Actual + 1) - 1
@@ -186,7 +185,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument("--submission-date", default="2020-03-03")
+    parser.add_argument("--submission-date", help="date in YYYY-MM-DD")
     parser.add_argument("--training-sample", type=int, default=500_000)
     parser.add_argument("--prediction-days", type=int, default=28)
     parser.add_argument("--project-id", default="moz-fx-data-bq-data-science")
