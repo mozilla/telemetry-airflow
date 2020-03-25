@@ -24,7 +24,6 @@ with DAG('incline_dashboard',
          default_args=default_args,
          schedule_interval="0 1 * * *") as dag:
 
-
     wait_for_copy_deduplicate = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate",
         external_dag_id="copy_deduplicate",
@@ -41,7 +40,6 @@ with DAG('incline_dashboard',
         project_id=project,
         dataset_id=dataset,
         date_partition_parameter=None,
-        parameters=('--nouse_legacy_sql'),
         sql_file_path="sql/org_mozilla_firefox_derived/migrated_clients_v1/init.sql",
         owner="frank@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"]
@@ -58,48 +56,31 @@ with DAG('incline_dashboard',
         email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
         dag=dag)
 
-    sql = (
-        'SELECT * '
-        'FROM `{project}.{dataset}.{table}` '
-        'WHERE date = "{{ ds }}"'
-    ).format(project=project, dataset=dataset, table=table)
-
     gcp_conn_id = 'google_cloud_derived_datasets',
-    fully_qualified_tmp_table = "{project}.tmp.{table}_{{ds_nodash}}".format(project=project, table=table)
-
-    create_table = BigQueryOperator(
-        task_id='create_temporary_table',
-        sql=sql,
-        destination_dataset_table=fully_qualified_tmp_table,
-        bigquery_conn_id=gcp_conn_id,
-        use_legacy_sql=False
-    )
-
     fully_qualified_table_name = '{}.{}.{}'.format(project, dataset, table)
     gcs_bucket = 'moz-fx-data-prod-analysis'
-    incline_prefix = 'incline/executive_dash/{{ds}}/data.ndjson'
-    gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix)
+    incline_prefix = 'incline/executive_dash/{}/data.csv.gz'
+    gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix.format('latest'))
 
     table_extract = BigQueryToCloudStorageOperator(
         task_id='extract_as_latest',
         source_project_dataset_table=fully_qualified_table_name,
         destination_cloud_storage_uris=[gcs_uri],
         bigquery_conn_id=gcp_conn_id,
-        export_format='JSON',
+        export_format='CSV',
         compression='GZIP'
     )
 
-    # Drop the temporary table
-    table_drop = BigQueryOperator(
-        task_id='drop_temp_table',
-        sql='DROP TABLE `{}`'.format(fully_qualified_tmp_table),
-        bigquery_conn_id=gcp_conn_id,
-        use_legacy_sql=False
+    data_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
+        task_id='gcs_copy_latest_to_date',
+        source_bucket=gcs_bucket,
+        source_object=incline_prefix.format('latest'),
+        destination_bucket=gcs_bucket,
+        destination_object=incline_prefix.format('{{ds}}')
     )
 
     wait_for_copy_deduplicate >> \
         migrated_clients >> \
         exec_dash >> \
-        create_table >> \
         table_extract >> \
-        table_drop
+        data_copy
