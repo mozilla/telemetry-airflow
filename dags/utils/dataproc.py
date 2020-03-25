@@ -333,6 +333,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
             task_id='run_dataproc_pyspark',
             job_name=job_name,
             cluster_name=cluster_name,
+            region=region,
             main=python_driver_code,
             arguments=py_args,
             gcp_conn_id=gcp_conn_id,
@@ -453,6 +454,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
 
         run_jar_on_dataproc = DataProcSparkOperator(
             cluster_name=cluster_name,
+            region=region,
             task_id='run_jar_on_dataproc',
             job_name=job_name,
             dataproc_spark_jars=jar_urls,
@@ -604,6 +606,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
 
         run_script_on_dataproc = DataProcSparkOperator(
             cluster_name=cluster_name,
+            region=region,
             task_id='run_script_on_dataproc',
             job_name=job_name,
             dataproc_spark_jars=[jar_url],
