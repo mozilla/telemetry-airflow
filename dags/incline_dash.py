@@ -85,8 +85,7 @@ with DAG('incline_dashboard',
         destination_cloud_storage_uris=[gcs_uri],
         bigquery_conn_id=gcp_conn_id,
         export_format='JSON',
-        compression='GZIP',
-        print_header=True
+        compression='GZIP'
     )
 
     # Drop the temporary table
