@@ -76,7 +76,7 @@ with DAG('incline_dashboard',
 
     fully_qualified_table_name = '{}.{}.{}'.format(project, dataset, table)
     gcs_bucket = 'moz-fx-data-prod-analysis'
-    incline_prefix = 'incline/executive_dash/{{ds}}/data.csv'
+    incline_prefix = 'incline/executive_dash/{{ds}}/data.ndjson'
     gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix)
 
     table_extract = BigQueryToCloudStorageOperator(
