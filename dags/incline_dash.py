@@ -22,7 +22,7 @@ default_args = {
 
 with DAG('incline_dashboard',
          default_args=default_args,
-         schedule_interval='@daily') as dag:
+         schedule_interval="0 1 * * *") as dag:
 
 
     wait_for_copy_deduplicate = ExternalTaskSensor(
