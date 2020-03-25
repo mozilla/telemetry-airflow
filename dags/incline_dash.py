@@ -37,10 +37,11 @@ with DAG('incline_dashboard',
 
     migrated_clients = bigquery_etl_query(
         task_id="generate_migrated_clients",
-        destination_table=table,
+        destination_table=None,
         project_id=project,
         dataset_id=dataset,
         date_partition_parameter=None,
+        parameters=('--nouse_legacy_sql'),
         sql_file_path="sql/org_mozilla_firefox_derived/migrated_clients_v1/init.sql",
         owner="frank@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"]
