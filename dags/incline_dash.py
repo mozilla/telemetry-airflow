@@ -1,8 +1,11 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 
-from operators.bq_sensor import BigQuerySQLSensorOperator
+from utils.gcp import bigquery_etl_query
 
+from operators.backport.bigquery_operator_1_10_2 import BigQueryOperator
+
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.gcs_to_gcs import GoogleCloudStorageToGoogleCloudStorageOperator
 
@@ -94,7 +97,7 @@ with DAG('incline_dashboard',
         use_legacy_sql=False
     )
 
-    wait_for_data >> \
+    wait_for_copy_deduplicate >> \
         migrated_clients >> \
         exec_dash >> \
         create_table >> \
