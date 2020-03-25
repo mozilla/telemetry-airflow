@@ -28,12 +28,25 @@ with DAG('incline_dashboard',
         external_task_id="copy_deduplicate_all",
         dag=dag)
 
-    table = "incline_executive_v1"
+    table = "migrated_clients_v1"
     project = "moz-fx-data-shared-prod"
     dataset = "org_mozilla_firefox_derived"
 
+    migrated_clients = bigquery_etl_query(
+        task_id="generate_migrated_clients",
+        destination_table=table,
+        project_id=project,
+        dataset_id=dataset,
+        date_partition_parameter=None,
+        sql_file_path="sql/org_mozilla_firefox_derived/migrated_clients_v1/init.sql",
+        owner="frank@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"]
+    )
+
+    table = "incline_executive_v1"
+
     exec_dash = bigquery_etl_query(
-        task_id="incline_exec_dash",
+        task_id="generate_incline_exec_dash",
         destination_table=table,
         project_id=project,
         dataset_id=dataset,
@@ -43,12 +56,12 @@ with DAG('incline_dashboard',
 
     sql = (
         'SELECT * '
-        'FROM `{project}.{dataset}.{table}'
+        'FROM `{project}.{dataset}.{table}` '
         'WHERE date = "{{ ds }}"'
     ).format(project=project, dataset=dataset, table=table)
 
     gcp_conn_id = 'google_cloud_derived_datasets',
-    fully_qualified_tmp_table = "{project}.tmp.{table}_{{ds}}".format(project=project, table=table)
+    fully_qualified_tmp_table = "{project}.tmp.{table}_{{ds_nodash}}".format(project=project, table=table)
 
     create_table = BigQueryOperator(
         task_id='create_temporary_table',
@@ -58,14 +71,13 @@ with DAG('incline_dashboard',
         use_legacy_sql=False
     )
 
-
     fully_qualified_table_name = '{}.{}.{}'.format(project, dataset, table)
     gcs_bucket = 'moz-fx-data-prod-analysis'
-    incline_prefix = 'incline/executive_dash/{{ ds_nodash }}/data.csv'
+    incline_prefix = 'incline/executive_dash/{{ds}}/data.csv'
     gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix)
 
     table_extract = BigQueryToCloudStorageOperator(
-        task_id='bq_to_gcs',
+        task_id='extract_as_latest',
         source_project_dataset_table=fully_qualified_table_name,
         destination_cloud_storage_uris=[gcs_uri],
         bigquery_conn_id=gcp_conn_id,
@@ -82,4 +94,9 @@ with DAG('incline_dashboard',
         use_legacy_sql=False
     )
 
-    wait_for_data >> table_extract >> copy_table
+    wait_for_data >> \
+        migrated_clients >> \
+        exec_dash >> \
+        create_table >> \
+        table_extract >> \
+        table_drop
