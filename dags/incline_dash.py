@@ -24,7 +24,6 @@ with DAG('incline_dashboard',
          default_args=default_args,
          schedule_interval="0 1 * * *") as dag:
 
-
     wait_for_copy_deduplicate = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate",
         external_dag_id="copy_deduplicate",
@@ -59,49 +58,62 @@ with DAG('incline_dashboard',
         email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
         dag=dag)
 
-    sql = (
-        'SELECT * FROM `{project}.{dataset}.{table}` WHERE date = "{date}"'
-    ).format(project=project, dataset=dataset, table=table, date="{{ ds }}")
-
-    gcp_conn_id = 'google_cloud_derived_datasets'
-    fully_qualified_tmp_table = (
-        "{project}.tmp.{table}_{date}"
-        .format(project=project, table=table, date="{{ ds_nodash }}")
-    )
-
-    create_table = BigQueryOperator(
-        task_id='create_temporary_table',
-        sql=sql,
-        destination_dataset_table=fully_qualified_tmp_table,
-        bigquery_conn_id=gcp_conn_id,
-        use_legacy_sql=False
-    )
-
-    fully_qualified_table_name = '{}.{}.{}'.format(project, dataset, table)
-    gcs_bucket = 'moz-fx-data-prod-analysis'
-    incline_prefix = 'incline/executive_dash/{date}/data.ndjson'.format(date="{{ ds }}")
-    gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix)
-
-    table_extract = BigQueryToCloudStorageOperator(
-        task_id='extract_as_latest',
-        source_project_dataset_table=fully_qualified_table_name,
-        destination_cloud_storage_uris=[gcs_uri],
-        bigquery_conn_id=gcp_conn_id,
-        export_format='JSON',
-        compression='GZIP'
-    )
-
-    # Drop the temporary table
-    table_drop = BigQueryOperator(
-        task_id='drop_temp_table',
-        sql='DROP TABLE `{}`'.format(fully_qualified_tmp_table),
-        bigquery_conn_id=gcp_conn_id,
-        use_legacy_sql=False
-    )
-
     wait_for_copy_deduplicate >> \
         migrated_clients >> \
+        exec_dash
+
+    countries = ('US', 'CA', 'DE', 'FR', 'GB', 'IN', 'CN', 'IR', 'BR', 'IE', 'ID', 'tier-1', 'non-tier-1')
+    for country in countries:
+        bq_country = country.replace('-', '_')
+
+        sql = (
+            'SELECT * FROM `{project}.{dataset}.{table}` WHERE country = {country}'
+        ).format(project=project, dataset=dataset, table=table, country=country)
+
+        fully_qualified_tmp_table = (
+            "{project}.tmp.{table}_{country}_{date}"
+            .format(project=project, table=table, country=bq_country, date="{{ ds_nodash }}")
+        )
+
+        gcp_conn_id = 'google_cloud_derived_datasets'
+        create_table = BigQueryOperator(
+            task_id='create_temporary_table',
+            sql=sql,
+            destination_dataset_table=fully_qualified_tmp_table,
+            bigquery_conn_id=gcp_conn_id,
+            use_legacy_sql=False
+        )
+
+        gcs_bucket = 'moz-fx-data-prod-analysis'
+        incline_prefix = 'incline/executive_dash/{}/' + '{}.csv.gz'.format(country)
+        gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix.format('latest'))
+
+        table_extract = BigQueryToCloudStorageOperator(
+            task_id='extract_as_latest',
+            source_project_dataset_table=fully_qualified_tmp_table,
+            destination_cloud_storage_uris=[gcs_uri],
+            bigquery_conn_id=gcp_conn_id,
+            export_format='CSV',
+            compression='GZIP'
+        )
+
+        data_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
+            task_id='gcs_copy_latest_to_date',
+            source_bucket=gcs_bucket,
+            source_object=incline_prefix.format('latest'),
+            destination_bucket=gcs_bucket,
+            destination_object=incline_prefix.format('{{ds}}')
+        )
+
+        table_drop = BigQueryOperator(
+            task_id='drop_temp_table',
+            sql='DROP TABLE `{}`'.format(fully_qualified_tmp_table),
+            bigquery_conn_id=gcp_conn_id,
+            use_legacy_sql=False
+        )
+
         exec_dash >> \
-        create_table >> \
-        table_extract >> \
-        table_drop
+            create_table >> \
+            table_extract >> \
+            data_copy >> \
+            table_drop
