@@ -1,0 +1,441 @@
+{% extends 'airflow/master.html' %}
+
+{% block title %}Airflow - Backfill Plugin{% endblock %}
+
+{% block head_css %}
+{{ super() }}
+
+{% endblock %}
+
+{% block tail %}
+
+<script>
+	$(document).ready(function () {
+		const source = null;
+
+		const backfill_success_message = '<div class="alert alert-success alert-dismissible">' +
+			'<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' +
+			'<strong>&#128077;</strong> Backfill has been completed successfully' +
+			'</div>';
+
+		const cleared_success_message = '<div class="alert alert-success alert-dismissible">' +
+			'<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' +
+			'<strong>&#128077;</strong> Dag runs have been cleared successfully' +
+			'</div>';
+
+		const backfill_error_message = '<div class="alert alert-danger alert-dismissible fade show">' +
+			'<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' +
+			'<strong>&#128078;</strong> Something went wrong !' +
+			'</div>';
+
+		const background_success_message = '<div class="alert alert-success alert-dismissible">' +
+			'<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' +
+			'<strong>&#128077;</strong> Background job submitted' +
+			'</div>';
+
+		const stream_stopped_message = '<div class="alert alert-info alert-dismissible">' +
+			'<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' +
+			'<strong>&#128517;</strong> Streaming has been stopped' +
+			'</div>';
+
+		const spinner_backfill_message = '<div class="alert alert-info" role="alert">Executing <span id="stop_process" style="margin-left:10px; color:blue; text-decoration: underline; cursor: pointer;">Stop Streaming</span></div>';
+		const spinner_background_message = '<div class="alert alert-info" role="alert">Submitting background task</div>';
+
+		const backfill_done = function () {
+			$("#backfill_status").html(backfill_success_message)
+		};
+
+		const backfill_err = function () {
+			$("#backfill_status").html(backfill_error_message)
+		};
+
+		const backfill_progress = function () {
+			$("#backfill_status").html(spinner_backfill_message)
+		};
+
+		const clear_done = function () {
+			$("#backfill_status").html(cleared_success_message)
+		};
+
+		const background_progress = function () {
+			$("#backfill_status").html(spinner_background_message)
+		};
+
+		const background_done = function () {
+			$("#backfill_status").html(background_success_message)
+		};
+
+		const disable_form = function () {
+			$("#form :input").prop("disabled", true);
+		};
+
+		const enable_form = function () {
+			$("#form :input").prop("disabled", false);
+		};
+
+		const stream_stopped = function () {
+			$("#backfill_status").html(stream_stopped_message)
+		};
+
+		$(document).on("submit", "#form", function (event) {
+			event.preventDefault();
+
+			const dag_name = $("#dag_name").val();
+			const start_date = moment($("#start_date").val()).format('YYYY-MM-DDTHH:mm:00');
+			const end_date = moment($("#end_date").val()).format('YYYY-MM-DDTHH:mm:00');
+
+			const background = $("#background").prop("checked");
+			const clear_prev = $("#clear_prev").prop("checked");
+
+			const query_string = "?dag_name=" + dag_name +
+				"&start_date=" + start_date +
+				"&end_date=" + end_date +
+				"&clear=" + clear_prev;
+
+			const st_date = moment($("#start_date").val());
+			const en_date = moment($("#end_date").val());
+
+			if (st_date > en_date) {
+				alert('Start date should be less than end date ');
+				return false;
+			}
+
+			if (en_date > st_date && en_date.diff(st_date, 'days') > 7) {
+				alert('Difference between start and end date should not exceed 7 days');
+				return false;
+			}
+
+			// disable the form
+			disable_form()
+
+
+			if (background === false) {
+				url = '/admin/backfill/stream' + query_string;
+
+				document.getElementById("output").innerHTML = '';
+
+				// start streaming
+				let source = new EventSource(url);
+
+				// show spinner for backfill in progress
+				const show_spinner = 0;
+
+				source.onmessage = function (event) {
+
+					// show spinner
+					if (show_spinner === 0) {
+						backfill_progress();
+						const show_spinner = 1;
+					}
+
+					if (event.data.indexOf('Backfill done. Exiting.') !== -1) {
+						$("#output").prepend(event.data + "<br>");
+						source.close();
+						backfill_done();
+						enable_form()
+					}
+					else if (event.data.indexOf('dag_id could not be found') >= 0) {
+						$("#output").prepend(event.data + "<br>");
+						source.close();
+						backfill_err();
+						enable_form()
+					}
+					else if (event.data.indexOf('Clear Done') >= 0) {
+						$("#output").prepend(event.data + "<br>");
+						source.close();
+						clear_done();
+						enable_form()
+					}
+					else if (event.data.indexOf('Nothing to clear') >= 0) {
+						$("#output").prepend(event.data + "<br>");
+						source.close();
+						clear_done();
+						enable_form()
+					}
+					else {
+						$("#output").prepend(event.data + "<br>")
+					}
+				}
+			}
+			else {
+				user_accepted = confirm("You have selected background backfill for DAG name '" + dag_name + "'. Please click OK if DAG name is correct.");
+
+				if (user_accepted === true) {
+					url = '/admin/backfill/background' + query_string;
+
+					// show background progress message
+					background_progress();
+
+					$.get(url, function (data) {
+
+						document.getElementById("output").innerHTML = 'Your background job has been submitted successfully!';
+
+						// show background submission task message
+						background_done();
+
+						// enable the form
+						enable_form()
+
+					})
+				} else {
+					// enable the form
+					enable_form()
+				}
+			}
+		});
+
+		$("#history_load").click(function () {
+			$("#history").html('Fetching history...');
+
+			$.get('/admin/backfill/history', function (data) {
+
+				if (data != null) {
+					let data_rows = data.split('\n');
+
+					let rows = [];
+
+					for (var x = 0; x < data_rows.length - 1; x++) {
+						let row = data_rows[x].split(',');
+						let time = moment(row[1]).format('YYYY-MM-DD HH:mm:SS');
+						let r = '<div style="margin-top:10px;border-bottom:1px solid #f1f1f1; padding-bottom: 10px;">' + row[0] + '<span class="far fa-clock" style="float:right; font-size: 12px; color: #565656;">&nbsp;&nbsp;' + time + '</span>' + '</div>';
+
+						rows.push(r)
+
+					}
+
+					let rev_array = rows.reverse().join('');
+
+					$("#history").html(rev_array)
+				} else {
+					$("#history").html('Something went wrong!')
+				}
+			})
+		});
+
+		$(document).on('click', '#stop_process', function () {
+			if (source !== undefined || true) {
+				source.close();
+				stream_stopped();
+
+				// enable the form
+				enable_form()
+			}
+		});
+
+
+		/*For Smooth UX*/
+
+		// keep an eye on checkboxes
+		$('#backfill').change(function () {
+			if ($(this).prop("checked") === true) {
+				$('#clear_prev').prop('checked', false);
+			} else {
+				$('#clear_prev').prop('checked', true);
+			}
+		});
+		$('#clear_prev').change(function () {
+			if ($(this).prop("checked") === true) {
+				$('#backfill').prop('checked', false);
+			} else {
+				$('#backfill').prop('checked', true);
+			}
+		});
+
+		// tooltip
+		$('[data-toggle="tooltip"]').tooltip();
+
+		// max and min date controls
+		//     const max_date = new Date();
+		//     const min_date = new Date(moment(max_date).subtract(365 , 'day'));
+		//     $('#start_date').datetimepicker({
+		//         maxDate: max_date,
+		//         minDate: min_date,
+		//         icons: {
+		//             time: 'far fa-clock',
+		//             date: 'far fa-calendar',
+		//             today: 'far fa-calendar-check-o',
+		//             clear: 'far fa-trash',
+		//             close: 'far fa-times'
+		//         }
+		//     });
+		//     $('#end_date').datetimepicker({
+		//         maxDate: max_date,
+		//         minDate: min_date,
+		//         icons: {
+		//             time: 'far fa-clock',
+		//             date: 'far fa-calendar',
+		//             today: 'far fa-calendar-check-o',
+		//             clear: 'far fa-trash',
+		//             close: 'far fa-times'
+		//         }
+		//     });
+		//     $('#end_date').val('')
+		//     $('#start_date').val('')
+		//
+	});
+
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+
+<style>
+	/*Custom size for jumbotron*/
+	.custom-jumbotron {
+		height: 100px;
+		padding: 10px;
+		margin-bottom: 20px;
+	}
+
+	.row {
+		margin-bottom: 10px;
+	}
+
+	.info-icon {
+		font-weight: bolder;
+	}
+
+	#output {
+		padding: 5px;
+		background: #f7f7f7;
+		height: 350px;
+		overflow-y: scroll;
+	}
+
+	hr {
+		margin-top: 1rem;
+		margin-bottom: 1rem;
+		border: 0;
+		border-top: 1px solid rgba(0, 0, 0, 0.1);
+	}
+</style>
+{% endblock %}
+{% block body %}
+{% if  rbac_authentication_enabled %}
+{% block navbar %}
+<header class="top" role="header">
+	{% include 'appbuilder/navbar.html' %}
+</header>
+{% endblock %}
+{%endif%}
+
+<div class="container">
+	<h2>Backfill</h2>
+	<hr/>
+
+	<!-- showing backfill status -->
+	<div id="backfill_status"></div>
+
+	<!-- start form -->
+	<form id="form" autocomplete="off">
+		<!-- dag related controls -->
+
+		<div class="row">
+			<div class="form-group col-md-8">
+				<div class="form-group">
+					<label for="dag_name">DAG Name</label>
+					<input type="text" class="form-control" id="dag_name" name="dag_name" placeholder="place your dag name here" required="true">
+				</div>
+				<div class="form-group">
+
+				<div class="col-sm-6">
+					<input type="checkbox" name="use_task_regex" class="custom-control-input mb-2 mr-sm-2" id="use_task_regex" value="yes">
+					<label class="form-check-label" for="use_task_regex">
+					  Use Task Regex <span class="info-icon" data-toggle="tooltip"
+							       title="If selected, backfill or clear will use the task regex to select sub tasks of the dag"
+							       data-placement="right">&#9432;</span>
+					</label>
+				</div>
+
+				<div class="form-group">
+					<label for="task_regex">Optional - DAG task regex - Must also check box for 'Use Task Regex' for this to work</label>
+					<input type="text" class="form-control" id="task_regex" name="task_regex" placeholder="^task regex goes here$" required="true">
+				</div>
+				<div class="form-group">
+
+					<div class="col-sm-10">
+						<div class="form-check row">
+							<div class="col-sm-6">
+								<input type="checkbox" name="backfill" class="custom-control-input mb-2 mr-sm-2" id="backfill" value="yes"
+									checked="true">
+								<label class="form-check-label" for="backfill">
+									Run backfill <span class="info-icon" data-toggle="tooltip"
+										title="This will run backfill for the given DAG" data-placement="right">&#9432;</span>
+								</label>
+							</div>
+							<div class="col-sm-6">
+								<input type="checkbox" name="clear_prev" class="custom-control-input mb-2 mr-sm-2" id="clear_prev"
+									value="yes">
+								<label class="form-check-label" for="clear_prev">
+									Clear previous runs (if any) <span class="info-icon" data-toggle="tooltip"
+										title="If DAG got failed in interval you specified, then it will be cleared first and then backfill will run"
+										data-placement="right">&#9432;</span>
+								</label>
+							</div>
+
+
+						</div>
+						<div class="form-check row">
+							<div class="col-sm-4">
+								<input type="checkbox" name="background" class="custom-control-input mb-2 mr-sm-2" id="background"
+									value="yes">
+								<label class="form-check-label" for="background">
+									Run in background <span class="info-icon" data-toggle="tooltip"
+										title="Running in background will use 'screen', a UNIX utility that will run this backfill in seperate terminal session. However you would also get a 'screen' id where your process is running"
+										data-placement="right">&#9432;</span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="form-group">
+					<label for="start_date">Start Datetime</label>
+					<input type="datetime-local" name="start_date" class="form-control mb-2 mr-sm-2" id="start_date"
+						data-target="#start_date" required="true" />
+				</div>
+				<div class="form-group">
+					<label for="end_date">End Datetime</label>
+					<input type="datetime-local" name="end_date" class="form-control mb-2 mr-sm-2" id="end_date"
+						data-target="#end_date" required="true" />
+				</div>
+				<div class="form-group text-right">
+					<input id="submit" type="submit" class="btn btn-primary mb-2 mr-sm-2" value="Start">
+					<input type="reset" class="btn btn-default" value="Clear">
+				</div>
+			</div>
+		</div>
+	</form>
+
+	<div class="row">
+		<div class="col-md-12">
+
+			<!-- nav tabs-->
+			<ul class="nav nav-tabs actions-nav">
+				<li class="active">
+					<a class="nav-link active" data-toggle="tab" href="#console_output">Realtime Console Output <span
+							class="info-icon" data-toggle="tooltip" title="Newest logs displayed first"
+							data-placement="top">&#9432;</span></a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-toggle="tab" id="history_load" href="#history">History</a>
+				</li>
+
+			</ul>
+
+			<!-- Tab panes -->
+			<div class="tab-content">
+				<div id="console_output" class="container tab-pane fade"><br>
+					<div id="output">
+						<p>No backfill running</p>
+					</div>
+				</div>
+				<div id="history" class="container tab-pane fade"><br>
+					<p>No data</p>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</div>
+{% endblock %}
