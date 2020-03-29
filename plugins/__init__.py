@@ -13,9 +13,9 @@ rbac_authentication_enabled = configuration.getboolean("webserver", "RBAC")
 
 # Init the plugin in Webserver's "Admin" Menu with Menu Item as "Backfill"
 if rbac_authentication_enabled == True:
-    backfill_admin_view = {"category" : "Admin", "name" : "Backfill",  "view": Backfill()}
+    backfill_admin_view = {"category" : "Admin", "name" : "Backfill (Alpha)",  "view": Backfill()}
 else:
-    backfill_admin_view = Backfill(category="Admin", name="Backfill")
+    backfill_admin_view = Backfill(category="Admin", name="Backfill (Alpha)")
 
 # Creating a flask blueprint to integrate the templates folder
 backfill_blueprint = Blueprint(

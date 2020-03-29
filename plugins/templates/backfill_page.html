@@ -84,26 +84,45 @@
 			const start_date = moment($("#start_date").val()).format('YYYY-MM-DDTHH:mm:00');
 			const end_date = moment($("#end_date").val()).format('YYYY-MM-DDTHH:mm:00');
 
+                        const use_task_regex = $("#use_task_regex").prop("checked");
+                        const task_regex = $("#task_regex").val();
+
 			const background = $("#background").prop("checked");
+
 			const clear_prev = $("#clear_prev").prop("checked");
 
+			const dry_run = $("#dry_run").prop("checked");
+
 			const query_string = "?dag_name=" + dag_name +
+                                "&use_task_regex=" + use_task_regex +
+                                "&task_regex=" + task_regex +
 				"&start_date=" + start_date +
 				"&end_date=" + end_date +
+				"&dry_run=" + dry_run +
 				"&clear=" + clear_prev;
 
 			const st_date = moment($("#start_date").val());
 			const en_date = moment($("#end_date").val());
 
 			if (st_date > en_date) {
-				alert('Start date should be less than end date ');
+				alert('Start date should be less than end date');
 				return false;
 			}
 
-			if (en_date > st_date && en_date.diff(st_date, 'days') > 7) {
-				alert('Difference between start and end date should not exceed 7 days');
+                        if (background == true && dry_run == true) {
+				alert('Dry run not available when running in background');
 				return false;
-			}
+                        }
+
+                        if (use_task_regex == false && task_regex !== "") {
+                                alert("Must check box for 'Use Task Regex'");
+                                return false;
+                        }
+
+                        if (use_task_regex == true && task_regex == "") {
+                                alert("Please fill out box for task regex");
+                                return false;
+                        }
 
 			// disable the form
 			disable_form()
@@ -129,31 +148,49 @@
 					}
 
 					if (event.data.indexOf('Backfill done. Exiting.') !== -1) {
-						$("#output").prepend(event.data + "<br>");
+						$("#output").append(event.data + "<br>");
 						source.close();
 						backfill_done();
 						enable_form()
 					}
 					else if (event.data.indexOf('dag_id could not be found') >= 0) {
-						$("#output").prepend(event.data + "<br>");
+						$("#output").append(event.data + "<br>");
 						source.close();
 						backfill_err();
 						enable_form()
 					}
 					else if (event.data.indexOf('Clear Done') >= 0) {
-						$("#output").prepend(event.data + "<br>");
+						$("#output").append(event.data + "<br>");
 						source.close();
 						clear_done();
 						enable_form()
 					}
 					else if (event.data.indexOf('Nothing to clear') >= 0) {
-						$("#output").prepend(event.data + "<br>");
+						$("#output").append(event.data + "<br>");
+						source.close();
+						clear_done();
+						enable_form()
+					}
+					else if (event.data.indexOf('Dry run of DAG') >= 0) {
+						$("#output").append(event.data + "<br>");
+						source.close();
+						backfill_done();
+						enable_form()
+					}
+					else if (event.data.indexOf('Bail. Nothing was cleared.') >= 0) {
+						$("#output").append(event.data + "<br>");
+						source.close();
+						clear_done();
+						enable_form()
+					}
+					else if (event.data.indexOf('Are you sure? (yes/no):') >= 0) {
+						$("#output").append(event.data + "<br>");
 						source.close();
 						clear_done();
 						enable_form()
 					}
 					else {
-						$("#output").prepend(event.data + "<br>")
+                                                $("#output").append(event.data + "<br>")
 					}
 				}
 			}
@@ -236,6 +273,7 @@
 		$('#clear_prev').change(function () {
 			if ($(this).prop("checked") === true) {
 				$('#backfill').prop('checked', false);
+				$('#dry_run').prop('checked', true);
 			} else {
 				$('#backfill').prop('checked', true);
 			}
@@ -244,34 +282,6 @@
 		// tooltip
 		$('[data-toggle="tooltip"]').tooltip();
 
-		// max and min date controls
-		//     const max_date = new Date();
-		//     const min_date = new Date(moment(max_date).subtract(365 , 'day'));
-		//     $('#start_date').datetimepicker({
-		//         maxDate: max_date,
-		//         minDate: min_date,
-		//         icons: {
-		//             time: 'far fa-clock',
-		//             date: 'far fa-calendar',
-		//             today: 'far fa-calendar-check-o',
-		//             clear: 'far fa-trash',
-		//             close: 'far fa-times'
-		//         }
-		//     });
-		//     $('#end_date').datetimepicker({
-		//         maxDate: max_date,
-		//         minDate: min_date,
-		//         icons: {
-		//             time: 'far fa-clock',
-		//             date: 'far fa-calendar',
-		//             today: 'far fa-calendar-check-o',
-		//             clear: 'far fa-trash',
-		//             close: 'far fa-times'
-		//         }
-		//     });
-		//     $('#end_date').val('')
-		//     $('#start_date').val('')
-		//
 	});
 
 
@@ -319,25 +329,42 @@
 {%endif%}
 
 <div class="container">
-	<h2>Backfill</h2>
+	<h1>Backfill (Alpha)</h1>
+        <h4>(Use with caution)</h4>
+        <hr/>
+
+        <h2>Some tips/notes:</h2>
+
+        <ul>
+          <li>Always use dry run first. Especially when using task regex</li>
+          <li>Refreshing or leaving the page may stop a command from running. If you have a backfill that will take multiple hours, consider running a day or two first for sanity. Then running the rest via 'Run in background'</li>
+          <li>If you're not seeing updates, try toggling between 'History' and 'Realtime Console Output'</li>
+          <li>The 'Stop Streaming' button doesnt work</li>
+          <li>Date formats are 2020-03-01 or 2020-03-01T00:00:00</li>
+          <li>Dry run for clearing tasks will show you the list of tasks that will be cleared</li>
+          <li>Dry run for backfilling will not show the list, but is useful in testing for input errors</li>
+          <li>Be patient. Dont click up a storm if something isn't working the first time.</li>
+        </ul>
+
+        <br>
 	<hr/>
 
 	<!-- showing backfill status -->
 	<div id="backfill_status"></div>
 
 	<!-- start form -->
-	<form id="form" autocomplete="off">
+	<form id="form" autocomplete="off" novalidate>
 		<!-- dag related controls -->
 
 		<div class="row">
-			<div class="form-group col-md-8">
+			<div class="form-group col-md-12">
 				<div class="form-group">
 					<label for="dag_name">DAG Name</label>
 					<input type="text" class="form-control" id="dag_name" name="dag_name" placeholder="place your dag name here" required="true">
 				</div>
 				<div class="form-group">
 
-				<div class="col-sm-6">
+				<div class="col-sm-2">
 					<input type="checkbox" name="use_task_regex" class="custom-control-input mb-2 mr-sm-2" id="use_task_regex" value="yes">
 					<label class="form-check-label" for="use_task_regex">
 					  Use Task Regex <span class="info-icon" data-toggle="tooltip"
@@ -348,13 +375,13 @@
 
 				<div class="form-group">
 					<label for="task_regex">Optional - DAG task regex - Must also check box for 'Use Task Regex' for this to work</label>
-					<input type="text" class="form-control" id="task_regex" name="task_regex" placeholder="^task regex goes here$" required="true">
+					<input type="text" class="form-control" id="task_regex" name="task_regex" placeholder="^task regex goes here$" required="false">
 				</div>
 				<div class="form-group">
 
 					<div class="col-sm-10">
 						<div class="form-check row">
-							<div class="col-sm-6">
+							<div class="col-sm-2">
 								<input type="checkbox" name="backfill" class="custom-control-input mb-2 mr-sm-2" id="backfill" value="yes"
 									checked="true">
 								<label class="form-check-label" for="backfill">
@@ -366,8 +393,18 @@
 								<input type="checkbox" name="clear_prev" class="custom-control-input mb-2 mr-sm-2" id="clear_prev"
 									value="yes">
 								<label class="form-check-label" for="clear_prev">
-									Clear previous runs (if any) <span class="info-icon" data-toggle="tooltip"
-										title="If DAG got failed in interval you specified, then it will be cleared first and then backfill will run"
+									Clear previous runs (WARN: Test with Dry run first) <span class="info-icon" data-toggle="tooltip"
+										title="Clears dag runs. Double check your dag name and regex if applicable"
+										data-placement="right">&#9432;</span>
+								</label>
+							</div>
+
+							<div class="col-sm-4">
+								<input type="checkbox" name="dry_run" class="custom-control-input mb-2 mr-sm-2" id="dry_run"
+									value="yes" checked="true">
+								<label class="form-check-label" for="dry_run">
+									Dry Run <span class="info-icon" data-toggle="tooltip"
+										title="Run airflow backfill or clear in dry run mode"
 										data-placement="right">&#9432;</span>
 								</label>
 							</div>
@@ -375,11 +412,11 @@
 
 						</div>
 						<div class="form-check row">
-							<div class="col-sm-4">
+							<div class="col-sm-8">
 								<input type="checkbox" name="background" class="custom-control-input mb-2 mr-sm-2" id="background"
 									value="yes">
 								<label class="form-check-label" for="background">
-									Run in background <span class="info-icon" data-toggle="tooltip"
+									Run in background - only recommended for long jobs <span class="info-icon" data-toggle="tooltip"
 										title="Running in background will use 'screen', a UNIX utility that will run this backfill in seperate terminal session. However you would also get a 'screen' id where your process is running"
 										data-placement="right">&#9432;</span>
 								</label>
@@ -414,7 +451,7 @@
 			<ul class="nav nav-tabs actions-nav">
 				<li class="active">
 					<a class="nav-link active" data-toggle="tab" href="#console_output">Realtime Console Output <span
-							class="info-icon" data-toggle="tooltip" title="Newest logs displayed first"
+							class="info-icon" data-toggle="tooltip" title="Oldest logs displayed first"
 							data-placement="top">&#9432;</span></a>
 				</li>
 				<li class="nav-item">
