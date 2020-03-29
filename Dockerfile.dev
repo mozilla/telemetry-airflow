@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-transport-https build-essential curl git libpq-dev python-dev \
         default-libmysqlclient-dev gettext sqlite3 libffi-dev libsasl2-dev \
-        lsb-release gnupg vim && \
+        lsb-release gnupg vim screen procps && \
     CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
     echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
