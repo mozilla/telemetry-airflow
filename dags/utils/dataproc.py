@@ -160,6 +160,7 @@ class DataProcHelper:
         return DataprocClusterDeleteOperator(
             task_id='delete_dataproc_cluster',
             cluster_name=self.cluster_name,
+            region=self.region,
             gcp_conn_id=self.gcp_conn_id,
             project_id=self.connection.project_id)
 # End DataProcHelper
