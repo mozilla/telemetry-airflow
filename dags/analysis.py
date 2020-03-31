@@ -17,7 +17,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("public_analysis", default_args=default_args, schedule_interval="0 4 * * *") as dag:
+with DAG("public_analysis", default_args=default_args, schedule_interval="0 6 * * *") as dag:
     deviations = bigquery_etl_query(
         destination_table="deviations_v1",
         dataset_id="telemetry_derived",
