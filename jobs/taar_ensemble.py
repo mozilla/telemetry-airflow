@@ -590,7 +590,7 @@ def load(coefs, date, prefix, bucket):
 @click.option("--reg_param", default=0.1)
 @click.option("--min_installed_addons", default=4)
 @click.option("--client_sample_date_from", default=today_minus_7_days())
-@click.option("--sample_rate", default=0.001)
+@click.option("--sample_rate", default=0.005)
 def main(
     date,
     aws_access_key_id,
