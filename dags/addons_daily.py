@@ -28,7 +28,7 @@ with models.DAG(dag_name, schedule_interval='0 1 * * *', default_args=default_ar
     wait_for_search_clients_daily = ExternalTaskSensor(
         task_id="wait_for_search_clients_daily",
         external_dag_id="main_summary",
-        external_task_id="search_clients_daily",
+        external_task_id="search_clients_daily_bigquery",
     )
 
     addons_daily = bigquery_etl_query(
