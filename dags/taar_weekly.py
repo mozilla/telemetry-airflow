@@ -43,7 +43,7 @@ taar_ensemble = SubDagOperator(
         default_args=default_args_weekly,
         cluster_name=taar_ensemble_cluster_name,
         job_name="TAAR_ensemble",
-        python_driver_code="gs://temp-hwoo-removemelater/taar_ensemble.py",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_ensemble.py",
         additional_properties={
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
             "spark:spark.hadoop.fs.s3a.access.key": taar_aws_access_key,
@@ -54,7 +54,7 @@ taar_ensemble = SubDagOperator(
         num_workers=35,
         worker_machine_type="n1-standard-8",
         master_machine_type="n1-standard-8",
-        init_actions_uris=["gs://temp-hwoo-removemelater/pip-install.sh"],
+        init_actions_uris=["gs://moz-fx-data-prod-airflow-dataproc-artifacts/pip-install.sh"],
         additional_metadata={
             "PIP_PACKAGES": "mozilla-taar3==0.4.12 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
         },
