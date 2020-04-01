@@ -573,7 +573,7 @@ def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
 def load(coefs, date, prefix, bucket):
     store_json_to_s3(
         json.dumps(coefs, indent=2),
-        "ensemble_weight_daily",
+        "ensemble_weight",
         date,
         prefix,
         bucket,
