@@ -67,7 +67,7 @@ taar_ensemble = SubDagOperator(
             "--aws_secret_access_key",
             taar_aws_secret_key,
             "--sample_rate",
-            "0.001",
+            "0.005",
         ],
         aws_conn_id=taar_aws_conn_id,
         gcp_conn_id=taar_gcpdataproc_conn_id,
