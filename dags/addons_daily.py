@@ -33,7 +33,7 @@ with models.DAG(dag_name, schedule_interval='0 1 * * *', default_args=default_ar
 
     addons_daily = bigquery_etl_query(
         task_id='addons_daily',
-        destination_table='addons_daily',
+        destination_table='addons_daily_v1',
         project_id='moz-fx-data-shared-prod',
         dataset_id='telemetry_derived',
     )
