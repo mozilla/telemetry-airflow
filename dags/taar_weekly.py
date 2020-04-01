@@ -20,12 +20,12 @@ taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 default_args_weekly = {
     "owner": "vng@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2019, 7, 14),
+    "start_date": datetime(2020, 4, 4),
     "email": ["telemetry-alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retry_delay": timedelta(minutes=60),
 }
 
 
@@ -33,6 +33,8 @@ taar_weekly = DAG(
     "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly"
 )
 
+# This job should complete in approximately 30 minutes given
+# 35 x n1-standard-8 workers and 2 SSDs per node.
 taar_ensemble = SubDagOperator(
     task_id="taar_ensemble",
     subdag=moz_dataproc_pyspark_runner(
