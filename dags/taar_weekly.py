@@ -54,7 +54,7 @@ taar_ensemble = SubDagOperator(
         master_machine_type="n1-standard-8",
         init_actions_uris=["gs://temp-hwoo-removemelater/pip-install.sh"],
         additional_metadata={
-            "PIP_PACKAGES": "mozilla-taar3==0.4.8 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
+            "PIP_PACKAGES": "mozilla-taar3==0.4.12 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
         },
         optional_components=["ANACONDA", "JUPYTER"],
         py_args=[
@@ -73,6 +73,8 @@ taar_ensemble = SubDagOperator(
         worker_disk_type="pd-ssd",
         master_disk_size=1024,
         worker_disk_size=1024,
+        master_num_local_ssds=2,
+        worker_num_local_ssds=2,
     ),
     dag=taar_weekly,
 )
