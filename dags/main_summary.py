@@ -166,7 +166,7 @@ addon_names = bigquery_etl_query(
     # previous day's addon data in main pings, thus the odd combination of
     # parameters below.
     date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}"),
+    parameters=["submission_date:DATE:{{ds}}"],
     dag=dag)
 
 clients_daily = bigquery_etl_query(
