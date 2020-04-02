@@ -65,7 +65,7 @@ with DAG('incline_dashboard',
         'WHERE date = "{{ ds }}"'
     ).format(project=project, dataset=dataset, table=table)
 
-    gcp_conn_id = 'google_cloud_derived_datasets',
+    gcp_conn_id = 'google_cloud_derived_datasets'
     fully_qualified_tmp_table = "{project}.tmp.{table}_{{ds_nodash}}".format(project=project, table=table)
 
     create_table = BigQueryOperator(
