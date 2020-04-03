@@ -2,13 +2,13 @@
 This configures a weekly DAG to run the TAAR Ensemble job off.
 """
 from airflow import DAG
+from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.operators.sensors import ExternalTaskSensor
 from datetime import datetime, timedelta
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
-from utils.mozetl import mozetl_envvar
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
-from airflow.contrib.hooks.aws_hook import AwsHook
+from utils.mozetl import mozetl_envvar
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
 taar_aws_access_key, taar_aws_secret_key, session = AwsHook(
