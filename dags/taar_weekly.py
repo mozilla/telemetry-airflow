@@ -10,9 +10,8 @@ from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.mozetl import mozetl_envvar
 
-taar_aws_conn_id = "airflow_taar_rw_s3"
 taar_aws_access_key, taar_aws_secret_key, session = AwsHook(
-    taar_aws_conn_id
+    "airflow_taar_rw_s3"
 ).get_credentials()
 taar_ensemble_cluster_name = "dataproc-taar-ensemble"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
