@@ -91,7 +91,7 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
     :type master_disk_type: str
     :param master_disk_size: Disk size for the master node
     :type master_disk_size: int
-    :param master_num_local_ssds : Number of local SSDs to mount
+    :param master_num_local_ssds : Number of local SSDs to mount.  Local SSDs are used for writing and reading Apache Hadoop and Apache Spark scratch files, such as shuffle outputs. Adding SSDs will improve Spark runtime performance.
         (default is 0)
     :type master_num_local_ssds : int
     :param worker_machine_type: Compute engine machine type to use for the worker nodes
@@ -103,7 +103,7 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
     :type worker_disk_type: str
     :param worker_disk_size: Disk size for the worker nodes
     :type worker_disk_size: int
-    :param worker_num_local_ssds : Number of local SSDs to mount
+    :param worker_num_local_ssds : Number of local SSDs to mount.  Local SSDs are used for writing and reading Apache Hadoop and Apache Spark scratch files, such as shuffle outputs.  Adding SSDs will improve Spark runtime performance.
         (default is 0)
     :type worker_num_local_ssds : int
     :param num_preemptible_workers: The # of preemptible worker nodes to spin up
