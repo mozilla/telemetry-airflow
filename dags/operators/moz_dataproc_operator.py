@@ -91,6 +91,9 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
     :type master_disk_type: str
     :param master_disk_size: Disk size for the master node
     :type master_disk_size: int
+    :param master_num_local_ssds : Number of local SSDs to mount.  Local SSDs are used for writing and reading Apache Hadoop and Apache Spark scratch files, such as shuffle outputs. Adding SSDs will improve Spark runtime performance.
+        (default is 0)
+    :type master_num_local_ssds : int
     :param worker_machine_type: Compute engine machine type to use for the worker nodes
     :type worker_machine_type: str
     :param worker_disk_type: Type of the boot disk for the worker node
@@ -100,6 +103,9 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
     :type worker_disk_type: str
     :param worker_disk_size: Disk size for the worker nodes
     :type worker_disk_size: int
+    :param worker_num_local_ssds : Number of local SSDs to mount.  Local SSDs are used for writing and reading Apache Hadoop and Apache Spark scratch files, such as shuffle outputs.  Adding SSDs will improve Spark runtime performance.
+        (default is 0)
+    :type worker_num_local_ssds : int
     :param num_preemptible_workers: The # of preemptible worker nodes to spin up
     :type num_preemptible_workers: int
     :param labels: dict of labels to add to the cluster
@@ -177,9 +183,11 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                  master_machine_type='n1-standard-4',
                  master_disk_type='pd-standard',
                  master_disk_size=500,
+                 master_num_local_ssds=0,
                  worker_machine_type='n1-standard-4',
                  worker_disk_type='pd-standard',
                  worker_disk_size=500,
+                 worker_num_local_ssds=0,
                  num_preemptible_workers=0,
                  labels=None,
                  region='global',
@@ -211,10 +219,12 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         self.master_machine_type = master_machine_type
         self.master_disk_type = master_disk_type
         self.master_disk_size = master_disk_size
+        self.master_num_local_ssds = master_num_local_ssds
         self.autoscaling_policy = autoscaling_policy
         self.worker_machine_type = worker_machine_type
         self.worker_disk_type = worker_disk_type
         self.worker_disk_size = worker_disk_size
+        self.worker_num_local_ssds = worker_num_local_ssds
         self.labels = labels
         self.zone = zone
         self.network_uri = network_uri
@@ -345,7 +355,8 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                     'machineTypeUri': master_type_uri,
                     'diskConfig': {
                         'bootDiskType': self.master_disk_type,
-                        'bootDiskSizeGb': self.master_disk_size
+                        'bootDiskSizeGb': self.master_disk_size,
+                        'numLocalSsds': self.master_num_local_ssds,
                     }
                 },
                 'workerConfig': {
@@ -353,7 +364,8 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                     'machineTypeUri': worker_type_uri,
                     'diskConfig': {
                         'bootDiskType': self.worker_disk_type,
-                        'bootDiskSizeGb': self.worker_disk_size
+                        'bootDiskSizeGb': self.worker_disk_size,
+                        'numLocalSsds': self.worker_num_local_ssds,
                     }
                 },
                 'secondaryWorkerConfig': {},

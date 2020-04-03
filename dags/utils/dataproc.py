@@ -47,8 +47,10 @@ class DataProcHelper:
                  storage_bucket='moz-fx-data-prod-dataproc-scratch',
                  master_disk_type='pd-standard',
                  master_disk_size=1024,
+                 master_num_local_ssds=0,
                  worker_disk_type='pd-standard',
                  worker_disk_size=1024,
+                 worker_num_local_ssds=0,
                 ):
 
         self.cluster_name = cluster_name
@@ -69,8 +71,11 @@ class DataProcHelper:
 
         self.master_disk_type = master_disk_type
         self.master_disk_size = master_disk_size
+        self.master_num_local_ssds = master_num_local_ssds
+
         self.worker_disk_type = worker_disk_type
         self.worker_disk_size = worker_disk_size
+        self.worker_num_local_ssds = worker_num_local_ssds
 
         if init_actions_uris is None:
             self.init_actions_uris=['gs://{}/bootstrap/dataproc_init.sh'.format(self.artifact_bucket)]
@@ -150,6 +155,8 @@ class DataProcHelper:
             master_disk_size=self.master_disk_size,
             worker_disk_type=self.worker_disk_type,
             worker_disk_size=self.worker_disk_size,
+            master_num_local_ssds=self.master_num_local_ssds,
+            worker_num_local_ssds=self.worker_num_local_ssds,
             metadata=metadata,
         )
 
@@ -197,6 +204,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 worker_disk_type='pd-standard',
                                 master_disk_size=1024,
                                 worker_disk_size=1024,
+                                master_num_local_ssds=0,
+                                worker_num_local_ssds=0,
                             ):
 
     """
@@ -279,6 +288,9 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :type master_disk_type: str
     :param master_disk_size:              Disk size for the master node
     :type master_disk_size: int
+    :param master_num_local_ssds : Number of local SSDs to mount
+        (default is 0)
+    :type master_num_local_ssds : int
     :param worker_disk_type:              Type of the boot disk for the worker node
                                             (default is ``pd-standard``).
                                             Valid values: ``pd-ssd`` (Persistent Disk Solid State Drive) or
@@ -286,6 +298,9 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     :type worker_disk_type: str
     :param worker_disk_size:              Disk size for the worker node
     :type worker_disk_size: int
+    :param worker_num_local_ssds : Number of local SSDs to mount
+        (default is 0)
+    :type worker_num_local_ssds : int
 
     Pyspark related args:
     ---
@@ -323,6 +338,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      master_disk_size=master_disk_size,
                                      worker_disk_type=worker_disk_type,
                                      worker_disk_size=worker_disk_size,
+                                     master_num_local_ssds=master_num_local_ssds,
+                                     worker_num_local_ssds=worker_num_local_ssds,
                                      )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
@@ -375,6 +392,8 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             worker_disk_type='pd-standard',
                             master_disk_size=1024,
                             worker_disk_size=1024,
+                            master_num_local_ssds=0,
+                            worker_num_local_ssds=0,
                             ):
 
     """
@@ -446,6 +465,8 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      master_disk_size=master_disk_size,
                                      worker_disk_type=worker_disk_type,
                                      worker_disk_size=worker_disk_size,
+                                     master_num_local_ssds=master_num_local_ssds,
+                                     worker_num_local_ssds=worker_num_local_ssds,
                                      )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
@@ -503,6 +524,8 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               worker_disk_type='pd-standard',
                               master_disk_size=1024,
                               worker_disk_size=1024,
+                              master_num_local_ssds=0,
+                              worker_num_local_ssds=0,
                               ):
 
     """
@@ -582,6 +605,8 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      master_disk_size=master_disk_size,
                                      worker_disk_type=worker_disk_type,
                                      worker_disk_size=worker_disk_size,
+                                     master_num_local_ssds=master_num_local_ssds,
+                                     worker_num_local_ssds=worker_num_local_ssds,
                                      )
 
     _dag_name = '{}.{}'.format(parent_dag_name, dag_name)
