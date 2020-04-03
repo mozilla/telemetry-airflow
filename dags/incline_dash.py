@@ -60,13 +60,14 @@ with DAG('incline_dashboard',
         dag=dag)
 
     sql = (
-        'SELECT * '
-        'FROM `{project}.{dataset}.{table}` '
-        'WHERE date = "{{ ds }}"'
-    ).format(project=project, dataset=dataset, table=table)
+        'SELECT * FROM `{project}.{dataset}.{table}` WHERE date = "{date}"'
+    ).format(project=project, dataset=dataset, table=table, date="{{ ds }}")
 
     gcp_conn_id = 'google_cloud_derived_datasets'
-    fully_qualified_tmp_table = "{project}.tmp.{table}_{{ds_nodash}}".format(project=project, table=table)
+    fully_qualified_tmp_table = (
+        "{project}.tmp.{table}_{date}"
+        .format(project=project, table=table, date="{{ ds_nodash }}")
+    )
 
     create_table = BigQueryOperator(
         task_id='create_temporary_table',
@@ -78,7 +79,7 @@ with DAG('incline_dashboard',
 
     fully_qualified_table_name = '{}.{}.{}'.format(project, dataset, table)
     gcs_bucket = 'moz-fx-data-prod-analysis'
-    incline_prefix = 'incline/executive_dash/{{ds}}/data.ndjson'
+    incline_prefix = 'incline/executive_dash/{date}/data.ndjson'.format(date="{{ ds }}")
     gcs_uri = 'gs://{bucket}/{prefix}'.format(bucket=gcs_bucket, prefix=incline_prefix)
 
     table_extract = BigQueryToCloudStorageOperator(
