@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from airflow.providers.google.cloud.operators.gcs_to_gcs import GCSToGCSOperator
 from utils.gcp import gke_command
 
 default_args = {
@@ -20,6 +22,7 @@ dag = DAG(
     "glam_org_mozilla_fenix", default_args=default_args, schedule_interval="@daily"
 )
 
+glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate",
@@ -29,7 +32,6 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
     check_existence=True,
     dag=dag,
 )
-
 
 run_sql = gke_command(
     task_id="run_sql",
@@ -41,4 +43,31 @@ run_sql = gke_command(
     dag=dag,
 )
 
-wait_for_copy_deduplicate >> run_sql
+extract_csv = gke_command(
+    task_id="extract_csv",
+    cmds=["bash"],
+    env_vars={"DATASET": "glam_etl"},
+    command=["script/glam/extract_csv"],
+    docker_image="mozilla/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
+    dag=dag,
+)
+
+gcs_delete = GCSDeleteObjectsOperator(
+    task_id="gcs_delete",
+    bucket_name=glam_bucket,
+    prefix="glam-extract-fenix",
+    gcp_conn_id="google_cloud_derived_datasets",
+    dag=dag,
+)
+
+gcs_copy = GCSToGCSOperator(
+    task_id="gcs_copy",
+    source_bucket="glam-fenix-dev",
+    source_object="*.csv",
+    destination_bucket=glam_bucket,
+    gcp_conn_id="google_cloud_derived_datasets",
+    dag=dag,
+)
+
+wait_for_copy_deduplicate >> run_sql >> extract_csv >> gcs_delete >> gcs_copy
