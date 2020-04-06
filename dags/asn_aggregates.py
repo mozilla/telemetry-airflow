@@ -23,7 +23,7 @@ asn_aggregates = bigquery_etl_query(
     dataset_id="telemetry_derived",
     owner="ascholtz@mozilla.com",
     email=["ascholtz@mozilla.com", "tdsmith@mozilla.com"],
-    parameters=("n_clients:INT64:50",),
+    parameters=("n_clients:INT64:500",),
     dag=dag)
 
 wait_for_bq_events = ExternalTaskSensor(
