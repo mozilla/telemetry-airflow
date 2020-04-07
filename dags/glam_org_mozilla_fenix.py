@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
-from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
-from airflow.providers.google.cloud.operators.gcs_to_gcs import GCSToGCSOperator
+from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
+from airflow.contrib.operators.gcs_to_gcs import GoogleCloudStorageToGoogleCloudStorageOperator
 from utils.gcp import gke_command
 
 default_args = {
@@ -53,7 +53,7 @@ extract_csv = gke_command(
     dag=dag,
 )
 
-gcs_delete = GCSDeleteObjectsOperator(
+gcs_delete = GoogleCloudStorageDeleteOperator(
     task_id="gcs_delete",
     bucket_name=glam_bucket,
     prefix="glam-extract-fenix",
@@ -61,7 +61,7 @@ gcs_delete = GCSDeleteObjectsOperator(
     dag=dag,
 )
 
-gcs_copy = GCSToGCSOperator(
+gcs_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
     task_id="gcs_copy",
     source_bucket="glam-fenix-dev",
     source_object="*.csv",
