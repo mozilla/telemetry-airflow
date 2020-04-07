@@ -14,35 +14,35 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("asn_aggregates", default_args=default_args, schedule_interval="@daily")
+with DAG("asn_aggregates", default_args=default_args, schedule_interval="0 1 * * *") as dag:
 
-asn_aggregates = bigquery_etl_query(
-    task_id="asn_aggregates",
-    destination_table="asn_aggregates_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="ascholtz@mozilla.com",
-    email=["ascholtz@mozilla.com", "tdsmith@mozilla.com"],
-    parameters=("n_clients:INT64:500",),
-    dag=dag)
+    asn_aggregates = bigquery_etl_query(
+        task_id="asn_aggregates",
+        destination_table="asn_aggregates_v1",
+        project_id="moz-fx-data-shared-prod",
+        dataset_id="telemetry_derived",
+        owner="ascholtz@mozilla.com",
+        email=["ascholtz@mozilla.com", "tdsmith@mozilla.com"],
+        parameters=("n_clients:INT64:500",),
+        dag=dag)
 
-wait_for_bq_events = ExternalTaskSensor(
-    task_id="wait_for_bq_events",
-    external_dag_id="main_summary",
-    external_task_id="bq_main_events",
-    dag=dag,
-)
+    wait_for_bq_events = ExternalTaskSensor(
+        task_id="wait_for_bq_events",
+        external_dag_id="main_summary",
+        external_task_id="bq_main_events",
+        dag=dag,
+    )
 
-wait_for_copy_deduplicate_events = ExternalTaskSensor(
-    task_id="wait_for_copy_deduplicate_events",
-    external_dag_id="copy_deduplicate",
-    external_task_id="event_events",
-    dag=dag,
-)
+    wait_for_copy_deduplicate_events = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_events",
+        external_dag_id="copy_deduplicate",
+        external_task_id="event_events",
+        dag=dag,
+    )
 
-asn_aggregates.set_upstream(
-    [
-        wait_for_bq_events,
-        wait_for_copy_deduplicate_events,
-    ]
-)
+    asn_aggregates.set_upstream(
+        [
+            wait_for_bq_events,
+            wait_for_copy_deduplicate_events,
+        ]
+    )
