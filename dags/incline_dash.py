@@ -22,10 +22,10 @@ with DAG('incline_dashboard',
          default_args=default_args,
          schedule_interval="0 1 * * *") as dag:
 
-    wait_for_copy_deduplicate = ExternalTaskSensor(
-        task_id="wait_for_copy_deduplicate",
+    wait_for_baseline_clients_last_seen = ExternalTaskSensor(
+        task_id="wait_for_baseline_clients_last_seen",
         external_dag_id="copy_deduplicate",
-        external_task_id="copy_deduplicate_all",
+        external_task_id="baseline_clients_last_seen",
         dag=dag)
 
     project = "moz-fx-data-shared-prod"
@@ -67,7 +67,7 @@ with DAG('incline_dashboard',
     )
 
     (
-        wait_for_copy_deduplicate >>
+        wait_for_baseline_clients_last_seen >>
         migrated_clients >>
         exec_dash >>
         export_incline_dash
