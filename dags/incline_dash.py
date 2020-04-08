@@ -26,7 +26,13 @@ with DAG('incline_dashboard',
         task_id="wait_for_baseline_clients_last_seen",
         external_dag_id="copy_deduplicate",
         external_task_id="baseline_clients_last_seen",
-        dag=dag)
+    )
+
+    wait_for_core_clients_last_seen = ExternalTaskSensor(
+        task_id="wait_for_core_clients_last_seen",
+        external_dag_id="copy_deduplicate",
+        external_task_id="core_clients_last_seen",
+    )
 
     project = "moz-fx-data-shared-prod"
     dataset = "org_mozilla_firefox_derived"
@@ -51,7 +57,7 @@ with DAG('incline_dashboard',
         dataset_id=dataset,
         owner="frank@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-        dag=dag)
+    )
 
     gcp_conn_id = 'google_cloud_derived_datasets'
     export_incline_dash = GKEPodOperator(
@@ -67,7 +73,7 @@ with DAG('incline_dashboard',
     )
 
     (
-        wait_for_baseline_clients_last_seen >>
+        [wait_for_baseline_clients_last_seen, wait_for_core_clients_last_seen] >>
         migrated_clients >>
         exec_dash >>
         export_incline_dash
