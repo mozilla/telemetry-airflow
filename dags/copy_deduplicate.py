@@ -258,6 +258,7 @@ with models.DAG(
         task_id='baseline_clients_last_seen',
         name='baseline-clients-last-seen',
         arguments=["script/run_glean_baseline_clients_last_seen"] + baseline_args,
+        depends_on_past=True,
         **baseline_etl_kwargs
     )
 
