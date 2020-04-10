@@ -318,7 +318,7 @@ insert_into_bigquery = SubDagOperator(
         env_vars={
             "DATA_CONFIG": "/app/processor/config/content.json",
             "ORIGIN_CONFIG": "/app/processor/config/telemetry_origin_data_inc.json",
-            "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_A,
+            "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
             "DATASET": "telemetry",
             "TABLE": "origin_content_blocking",
             "BQ_REPLACE": "false",
