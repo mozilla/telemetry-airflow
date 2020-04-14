@@ -11,6 +11,11 @@ from pyspark.sql.types import DoubleType
 
 from lifetimes import BetaGeoFitter
 
+PRED_METRICS = [
+	"days_searched", 
+	"days_tagged_searched",
+	"days_clicked_ads",
+	"days_searched_with_ads"]
 
 def train_metric(d, metric, plot=True, penalty=0):
     frequency = metric + "_frequency"
@@ -115,7 +120,7 @@ def main(
             F.col(str(metric + ".recency")).alias(metric + "_recency"),
             F.col(str(metric + ".T")).alias(metric + "_T"),
         ]
-        for metric in ["days_searched", "days_tagged_searched", "days_clicked_ads"]
+        for metric in PRED_METRICS
     ]
 
     # flatten list
@@ -123,9 +128,8 @@ def main(
 
     model_perf_data = pd.DataFrame()
     model_pred_data = None
-    pred_metrics = ["days_searched", "days_tagged_searched", "days_clicked_ads"]
     search_rfm_ds = search_rfm_full.limit(training_sample).select(columns).toPandas()
-    for metric in pred_metrics:
+    for metric in PRED_METRICS:
         # train and extract model performace
         model_perf, model = train_metric(search_rfm_ds, metric, plot=False, penalty=0.8)
         model_perf["pct"] = model_perf.Model / (model_perf.Actual + 1) - 1
