@@ -115,3 +115,19 @@ with models.DAG(
         ),
         task_id=devtools_task_id
     )
+
+    sync_send_tab_task_id = 'sync_send_tab_amplitude_export'
+    sync_send_tab_args = default_args.copy()
+    sync_send_tab_args["start_date"] = datetime.datetime(2020, 4, 12)
+    SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=sync_send_tab_task_id,
+            parent_dag_name=dag_name,
+            default_args=sync_send_tab_args,
+            project='moz-fx-data-shared-prod',
+            dataset='telemetry_derived',
+            table_or_view='sync_send_tab_events_v1',
+            s3_prefix='sync_send_tab',
+        ),
+        task_id=sync_send_tab_task_id
+    )
