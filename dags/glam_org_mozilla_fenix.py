@@ -43,11 +43,11 @@ run_sql = gke_command(
     dag=dag,
 )
 
-extract_csv = gke_command(
-    task_id="extract_csv",
+export_csv = gke_command(
+    task_id="export_csv",
     cmds=["bash"],
     env_vars={"DATASET": "glam_etl"},
-    command=["script/glam/extract_csv"],
+    command=["script/glam/export_csv"],
     docker_image="mozilla/bigquery-etl:latest",
     gcp_conn_id="google_cloud_derived_datasets",
     dag=dag,
@@ -70,4 +70,4 @@ gcs_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
     dag=dag,
 )
 
-wait_for_copy_deduplicate >> run_sql >> extract_csv >> gcs_delete >> gcs_copy
+wait_for_copy_deduplicate >> run_sql >> expoty_csv >> gcs_delete >> gcs_copy
