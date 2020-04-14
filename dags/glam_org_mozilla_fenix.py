@@ -70,4 +70,4 @@ gcs_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
     dag=dag,
 )
 
-wait_for_copy_deduplicate >> run_sql >> expoty_csv >> gcs_delete >> gcs_copy
+wait_for_copy_deduplicate >> run_sql >> export_csv >> gcs_delete >> gcs_copy
