@@ -164,12 +164,15 @@ def main(
 
     model_pred_data = model_pred_data.withColumn("predictions", predictions)
     model_perf_data["active_days"] = model_perf_data.index
-    model_perf_data_sdf = spark.createDataFrame(model_perf_data)
+    model_perf_data_sdf = spark.createDataFrame(model_perf_data).withColumn(
+        "date", F.to_date("date")
+    )
 
     (
         model_perf_data_sdf.write.format("bigquery")
         .option("table", f"{project_id}.{dataset_id}.{model_input_table_id}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
+        .option("partitionField", "date")
         .mode("overwrite")
         .save()
     )

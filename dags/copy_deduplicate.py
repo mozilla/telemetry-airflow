@@ -9,6 +9,9 @@ from utils.gcp import (bigquery_etl_copy_deduplicate,
                        gke_command,
                        bigquery_xcom_query)
 
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from operators.gcp_container_operator import GKEPodOperator
+
 default_args = {
     "owner": "jklukas@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
@@ -229,10 +232,40 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
+    # Daily and last seen views on top of every Glean application.
+
+    gcp_conn_id = "google_cloud_derived_datasets"
+    baseline_etl_kwargs = dict(
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location="us-central1-a",
+        cluster_name="bq-load-gke-1",
+        namespace="default",
+        image="mozilla/bigquery-etl:latest",
+    )
+    baseline_args = [
+        "--project-id=moz-fx-data-shared-prod",
+        "--date={{ ds }}",
+        "--only=*_stable.baseline_v1"
+    ]
+    baseline_clients_daily = GKEPodOperator(
+        task_id='baseline_clients_daily',
+        name='baseline-clients-daily',
+        arguments=["script/run_glean_baseline_clients_daily"] + baseline_args,
+        **baseline_etl_kwargs
+    )
+    baseline_clients_last_seen = GKEPodOperator(
+        task_id='baseline_clients_last_seen',
+        name='baseline-clients-last-seen',
+        arguments=["script/run_glean_baseline_clients_last_seen"] + baseline_args,
+        depends_on_past=True,
+        **baseline_etl_kwargs
+    )
+
     # Daily and last seen views on top of Fenix pings (deprecated);
     # these legacy tables consider both baseline and metrics pings as activity
     # and should be removed once GUD and KPI reporting consistently use the
-    # new org_mozilla_firefox tables.
+    # new baseline_clients_* tables.
 
     fenix_clients_daily = bigquery_etl_query(
         task_id='fenix_clients_daily',
@@ -251,8 +284,8 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
-    # Daily and last seen views on top of Fenix pings;
-    # these will replace the above
+    # Daily and last seen views on top of pings from all Fenix apps;
+    # these are also deprecated in favor of baseline_clients_* tables.
 
     org_mozilla_firefox_baseline_daily = bigquery_etl_query(
         task_id='org_mozilla_firefox_baseline_daily',
@@ -277,41 +310,6 @@ with models.DAG(
         dataset_id='org_mozilla_firefox_derived',
         depends_on_past=True,
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    # Daily and last seen views on top of VR browser pings.
-
-    vrbrowser_baseline_daily = bigquery_etl_query(
-        task_id='vrbrowser_baseline_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='baseline_daily_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
-    vrbrowser_metrics_daily = bigquery_etl_query(
-        task_id='vrbrowser_metrics_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='metrics_daily_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
-    vrbrowser_clients_daily = bigquery_etl_query(
-        task_id='vrbrowser_clients_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='clients_daily_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
-    vrbrowser_clients_last_seen = bigquery_etl_query(
-        task_id='vrbrowser_clients_last_seen',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='clients_last_seen_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
     )
 
     # Aggregated nondesktop tables and their dependency chains.
@@ -360,21 +358,21 @@ with models.DAG(
      core_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
+    (copy_deduplicate_all >>
+     baseline_clients_daily >>
+     baseline_clients_last_seen >>
+     nondesktop_aggregate_tasks)
+
     # TODO: Remove this dependency chain once we retire fenix_* tasks.
     (copy_deduplicate_all >>
      fenix_clients_daily >>
      fenix_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
+    # TODO: Remove this dependency chain once we retire org_mozilla_firefox_* tasks.
     (copy_deduplicate_all >>
      [org_mozilla_firefox_baseline_daily, org_mozilla_firefox_metrics_daily] >>
      org_mozilla_firefox_clients_last_seen >>
-     nondesktop_aggregate_tasks)
-
-    (copy_deduplicate_all >>
-     [vrbrowser_baseline_daily, vrbrowser_metrics_daily] >>
-     vrbrowser_clients_daily >>
-     vrbrowser_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
     # Nondesktop forecasts.
