@@ -27,6 +27,7 @@ with DAG("ssl_ratios", default_args=default_args, schedule_interval="@daily") as
     )
 
     ssl_ratios = bigquery_etl_query(
+        task_id="ssl_ratios",
         destination_table="ssl_ratios_v1",
         dataset_id="telemetry_derived",
         dag=dag,

@@ -19,6 +19,7 @@ default_args = {
 
 with DAG("public_analysis", default_args=default_args, schedule_interval="0 6 * * *") as dag:
     deviations = bigquery_etl_query(
+        task_id="deviations",
         destination_table="deviations_v1",
         dataset_id="telemetry_derived",
         dag=dag,
