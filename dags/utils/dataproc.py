@@ -663,7 +663,7 @@ def copy_artifacts_dev(dag, project_id, artifact_bucket, storage_bucket):
     return BashOperator(
         task_id="copy_to_dev_artifacts",
         bash_command="""
-        gcloud auth activate-service-account --key-file ~/.credentials
+        gcloud auth activate-service-account --key-file ~/.credentials || cat ~/.credentials
         gcloud config set project ${PROJECT_ID}
 
         gsutil mb gs://${ARTIFACT_BUCKET}

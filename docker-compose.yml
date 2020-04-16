@@ -21,7 +21,7 @@ services:
     volumes:
       - $PWD:/app
       # mount a dummy file to google application credentials, if not provided
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-./README.md}:/app/.credentials
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-./.add_credentials.md}:/app/.credentials
     command: "true"
     # Environment variables, exports, and substitution:
     #   https://docs.docker.com/compose/environment-variables/
