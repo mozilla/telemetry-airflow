@@ -183,9 +183,37 @@ testing instructions above and use `make run`.
 
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
-For now, follow the steps outlined here: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
+For now, follow the steps outlined here to create a service account: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
 
-In the future we will enhance these testing capabilities.
+Enable that service account in Airflow with the following:
+```
+make build && make up
+./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS
+```
+
+From there, [connect to Airflow](localhost:8000) and enable your job.
+
+### Testing Dataproc Jobs
+
+Dataproc jobs run on a self-contained Dataproc cluster, created by Airflow.
+
+To test these, jobs, you'll need a sandbox account and corresponding service account.
+For information on creating that, see "Testing GKE Jobs". Your service account
+will need Dataproc and GCS permissions (and BigQuery, if you're connecting to it). _Note_: Dataproc requires "Dataproc/Dataproc Worker"
+as well as Compute Admin permissions.
+You'll need to ensure that the Dataproc API is [enabled in your sandbox project.](https://console.developers.google.com/apis/api/dataproc.googleapis.com)
+
+Ensure that your dataproc job has a configurable project to write to.
+Set the project in the DAG entry to be configured based on development environment;
+see the `ltv.py` job for an example of that.
+
+From there, run the following:
+```
+make build && make up
+./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS google_cloud_airflow_dataproc
+```
+
+You can then connect to Airflow [locally](localhost:8000). Enable your DAG and see that it runs correctly.
 
 ### Production Setup
 

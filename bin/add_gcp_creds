@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -eou pipefail
+
+keyfile_path=${1:-""}
+if [ -z $keyfile_path ] ; then
+    echo "Must specify keyfile path" >&2;
+    exit 1;
+fi
+
+connection=${2:-"google_cloud_derived_datasets"}
+
+# Wait for full display until after checks
+set -x
+
+function format_gcp() {
+KEYFILE="$1" python3 - <<END
+import os
+import json
+
+with open(os.environ["KEYFILE"]) as f:
+    data = json.load(f)
+
+extra = {
+    "extra__google_cloud_platform__project": data["project_id"],
+    "extra__google_cloud_platform__keyfile_dict": json.dumps(data)
+}
+
+print(json.dumps(extra))
+END
+}
+
+function update_gcp() {
+    local conn_id=$1
+    local keyfile=$2
+
+    container_id=$(docker ps | grep telemetry-airflow_web | cut -d' ' -f1)
+
+    docker exec $container_id \
+        airflow connections -d --conn_id $conn_id
+
+    docker exec $container_id \
+        airflow connections -a \
+            --conn_id $conn_id \
+            --conn_type google_cloud_platform \
+            --conn_extra "$(format_gcp $keyfile)"
+}
+
+update_gcp $connection $keyfile_path
