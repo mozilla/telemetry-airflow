@@ -14,7 +14,7 @@ def repeated_subdag(
 
     # This task runs first and replaces the relevant partition, followed
     # by the next tasks that append to the same partition of the same table.
-    NUM_PARTITIONS = 4
+    NUM_PARTITIONS = 5
     NUM_SAMPLE_IDS = 100
     PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
     task_0 = bigquery_etl_query(

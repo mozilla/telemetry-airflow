@@ -8,6 +8,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
+from glam_subdags.general import repeated_subdag
 from utils.gcp import bigquery_etl_query
 
 
@@ -232,23 +233,6 @@ clients_histogram_aggregates = SubDagOperator(
     dag=dag,
 )
 
-clients_histogram_bucket_counts = bigquery_etl_query(
-    task_id="clients_histogram_bucket_counts",
-    destination_table="clients_histogram_bucket_counts_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-    ],
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
-    dag=dag,
-)
-
 histogram_percentiles = bigquery_etl_query(
     task_id="histogram_percentiles",
     destination_table="histogram_percentiles_v1",
@@ -282,12 +266,9 @@ glam_user_counts = bigquery_etl_query(
     dag=dag,
 )
 
-sql_file_path = "sql/{}/{}/query.sql".format(
-    dataset_id, "clients_scalar_probe_counts_v1"
-)
 client_scalar_probe_counts = bigquery_etl_query(
     task_id="client_scalar_probe_counts",
-    destination_table="client_probe_counts_v1",
+    destination_table="clients_scalar_probe_counts_v1",
     sql_file_path=sql_file_path,
     dataset_id=dataset_id,
     project_id=project_id,
@@ -298,26 +279,20 @@ client_scalar_probe_counts = bigquery_etl_query(
         "robhudson@mozilla.com",
     ],
     date_partition_parameter=None,
+    arguments=("--replace",),
     dag=dag,
 )
 
-sql_file_path = "sql/{}/{}/query.sql".format(
-    dataset_id, "clients_histogram_probe_counts_v1"
-)
-client_histogram_probe_counts = bigquery_etl_query(
+client_histogram_probe_counts = SubDagOperator(
+    subdag=repeated_subdag(
+        GLAM_DAG,
+        "client_histogram_probe_counts",
+        default_args,
+        dag.schedule_interval,
+        dataset_id,
+    ),
     task_id="client_histogram_probe_counts",
-    destination_table="client_probe_counts_v1",
-    sql_file_path=sql_file_path,
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-    ],
-    date_partition_parameter=None,
-    arguments=("--append_table", "--noreplace",),
+    executor=get_default_executor(),
     dag=dag,
 )
 
@@ -363,12 +338,10 @@ latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
-clients_histogram_aggregates >> clients_histogram_bucket_counts
+clients_histogram_aggregates >> client_histogram_probe_counts
 clients_histogram_aggregates >> glam_user_counts
 
 clients_scalar_bucket_counts >> client_scalar_probe_counts
-client_scalar_probe_counts >> client_histogram_probe_counts
-clients_histogram_bucket_counts >> client_histogram_probe_counts
 client_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
@@ -376,4 +349,6 @@ clients_scalar_aggregates >> glam_user_counts
 glam_user_counts >> extract_counts
 
 extract_counts >> extracts_per_channel
+client_scalar_probe_counts >> extracts_per_channel
+scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
