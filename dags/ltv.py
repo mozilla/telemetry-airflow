@@ -11,6 +11,7 @@ from utils.dataproc import (
     get_dataproc_parameters,
 )
 
+
 EXPORT_TO_AVRO = True
 
 default_args = {
@@ -45,6 +46,7 @@ subdag_args = default_args.copy()
 subdag_args["retries"] = 0
 
 task_id = "ltv_daily"
+project = params.project_id if params.is_dev else "moz-fx-data-shared-prod"
 ltv_daily = SubDagOperator(
     task_id=task_id,
     dag=dag,
@@ -71,9 +73,9 @@ ltv_daily = SubDagOperator(
             "--prediction-days",
             "364",
             "--project-id",
-            "moz-fx-data-shared-prod",
+            project,
             "--source-qualified-table-id",
-            "moz-fx-data-shared-prod.search.search_rfm",
+            "{project}.search.search_rfm".format(project=project),
             "--dataset-id",
             "analysis",
             "--intermediate-table-id",
