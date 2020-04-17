@@ -8,6 +8,7 @@ from airflow.operators.bash_operator import BashOperator
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.dataproc_operator import DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator
 from airflow.exceptions import AirflowException
+from airflow.utils.trigger_rule import TriggerRule
 
 # Our own dataproc operator used to install component gateway
 from operators.moz_dataproc_operator import DataprocClusterCreateOperator
@@ -166,6 +167,7 @@ class DataProcHelper:
         """
         return DataprocClusterDeleteOperator(
             task_id='delete_dataproc_cluster',
+            trigger_rule=TriggerRule.ALL_DONE,
             cluster_name=self.cluster_name,
             region=self.region,
             gcp_conn_id=self.gcp_conn_id,
