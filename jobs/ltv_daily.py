@@ -185,6 +185,7 @@ def main(
         model_pred_data.write.format("bigquery")
         .option("table", f"{project_id}.{dataset_id}.{model_output_table_id}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
+        .option("partitionField", "submission_date")
         .mode("overwrite")
         .save()
     )
