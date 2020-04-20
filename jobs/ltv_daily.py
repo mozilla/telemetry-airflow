@@ -161,7 +161,7 @@ def main(
     predictions = F.create_map(
         list(
             chain(
-                *((F.lit(name), F.col("prediction_" + name)) for name in pred_metrics)
+                *((F.lit(name), F.col("prediction_" + name)) for name in PRED_METRICS)
             )
         )
     ).alias("predictions")
