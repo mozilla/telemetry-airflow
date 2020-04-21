@@ -35,6 +35,7 @@ with DAG("public_data", default_args=default_args, schedule_interval="0 6 * * *"
         task_id="wait_for_ssl_ratios",
         external_dag_id="ssl_ratios",
         external_task_id="ssl_ratios",
+        execution_delta=timedelta(hours=6),
         dag=dag,
     )
 
