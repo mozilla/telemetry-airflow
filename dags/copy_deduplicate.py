@@ -262,55 +262,42 @@ with models.DAG(
         **baseline_etl_kwargs
     )
 
-    # Daily and last seen views on top of Fenix pings (deprecated);
-    # these legacy tables consider both baseline and metrics pings as activity
-    # and should be removed once GUD and KPI reporting consistently use the
-    # new baseline_clients_* tables.
 
-    fenix_clients_daily = bigquery_etl_query(
-        task_id='fenix_clients_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='clients_daily_v1',
-        dataset_id='org_mozilla_fenix_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
+    # Daily and last seen views on top of VR browser pings.
 
-    fenix_clients_last_seen = bigquery_etl_query(
-        task_id='fenix_clients_last_seen',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='clients_last_seen_v1',
-        dataset_id='org_mozilla_fenix_derived',
-        depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    # Daily and last seen views on top of pings from all Fenix apps;
-    # these are also deprecated in favor of baseline_clients_* tables.
-
-    org_mozilla_firefox_baseline_daily = bigquery_etl_query(
-        task_id='org_mozilla_firefox_baseline_daily',
+    vrbrowser_baseline_daily = bigquery_etl_query(
+        task_id='vrbrowser_baseline_daily',
         project_id='moz-fx-data-shared-prod',
         destination_table='baseline_daily_v1',
-        dataset_id='org_mozilla_firefox_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+        dataset_id='org_mozilla_vrbrowser_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
     )
 
-    org_mozilla_firefox_metrics_daily = bigquery_etl_query(
-        task_id='org_mozilla_firefox_metrics_daily',
+    vrbrowser_metrics_daily = bigquery_etl_query(
+        task_id='vrbrowser_metrics_daily',
         project_id='moz-fx-data-shared-prod',
         destination_table='metrics_daily_v1',
-        dataset_id='org_mozilla_firefox_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+        dataset_id='org_mozilla_vrbrowser_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
     )
 
-    org_mozilla_firefox_clients_last_seen = bigquery_etl_query(
-        task_id='org_mozilla_firefox_clients_last_seen',
+    vrbrowser_clients_daily = bigquery_etl_query(
+        task_id='vrbrowser_clients_daily',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='clients_daily_v1',
+        dataset_id='org_mozilla_vrbrowser_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
+    )
+
+    vrbrowser_clients_last_seen = bigquery_etl_query(
+        task_id='vrbrowser_clients_last_seen',
         project_id='moz-fx-data-shared-prod',
         destination_table='clients_last_seen_v1',
-        dataset_id='org_mozilla_firefox_derived',
+        dataset_id='org_mozilla_vrbrowser_derived',
         depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
     )
+
 
     # Aggregated nondesktop tables and their dependency chains.
 
@@ -363,17 +350,11 @@ with models.DAG(
      baseline_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
-    # TODO: Remove this dependency chain once we retire fenix_* tasks.
     (copy_deduplicate_all >>
-     fenix_clients_daily >>
-     fenix_clients_last_seen >>
-     nondesktop_aggregate_tasks)
+     [vrbrowser_baseline_daily, vrbrowser_metrics_daily] >>
+     vrbrowser_clients_daily >>
+     vrbrowser_clients_last_seen)
 
-    # TODO: Remove this dependency chain once we retire org_mozilla_firefox_* tasks.
-    (copy_deduplicate_all >>
-     [org_mozilla_firefox_baseline_daily, org_mozilla_firefox_metrics_daily] >>
-     org_mozilla_firefox_clients_last_seen >>
-     nondesktop_aggregate_tasks)
 
     # Nondesktop forecasts.
 
