@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 
@@ -29,11 +30,22 @@ default_args = {
     "retry_delay": timedelta(minutes=10),
 }
 
-dag = DAG("public_data_hardware_report", default_args=default_args, schedule_interval="0 4 * * MON")
+dag = DAG("public_data_hardware_report", default_args=default_args, schedule_interval="0 1 * * MON")
 
 # Required to write json output to s3://telemetry-public-analysis-2/public-data-report/hardware/
 write_aws_conn_id='aws_dev_telemetry_public_analysis_2_rw'
 aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credentials()
+
+# hardware_report's execution date will be {now}-7days. It will read last week's main pings,
+# therefore we need to wait for yesterday's Main Ping deduplication task to finish
+wait_for_main_ping = ExternalTaskSensor(
+    task_id="wait_for_main_ping",
+    external_dag_id="main_summary",
+    external_task_id="copy_deduplicate_main_ping",
+    execution_delta=timedelta(days=-6, hours=-1),
+    check_existence=True,
+    dag=dag,
+)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
@@ -69,3 +81,5 @@ hardware_report = SubDagOperator(
         storage_bucket=params.storage_bucket,
     )
 )
+
+wait_for_main_ping >> hardware_report
