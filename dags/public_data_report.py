@@ -42,7 +42,7 @@ wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
     external_dag_id="main_summary",
     external_task_id="copy_deduplicate_main_ping",
-    execution_delta=timedelta(days=-6, hours=-1),
+    execution_delta=timedelta(days=-6),
     check_existence=True,
     dag=dag,
 )
