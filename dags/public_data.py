@@ -19,7 +19,7 @@ with DAG("public_data", default_args=default_args, schedule_interval="0 6 * * *"
 
     public_data_gcs_metadata = gke_command(
         task_id="public_data_gcs_metadata",
-        command="script/publish_public_data_gcs_metadata",
+        command=["script/publish_public_data_gcs_metadata"],
         docker_image=docker_image,
         dag=dag
     )
