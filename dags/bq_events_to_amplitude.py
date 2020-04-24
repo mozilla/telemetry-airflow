@@ -51,22 +51,6 @@ with models.DAG(
         task_id=fennec_ios_task_id
     )
 
-    focus_android_task_id = 'focus_android_amplitude_export'
-    focus_args = default_args.copy()
-    focus_args["start_date"] = datetime.datetime(2019, 12, 2)
-    SubDagOperator(
-        subdag=export_to_amplitude(
-            dag_name=focus_android_task_id,
-            parent_dag_name=dag_name,
-            default_args=focus_args,
-            project='moz-fx-data-shared-prod',
-            dataset='telemetry',
-            table_or_view='focus_android_events_v1',
-            s3_prefix='focus_android',
-        ),
-        task_id=focus_android_task_id
-    )
-
     rocket_android_task_id = 'rocket_android_amplitude_export'
     rocket_args = default_args.copy()
     rocket_args["start_date"] = datetime.datetime(2019, 12, 2)
@@ -81,22 +65,6 @@ with models.DAG(
             s3_prefix='rocket_android',
         ),
         task_id=rocket_android_task_id
-    )
-
-    fire_tv_task_id = 'fire_tv_amplitude_export'
-    fire_tv_args = default_args.copy()
-    fire_tv_args["start_date"] = datetime.datetime(2019, 12, 2)
-    SubDagOperator(
-        subdag=export_to_amplitude(
-            dag_name=fire_tv_task_id,
-            parent_dag_name=dag_name,
-            default_args=fire_tv_args,
-            project='moz-fx-data-shared-prod',
-            dataset='telemetry',
-            table_or_view='fire_tv_events_v1',
-            s3_prefix='fire_tv',
-        ),
-        task_id=fire_tv_task_id
     )
 
     devtools_task_id = 'devtools_amplitude_export'
