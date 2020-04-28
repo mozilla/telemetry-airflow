@@ -172,9 +172,10 @@ def main(
         "date", F.to_date("date")
     )
 
+    ds_nodash = submission_date.replace('-', '')
     (
         model_perf_data_sdf.write.format("bigquery")
-        .option("table", f"{project_id}.{dataset_id}.{model_input_table_id}")
+        .option("table", f"{project_id}.{dataset_id}.{model_input_table_id}${ds_nodash}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
         .option("partitionField", "date")
         .mode("overwrite")
@@ -183,7 +184,7 @@ def main(
 
     (
         model_pred_data.write.format("bigquery")
-        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id}")
+        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id}${ds_nodash}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
         .option("partitionField", "submission_date")
         .mode("overwrite")
