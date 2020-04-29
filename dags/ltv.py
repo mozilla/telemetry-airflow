@@ -31,15 +31,6 @@ default_args = {
 
 dag = DAG("ltv_daily", default_args=default_args, schedule_interval="@daily")
 
-wait_for_search_clients_last_seen = ExternalTaskSensor(
-    task_id="wait_for_search_clients_last_seen",
-    external_dag_id="main_summary",
-    external_task_id="search_clients_last_seen",
-    execution_delta=timedelta(hours=-1),
-    check_existence=True,
-    dag=dag,
-)
-
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
 subdag_args = default_args.copy()
@@ -95,10 +86,18 @@ ltv_daily = SubDagOperator(
     ),
 )
 
-wait_for_search_clients_last_seen >> ltv_daily
-
 if params.is_dev:
     copy_to_dev = copy_artifacts_dev(
         dag, params.project_id, params.artifact_bucket, params.storage_bucket
     )
-    copy_to_dev.set_downstream(ltv_daily)
+    copy_to_dev >> ltv_daily
+else:
+    wait_for_search_clients_last_seen = ExternalTaskSensor(
+        task_id="wait_for_search_clients_last_seen",
+        external_dag_id="main_summary",
+        external_task_id="search_clients_last_seen",
+        execution_delta=timedelta(hours=-1),
+        check_existence=True,
+        dag=dag,
+    )
+    wait_for_search_clients_last_seen >> ltv_daily
