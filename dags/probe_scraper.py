@@ -78,7 +78,11 @@ with DAG('probe_scraper',
         task_id="probe-expiry-alerts",
         name="probe-expiry-alerts",
         image=probe_scraper_image,
-        arguments=["python3", "-m", "probe_scraper.probe_expiry_alert"],
+        arguments=[
+            "python3", "-m", "probe_scraper.probe_expiry_alert",
+            "--date", "{{ ds }}",
+            "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}"
+        ],
         email=["bewu@mozilla.com"],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,

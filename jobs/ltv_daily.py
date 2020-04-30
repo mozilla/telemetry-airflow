@@ -12,6 +12,7 @@ from pyspark.sql.types import DoubleType
 from lifetimes import BetaGeoFitter
 
 PRED_METRICS = [
+    "days_seen",
 	"days_searched", 
 	"days_tagged_searched",
 	"days_clicked_ads",
@@ -126,6 +127,9 @@ def main(
     # flatten list
     columns = [item for sublist in columns for item in sublist]
 
+    prediction_prefix = "prediction_"
+    p_alive_prefix = "p_alive_"
+
     model_perf_data = pd.DataFrame()
     model_pred_data = None
     search_rfm_ds = search_rfm_full.limit(training_sample).select(columns).toPandas()
@@ -146,35 +150,58 @@ def main(
                 prediction_days, metric.frequency, metric.recency, metric.T, model
             )
 
+        @F.udf(DoubleType())
+        def ltv_prob_alive(metric):
+            import lifetimes
+            p_alive = float(
+                model.conditional_probability_alive(
+                    catch_none(metric.frequency), catch_none(metric.recency), catch_none(metric.T)
+                )
+            )
+
+            # Lifetimes returns 1.0 if frequency==0
+            # https://github.com/CamDavidsonPilon/lifetimes/blob/master/lifetimes/fitters/beta_geo_fitter.py#L293
+            if p_alive >= 1.0:
+                return 0.0
+            return p_alive
+
         # go back to full sample here
         predictions = search_rfm_full.select(
-            "*", ltv_predict_metric(metric).alias("prediction_" + metric)
+            "*", ltv_predict_metric(metric).alias(prediction_prefix + metric), ltv_prob_alive(metric).alias(p_alive_prefix + metric)
         )
 
         if not model_pred_data:
             model_pred_data = predictions
         else:
             model_pred_data = model_pred_data.join(
-                predictions.select("client_id", "prediction_" + metric), on="client_id"
+                predictions.select("client_id", prediction_prefix + metric, p_alive_prefix + metric), on="client_id"
             )
 
     predictions = F.create_map(
         list(
             chain(
-                *((F.lit(name), F.col("prediction_" + name)) for name in PRED_METRICS)
+                *((F.lit(name), F.col(prediction_prefix + name)) for name in PRED_METRICS)
             )
         )
     ).alias("predictions")
 
-    model_pred_data = model_pred_data.withColumn("predictions", predictions)
+    p_alive = F.create_map(
+        list(
+            chain(
+                *((F.lit(name), F.col(p_alive_prefix + name)) for name in PRED_METRICS)
+            )
+        )
+    ).alias("p_alive")
+
     model_perf_data["active_days"] = model_perf_data.index
     model_perf_data_sdf = spark.createDataFrame(model_perf_data).withColumn(
         "date", F.to_date("date")
     )
 
+    ds_nodash = submission_date.replace('-', '')
     (
         model_perf_data_sdf.write.format("bigquery")
-        .option("table", f"{project_id}.{dataset_id}.{model_input_table_id}")
+        .option("table", f"{project_id}.{dataset_id}.{model_input_table_id}${ds_nodash}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
         .option("partitionField", "date")
         .mode("overwrite")
@@ -182,10 +209,22 @@ def main(
     )
 
     (
-        model_pred_data.write.format("bigquery")
-        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id}")
+        model_pred_data
+
+        # Add prediction columns as maps
+        .withColumn("predictions", predictions)
+        .withColumn("p_alive", p_alive)
+
+        # Drop top-level prediction columns
+        .drop(*list(chain(*[[prediction_prefix + n, p_alive_prefix + n] for n in PRED_METRICS])))
+
+        # Overwrite BQ partition
+        .write.format("bigquery")
+        .option("table", f"{project_id}.{dataset_id}.{model_output_table_id}${ds_nodash}")
         .option("temporaryGcsBucket", temporary_gcs_bucket)
         .option("partitionField", "submission_date")
+        .option("clusteredFields", "sample_id,client_id")
+        .option("allowFieldAddition", "true")
         .mode("overwrite")
         .save()
     )
