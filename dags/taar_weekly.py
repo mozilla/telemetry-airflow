@@ -54,7 +54,7 @@ taar_ensemble = SubDagOperator(
         num_workers=35,
         worker_machine_type="n1-standard-8",
         master_machine_type="n1-standard-8",
-        init_actions_uris=["gs://moz-fx-data-prod-airflow-dataproc-artifacts/pip-install.sh"],
+        init_actions_uris=["gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/pip-install.sh"],
         additional_metadata={
             "PIP_PACKAGES": "mozilla-taar3==0.4.12 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
         },
