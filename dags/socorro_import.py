@@ -33,7 +33,11 @@ default_args = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 9, 10),
-    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
+    "email": [
+        "telemetry-alerts@mozilla.com",
+        "amiyaguchi@mozilla.com",
+        "willkg@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
