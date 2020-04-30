@@ -68,6 +68,7 @@ def test_subdag_structure_default(dag, mock_hook):
     assert {ti.task_id for ti in dag.topological_sort()} == {
         "test",
         "test_register",
+        "test_success",
         "test_failure",
     }
 
