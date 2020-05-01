@@ -49,7 +49,7 @@ export_csv = gke_command(
     env_vars={"DATASET": "glam_etl"},
     command=["script/glam/export_csv"],
     docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_dataproc",
     dag=dag,
 )
 
@@ -57,7 +57,7 @@ gcs_delete = GoogleCloudStorageDeleteOperator(
     task_id="gcs_delete",
     bucket_name=glam_bucket,
     prefix="glam-extract-fenix",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_dataproc",
     dag=dag,
 )
 
@@ -66,7 +66,7 @@ gcs_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
     source_bucket="glam-fenix-dev",
     source_object="*.csv",
     destination_bucket=glam_bucket,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_dataproc",
     dag=dag,
 )
 
