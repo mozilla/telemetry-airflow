@@ -5,10 +5,10 @@ from airflow.operators.dataset_status import DatasetStatusOperator
 from airflow.hooks.dataset_status import DatasetStatusHook
 
 
-def register_status(operator, name, description, on_success=False):
+def register_status(operator, name, description, on_success=True):
     """Wrap an operator with an external status page.
     
-    The default behavior will only set the state of a dataset to partial_outage.
+    By default, the statuspage will be pinged on every run of the referenced operator.
 
     :param airflow.models.BaseOperator operator: An Airflow operator to set upstream
     :param str name:            The name of the dataset
