@@ -4,10 +4,10 @@ from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.contrib.operators.bigquery_table_delete_operator import (
     BigQueryTableDeleteOperator,
-)  # noqa
+)
 from airflow.contrib.operators.gcp_transfer_operator import (
     S3ToGoogleCloudStorageTransferOperator,
-)  # noqa
+)
 
 from datetime import datetime, timedelta
 
@@ -127,7 +127,7 @@ dest_s3_key = "s3://telemetry-parquet"
 bq_dataset = "telemetry_derived"
 bq_table_name = "{}_{}".format(dataset, dataset_version)
 
-docker_image = "docker.io/mozilla/parquet2bigquery:20190722"  # noqa
+docker_image = "docker.io/mozilla/parquet2bigquery:20190722"
 
 gke_args = [
     "--dataset",
@@ -147,9 +147,7 @@ gke_args = [
 remove_bq_table_partition = BigQueryTableDeleteOperator(
     task_id="remove_bq_table_partition",
     bigquery_conn_id=bq_gcp_conn_id,
-    deletion_dataset_table="{}.{}${{{{ds_nodash}}}}".format(
-        bq_dataset, bq_table_name
-    ),  # noqa
+    deletion_dataset_table="{}.{}${{{{ds_nodash}}}}".format(bq_dataset, bq_table_name),
     ignore_if_missing=True,
     dag=dag,
 )
