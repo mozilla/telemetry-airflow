@@ -18,9 +18,20 @@ default_args = {
 
 dag_name = 'fxa_amplitude_export'
 
+"""
+FxA logs become available to BigQuery within seconds.
+The `timestamp` field of an event is when it occurred on the server,
+and the `receiveTimestamp` was when it was received by Cloud Logging.
+Usually these are at most seconds apart.
+Reference: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+
+From there the data is streamed to BigQuery. This is one record at-a-time
+and data should be available very quickly.
+Reference: https://cloud.google.com/logging/docs/export/bigquery
+"""
 with models.DAG(
         dag_name,
-        schedule_interval='0 10 * * *',
+        schedule_interval='30 0 * * *',
         default_args=default_args) as dag:
 
     fxa_export_table_create = bigquery_etl_query(
