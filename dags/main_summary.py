@@ -231,6 +231,22 @@ clients_daily_export = SubDagOperator(
 
 register_status(clients_daily, "Clients Daily", "A view of main pings with one row per client per day.")
 
+clients_first_seen = bigquery_etl_query(
+    task_id="clients_first_seen",
+    destination_table="clients_first_seen_v1",
+    project_id="moz-fx-data-shared-prod",
+    owner="jklukas@mozilla.com",
+    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    depends_on_past=True,
+    start_date=datetime(2020, 5, 5),
+    dataset_id="telemetry_derived",
+    # This query updates the entire existing table every day rather than appending
+    # a new partition, so we need to disable date_partition_parameter and instead
+    # pass submission_date as a generic param.
+    date_partition_parameter=None,
+    parameters=["submission_date:DATE:{{ds}}"],
+    dag=dag)
+
 clients_last_seen = bigquery_etl_query(
     task_id="clients_last_seen",
     destination_table="clients_last_seen_v1",
@@ -424,6 +440,7 @@ addons.set_upstream(copy_deduplicate_main_ping)
 addon_aggregates.set_upstream(copy_deduplicate_main_ping)
 addon_names.set_upstream(copy_deduplicate_main_ping)
 
+clients_first_seen.set_upstream(clients_daily)
 clients_last_seen.set_upstream(clients_daily)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
