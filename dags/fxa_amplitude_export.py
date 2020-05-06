@@ -35,6 +35,7 @@ with models.DAG(
 
     fxa_export_table_create = bigquery_etl_query(
         task_id='fxa_amplitude_export_v1',
+        project_id='moz-fx-data-shared-prod',
         destination_table='fxa_amplitude_export_v1',
         dataset_id='firefox_accounts_derived'
     )
