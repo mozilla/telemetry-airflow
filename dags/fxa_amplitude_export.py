@@ -44,8 +44,7 @@ with models.DAG(
         subdag=export_to_amplitude(
             dag_name=task_id,
             parent_dag_name=dag_name,
-            default_args=default_args,
-            depends_on_past=True,
+            default_args=dict(default_args, **{'depends_on_past': True}),
             project='moz-fx-data-shared-prod',
             dataset='firefox_accounts',
             table_or_view='fxa_amplitude_export',
