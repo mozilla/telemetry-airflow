@@ -285,12 +285,12 @@ client_scalar_probe_counts = bigquery_etl_query(
 client_histogram_probe_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
-        "client_histogram_probe_counts",
+        "clients_histogram_probe_counts",
         default_args,
         dag.schedule_interval,
         dataset_id,
     ),
-    task_id="client_histogram_probe_counts",
+    task_id="clients_histogram_probe_counts",
     executor=get_default_executor(),
     dag=dag,
 )
