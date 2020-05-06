@@ -4,7 +4,12 @@ from utils.gcp import bigquery_etl_query
 
 
 def repeated_subdag(
-    parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id
+    parent_dag_name,
+    child_dag_name,
+    default_args,
+    schedule_interval,
+    dataset_id,
+    date_partition_parameter="submission_date",
 ):
     dag = DAG(
         "%s.%s" % (parent_dag_name, child_dag_name),
@@ -29,6 +34,7 @@ def repeated_subdag(
             "min_sample_id:INT64:0",
             "max_sample_id:INT64:{}".format(PARTITION_SIZE - 1),
         ),
+        date_partition_parameter=date_partition_parameter,
         arguments=("--replace",),
         dag=dag,
     )
@@ -49,6 +55,7 @@ def repeated_subdag(
                 "min_sample_id:INT64:{}".format(min_param),
                 "max_sample_id:INT64:{}".format(max_param),
             ),
+            date_partition_parameter=date_partition_parameter,
             arguments=("--append_table", "--noreplace",),
             dag=dag,
         )

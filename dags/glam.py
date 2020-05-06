@@ -289,6 +289,7 @@ client_histogram_probe_counts = SubDagOperator(
         default_args,
         dag.schedule_interval,
         dataset_id,
+        date_partition_parameter=None,
     ),
     task_id="clients_histogram_probe_counts",
     executor=get_default_executor(),
