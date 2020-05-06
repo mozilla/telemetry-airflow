@@ -269,7 +269,6 @@ glam_user_counts = bigquery_etl_query(
 client_scalar_probe_counts = bigquery_etl_query(
     task_id="client_scalar_probe_counts",
     destination_table="clients_scalar_probe_counts_v1",
-    sql_file_path=sql_file_path,
     dataset_id=dataset_id,
     project_id=project_id,
     owner="msamuel@mozilla.com",
