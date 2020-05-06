@@ -11,7 +11,6 @@ default_args = {
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
-    'depends_on_past': True,
     'retries': 1,
     'retry_delay': datetime.timedelta(minutes=20),
 }
@@ -46,9 +45,10 @@ with models.DAG(
             dag_name=task_id,
             parent_dag_name=dag_name,
             default_args=default_args,
+            depends_on_past=True,
             project='moz-fx-data-shared-prod',
             dataset='firefox_accounts',
-            table_or_view='fxa_amplitude_export_v1',
+            table_or_view='fxa_amplitude_export',
             s3_prefix='fxa-active',
         ),
         task_id=task_id
