@@ -3,12 +3,25 @@ from airflow.models import DAG
 from utils.gcp import bigquery_etl_query
 
 
+def merge_params(min_param, max_param, additional_params):
+    parameters = (
+        "min_sample_id:INT64:{}".format(min_param),
+        "max_sample_id:INT64:{}".format(max_param),
+    )
+
+    if additional_params is not None:
+        parameters += additional_params
+
+    return parameters
+
+
 def repeated_subdag(
     parent_dag_name,
     child_dag_name,
     default_args,
     schedule_interval,
     dataset_id,
+    additional_params=None,
     date_partition_parameter="submission_date",
 ):
     dag = DAG(
@@ -30,10 +43,7 @@ def repeated_subdag(
         owner="msamuel@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
         depends_on_past=True,
-        parameters=(
-            "min_sample_id:INT64:0",
-            "max_sample_id:INT64:{}".format(PARTITION_SIZE - 1),
-        ),
+        parameters=merge_params(0, PARTITION_SIZE - 1, additional_params),
         date_partition_parameter=date_partition_parameter,
         arguments=("--replace",),
         dag=dag,
@@ -51,10 +61,7 @@ def repeated_subdag(
             owner="msamuel@mozilla.com",
             email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
             depends_on_past=True,
-            parameters=(
-                "min_sample_id:INT64:{}".format(min_param),
-                "max_sample_id:INT64:{}".format(max_param),
-            ),
+            parameters=merge_params(min_param, max_param, additional_params),
             date_partition_parameter=date_partition_parameter,
             arguments=("--append_table", "--noreplace",),
             dag=dag,
