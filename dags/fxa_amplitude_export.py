@@ -7,7 +7,7 @@ from utils.amplitude import export_to_amplitude
 
 default_args = {
     'owner': 'frank@mozilla.com',
-    'start_date': datetime.datetime(2020, 5, 1),
+    'start_date': datetime.datetime(2020, 4, 1),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
