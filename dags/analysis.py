@@ -33,13 +33,6 @@ with DAG("public_analysis", default_args=default_args, schedule_interval="0 1 * 
         dag=dag,
     )
 
-    wait_for_clients_daily = ExternalTaskSensor(
-        task_id="wait_for_clients_daily",
-        external_dag_id="main_summary",
-        external_task_id="clients_daily",
-        dag=dag,
-    )
-
     wait_for_clients_first_seen = ExternalTaskSensor(
         task_id="wait_for_clients_first_seen",
         external_dag_id="main_summary",
@@ -49,7 +42,6 @@ with DAG("public_analysis", default_args=default_args, schedule_interval="0 1 * 
 
     anomdtct.set_upstream(
         [
-            wait_for_clients_daily,
             wait_for_clients_first_seen,
         ]
     )
