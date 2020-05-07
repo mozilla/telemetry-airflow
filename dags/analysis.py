@@ -48,6 +48,7 @@ with DAG("public_analysis", default_args=default_args, schedule_interval="0 1 * 
 
     deviations = bigquery_etl_query(
         task_id="deviations",
+        project_id="moz-fx-data-shared-prod",
         destination_table="deviations_v1",
         dataset_id="telemetry_derived",
         arguments=("--replace",),
