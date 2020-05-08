@@ -56,3 +56,19 @@ with models.DAG(
     )
 
     fxa_export_table_create >> fxa_amplitude_export
+
+    sync_send_tab_task_id = 'sync_send_tab_amplitude_export'
+    sync_send_tab_export = SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=sync_send_tab_task_id,
+            parent_dag_name=dag_name,
+            default_args=default_args,
+            project='moz-fx-data-shared-prod',
+            dataset='telemetry_derived',
+            table_or_view='sync_send_tab_events_v1',
+            s3_prefix='sync_send_tab',
+        ),
+        task_id=sync_send_tab_task_id
+    )
+
+    fxa_export_table_create >> sync_send_tab_export
