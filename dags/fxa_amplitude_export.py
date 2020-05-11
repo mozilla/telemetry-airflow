@@ -1,13 +1,17 @@
 import datetime
+import pendulum
 
 from airflow import models
 from utils.gcp import bigquery_etl_query
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.amplitude import export_to_amplitude
 
+# https://airflow.apache.org/docs/stable/timezone.html#time-zone-aware-dags
+pdt_tz = pendulum.timezone("America/Los_Angeles")
+
 default_args = {
     'owner': 'frank@mozilla.com',
-    'start_date': datetime.datetime(2020, 4, 1),
+    'start_date': datetime.datetime(2020, 4, 1, tzinfo=pdt_tz),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -18,6 +22,7 @@ default_args = {
 dag_name = 'fxa_amplitude_export'
 
 """
+A Note on Times:
 FxA logs become available to BigQuery within seconds.
 The `timestamp` field of an event is when it occurred on the server,
 and the `receiveTimestamp` was when it was received by Cloud Logging.
@@ -27,6 +32,11 @@ Reference: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 From there the data is streamed to BigQuery. This is one record at-a-time
 and data should be available very quickly.
 Reference: https://cloud.google.com/logging/docs/export/bigquery
+
+However, the above exports to UTC-partitioned tables. We are running
+with PDT-based days, so the following will actually wait until
+7:30:00 hours after start of day UTC.
+https://airflow.apache.org/docs/stable/timezone.html#cron-schedules
 """
 with models.DAG(
         dag_name,
