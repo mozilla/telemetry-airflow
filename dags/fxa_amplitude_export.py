@@ -7,11 +7,11 @@ from airflow.operators.subdag_operator import SubDagOperator
 from utils.amplitude import export_to_amplitude
 
 # https://airflow.apache.org/docs/stable/timezone.html#time-zone-aware-dags
-pdt_tz = pendulum.timezone("America/Los_Angeles")
+pt_tz = pendulum.timezone("America/Los_Angeles")
 
 default_args = {
     'owner': 'frank@mozilla.com',
-    'start_date': datetime.datetime(2020, 4, 1, tzinfo=pdt_tz),
+    'start_date': datetime.datetime(2020, 4, 1, tzinfo=pt_tz),
     'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
@@ -35,7 +35,7 @@ Reference: https://cloud.google.com/logging/docs/export/bigquery
 
 However, the above exports to UTC-partitioned tables. We are running
 with PDT-based days, so the following will actually wait until
-7:30:00 hours after start of day UTC.
+7:30:00 hours after start of day UTC (for PDT) and 8:30:00 after (during PST).
 https://airflow.apache.org/docs/stable/timezone.html#cron-schedules
 """
 with models.DAG(
