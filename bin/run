@@ -126,7 +126,8 @@ init_variables() {
     airflow variables -s "surveygizmo_daily_attitudes_survey_id" "12345"
     airflow variables -s "surveygizmo_api_token" "tokentokentoken"
     airflow variables -s "surveygizmo_api_secret" "tapsekret"
-    airflow variables -s "anomdtct_spreadsheet_id" "secret-d"
+    airflow variables -s "anomdtct_spreadsheet_id" "secret-id"
+    airflow variables -s "anomdtct_spreadsheet_api_key" "secret-key"
 }
 
 [ $# -lt 1 ] && usage

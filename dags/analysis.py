@@ -29,7 +29,8 @@ with DAG("public_analysis", default_args=default_args, schedule_interval="0 1 * 
         image=anomdtct_image,
         email=["ascholtz@mozilla.com", "jmccrosky@mozilla.com",],
         arguments=["{{ds}}"]
-        + ["--spreadsheet-id=" + Variable.get('anomdtct_spreadsheet_id')],
+        + ["--spreadsheet-id=" + Variable.get('anomdtct_spreadsheet_id')]
+        + ["--spreadsheet-key=" + Variable.get('anomdtct_spreadsheet_api_key')],
         dag=dag,
     )
 
