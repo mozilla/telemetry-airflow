@@ -67,6 +67,21 @@ with models.DAG(
 
     fxa_export_table_create >> fxa_amplitude_export
 
+    fxa_amplitude_user_ids = bigquery_etl_query(
+        task_id='fxa_amplitude_user_ids',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='fxa_amplitude_user_ids_v1',
+        dataset_id='firefox_accounts_derived',
+        depends_on_past=True,
+        start_date=datetime.datetime(2020, 5, 10),
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
+        # This query updates the entire existing table every day rather than appending
+        # a new partition, so we need to disable date_partition_parameter and instead
+        # pass submission_date as a generic param.
+        date_partition_parameter=None,
+        parameters=["submission_date:DATE:{{ds}}"],
+    )
+
     sync_send_tab_task_id = 'sync_send_tab_amplitude_export'
     sync_send_tab_args = default_args.copy()
     sync_send_tab_args['email'] = ['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
@@ -76,11 +91,11 @@ with models.DAG(
             parent_dag_name=dag_name,
             default_args=sync_send_tab_args,
             project='moz-fx-data-shared-prod',
-            dataset='telemetry_derived',
-            table_or_view='sync_send_tab_events_v1',
+            dataset='firefox_accounts',
+            table_or_view='sync_send_tab_export',
             s3_prefix='sync_send_tab',
         ),
         task_id=sync_send_tab_task_id
     )
 
-    fxa_export_table_create >> sync_send_tab_export
+    fxa_amplitude_user_ids >> sync_send_tab_export
