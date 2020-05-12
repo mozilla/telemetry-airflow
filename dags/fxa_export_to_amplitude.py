@@ -41,6 +41,7 @@ https://airflow.apache.org/docs/stable/timezone.html#cron-schedules
 with models.DAG(
         dag_name,
         schedule_interval='30 0 * * *',
+        catchup=True,
         default_args=default_args) as dag:
 
     fxa_export_table_create = bigquery_etl_query(
