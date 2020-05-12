@@ -49,7 +49,7 @@ export_csv = gke_command(
     env_vars={"DATASET": "glam_etl"},
     command=["script/glam/export_csv"],
     docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_airflow_dataproc",
+    gcp_conn_id="google_cloud_derived_datasets",
     dag=dag,
 )
 
