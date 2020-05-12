@@ -19,7 +19,7 @@ default_args = {
     'retry_delay': datetime.timedelta(minutes=20),
 }
 
-dag_name = 'fxa_amplitude_export'
+dag_name = 'fxa_export_to_amplitude'
 
 """
 A Note on Times:
