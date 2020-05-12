@@ -22,6 +22,7 @@ def repeated_subdag(
     schedule_interval,
     dataset_id,
     additional_params=None,
+    num_partitions=5,
     date_partition_parameter="submission_date",
 ):
     dag = DAG(
@@ -32,9 +33,8 @@ def repeated_subdag(
 
     # This task runs first and replaces the relevant partition, followed
     # by the next tasks that append to the same partition of the same table.
-    NUM_PARTITIONS = 5
     NUM_SAMPLE_IDS = 100
-    PARTITION_SIZE = NUM_SAMPLE_IDS / NUM_PARTITIONS
+    PARTITION_SIZE = NUM_SAMPLE_IDS / num_partitions
     task_0 = bigquery_etl_query(
         task_id="{dag_name}_0".format(dag_name=child_dag_name),
         destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
@@ -49,7 +49,7 @@ def repeated_subdag(
         dag=dag,
     )
 
-    for partition in range(1, NUM_PARTITIONS):
+    for partition in range(1, num_partitions):
         min_param = partition * PARTITION_SIZE
         max_param = min_param + PARTITION_SIZE - 1
 
