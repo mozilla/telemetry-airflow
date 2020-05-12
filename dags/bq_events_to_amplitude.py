@@ -1,6 +1,7 @@
 import datetime
 
 from airflow import models
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.amplitude import export_to_amplitude
 
@@ -67,11 +68,25 @@ with models.DAG(
         task_id=rocket_android_task_id
     )
 
+    # DevTools view merges events from `telemetry.main` and `telemetry.event`.
+    # We need to make sure both tables are ready and deduplicated before proceeding.
+    wait_for_telemetry_event = ExternalTaskSensor(
+        task_id="wait_for_telemetry_event",
+        external_dag_id="copy_deduplicate",
+        external_task_id="copy_deduplicate_all",
+        dag=dag)
+    wait_for_telemetry_main = ExternalTaskSensor(
+        task_id="wait_for_telemetry_main",
+        external_dag_id="main_summary",
+        external_task_id="copy_deduplicate_main_ping",
+        dag=dag,
+    )
+
     devtools_task_id = 'devtools_amplitude_export'
     devtools_args = default_args.copy()
     devtools_args["start_date"] = datetime.datetime(2019, 12, 2)
     devtools_args["email"] = ['ssuh@mozilla.com', 'telemetry-alerts@mozilla.com', 'akomar@mozilla.com']
-    SubDagOperator(
+    devtools_export = SubDagOperator(
         subdag=export_to_amplitude(
             dag_name=devtools_task_id,
             parent_dag_name=dag_name,
@@ -83,3 +98,5 @@ with models.DAG(
         ),
         task_id=devtools_task_id
     )
+
+    [wait_for_telemetry_event, wait_for_telemetry_main] >> devtools_export
