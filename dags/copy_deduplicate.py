@@ -334,10 +334,19 @@ with models.DAG(
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
     )
 
+    firefox_nondesktop_day_2_7_activation = bigquery_etl_query(
+        task_id='firefox_nondesktop_day_2_7_activation',
+        project_id='moz-fx-data-shared-prod',
+        destination_table='firefox_nondesktop_day_2_7_activation_v1',
+        dataset_id='telemetry_derived',
+        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'gkaberere@mozilla.com'],
+    )
+
     nondesktop_aggregate_tasks = [
         firefox_nondesktop_exact_mau28,
         smoot_usage_nondesktop_v2,
         firefox_nondesktop_exact_mau28_by_client_count_dimensions,
+        firefox_nondesktop_day_2_7_activation,
     ]
 
     (copy_deduplicate_all >>
