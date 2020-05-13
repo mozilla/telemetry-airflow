@@ -282,6 +282,8 @@ client_scalar_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
+# SubdagOperator uses a SequentialExecutor by default
+# so its tasks will run sequentially.
 client_histogram_probe_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
@@ -294,7 +296,6 @@ client_histogram_probe_counts = SubDagOperator(
         None,
     ),
     task_id="clients_histogram_probe_counts",
-    executor=get_default_executor(),
     dag=dag,
 )
 
