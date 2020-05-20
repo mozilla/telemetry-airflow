@@ -284,10 +284,10 @@ client_scalar_probe_counts = bigquery_etl_query(
 
 # SubdagOperator uses a SequentialExecutor by default
 # so its tasks will run sequentially.
-client_histogram_bucket_counts = SubDagOperator(
+clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
-        "client_histogram_bucket_counts",
+        "clients_histogram_bucket_counts",
         default_args,
         dag.schedule_interval,
         dataset_id,
@@ -295,13 +295,13 @@ client_histogram_bucket_counts = SubDagOperator(
         10,
         None,
     ),
-    task_id="client_histogram_bucket_counts",
+    task_id="clients_histogram_bucket_counts",
     dag=dag,
 )
 
-client_histogram_probe_counts = bigquery_etl_query(
-    task_id="client_histogram_probe_counts",
-    destination_table="client_histogram_probe_counts_v1",
+clients_histogram_probe_counts = bigquery_etl_query(
+    task_id="clients_histogram_probe_counts",
+    destination_table="clients_histogram_probe_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
     owner="msamuel@mozilla.com",
@@ -357,12 +357,12 @@ latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
-clients_histogram_aggregates >> client_histogram_bucket_counts
+clients_histogram_aggregates >> clients_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
 
 clients_scalar_bucket_counts >> client_scalar_probe_counts
-client_histogram_bucket_counts >> client_histogram_probe_counts
-client_histogram_probe_counts >> histogram_percentiles
+clients_histogram_bucket_counts >> clients_histogram_probe_counts
+clients_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 
