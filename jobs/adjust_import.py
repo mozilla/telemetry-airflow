@@ -39,9 +39,9 @@ def main(
         .withColumn("identifier",
             pbkdf2_sha1hmac(
                 col("gps_adid"),
-                lit("org.mozilla.fenix-salt"),
-                lit(1000),
-                lit(32)))
+                lit(salt),
+                lit(iterations),
+                lit(klen)))
         .select("identifier", "installed_at")
         .write.format("bigquery")
         .option("table", f"{project}.{output_table}")
