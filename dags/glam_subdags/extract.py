@@ -78,13 +78,13 @@ def extract_channel_subdag(
     gcs_delete = GoogleCloudStorageDeleteOperator(
         task_id="glam_gcs_delete_old_{}_extracts".format(channel),
         bucket_name=glam_bucket,
-        prefix="glam-extract-firefox-{}".format(channel),
+        prefix="aggs-desktop-{}".format(channel),
         google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
         dag=dag,
     )
 
-    gcs_destination = "gs://{}/glam-extract-firefox-{}-*.csv".format(
-        glam_bucket, channel
+    gcs_destination = "gs://{bucket}/aggs-desktop-{channel}-*.csv".format(
+        bucket=glam_bucket, channel=channel
     )
     bq2gcs = BigQueryToCloudStorageOperator(
         task_id="glam_extract_{}_to_csv".format(channel),
