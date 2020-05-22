@@ -183,22 +183,6 @@ scalar_percentiles = bigquery_etl_query(
     dag=dag,
 )
 
-clients_scalar_bucket_counts = bigquery_etl_query(
-    task_id="clients_scalar_bucket_counts",
-    destination_table="clients_scalar_bucket_counts_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-    ],
-    date_partition_parameter=None,
-    arguments=("--replace",),
-    dag=dag,
-)
-
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
 clients_daily_histogram_aggregates = gke_command(
@@ -388,8 +372,8 @@ clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
 clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
 clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
 clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
-clients_scalar_aggregates >> clients_scalar_bucket_counts
 clients_scalar_aggregates >> scalar_percentiles
+clients_scalar_aggregates >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
@@ -398,7 +382,6 @@ clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 clients_histogram_aggregates >> clients_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
 
-clients_scalar_bucket_counts >> client_scalar_probe_counts
 clients_histogram_bucket_counts >> clients_histogram_probe_counts
 clients_histogram_probe_counts >> histogram_percentiles
 
