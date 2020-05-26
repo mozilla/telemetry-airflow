@@ -37,7 +37,8 @@ with DAG(
             # TODO: remove this after verifying permissions
             RUNFAST="true",
             BUCKET="gs://moz-fx-data-prod-analysis",
-            PROJECT_ID="moz-fx-data-bq-data-science",
+            PROJECT_ID="moz-fx-data-shared-prod",
+            DATASET="telemetry",
         ),
         dag=dag,
     )
