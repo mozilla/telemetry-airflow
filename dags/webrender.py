@@ -36,6 +36,7 @@ with DAG(
         env_vars=dict(
             BUCKET="gs://moz-fx-data-prod-analysis",
             PROJECT_ID="moz-fx-data-shared-prod",
+            # source dataset, results are written to the analysis dataset
             DATASET="telemetry",
         ),
         dag=dag,
