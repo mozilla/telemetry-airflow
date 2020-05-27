@@ -34,8 +34,6 @@ with DAG(
         name="webrender_ds_283",
         image="gcr.io/moz-fx-ds-283/ds_283_prod:latest",
         env_vars=dict(
-            # TODO: remove this after verifying permissions
-            RUNFAST="true",
             BUCKET="gs://moz-fx-data-prod-analysis",
             PROJECT_ID="moz-fx-data-shared-prod",
             DATASET="telemetry",
