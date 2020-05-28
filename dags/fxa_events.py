@@ -27,28 +27,32 @@ with models.DAG(
     fxa_auth_events = bigquery_etl_query(
         task_id='fxa_auth_events',
         destination_table='fxa_auth_events_v1',
-        dataset_id='telemetry',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_auth_bounce_events = bigquery_etl_query(
         task_id='fxa_auth_bounce_events',
         destination_table='fxa_auth_bounce_events_v1',
-        dataset_id='telemetry',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_content_events = bigquery_etl_query(
         task_id='fxa_content_events',
         destination_table='fxa_content_events_v1',
-        dataset_id='telemetry',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     fxa_users_daily = bigquery_etl_query(
         task_id='fxa_users_daily',
         destination_table='fxa_users_daily_v1',
-        dataset_id='telemetry',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
     )
 
     fxa_users_daily << fxa_auth_events
@@ -57,8 +61,9 @@ with models.DAG(
 
     fxa_users_last_seen = bigquery_etl_query(
         task_id='fxa_users_last_seen',
-        destination_table='fxa_users_last_seen_raw_v1',
-        dataset_id='telemetry',
+        destination_table='fxa_users_last_seen_v1',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
         depends_on_past=True,
         start_date=datetime.datetime(2019, 4, 23),
     )
@@ -67,8 +72,9 @@ with models.DAG(
 
     firefox_accounts_exact_mau28_raw = bigquery_etl_query(
         task_id='firefox_accounts_exact_mau28_raw',
-        destination_table='firefox_accounts_exact_mau28_raw_v1',
-        dataset_id='telemetry',
+        destination_table='exact_mau28_v1',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
     )
 
     fxa_users_last_seen >> firefox_accounts_exact_mau28_raw
@@ -107,7 +113,7 @@ with models.DAG(
         task_id='fxa_users_services_daily',
         project_id='moz-fx-data-shared-prod',
         destination_table='fxa_users_services_daily_v1',
-        dataset_id='telemetry_derived',
+        dataset_id='firefox_accounts_derived',
     )
 
     fxa_users_services_daily << fxa_auth_events
@@ -117,8 +123,8 @@ with models.DAG(
     fxa_users_services_first_seen = bigquery_etl_query(
         task_id='fxa_users_services_first_seen',
         project_id='moz-fx-data-shared-prod',
-        sql_file_path='sql/telemetry_derived/fxa_users_services_first_seen_v1/init.sql',
-        dataset_id='telemetry_derived',
+        sql_file_path='sql/firefox_accounts_derived/fxa_users_services_first_seen_v1/init.sql',
+        dataset_id='firefox_accounts_derived',
         # At least for now, we completely recreate this table every day;
         # making it incremental is possible but nuanced since it windows over
         # events that may cross the midnight boundary.
@@ -136,7 +142,7 @@ with models.DAG(
         task_id='fxa_users_services_last_seen',
         project_id='moz-fx-data-shared-prod',
         destination_table='fxa_users_services_last_seen_v1',
-        dataset_id='telemetry_derived',
+        dataset_id='firefox_accounts_derived',
         depends_on_past=True,
         start_date=datetime.datetime(2019, 10, 8),
     )
