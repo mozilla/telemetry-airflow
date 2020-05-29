@@ -3,8 +3,6 @@ from airflow.operators import BashOperator
 from datetime import datetime, timedelta
 from operators.emr_spark_operator import EMRSparkOperator
 
-from airflow.operators.dataset_status import DatasetStatusOperator
-from operators.sleep_operator import SleepOperator
 
 default_args = {
     'owner': 'example@mozilla.com',
@@ -36,27 +34,3 @@ bash = EMRSparkOperator(
     env = {"date": "{{ ds_nodash }}"},
     uri = "https://raw.githubusercontent.com/mozilla/telemetry-airflow/master/examples/spark/example_date.sh",
     dag = dag)
-
-
-
-statuspage_dag = DAG('example_statuspage', default_args=default_args)
-
-set_outage = DatasetStatusOperator(
-    task_id="outage",
-    name="Test Airflow Integration",
-    description="Testing an outage",
-    status = "partial_outage",
-    dag = statuspage_dag
-)
-
-sleep = SleepOperator(task_id="sleep", dag=statuspage_dag)
-
-set_operational = DatasetStatusOperator(
-    task_id="operational",
-    name="Test Airflow Integration",
-    description="Testing an outage",
-    status = "operational",
-    dag = statuspage_dag
-)
-
-set_outage >> sleep >> set_operational
