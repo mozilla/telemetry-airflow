@@ -8,15 +8,18 @@ cluster and can be offloaded elsewhere.
 A VM can perform the same functionality, at the minor cost of VM startup for
 each command. Starting VMs in Google Compute Engine (GCE) is surprisingly fast.
 An SSH connection can be established in less than 30 seconds, and a container
-can be fetched from a registry in another 30 seconds.  
+can be fetched from a registry in another 30 seconds.
 
+The following will create a VM environment that assumes permissions from the
+parent project. The VM can run a published docker image on DockerHub or Google
+Container Registry (GCR).
 """
-from datetime import datetime, timedelta
-import tempfile
+import json
 import os
 import shutil
+import tempfile
+from datetime import datetime, timedelta
 
-import json
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.bash_operator import BashOperator
@@ -34,7 +37,8 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-def gcloud_cmd(dag, task_id, conn_id, command):
+
+def gcloud_bash_operator(dag, task_id, conn_id, command):
     conn = GoogleCloudBaseHook(conn_id)
     keyfile = json.loads(
         conn.extras["extra__google_cloud_platform__keyfile_dict"].encode()
@@ -54,9 +58,12 @@ def gcloud_cmd(dag, task_id, conn_id, command):
     return BashOperator(
         task_id=task_id,
         bash_command="""
-        set -xe
+        set -e
+        echo "Running command: $(cat ${TMP_COMMAND})"
         gcloud auth activate-service-account --key-file ${GOOGLE_APPLICATION_CREDENTIALS}
         gcloud config set project ${PROJECT_ID}
+        set -x
+        gcloud config get-value project
         source ${TMP_COMMAND}
         """,
         env={
@@ -64,22 +71,41 @@ def gcloud_cmd(dag, task_id, conn_id, command):
             # https://github.com/GoogleCloudPlatform/gsutil/issues/236
             "CLOUDSDK_PYTHON": "python",
             "PROJECT_ID": project_id,
-            "TMP_COMMAND": tmp_command
+            # hack to avoid airflow confusing this with a jinja template: https://stackoverflow.com/a/42198617
+            "TMP_COMMAND": tmp_command + " ",
         },
         dag=dag,
     )
     shutil.rmtree(tmp_dir)
 
 
+def gce_container_subdag(
+    parent_dag_name,
+    child_dag_name,
+    conn_id,
+    container,
+    image=None,
+    env_vars={},
+    **kwargs
+):
+    pass
+
+
 with DAG("test_vm", default_args=default_args, schedule_interval="0 1 * * *") as dag:
-    dag >> gcloud_cmd(
+    dag >> gcloud_bash_operator(
         dag=dag,
-        task_id="test_gcs_writable",
+        task_id="verify_gcs_writable",
         conn_id="google_cloud_derived_datasets",
-        command=""""
+        command="""
             bucket="gs://airflow-test-vm-dag-test-bucket-$RANDOM"
             gsutil mb $bucket
             gsutil ls $bucket
             gsutil rm -r $bucket
-        """
+        """,
     )
+    # >> gce_container_subdag(
+    #     dag=dag,
+    #     task_id="verify_prio_processor_unit_test",
+    #     conn_id="google_cloud_derived_datasets",
+    #     image="mozilla/prio-processor:latest",
+    # )
