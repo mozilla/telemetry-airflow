@@ -12,7 +12,6 @@ from utils.dataproc import (
 )
 from utils.mozetl import mozetl_envvar
 from utils.tbv import tbv_envvar
-from utils.status import register_status
 from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
@@ -137,8 +136,6 @@ main_summary_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
-register_status(main_summary, "Main Summary", "A summary view of main pings.")
-
 addons = bigquery_etl_query(
     task_id="addons",
     destination_table="addons_v2",
@@ -228,8 +225,6 @@ clients_daily_export = SubDagOperator(
     task_id="clients_daily_export",
     executor=get_default_executor(),
     dag=dag)
-
-register_status(clients_daily, "Clients Daily", "A view of main pings with one row per client per day.")
 
 clients_first_seen = bigquery_etl_query(
     task_id="clients_first_seen",
