@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import load_to_bigquery
-from utils.status import register_status
 from utils.dataproc import moz_dataproc_pyspark_runner
 
 """
@@ -163,11 +162,6 @@ bq_load = GKEPodOperator(
     dag=dag,
 )
 
-register_status(
-    bq_load,
-    "Socorro Crash Reports Parquet",
-    "Convert processed crash reports into parquet for analysis",
-)
 
 s3_to_gcs >> crash_report_parquet
 crash_report_parquet >> remove_bq_table_partition >> bq_load

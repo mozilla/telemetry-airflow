@@ -9,7 +9,6 @@ from airflow.operators.subdag_operator import SubDagOperator
 
 
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
-from utils.status import register_status
 from utils.gcp import gke_command
 
 EXPORT_TO_AVRO = True
@@ -158,12 +157,6 @@ if EXPORT_TO_AVRO:
         google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
         dag=dag
     ).set_upstream(mobile_aggregate_view_dataproc)
-
-register_status(
-    mobile_aggregate_view_dataproc,
-    "Mobile Aggregates",
-    "Aggregates of metrics sent through the mobile-events pings.",
-)
 
 # copy over artifacts if we're running in dev
 if is_dev:
