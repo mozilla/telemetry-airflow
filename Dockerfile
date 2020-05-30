@@ -29,6 +29,8 @@ WORKDIR /tmp
 RUN pip install --upgrade pip
 RUN export SLUGIFY_USES_TEXT_UNIDECODE=yes && pip install --no-cache-dir -r requirements.txt
 
+RUN gcloud components upgrade --version 294.0.0 --quiet
+
 # Switch back to home directory
 WORKDIR /app
 
