@@ -20,6 +20,7 @@ import logging
 import os
 import shutil
 import tempfile
+import textwrap
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -41,63 +42,71 @@ default_args = {
 }
 
 
-def merge_dict(a, b):
-    x = a.copy()
-    for key, value in b.items():
-        if key in x:
-            logging.warning("{} is over written".format(key))
-        x[key] = value
-    return x
+class GCloudBashOperator(BashOperator):
+    def __init__(self, conn_id, *args, **kwargs):
+        super(GCloudBashOperator, self).__init__(*args, **kwargs)
+        self.conn = GoogleCloudBaseHook(conn_id)
 
+    def execute(self, context):
+        keyfile = json.loads(
+            self.conn.extras["extra__google_cloud_platform__keyfile_dict"].encode()
+        )
+        # project of the service credentials
+        project_id = keyfile["project_id"]
 
-def gcloud_bash_operator(dag, task_id, conn_id, command, env_vars={}, **kwargs):
-    conn = GoogleCloudBaseHook(conn_id)
-    keyfile = json.loads(
-        conn.extras["extra__google_cloud_platform__keyfile_dict"].encode()
-    )
-    # project of the service credentials
-    project_id = keyfile["project_id"]
+        tmp_dir = tempfile.mkdtemp(prefix="airflow-gcloud-cmd")
 
-    tmp_dir = tempfile.mkdtemp(prefix="airflow-gcloud-cmd")
-    tmp_credentials = os.path.join(tmp_dir, "keyfile.json")
-    tmp_command = os.path.join(tmp_dir, "command.sh")
+        # write credentials to a file
+        tmp_credentials = os.path.join(tmp_dir, "keyfile.json")
+        with open(tmp_credentials, "w") as fp:
+            json.dump(keyfile, fp)
 
-    with open(tmp_credentials, "w") as fp:
-        json.dump(keyfile, fp)
-    with open(tmp_command, "w") as fp:
-        fp.write(command)
+        # write the actual command to be run and source it as the last step of the
+        # operator's bash_command
+        tmp_command = os.path.join(tmp_dir, "command.sh")
+        with open(tmp_command, "w") as fp:
+            fp.write(self.bash_command)
 
-    return BashOperator(
-        task_id=task_id,
-        bash_command="""
-        set -e
-        echo "Running command: $(cat ${TMP_COMMAND})"
-        gcloud auth activate-service-account --key-file ${GOOGLE_APPLICATION_CREDENTIALS}
-        gcloud config set project ${PROJECT_ID}
-        set -x
-        gcloud config get-value project
-        source ${TMP_COMMAND}
-        """,
-        env=merge_dict(
-            env_vars,
+        self.bash_command = textwrap.dedent(
+            """
+            set -e
+            echo "Running command: $(cat ${TMP_COMMAND})"
+            gcloud auth activate-service-account --key-file ${GOOGLE_APPLICATION_CREDENTIALS}
+            gcloud config set project ${PROJECT_ID}
+            set -x
+            gcloud --version
+            gcloud config get-value project
+            source ${TMP_COMMAND}
+        """
+        )
+
+        self.env = self._merge_dict(
+            self.env or {},
             {
                 "GOOGLE_APPLICATION_CREDENTIALS": tmp_credentials,
                 # https://github.com/GoogleCloudPlatform/gsutil/issues/236
-                "CLOUDSDK_PYTHON": "python",
+                # "CLOUDSDK_PYTHON": "python",
                 "PROJECT_ID": project_id,
                 # hack to avoid airflow confusing this with a jinja template: https://stackoverflow.com/a/42198617
                 "TMP_COMMAND": tmp_command + " ",
             },
-        ),
-        dag=dag,
-        **kwargs
-    )
-    shutil.rmtree(tmp_dir)
+        )
+        try:
+            super(GCloudBashOperator, self).execute(context)
+        finally:
+            shutil.rmtree(tmp_dir)
+
+    def _merge_dict(self, a, b):
+        x = a.copy()
+        for key, value in b.items():
+            if key in x:
+                logging.warning("{} is over written".format(key))
+            x[key] = value
+        return x
 
 
 def gce_container_subdag(
-    parent_dag_name,
-    child_dag_name,
+    dag,
     default_args,
     conn_id,
     task_id,
@@ -120,12 +129,11 @@ def gce_container_subdag(
     args = default_args.copy()
     args["retries"] = 0
 
-    with DAG("{}.{}".format(parent_dag_name, child_dag_name), default_args=args) as dag:
-        start_op = gcloud_bash_operator(
-            dag=dag,
+    with DAG("{}.{}".format(dag.dag_id, task_id), default_args=args) as dag:
+        start_op = GCloudBashOperator(
             task_id="gcloud_compute_instances_create",
             conn_id=conn_id,
-            command="""
+            bash_command="""
                 # https://cloud.google.com/sdk/gcloud/reference/compute/instances/create#INSTANCE_NAMES
                 # https://cloud.google.com/container-optimized-os/docs/how-to/create-configure-instance#list-images
                 gcloud compute instances create ${CLUSTER_ID} \
@@ -133,7 +141,7 @@ def gce_container_subdag(
                     --image-project=cos-cloud \
                     --image-family=cos-stable
             """,
-            env_vars=dict(CLUSTER_ID=cluster_id, ZONE=zone),
+            env=dict(CLUSTER_ID=cluster_id, ZONE=zone),
         )
         # use the same trick as gcloud_bash_operator to copy over the command over
         tmp_dir = tempfile.mkdtemp(prefix="airflow-gce-container")
@@ -149,65 +157,62 @@ def gce_container_subdag(
                     image=image
                 )
             )
-        scp_op = gcloud_bash_operator(
-            dag=dag,
+        scp_op = GCloudBashOperator(
             task_id="gcloud_compute_scp",
             conn_id=conn_id,
-            command="""
+            bash_command="""
                 gcloud compute scp \
-                    $TMP_DOCKER_SH $CLUSTER_ID:/tmp/command.sh \
-                    --zone=$ZONE
+                    --zone=$ZONE \
+                    $TMP_DOCKER_SH $CLUSTER_ID:/tmp/command.sh
             """,
-            env_vars=dict(
-                CLUSTER_ID=cluster_id, ZONE=zone, TMP_DOCKER_SH=tmp_command + " "
-            ),
+            env=dict(CLUSTER_ID=cluster_id, ZONE=zone, TMP_DOCKER_SH=tmp_command + " "),
         )
-        container_op = gcloud_bash_operator(
-            dag=dag,
+        container_op = GCloudBashOperator(
             task_id=task_id,
             conn_id=conn_id,
-            command="""
+            bash_command="""
                 gcloud compute ssh ${CLUSTER_ID} \
                     --zone=${ZONE} \
                     --command="bash -x -c 'source /tmp/command.sh'"
             """,
-            env_vars=dict(CLUSTER_ID=cluster_id, ZONE=zone, IMAGE=image),
+            env=dict(CLUSTER_ID=cluster_id, ZONE=zone, IMAGE=image),
         )
 
-        delete_op = gcloud_bash_operator(
-            dag=dag,
+        delete_op = GCloudBashOperator(
             task_id="gcloud_compute_instances_delete",
             conn_id=conn_id,
-            command="""
+            bash_command="""
                 gcloud compute instances delete ${CLUSTER_ID} --zone=${ZONE}
             """,
-            env_vars=dict(CLUSTER_ID=cluster_id, ZONE=zone),
+            env=dict(CLUSTER_ID=cluster_id, ZONE=zone),
             trigger_rule="all_done",
         )
         dag >> start_op >> scp_op >> container_op >> delete_op
         return dag
 
 
+TEST_CONN_ID = "google_cloud_derived_datasets"
+
 with DAG("test_vm", default_args=default_args, schedule_interval="0 1 * * *") as dag:
-    dag >> gcloud_bash_operator(
-        dag=dag,
+    dag >> GCloudBashOperator(
         task_id="verify_gcs_writable",
-        conn_id="google_cloud_derived_datasets",
-        command="""
+        conn_id=TEST_CONN_ID,
+        bash_command="""
             bucket="gs://airflow-test-vm-dag-test-bucket-$RANDOM"
             gsutil mb $bucket
             gsutil ls $bucket
             gsutil rm -r $bucket
         """,
+        dag=dag,
     )
     dag >> SubDagOperator(
+        task_id="verify_prio_processor_unit_test",
         subdag=gce_container_subdag(
-            parent_dag_name=dag.dag_id,
-            child_dag_name="test_container_subdag",
+            dag=dag,
             default_args=default_args,
             task_id="verify_prio_processor_unit_test",
-            conn_id="google_cloud_derived_datasets",
+            conn_id=TEST_CONN_ID,
             image="mozilla/prio-processor:latest",
         ),
-        task_id="test_container_subdag",
+        dag=dag,
     )
