@@ -1,5 +1,7 @@
-FROM python:2.7-slim
+FROM python:3.7-slim
 MAINTAINER Jannis Leidel <jezdez@mozilla.com>
+
+# Due to AIRFLOW-6854, Python 3.7 is chosen as the base python version.
 
 # add a non-privileged user for installing and running the application
 RUN mkdir /app && \
