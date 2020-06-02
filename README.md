@@ -1,6 +1,7 @@
+# Telemetry-Airflow
+
 [![CircleCi](https://circleci.com/gh/mozilla/telemetry-airflow.svg?style=shield&circle-token=62f4c1be98e5c9f36bd667edb7545fa736eed3ae)](https://circleci.com/gh/mozilla/telemetry-airflow)
 
-# Telemetry-Airflow
 Airflow is a platform to programmatically author, schedule and monitor workflows.
 
 When workflows are defined as code, they become more maintainable, versionable,
@@ -10,26 +11,25 @@ Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks.
 The Airflow scheduler executes your tasks on an array of workers while following
 the specified dependencies. Rich command line utilities make performing complex
 surgeries on DAGs a snap. The rich user interface makes it easy to visualize
-pipelines running in production, monitor progress, and troubleshoot issues when
+pipelines running in production, monitor progress, and troubleshoot issues Øhen
 needed.
 
-### Prerequisites
+## Prerequisites
 
 This app is built and deployed with
 [docker](https://docs.docker.com/) and
 [docker-compose](https://docs.docker.com/compose/).
 
-### Dependencies
+### Updating Python dependencies
 
-Most Airflow jobs are thin wrappers that spin up an EMR cluster for running
-the job. Be aware that the configuration of the created EMR clusters depends
-on finding scripts in an S3 location configured by the `SPARK_BUCKET` variable.
-Those scripts are maintained in
-[emr-bootstrap-spark](https://github.com/mozilla/emr-bootstrap-spark/)
-and are deployed independently of this repository.
-Changes in behavior of Airflow jobs not explained by changes in the source of the
-Spark jobs or by changes in this repository
-could be due to changes in the bootstrap scripts.
+Add new Python dependencies into `requirements.in`. Run the following commands with the same Python
+version specified by the Dockerfile.
+
+```bash
+# As of time of writing, python3.7
+pip install pip-tools
+pip-compile
+```
 
 ### Build Container
 
@@ -42,6 +42,7 @@ make build
 ### Export Credentials
 
 For now, DAGs that use the Databricks operator won't parse until the following environment variables are set (see issue #501):
+
 ```
 AWS_SECRET_ACCESS_KEY
 AWS_ACCESS_KEY_ID
@@ -55,55 +56,13 @@ Airflow database migration is no longer a separate step for dev but is run by th
 ## Testing
 
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
+
 ```bash
-export DEV_USERNAME=...
-export AWS_SECRET_ACCESS_KEY=...
-export AWS_ACCESS_KEY_ID=...
 make run COMMAND="test example spark 20180101"
 ```
 
-The `DEV_USERNAME` is a short string used to identify your EMR instances.
-This should be set to something like your IRC or Slack handle.
-
-The container will run the desired task to completion (or failure).
-Note that if the container is stopped during the execution of a task,
-the task will be aborted. In the example's case, the Spark job will be
-terminated.
-
-The logs of the task can be inspected in real-time with:
 ```bash
 docker logs -f telemetryairflow_scheduler_1
-```
-
-You can see task logs and see cluster status on
-[the EMR console](https://us-west-2.console.aws.amazon.com/elasticmapreduce/home?region=us-west-2)
-
-By default, the results will end up in the `telemetry-test-bucket` in S3.
-If your desired task depends on other views, it will expect to be able to find those results
-in `telemetry-test-bucket` too. It's your responsibility to run the tasks in correct
-order of their dependencies.
-
-**CAVEAT**: When running the `make run` multiple times it can spin
-up multiple versions of the `web` container. It can also fail if you've never
-run `make up` to initialize the database. An alternative form of the above is to
-launch the containers and shell into the `web` container to run the `airflow
-test` command.
-
-In one terminal launch the docker containers:
-```bash
-make up
-```
-
-Note: initializing the web container will run the airflow initdb/upgradedb
-
-In another terminal shell into the `web` container, making sure to also supply
-the environment variables, then run the `airflow test` command:
-```bash
-export DEV_USERNAME=...
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-docker exec -ti -e DEV_USERNAME -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID telemetry-airflow_web_1 /bin/bash
-airflow test example spark 20180101
 ```
 
 ### Adding dummy credentials
@@ -125,6 +84,7 @@ click the docker icon in the menu bar, click on preferences and change the
 available memory to 4GB.
 
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
+
 ```bash
 make up
 ```
@@ -135,7 +95,6 @@ You can now connect to your local Airflow web console at
 All DAGs are paused by default for local instances and our staging instance of Airflow.
 In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On".
 You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
-
 
 #### Workaround for permission issues
 
@@ -168,24 +127,12 @@ Finally, run the testing command using docker-compose directly:
 docker-compose exec web airflow test example spark 20180101
 ```
 
-### Testing Dev Changes
-
-*Note: This only works for `telemetry-batch-view` jobs*
-
-A dev changes can be run by simply changing the `DEPLOY_TAG` environment variable
-to whichever upstream branch you've pushed your local changes to.
-
-Afterwards, you're going to need to:`make clean` and `make build` and `nohup make up &`
-
-From there, you can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the
-Dockerfile and run `make up` to get a local UI and run from there, or you can follow the
-testing instructions above and use `make run`.
-
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
 For now, follow the steps outlined here to create a service account: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
 
 Enable that service account in Airflow with the following:
+
 ```
 make build && make up
 ./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS
@@ -208,7 +155,8 @@ Set the project in the DAG entry to be configured based on development environme
 see the `ltv.py` job for an example of that.
 
 From there, run the following:
-```
+
+```bash
 make build && make up
 ./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS google_cloud_airflow_dataproc
 ```
@@ -248,7 +196,7 @@ variables:
 - `AIRFLOW_SMTP_HOST` -- The SMTP server to use to send emails e.g.
   `email-smtp.us-west-2.amazonaws.com`
 - `AIRFLOW_SMTP_USER` -- The SMTP user name
-- `AIRFLOW_SMTP_PASSWORD` --  The SMTP password
+- `AIRFLOW_SMTP_PASSWORD` -- The SMTP password
 - `AIRFLOW_SMTP_FROM` -- The email address to send emails from e.g.
   `telemetry-alerts@workflow.telemetry.mozilla.org`
 - `URL` -- The base URL of the website e.g.
@@ -270,7 +218,9 @@ Also, please set
 Both values should be set by using the cryptography module's fernet tool that
 we've wrapped in a docker-compose call:
 
-    make secret
+```bash
+make secret
+```
 
 Run this for each key config variable, and **don't use the same for both!**
 
