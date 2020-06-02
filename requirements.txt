@@ -85,6 +85,7 @@ hmsclient==0.1.1          # via apache-airflow
 httplib2==0.18.1          # via apache-airflow, google-api-python-client, google-auth-httplib2
 humanize==0.5.1           # via flower
 idna==2.9                 # via email-validator, requests
+importlib-metadata==1.6.0  # via argcomplete, jsonschema, kombu
 iso8601==0.1.12           # via apache-airflow
 itsdangerous==1.1.0       # via flask, flask-wtf
 jaydebeapi==1.2.1         # via apache-airflow
@@ -152,6 +153,7 @@ termcolor==1.1.0          # via apache-airflow
 text-unidecode==1.2       # via apache-airflow
 thrift==0.13.0            # via apache-airflow, hmsclient
 tornado==5.1.1            # via apache-airflow, flower
+typing-extensions==3.7.4.2  # via apache-airflow
 tzlocal==1.5.1            # via apache-airflow, pendulum
 unicodecsv==0.14.1        # via apache-airflow
 uritemplate==3.0.1        # via google-api-python-client
@@ -160,6 +162,7 @@ vine==1.3.0               # via amqp, celery
 websocket-client==0.57.0  # via -r requirements.in, kubernetes
 werkzeug==0.16.0          # via -r requirements.in, apache-airflow, flask, flask-caching, flask-jwt-extended
 wtforms==2.3.1            # via flask-admin, flask-wtf
+zipp==3.1.0               # via importlib-metadata
 zope.deprecation==4.4.0   # via apache-airflow
 zope.event==4.4           # via gevent
 zope.interface==5.1.0     # via gevent
