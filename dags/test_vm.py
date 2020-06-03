@@ -61,35 +61,36 @@ class GCloudBashOperator(BashOperator):
         with open(tmp_credentials, "w") as fp:
             json.dump(keyfile, fp)
 
-        # write the actual command to be run and source it as the last step of the
-        # operator's bash_command
-        tmp_command = os.path.join(tmp_dir, "command.sh")
-        with open(tmp_command, "w") as fp:
-            fp.write(self.bash_command)
-
-        self.bash_command = textwrap.dedent(
+        self.bash_command = (
+            textwrap.dedent(
+                """
+                set -e
+                echo "Running command: $(cat $TMP_COMMAND)"
+                gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
+                gcloud config set project $PROJECT_ID
+                gcloud info
+                set -x
+                gcloud config get-value project
             """
-            set -e
-            echo "Running command: $(cat ${TMP_COMMAND})"
-            gcloud auth activate-service-account --key-file ${GOOGLE_APPLICATION_CREDENTIALS}
-            gcloud config set project ${PROJECT_ID}
-            set -x
-            gcloud --version
-            gcloud config get-value project
-            source ${TMP_COMMAND}
-        """
+            ).strip()
+            + "\n"
+            + textwrap.dedent(self.bash_command)
         )
 
         self.env = self._merge_dict(
-            self.env or {},
-            {
-                "GOOGLE_APPLICATION_CREDENTIALS": tmp_credentials,
-                # https://github.com/GoogleCloudPlatform/gsutil/issues/236
-                # "CLOUDSDK_PYTHON": "python",
-                "PROJECT_ID": project_id,
-                # hack to avoid airflow confusing this with a jinja template: https://stackoverflow.com/a/42198617
-                "TMP_COMMAND": tmp_command + " ",
-            },
+            os.environ,
+            self._merge_dict(
+                self.env or {},
+                {
+                    "GOOGLE_APPLICATION_CREDENTIALS": tmp_credentials,
+                    "PROJECT_ID": project_id,
+                    # hack to avoid airflow confusing this with a jinja template
+                    # https://stackoverflow.com/a/42198617
+                    # set temporary config location instead of a shared one
+                    # https://stackoverflow.com/a/48343135
+                    "CLOUDSDK_CONFIG": tmp_dir + " ",
+                },
+            ),
         )
         try:
             super(GCloudBashOperator, self).execute(context)
@@ -114,7 +115,7 @@ def gce_container_subdag(
     env_vars={},
     arguments=[],
     zone="us-west1-b",
-    **kwargs
+    **kwargs,
 ):
     # Create a valid cluster id based on the instances reference. This value must
     # be passed as an environment variable so airflow can properly template variables.
@@ -194,6 +195,7 @@ def gce_container_subdag(
 TEST_CONN_ID = "google_cloud_derived_datasets"
 
 with DAG("test_vm", default_args=default_args, schedule_interval="0 1 * * *") as dag:
+    dag >> BashOperator(task_id="gcloud_info", bash_command="gcloud info", dag=dag)
     dag >> GCloudBashOperator(
         task_id="verify_gcs_writable",
         conn_id=TEST_CONN_ID,
