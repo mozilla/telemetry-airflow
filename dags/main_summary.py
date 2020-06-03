@@ -308,24 +308,6 @@ devtools_panel_usage = bigquery_etl_query(
     start_date=datetime(2019, 11, 25),
     dag=dag)
 
-amo_stats_dau = bigquery_etl_query(
-    task_id="amo_stats_dau",
-    destination_table="amo_stats_dau_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
-amo_stats_installs = bigquery_etl_query(
-    task_id="amo_stats_installs",
-    destination_table="amo_stats_installs_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
 search_clients_daily_bigquery = bigquery_etl_query(
     task_id="search_clients_daily_bigquery",
     destination_table="search_clients_daily_v8",
@@ -381,8 +363,6 @@ smoot_usage_desktop_v2.set_upstream(clients_last_seen)
 smoot_usage_desktop_compressed_v2.set_upstream(smoot_usage_desktop_v2)
 simpleprophet_forecasts_desktop.set_upstream(exact_mau_by_dimensions)
 devtools_panel_usage.set_upstream(clients_daily)
-amo_stats_dau.set_upstream(clients_daily)
-amo_stats_installs.set_upstream(clients_daily)
 
 search_clients_daily_bigquery.set_upstream(main_summary)
 search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
