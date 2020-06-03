@@ -33,6 +33,18 @@ jobs:
       - run: find . -name *.pyc -delete
       - run: tox -e py37
 
+  verify-requirements:
+    docker:
+      - image: python:3.7
+    steps:
+      - checkout
+      - run:
+          name: Verify that requirements.txt contains the right dependencies for this python version
+          command: |
+            pip install pip-tools
+            pip-compile --quiet requirements.in
+            git diff --exit-code requirements.txt
+
   test-environment:
     machine:
       image: ubuntu-1604:201903-01
