@@ -28,7 +28,7 @@ version specified by the Dockerfile.
 ```bash
 # As of time of writing, python3.7
 pip install pip-tools
-pip-compile requirements.in
+pip-compile
 ```
 
 ### Build Container

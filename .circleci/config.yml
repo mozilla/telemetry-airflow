@@ -42,7 +42,7 @@ jobs:
           name: Verify that requirements.txt contains the right dependencies for this python version
           command: |
             pip install pip-tools
-            pip-compile --quiet requirements.in
+            pip-compile --quiet
             git diff --exit-code requirements.txt
 
   test-environment:
