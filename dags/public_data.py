@@ -14,7 +14,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("public_data", default_args=default_args, schedule_interval="0 6 * * *") as dag:
+with DAG("public_data", default_args=default_args, schedule_interval="0 1 * * *") as dag:
     docker_image = "mozilla/bigquery-etl:latest"
 
     public_data_gcs_metadata = gke_command(
@@ -24,10 +24,10 @@ with DAG("public_data", default_args=default_args, schedule_interval="0 6 * * *"
         dag=dag
     )
 
-    wait_for_public_analysis = ExternalTaskSensor(
-        task_id="wait_for_public_analysis",
-        external_dag_id="public_analysis",
-        external_task_id="deviations",
+    wait_for_deviations = ExternalTaskSensor(
+        task_id="wait_for_deviations",
+        external_dag_id="bqetl_deviations",
+        external_task_id="telemetry_derived__deviations__v1",
         dag=dag,
     )
 
@@ -35,13 +35,13 @@ with DAG("public_data", default_args=default_args, schedule_interval="0 6 * * *"
         task_id="wait_for_ssl_ratios",
         external_dag_id="ssl_ratios",
         external_task_id="ssl_ratios",
-        execution_delta=timedelta(hours=6),
+        execution_delta=timedelta(hours=1),
         dag=dag,
     )
 
     public_data_gcs_metadata.set_upstream(
         [
-            wait_for_public_analysis,
+            wait_for_deviations,
             wait_for_ssl_ratios,
         ]
     )
