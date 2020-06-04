@@ -19,7 +19,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("anomdtct", default_args=default_args, schedule_interval="0 1 * * *") as dag:
+with DAG("public_analysis", default_args=default_args, schedule_interval="0 1 * * *") as dag:
     # Built from https://github.com/mozilla/forecasting/tree/master/anomdtct
     anomdtct_image = "gcr.io/moz-fx-data-forecasting/anomdtct:latest"
 
@@ -46,3 +46,14 @@ with DAG("anomdtct", default_args=default_args, schedule_interval="0 1 * * *") a
             wait_for_clients_first_seen,
         ]
     )
+
+    deviations = bigquery_etl_query(
+        task_id="deviations",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="deviations_v1",
+        dataset_id="telemetry_derived",
+        arguments=("--replace",),
+        dag=dag,
+    )
+
+    deviations.set_upstream(anomdtct)
