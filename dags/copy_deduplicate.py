@@ -243,73 +243,10 @@ with models.DAG(
         depends_on_past=True,
         **baseline_etl_kwargs
     )
-    
-
-    # Aggregated nondesktop tables and their dependency chains.
-
-    firefox_nondesktop_exact_mau28 = bigquery_etl_query(
-        task_id='firefox_nondesktop_exact_mau28',
-        destination_table='firefox_nondesktop_exact_mau28_raw_v1',
-        dataset_id='telemetry',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    smoot_usage_nondesktop_v2 = bigquery_etl_query(
-        task_id='smoot_usage_nondesktop_v2',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='smoot_usage_nondesktop_v2',
-        dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    smoot_usage_nondesktop_compressed_v2 = bigquery_etl_query(
-        task_id='smoot_usage_nondesktop_compressed_v2',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='smoot_usage_nondesktop_compressed_v2',
-        dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    smoot_usage_nondesktop_v2 >> smoot_usage_nondesktop_compressed_v2
-
-    firefox_nondesktop_exact_mau28_by_client_count_dimensions = bigquery_etl_query(
-        task_id='firefox_nondesktop_exact_mau28_by_client_count_dimensions',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='firefox_nondesktop_exact_mau28_by_client_count_dimensions_v1',
-        dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    firefox_nondesktop_day_2_7_activation = bigquery_etl_query(
-        task_id='firefox_nondesktop_day_2_7_activation',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='firefox_nondesktop_day_2_7_activation_v1',
-        dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'gkaberere@mozilla.com'],
-    )
-
-    nondesktop_aggregate_tasks = [
-        firefox_nondesktop_exact_mau28,
-        smoot_usage_nondesktop_v2,
-        firefox_nondesktop_exact_mau28_by_client_count_dimensions,
-        firefox_nondesktop_day_2_7_activation,
-    ]
-
-    wait_for_core_clients_last_seen = ExternalTaskSensor(
-        task_id="wait_for_core_clients_last_seen",
-        external_dag_id="bqetl_core",
-        external_task_id="telemetry_derived__core_clients_last_seen__v1",
-        check_existence=True,
-        dag=dag,
-    )
-
-    (wait_for_core_clients_last_seen >>
-     nondesktop_aggregate_tasks)
 
     (copy_deduplicate_all >>
      baseline_clients_daily >>
-     baseline_clients_last_seen >>
-     nondesktop_aggregate_tasks)
+     baseline_clients_last_seen)
 
 
     # Nondesktop forecasts.
