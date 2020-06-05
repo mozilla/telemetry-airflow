@@ -213,24 +213,6 @@ with models.DAG(
      messaging_system_snippets_users_last_seen >>
      messaging_system_snippets_exact_mau28_by_dimensions)
 
-    # Daily and last seen views on top of core pings.
-
-    core_clients_daily = bigquery_etl_query(
-        task_id='core_clients_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='core_clients_daily_v1',
-        dataset_id='telemetry_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
-
-    core_clients_last_seen = bigquery_etl_query(
-        task_id='core_clients_last_seen',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='core_clients_last_seen_v1',
-        dataset_id='telemetry_derived',
-        depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com'],
-    )
 
     # Daily and last seen views on top of every Glean application.
 
@@ -313,9 +295,15 @@ with models.DAG(
         firefox_nondesktop_day_2_7_activation,
     ]
 
-    (copy_deduplicate_all >>
-     core_clients_daily >>
-     core_clients_last_seen >>
+    wait_for_core_clients_last_seen = ExternalTaskSensor(
+        task_id="wait_for_core_clients_last_seen",
+        external_dag_id="bqetl_core",
+        external_task_id="telemetry_derived__core_clients_last_seen__v1",
+        check_existence=True,
+        dag=dag,
+    )
+
+    (wait_for_core_clients_last_seen >>
      nondesktop_aggregate_tasks)
 
     (copy_deduplicate_all >>
