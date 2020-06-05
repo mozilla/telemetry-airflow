@@ -261,43 +261,7 @@ with models.DAG(
         depends_on_past=True,
         **baseline_etl_kwargs
     )
-
-
-    # Daily and last seen views on top of VR browser pings.
-
-    vrbrowser_baseline_daily = bigquery_etl_query(
-        task_id='vrbrowser_baseline_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='baseline_daily_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
-    vrbrowser_metrics_daily = bigquery_etl_query(
-        task_id='vrbrowser_metrics_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='metrics_daily_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
-    vrbrowser_clients_daily = bigquery_etl_query(
-        task_id='vrbrowser_clients_daily',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='clients_daily_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
-    vrbrowser_clients_last_seen = bigquery_etl_query(
-        task_id='vrbrowser_clients_last_seen',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='clients_last_seen_v1',
-        dataset_id='org_mozilla_vrbrowser_derived',
-        depends_on_past=True,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com', 'ascholtz@mozilla.com'],
-    )
-
+    
 
     # Aggregated nondesktop tables and their dependency chains.
 
@@ -358,11 +322,6 @@ with models.DAG(
      baseline_clients_daily >>
      baseline_clients_last_seen >>
      nondesktop_aggregate_tasks)
-
-    (copy_deduplicate_all >>
-     [vrbrowser_baseline_daily, vrbrowser_metrics_daily] >>
-     vrbrowser_clients_daily >>
-     vrbrowser_clients_last_seen)
 
 
     # Nondesktop forecasts.
