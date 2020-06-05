@@ -261,7 +261,15 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     )
 
-    firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
+    wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskSensor(
+        task_id="wait_for_firefox_nondesktop_exact_mau28",
+        external_dag_id="bqetl_nondesktop",
+        external_task_id="telemetry__firefox_nondesktop_exact_mau28_raw__v1",
+        check_existence=True,
+        dag=dag,
+    )
+
+    wait_for_firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
 
     # Mobile search queries and dependency chain.
 
