@@ -49,10 +49,24 @@ with DAG("test_vm", default_args=default_args, schedule_interval="0 1 * * *") as
         """,
         dag=dag,
     )
+
+    # Run a non-trivial application inside of a docker application. The prio-processor container
+    # is used else where, and defaults to a pytest entrypoint.
     dag >> GceContainerSubDagOperator(
-        task_id="verify_prio_processor_unit_test",
+        task_id="verify_prio_processor_unit_test_default_entry",
         default_args=default_args,
         conn_id=TEST_CONN_ID,
         image="mozilla/prio-processor:latest",
+        dag=dag,
+    )
+
+    # Add some variables and print them out
+    dag >> GceContainerSubDagOperator(
+        task_id="verify_environment_variables",
+        default_args=default_args,
+        conn_id=TEST_CONN_ID,
+        image="ubuntu:latest",
+        env_vars={"TEST_VAR_{}".format(v): str(v ** 3) for v in range(10)},
+        arguments=["printenv"],
         dag=dag,
     )

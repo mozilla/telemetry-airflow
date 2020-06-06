@@ -7,6 +7,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 
 from operators.gcloud_bash_operator import GCloudBashOperator
 
+
 class GceContainerSubDagOperator(SubDagOperator):
     def __init__(self, task_id, dag=None, default_args=None, **kwargs):
         super(GceContainerSubDagOperator, self).__init__(
@@ -19,7 +20,7 @@ class GceContainerSubDagOperator(SubDagOperator):
 
     @property
     def task_type(self):
-        return 'SubDagOperator'
+        return "SubDagOperator"
 
     @staticmethod
     def gce_container_subdag(
@@ -29,6 +30,7 @@ class GceContainerSubDagOperator(SubDagOperator):
         task_id,
         image=None,
         env_vars={},
+        # TODO: cmds: list[str] override entrypoint
         arguments=[],
         zone="us-west1-b",
         **kwargs
@@ -80,6 +82,7 @@ class GceContainerSubDagOperator(SubDagOperator):
                 task_id="gcloud_compute_scp",
                 conn_id=conn_id,
                 bash_command="""
+                    cat $TMP_DOCKER_SH
                     gcloud compute scp \
                         --zone=$ZONE \
                         $TMP_DOCKER_SH $CLUSTER_ID:/tmp/command.sh
@@ -110,4 +113,3 @@ class GceContainerSubDagOperator(SubDagOperator):
             )
             dag >> start_op >> scp_op >> container_op >> delete_op
             return dag
-
