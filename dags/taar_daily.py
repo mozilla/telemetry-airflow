@@ -23,7 +23,6 @@ taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
 taar_similarity_cluster_name = "dataproc-taar-similarity"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
-taar_dynamo_cluster_name = "dataproc-taar-dynamo"
 
 default_args = {
     "owner": "vng@mozilla.com",
@@ -98,33 +97,6 @@ wait_for_main_summary_export = ExternalTaskSensor(
     external_task_id="main_summary_export",
     dag=dag)
 
-taar_dynamo_job = SubDagOperator(
-    task_id="taar_dynamo_job",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="taar_dynamo_job",
-        default_args=default_args,
-        master_machine_type='n1-standard-32',
-        worker_machine_type='n1-standard-32',
-        cluster_name=taar_dynamo_cluster_name,
-        job_name="TAAR_Dynamo",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_dynamo.py",
-        num_workers=12,
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--aws_access_key_id",
-            taar_aws_access_key,
-            "--aws_secret_access_key",
-            taar_aws_secret_key,
-        ],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-        master_disk_type='pd-ssd',
-        worker_disk_type='pd-ssd',
-    ),
-    dag=dag,
-)
 
 taar_locale = SubDagOperator(
     task_id="taar_locale",
@@ -247,7 +219,6 @@ taar_lite = SubDagOperator(
 amodump >> amowhitelist
 amodump >> editorial_whitelist
 
-wait_for_main_summary_export >> taar_dynamo_job
 wait_for_clients_daily_export >> taar_similarity
 wait_for_clients_daily_export >> taar_locale
 wait_for_clients_daily_export >> taar_collaborative_recommender
