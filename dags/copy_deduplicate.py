@@ -247,26 +247,3 @@ with models.DAG(
     (copy_deduplicate_all >>
      baseline_clients_daily >>
      baseline_clients_last_seen)
-
-
-    # Nondesktop forecasts.
-
-    simpleprophet_forecasts_mobile = simpleprophet_forecast(
-        task_id="simpleprophet_forecasts_mobile",
-        datasource="mobile",
-        project_id='moz-fx-data-shared-prod',
-        dataset_id='telemetry_derived',
-        table_id='simpleprophet_forecasts_mobile_v1',
-        owner="jklukas@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    )
-
-    wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskSensor(
-        task_id="wait_for_firefox_nondesktop_exact_mau28",
-        external_dag_id="bqetl_nondesktop",
-        external_task_id="telemetry__firefox_nondesktop_exact_mau28_raw__v1",
-        check_existence=True,
-        dag=dag,
-    )
-
-    wait_for_firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
