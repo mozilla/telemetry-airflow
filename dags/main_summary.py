@@ -270,24 +270,6 @@ exact_mau_by_client_count_dimensions = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
-smoot_usage_desktop_v2 = bigquery_etl_query(
-    task_id='smoot_usage_desktop_v2',
-    project_id='moz-fx-data-shared-prod',
-    destination_table='smoot_usage_desktop_v2',
-    dataset_id='telemetry_derived',
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
-smoot_usage_desktop_compressed_v2 = bigquery_etl_query(
-    task_id='smoot_usage_desktop_compressed_v2',
-    project_id='moz-fx-data-shared-prod',
-    destination_table='smoot_usage_desktop_compressed_v2',
-    dataset_id='telemetry_derived',
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
 simpleprophet_forecasts_desktop = simpleprophet_forecast(
     task_id="simpleprophet_forecasts_desktop",
     datasource="desktop",
@@ -359,8 +341,6 @@ clients_first_seen.set_upstream(clients_daily)
 clients_last_seen.set_upstream(clients_daily)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
-smoot_usage_desktop_v2.set_upstream(clients_last_seen)
-smoot_usage_desktop_compressed_v2.set_upstream(smoot_usage_desktop_v2)
 simpleprophet_forecasts_desktop.set_upstream(exact_mau_by_dimensions)
 devtools_panel_usage.set_upstream(clients_daily)
 
