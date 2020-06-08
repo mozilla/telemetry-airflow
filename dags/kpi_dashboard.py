@@ -2,6 +2,7 @@ import datetime
 
 from airflow import models
 from utils.gcp import bigquery_etl_query
+from airflow.operators.sensors import ExternalTaskSensor
 
 default_args = {
     'owner': 'jklukas@mozilla.com',
@@ -29,19 +30,3 @@ with models.DAG(
         date_partition_parameter=None,
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
     )
-
-    smoot_usage_new_profiles_v2 = bigquery_etl_query(
-        task_id='smoot_usage_new_profiles_v2',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='smoot_usage_new_profiles_v2',
-        dataset_id='telemetry_derived',
-    )
-
-    smoot_usage_new_profiles_compressed_v2 = bigquery_etl_query(
-        task_id='smoot_usage_new_profiles_compressed_v2',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='smoot_usage_new_profiles_compressed_v2',
-        dataset_id='telemetry_derived',
-    )
-
-    smoot_usage_new_profiles_v2 >> smoot_usage_new_profiles_compressed_v2
