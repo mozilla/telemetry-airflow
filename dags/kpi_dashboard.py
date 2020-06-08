@@ -1,8 +1,10 @@
 import datetime
 
 from airflow import models
+from datetime import timedelta
 from utils.gcp import bigquery_etl_query
 from airflow.operators.sensors import ExternalTaskSensor
+from utils.forecasting import simpleprophet_forecast
 
 default_args = {
     'owner': 'jklukas@mozilla.com',
@@ -30,3 +32,24 @@ with models.DAG(
         date_partition_parameter=None,
         email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
     )
+
+    simpleprophet_forecasts_mobile = simpleprophet_forecast(
+        task_id="simpleprophet_forecasts_mobile",
+        datasource="mobile",
+        project_id='moz-fx-data-shared-prod',
+        dataset_id='telemetry_derived',
+        table_id='simpleprophet_forecasts_mobile_v1',
+        owner="jklukas@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    )
+
+    wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskSensor(
+        task_id="wait_for_firefox_nondesktop_exact_mau28",
+        external_dag_id="bqetl_nondesktop",
+        external_task_id="telemetry__firefox_nondesktop_exact_mau28_raw__v1",
+        check_existence=True,
+        execution_delta=timedelta(hours=14, minutes=45),
+        dag=dag,
+    )
+
+    wait_for_firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
