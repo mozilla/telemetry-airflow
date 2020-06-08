@@ -270,25 +270,3 @@ with models.DAG(
     )
 
     wait_for_firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
-
-    # Mobile search queries and dependency chain.
-
-    mobile_search_clients_daily = bigquery_etl_query(
-        task_id='mobile_search_clients_daily',
-        project_id='moz-fx-data-shared-prod',
-        dataset_id="search_derived",
-        destination_table='mobile_search_clients_daily_v1',
-        email=['telemetry-alerts@mozilla.com', 'bewu@mozilla.com'],
-    )
-
-    mobile_search_aggregates = bigquery_etl_query(
-        task_id='mobile_search_aggregates',
-        project_id='moz-fx-data-shared-prod',
-        dataset_id="search_derived",
-        destination_table='mobile_search_aggregates_v1',
-        email=['telemetry-alerts@mozilla.com', 'bewu@mozilla.com'],
-    )
-
-    (copy_deduplicate_all >>
-     mobile_search_clients_daily >>
-     mobile_search_aggregates)
