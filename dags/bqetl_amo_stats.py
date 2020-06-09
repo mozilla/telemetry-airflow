@@ -1,4 +1,4 @@
-# Generated via query_scheduling/generate_airflow_dags
+# Generated via https://github.com/mozilla/bigquery-etl/blob/master/bigquery_etl/query_scheduling/generate_airflow_dags.py
 
 from airflow import DAG
 from airflow.operators.sensors import ExternalTaskSensor
@@ -76,6 +76,8 @@ with DAG(
         task_id="wait_for_main_summary_clients_daily",
         external_dag_id="main_summary",
         external_task_id="clients_daily",
+        check_existence=True,
+        mode="reschedule",
         dag=dag,
     )
 

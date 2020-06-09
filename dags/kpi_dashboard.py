@@ -46,7 +46,7 @@ with models.DAG(
     wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskSensor(
         task_id="wait_for_firefox_nondesktop_exact_mau28",
         external_dag_id="bqetl_nondesktop",
-        external_task_id="telemetry__firefox_nondesktop_exact_mau28_raw__v1",
+        external_task_id="telemetry_derived__firefox_nondesktop_exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
         dag=dag,
