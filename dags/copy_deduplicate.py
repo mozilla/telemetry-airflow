@@ -3,7 +3,6 @@ import datetime
 from airflow import models
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
-from utils.forecasting import simpleprophet_forecast
 from utils.gcp import (bigquery_etl_copy_deduplicate,
                        bigquery_etl_query,
                        gke_command,
