@@ -270,16 +270,6 @@ exact_mau_by_client_count_dimensions = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     dag=dag)
 
-simpleprophet_forecasts_desktop = simpleprophet_forecast(
-    task_id="simpleprophet_forecasts_desktop",
-    datasource="desktop",
-    project_id='moz-fx-data-shared-prod',
-    dataset_id='telemetry_derived',
-    table_id='simpleprophet_forecasts_desktop_v1',
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
 devtools_panel_usage = bigquery_etl_query(
     task_id="devtools_panel_usage",
     destination_table="devtools_panel_usage_v1",
@@ -341,7 +331,6 @@ clients_first_seen.set_upstream(clients_daily)
 clients_last_seen.set_upstream(clients_daily)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
-simpleprophet_forecasts_desktop.set_upstream(exact_mau_by_dimensions)
 devtools_panel_usage.set_upstream(clients_daily)
 
 search_clients_daily_bigquery.set_upstream(main_summary)

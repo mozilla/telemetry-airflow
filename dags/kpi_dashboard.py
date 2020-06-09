@@ -49,7 +49,30 @@ with models.DAG(
         external_task_id="telemetry__firefox_nondesktop_exact_mau28_raw__v1",
         check_existence=True,
         execution_delta=timedelta(hours=14, minutes=45),
+        mode="reschedule",
         dag=dag,
     )
 
     wait_for_firefox_nondesktop_exact_mau28 >> simpleprophet_forecasts_mobile
+
+    simpleprophet_forecasts_desktop = simpleprophet_forecast(
+        task_id="simpleprophet_forecasts_desktop",
+        datasource="desktop",
+        project_id='moz-fx-data-shared-prod',
+        dataset_id='telemetry_derived',
+        table_id='simpleprophet_forecasts_desktop_v1',
+        owner="jklukas@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+        dag=dag)
+
+    wait_for_exact_mau_by_dimensions = ExternalTaskSensor(
+        task_id="wait_for_exact_mau_by_dimensions",
+        external_dag_id="main_summary",
+        external_task_id="exact_mau_by_dimensions",
+        check_existence=True,
+        execution_delta=timedelta(hours=14, minutes=45),
+        mode="reschedule",
+        dag=dag,
+    )
+
+    simpleprophet_forecasts_desktop.set_upstream(wait_for_exact_mau_by_dimensions)
