@@ -19,7 +19,6 @@ from utils.gcp import (
     load_to_bigquery,
     gke_command,
 )
-from utils.forecasting import simpleprophet_forecast
 
 
 default_args = {
