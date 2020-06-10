@@ -30,8 +30,8 @@ with DAG('incline_dashboard',
 
     wait_for_core_clients_last_seen = ExternalTaskSensor(
         task_id="wait_for_core_clients_last_seen",
-        external_dag_id="copy_deduplicate",
-        external_task_id="core_clients_last_seen",
+        external_dag_id="bqetl_core",
+        external_task_id="telemetry_derived__core_clients_last_seen__v1",
     )
 
     project = "moz-fx-data-shared-prod"
