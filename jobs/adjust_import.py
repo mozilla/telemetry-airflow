@@ -69,7 +69,6 @@ def main(
     (spark.read
         .format("bigquery").option("table", f"{project}.tmp.{tmp_table_name}").load()
         .repartition(1000)
-        #.csv(input_table)
         .where(~isnull("gps_adid"))
         .withColumn("identifier",
             hash_func(
