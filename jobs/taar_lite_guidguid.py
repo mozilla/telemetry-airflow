@@ -104,7 +104,7 @@ def get_initial_sample(spark, thedate):
     """
     # Could scale this up to grab more than what is in
     # longitudinal and see how long it takes to run.
-    s3_url = "s3a://telemetry-parquet/clients_daily/v6/submission_date_s3={}".format(
+    s3_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
         thedate
     )
     logging.info("Loading data from : {}".format(s3_url))
