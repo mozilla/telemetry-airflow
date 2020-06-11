@@ -105,18 +105,6 @@ with models.DAG(
      experiment_enrollment_aggregates_live_generate_query >>
      experiment_enrollment_aggregates_live_run_query)
 
-    # Derived tables for activity-stream.
-
-    impression_stats_flat = bigquery_etl_query(
-        task_id='impression_stats_flat',
-        project_id='moz-fx-data-shared-prod',
-        destination_table='impression_stats_flat_v1',
-        dataset_id='activity_stream_bi',
-        email=['jklukas@mozilla.com'],
-    )
-
-    copy_deduplicate_all >> impression_stats_flat
-
     # Daily and last seen views on top of every Glean application.
 
     gcp_conn_id = "google_cloud_derived_datasets"
