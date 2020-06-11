@@ -95,3 +95,9 @@ with models.DAG(
     )
 
     simpleprophet_forecasts_fxa.set_upstream(wait_for_firefox_accounts_exact_mau28_raw)
+
+    kpi_dashboard.set_upstream([
+        simpleprophet_forecasts_desktop,
+        simpleprophet_forecasts_mobile,
+        simpleprophet_forecasts_fxa,
+    ])
