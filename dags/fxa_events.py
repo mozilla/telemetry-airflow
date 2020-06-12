@@ -48,14 +48,14 @@ with models.DAG(
     )
 
     fxa_log_auth_events = bigquery_etl_query(
-        task_id='fxa_auth_events',
+        task_id='fxa_log_auth_events',
         destination_table='fxa_log_auth_events_v1',
         dataset_id='firefox_accounts_derived',
         project_id='moz-fx-data-shared-prod',
     )
 
     fxa_log_content_events = bigquery_etl_query(
-        task_id='fxa_content_events',
+        task_id='fxa_log_content_events',
         destination_table='fxa_log_content_events_v1',
         dataset_id='firefox_accounts_derived',
         project_id='moz-fx-data-shared-prod',
