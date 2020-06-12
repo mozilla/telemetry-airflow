@@ -279,34 +279,6 @@ devtools_panel_usage = bigquery_etl_query(
     start_date=datetime(2019, 11, 25),
     dag=dag)
 
-search_clients_daily_bigquery = bigquery_etl_query(
-    task_id="search_clients_daily_bigquery",
-    destination_table="search_clients_daily_v8",
-    dataset_id="search_derived",
-    project_id="moz-fx-data-shared-prod",
-    owner="bewu@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
-    dag=dag)
-
-search_aggregates_bigquery = bigquery_etl_query(
-    task_id="search_aggregates_bigquery",
-    destination_table="search_aggregates_v8",
-    dataset_id="search_derived",
-    project_id="moz-fx-data-shared-prod",
-    owner="bewu@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "bewu@mozilla.com"],
-    dag=dag)
-
-search_clients_last_seen = bigquery_etl_query(
-    task_id="search_clients_last_seen",
-    destination_table="search_clients_last_seen_v1",
-    dataset_id="search_derived",
-    project_id="moz-fx-data-shared-prod",
-    depends_on_past=True,
-    owner="frank@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"],
-    dag=dag)
-
 experiments_daily_active_clients = bigquery_etl_query(
     task_id="experiments_daily_active_clients",
     destination_table="experiments_daily_active_clients_v1",
@@ -331,10 +303,6 @@ clients_last_seen.set_upstream(clients_daily)
 exact_mau_by_dimensions.set_upstream(clients_last_seen)
 exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
 devtools_panel_usage.set_upstream(clients_daily)
-
-search_clients_daily_bigquery.set_upstream(main_summary)
-search_aggregates_bigquery.set_upstream(search_clients_daily_bigquery)
-search_clients_last_seen.set_upstream(search_clients_daily_bigquery)
 
 bq_main_events.set_upstream(copy_deduplicate_main_ping)
 
