@@ -135,36 +135,6 @@ main_summary_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
-addons = bigquery_etl_query(
-    task_id="addons",
-    destination_table="addons_v2",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    dag=dag)
-
-addon_aggregates = bigquery_etl_query(
-    task_id="addon_aggregates",
-    destination_table="addon_aggregates_v2",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="bmiroglio@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
-    dag=dag)
-
-addon_names = bigquery_etl_query(
-    task_id="addon_names",
-    destination_table="addon_names_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="bmiroglio@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "bmiroglio@mozilla.com"],
-    # This is an unpartitioned table that we recreate each day based on the
-    # previous day's addon data in main pings, thus the odd combination of
-    # parameters below.
-    date_partition_parameter=None,
-    parameters=["submission_date:DATE:{{ds}}"],
-    dag=dag)
-
 clients_daily = bigquery_etl_query(
     task_id="clients_daily",
     destination_table="clients_daily_v6",
@@ -293,10 +263,6 @@ main_summary.set_upstream(copy_deduplicate_main_ping)
 main_summary_export.set_upstream(main_summary)
 clients_daily.set_upstream(main_summary)
 clients_daily_export.set_upstream(clients_daily)
-
-addons.set_upstream(copy_deduplicate_main_ping)
-addon_aggregates.set_upstream(copy_deduplicate_main_ping)
-addon_names.set_upstream(copy_deduplicate_main_ping)
 
 clients_first_seen.set_upstream(clients_daily)
 clients_last_seen.set_upstream(clients_daily)
