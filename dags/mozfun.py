@@ -19,6 +19,5 @@ with DAG("mozfun", default_args=default_args, schedule_interval="0 1 * * *") as 
     publish_public_udfs = gke_command(
         task_id="publish_public_udfs",
         command=["script/publish_public_udfs"],
-        docker_image=docker_image,
-        dag=dag
+        docker_image=docker_image
     )
