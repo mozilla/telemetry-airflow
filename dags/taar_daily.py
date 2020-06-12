@@ -127,7 +127,6 @@ taar_locale = SubDagOperator(
 )
 
 taar_similarity_args = default_args.copy()
-taar_similarity_args["email"] = ["vng@mozilla.com", "mlopatka@mozilla.com", "akomar@mozilla.com"]
 taar_similarity = SubDagOperator(
     task_id="taar_similarity",
     subdag=moz_dataproc_pyspark_runner(
@@ -137,18 +136,28 @@ taar_similarity = SubDagOperator(
         cluster_name=taar_similarity_cluster_name,
         job_name="TAAR_similarity",
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
-        num_workers=4,
-        worker_machine_type="n1-highmem-96",
+        init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
+        additional_metadata={'PIP_PACKAGES': "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1 boto3==1.9.253"},
+        additional_properties={"spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
+                               "spark:spark.jars":"gs://spark-lib/bigquery/spark-bigquery-latest.jar"},
+        num_workers=8,
         master_machine_type='n1-standard-8',
+        worker_machine_type="n1-highmem-32",
         py_args=[
-            "--date", "{{ ds_nodash }}",
-            "--bucket", "telemetry-private-analysis-2",
+            "--date", "{{ ds }}",
+            "--bucket", "telemetry-parquet",
             "--prefix", "taar/similarity/",
             "--aws_access_key_id", taar_aws_access_key,
             "--aws_secret_access_key", taar_aws_secret_key,
         ],
         aws_conn_id=taar_aws_conn_id,
         gcp_conn_id=taar_gcpdataproc_conn_id,
+        master_disk_type="pd-ssd",
+        worker_disk_type="pd-ssd",
+        master_disk_size=1024,
+        worker_disk_size=1024,
+        master_num_local_ssds=2,
+        worker_num_local_ssds=2,
     ),
     dag=dag,
 )
