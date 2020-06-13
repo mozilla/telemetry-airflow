@@ -44,8 +44,8 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
 
     wait_for_search_clients_daily = ExternalTaskSensor(
         task_id="wait_for_search_clients_daily",
-        external_dag_id="main_summary",
-        external_task_id="search_clients_daily_bigquery",
+        external_dag_id="bqetl_search",
+        external_task_id="search_derived__search_clients_daily__v8",
         dag=dag,
     )
 
