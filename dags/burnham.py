@@ -68,7 +68,9 @@ with models.DAG(
 
     # TODO: Update SQL for Sensor
     # Wait for 10 pings with this test run ID in live tables
-    wait_for_data = new_burnham_sensor(task_id="wait_for_data", sql="TODO")
+    wait_for_data = new_burnham_sensor(
+        task_id="wait_for_data", sql="TODO", timeout=60 * 60 * 4
+    )
 
     # TODO: Run another GKEPodOperator to verify the data
     # Query for space_travel metrics and one client error
