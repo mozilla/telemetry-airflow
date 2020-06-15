@@ -21,6 +21,7 @@ docker_image = "mozilla/bigquery-etl:latest"
 base_command = [
     "script/shredder_delete",
     "--state-table=moz-fx-data-shredder.shredder_state.shredder_state",
+    "--task-table=moz-fx-data-shredder.shredder_state.tasks",
     # dags run schedule_interval after ds, and end date should be one day
     # before the dag runs, so 28-1 = 27 days after ds.
     "--end-date={{macros.ds_add(ds, 27)}}",
