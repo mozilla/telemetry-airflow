@@ -185,8 +185,11 @@ scalar_percentiles = bigquery_etl_query(
 
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
-clients_daily_histogram_aggregates = gke_command(
+clients_daily_histogram_aggregates = bigquery_etl_query(
     task_id="clients_daily_histogram_aggregates",
+    destination_table="clients_daily_histogram_aggregates_v1",
+    dataset_id=dataset_id,
+    project_id=project_id,
     owner="msamuel@mozilla.com",
     email=[
         "telemetry-alerts@mozilla.com",
@@ -194,23 +197,11 @@ clients_daily_histogram_aggregates = gke_command(
         "robhudson@mozilla.com",
         "bewu@mozilla.com",
     ],
-    cmds=["bash"],
-    env_vars={
-        "PROJECT": project_id,
-        "PROD_DATASET": dataset_id,
-        "DATASET": dataset_id,
-        "SUBMISSION_DATE": "{{ ds }}",
-        "RUN_QUERY": "t",
-    },
-    command=[
-        "script/glam/generate_and_run_desktop_sql",
-        "histogram",
-        PERCENT_RELEASE_WINDOWS_SAMPLING,
-    ],
-    docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    arguments=("--replace",),
+    parameters=(
+        "sample_size:INT64:{}".format(PERCENT_RELEASE_WINDOWS_SAMPLING),
+    ),
     dag=dag,
-    get_logs=False,
 )
 
 clients_daily_keyed_histogram_aggregates = gke_command(

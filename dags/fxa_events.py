@@ -47,6 +47,20 @@ with models.DAG(
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
+    fxa_log_auth_events = bigquery_etl_query(
+        task_id='fxa_log_auth_events',
+        destination_table='fxa_log_auth_events_v1',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
+    )
+
+    fxa_log_content_events = bigquery_etl_query(
+        task_id='fxa_log_content_events',
+        destination_table='fxa_log_content_events_v1',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
+    )
+
     fxa_users_daily = bigquery_etl_query(
         task_id='fxa_users_daily',
         destination_table='fxa_users_daily_v1',

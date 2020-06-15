@@ -46,7 +46,7 @@ with models.DAG(
     wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskSensor(
         task_id="wait_for_firefox_nondesktop_exact_mau28",
         external_dag_id="bqetl_nondesktop",
-        external_task_id="telemetry__firefox_nondesktop_exact_mau28_raw__v1",
+        external_task_id="telemetry_derived__firefox_nondesktop_exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
         dag=dag,
@@ -89,9 +89,15 @@ with models.DAG(
         external_dag_id="fxa_events",
         external_task_id="firefox_accounts_exact_mau28_raw",
         check_existence=True,
-        execution_delta=timedelta(hours=9),
+        execution_delta=timedelta(hours=-9),
         mode="reschedule",
         dag=dag,
     )
 
     simpleprophet_forecasts_fxa.set_upstream(wait_for_firefox_accounts_exact_mau28_raw)
+
+    kpi_dashboard.set_upstream([
+        simpleprophet_forecasts_desktop,
+        simpleprophet_forecasts_mobile,
+        simpleprophet_forecasts_fxa,
+    ])

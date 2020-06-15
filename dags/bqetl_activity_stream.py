@@ -16,29 +16,19 @@ default_args = {
     "retries": 1,
 }
 
-with DAG("bqetl_core", default_args=default_args, schedule_interval="0 1 * * *") as dag:
+with DAG(
+    "bqetl_activity_stream", default_args=default_args, schedule_interval="0 1 * * *"
+) as dag:
 
-    telemetry_derived__core_clients_daily__v1 = bigquery_etl_query(
-        task_id="telemetry_derived__core_clients_daily__v1",
-        destination_table="core_clients_daily_v1",
-        dataset_id="telemetry_derived",
+    activity_stream_bi__impression_stats_flat__v1 = bigquery_etl_query(
+        task_id="activity_stream_bi__impression_stats_flat__v1",
+        destination_table="impression_stats_flat_v1",
+        dataset_id="activity_stream_bi",
         project_id="moz-fx-data-shared-prod",
         owner="jklukas@mozilla.com",
         email=["jklukas@mozilla.com"],
         date_partition_parameter="submission_date",
         depends_on_past=False,
-        dag=dag,
-    )
-
-    telemetry_derived__core_clients_last_seen__v1 = bigquery_etl_query(
-        task_id="telemetry_derived__core_clients_last_seen__v1",
-        destination_table="core_clients_last_seen_v1",
-        dataset_id="telemetry_derived",
-        project_id="moz-fx-data-shared-prod",
-        owner="jklukas@mozilla.com",
-        email=["jklukas@mozilla.com"],
-        date_partition_parameter="submission_date",
-        depends_on_past=True,
         dag=dag,
     )
 
@@ -51,10 +41,6 @@ with DAG("bqetl_core", default_args=default_args, schedule_interval="0 1 * * *")
         dag=dag,
     )
 
-    telemetry_derived__core_clients_daily__v1.set_upstream(
+    activity_stream_bi__impression_stats_flat__v1.set_upstream(
         wait_for_copy_deduplicate_copy_deduplicate_all
-    )
-
-    telemetry_derived__core_clients_last_seen__v1.set_upstream(
-        telemetry_derived__core_clients_daily__v1
     )
