@@ -12,7 +12,7 @@ def simpleprophet_forecast(
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-forecasting/simpleprophet:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/simpleprophet:latest",
     image_pull_policy="Always",
     **kwargs
 ):
