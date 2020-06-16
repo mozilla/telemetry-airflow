@@ -54,7 +54,6 @@ def new_burnham_operator(
     if burnham_spore_drive is not None:
         env_vars["BURNHAM_SPORE_DRIVE"] = burnham_spore_drive
 
-    # TODO: Update project for Docker image
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
@@ -62,7 +61,7 @@ def new_burnham_operator(
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
-        image="gcr.io/<PROJECT>/burnham:latest",
+        image="gcr.io/{{ var.value.gcr_project_id }}/burnham:latest",
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
