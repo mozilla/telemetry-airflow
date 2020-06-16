@@ -80,9 +80,6 @@ def export_to_amplitude(
                 'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
                 dataset, table_or_view, 'view.sql']))
             sql = response.read().decode('utf-8')
-            # The sql param is interpreted as a Jinja template, so we need to
-            # mark the content as raw to avoid interpretation.
-            sql = '{% raw %}\n' + sql + '\n{% endraw %}'
             recreate_view = BigQueryOperator(
                 task_id='recreate_view',
                 sql=sql,
