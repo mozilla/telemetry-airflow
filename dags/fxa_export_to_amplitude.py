@@ -113,6 +113,7 @@ with models.DAG(
             dataset='firefox_accounts',
             table_or_view='fxa_amplitude_email_clicks',
             s3_prefix='fxa_email_click',
+            recreate_view=True,
         ),
         task_id=fxa_email_click_task_id
     )

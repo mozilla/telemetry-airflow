@@ -1,3 +1,5 @@
+from six.moves.urllib.request import urlopen
+
 from airflow import models
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
@@ -22,7 +24,8 @@ def export_to_amplitude(
         gcs_bucket='moz-fx-data-derived-datasets-amplitude-export',
         gcp_conn_id='google_cloud_derived_datasets',
         amplitude_s3_conn='amplitude_s3_conn',
-        amplitude_s3_bucket='com-amplitude-vacuum-mozilla-vacuum-wup'):
+        amplitude_s3_bucket='com-amplitude-vacuum-mozilla-vacuum-wup',
+        recreate_view=False):
 
     """Export a bigquery table or view to Amplitude.
 
@@ -41,6 +44,7 @@ def export_to_amplitude(
     :param str amplitude_s3_conn: S3 connection ID
     :param str amplitude_s3_bucket: The bucket to export data to
     :param str s3_prefix: The prefix for the s3 objects
+    :param bool recreate_view: Recreate the target view via GitHub URL before executing
     """
 
     environment = environ['DEPLOY_ENVIRONMENT']
@@ -65,6 +69,24 @@ def export_to_amplitude(
                 bigquery_conn_id=gcp_conn_id,
                 use_legacy_sql=False
         )
+
+        # If the underlying view requires special permissions only available to the
+        # Airflow workers, it may not be possible to maintain the view through the
+        # normal Jenkins-controlled view publishing process, so we provide a hook
+        # here to create the view with the same privileges that will be used when
+        # executing the query.
+        if recreate_view:
+            response = urlopen('/'.join([
+                'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
+                dataset, table_or_view, 'view.sql']))
+            sql = response.read().decode('utf-8')
+            recreate_view = BigQueryOperator(
+                task_id='recreate_view',
+                sql=sql,
+                bigquery_conn_id=gcp_conn_id,
+                use_legacy_sql=False
+            )
+            wait_for_data >> recreate_view
 
         # Create the table with yesterday's data
         project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
