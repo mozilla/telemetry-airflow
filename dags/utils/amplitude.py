@@ -86,7 +86,7 @@ def export_to_amplitude(
                 bigquery_conn_id=gcp_conn_id,
                 use_legacy_sql=False
             )
-            wait_for_data >> recreate_view
+            recreate_view >> wait_for_data
 
         # Create the table with yesterday's data
         project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
