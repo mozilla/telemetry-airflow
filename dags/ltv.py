@@ -101,3 +101,17 @@ else:
         dag=dag,
     )
     wait_for_search_clients_last_seen >> ltv_daily
+
+response = urlopen('/'.join([
+    'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
+    'revenue_derived', 'client_ltv_v1', 'query.sql']))
+
+ltv_revenue_join=BigQueryOperator(
+    task_id='ltv_revenue_join',
+    sql=response.read().decode('utf-8'),
+    destination_dataset_table='moz-it-eip-revenue-users.ltv_derived.client_ltv_v1',
+    bigquery_conn_id='google_cloud_it_revenue',
+    use_legacy_sql=False
+)
+
+ltv_daily >> ltv_revenue_join
