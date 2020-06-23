@@ -132,3 +132,19 @@ with models.DAG(
 
     [wait_for_copy_deduplicate_all, wait_for_copy_deduplicate_main_ping] >> devtools_export
     wait_for_copy_deduplicate_all >> [fenix_shredder, devtools_shredder]
+
+    onboarding_task_id = 'onboarding_amplitude_export'
+    onboarding_args = default_args.copy()
+    onboarding_args["start_date"] = datetime.datetime(2020, 6, 25)
+    SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=onboarding_task_id,
+            parent_dag_name=dag_name,
+            default_args=onboarding_args,
+            project='moz-fx-data-shared-prod',
+            dataset='messaging_system',
+            table_or_view='onboarding_events_amplitude',
+            s3_prefix='onboarding',
+        ),
+        task_id=onboarding_task_id
+    )
