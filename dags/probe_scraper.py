@@ -17,7 +17,7 @@ default_args = {
 
 with DAG('probe_scraper',
          default_args=default_args,
-         schedule_interval='@daily') as dag:
+         schedule_interval='0 0 * * 1-5') as dag:
 
     aws_conn_id='aws_prod_probe_scraper'
     aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
