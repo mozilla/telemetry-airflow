@@ -98,8 +98,8 @@ with DAG(
 
     wait_for_telemetry_derived__clients_daily__v6 = ExternalTaskSensor(
         task_id="wait_for_telemetry_derived__clients_daily__v6",
-        external_dag_id="main_summary",
-        external_task_id="clients_daily",
+        external_dag_id="bqetl_clients",
+        external_task_id="telemetry_derived__clients_daily__v6",
         check_existence=True,
         mode="reschedule",
     )
@@ -117,6 +117,9 @@ with DAG(
         dag=dag,
     )
 
+    amo_prod__amo_stats_installs__v1.set_upstream(
+        wait_for_telemetry_derived__clients_daily__v6
+    )
     amo_prod__fenix_addons_by_client__v1.set_upstream(
         wait_for_copy_deduplicate_copy_deduplicate_all
     )
