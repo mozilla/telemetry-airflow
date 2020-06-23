@@ -4,6 +4,7 @@ from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import get_default_executor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.operators.sensors import ExternalTaskSensor
 from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
@@ -135,16 +136,6 @@ main_summary_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
-clients_daily = bigquery_etl_query(
-    task_id="clients_daily",
-    destination_table="clients_daily_v6",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    start_date=datetime(2019, 11, 5),
-    dag=dag)
-
 clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
         table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
@@ -195,6 +186,7 @@ clients_daily_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
+<<<<<<< HEAD
 clients_first_seen = bigquery_etl_query(
     task_id="clients_first_seen",
     destination_table="clients_first_seen_v1",
@@ -250,6 +242,8 @@ devtools_panel_usage = bigquery_etl_query(
     start_date=datetime(2019, 11, 25),
     dag=dag)
 
+=======
+>>>>>>> Move queries out of main_summary
 experiments_daily_active_clients = bigquery_etl_query(
     task_id="experiments_daily_active_clients",
     destination_table="experiments_daily_active_clients_v1",
@@ -259,18 +253,17 @@ experiments_daily_active_clients = bigquery_etl_query(
     email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
     dag=dag)
 
+wait_for_clients_daily = ExternalTaskSensor(
+    task_id="wait_for_clients_daily",
+    external_dag_id="bqetl_clients",
+    external_task_id="telemetry_derived__clients_daily__v6",
+    dag=dag)
+
 
 main_summary.set_upstream(copy_deduplicate_main_ping)
 main_summary_export.set_upstream(main_summary)
-clients_daily.set_upstream(main_summary)
-clients_daily_export.set_upstream(clients_daily)
-
-clients_first_seen.set_upstream(clients_daily)
-clients_last_seen.set_upstream(clients_daily)
-exact_mau_by_dimensions.set_upstream(clients_last_seen)
-exact_mau_by_client_count_dimensions.set_upstream(clients_last_seen)
-devtools_panel_usage.set_upstream(clients_daily)
+clients_daily_export.set_upstream(wait_for_clients_daily)
 
 bq_main_events.set_upstream(copy_deduplicate_main_ping)
 
-experiments_daily_active_clients.set_upstream(clients_daily)
+experiments_daily_active_clients.set_upstream(wait_for_clients_daily)

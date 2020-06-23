@@ -53,8 +53,8 @@ with models.DAG(
 
     wait_for_clients_daily = ExternalTaskSensor(
         task_id="wait_for_clients_daily",
-        external_dag_id="main_summary",
-        external_task_id="clients_daily",
+        external_dag_id="bqetl_clients",
+        external_task_id="telemetry_derived__clients_daily__v6",
         dag=dag)
 
 
