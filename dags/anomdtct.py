@@ -21,7 +21,7 @@ default_args = {
 
 with DAG("anomdtct", default_args=default_args, schedule_interval="0 1 * * *") as dag:
     # Built from https://github.com/mozilla/forecasting/tree/master/anomdtct
-    anomdtct_image = "gcr.io/{{ var.value.gcr_project_id }}/anomdtct:latest"
+    anomdtct_image = "gcr.io/moz-fx-data-airflow-prod-88e0/anomdtct:latest"
 
     anomdtct = GKEPodOperator(
         task_id="anomdtct",
