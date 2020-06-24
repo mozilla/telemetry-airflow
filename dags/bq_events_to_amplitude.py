@@ -4,6 +4,7 @@ from airflow import models
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.amplitude import export_to_amplitude
+from utils.gcp import gke_command
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -34,6 +35,21 @@ with models.DAG(
             s3_prefix='fenix',
         ),
         task_id=fenix_task_id
+    )
+
+    fenix_shredder = gke_command(
+        task_id="fenix_amplitude_shredder",
+        name="shredder-amplitude-fenix",
+        command=[
+            "script/shredder_amplitude",
+            "--date={{ ds }}",
+            "--api-key={{ var.value.amplitude_api_key }}",
+            "--secret-key={{ var.value.amplitude_secret_key }}",
+            "--table-id=moz-fx-data-shared-prod.org_mozilla_fenix.deletion_request_v1",
+            "--device-id-field=client_info.client_id",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        dag=dag,
     )
 
     fennec_ios_task_id = 'fennec_ios_amplitude_export'
@@ -70,13 +86,13 @@ with models.DAG(
 
     # DevTools view merges events from `telemetry.main` and `telemetry.event`.
     # We need to make sure both tables are ready and deduplicated before proceeding.
-    wait_for_telemetry_event = ExternalTaskSensor(
-        task_id="wait_for_telemetry_event",
+    wait_for_copy_deduplicate_all = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         dag=dag)
-    wait_for_telemetry_main = ExternalTaskSensor(
-        task_id="wait_for_telemetry_main",
+    wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="main_summary",
         external_task_id="copy_deduplicate_main_ping",
         dag=dag,
@@ -99,4 +115,20 @@ with models.DAG(
         task_id=devtools_task_id
     )
 
-    [wait_for_telemetry_event, wait_for_telemetry_main] >> devtools_export
+    devtools_shredder = gke_command(
+        task_id="devtools_amplitude_shredder",
+        name="shredder-amplitude-devtools",
+        command=[
+            "script/shredder_amplitude",
+            "--date={{ ds }}",
+            "--api-key={{ var.value.amplitude_api_key }}",
+            "--secret-key={{ var.value.amplitude_secret_key }}",
+            "--table-id=moz-fx-data-shared-prod.telemetry.deletion_request_v4",
+            "--user-id-field=client_id",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        dag=dag,
+    )
+
+    [wait_for_copy_deduplicate_all, wait_for_copy_deduplicate_main_ping] >> devtools_export
+    wait_for_copy_deduplicate_all >> [fenix_shredder, devtools_shredder]
