@@ -111,7 +111,8 @@ ltv_revenue_join=BigQueryOperator(
     sql=response.read().decode('utf-8'),
     destination_dataset_table='moz-it-eip-revenue-users.ltv_derived.client_ltv_v1',
     bigquery_conn_id='google_cloud_it_revenue',
-    use_legacy_sql=False
+    use_legacy_sql=False,
+    default_args=default_args
 )
 
 ltv_daily >> ltv_revenue_join
