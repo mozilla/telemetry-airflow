@@ -1,18 +1,18 @@
 import json
 import os
-from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
+from datetime import datetime, timedelta
+from operators.backport.bigquery_operator_1_10_2 import BigQueryOperator
+from six.moves.urllib.request import urlopen
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     copy_artifacts_dev,
     get_dataproc_parameters,
 )
 
-
-EXPORT_TO_AVRO = True
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
