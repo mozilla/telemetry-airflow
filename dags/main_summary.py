@@ -186,64 +186,6 @@ clients_daily_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
-<<<<<<< HEAD
-clients_first_seen = bigquery_etl_query(
-    task_id="clients_first_seen",
-    destination_table="clients_first_seen_v1",
-    project_id="moz-fx-data-shared-prod",
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    depends_on_past=True,
-    start_date=datetime(2020, 5, 5),
-    dataset_id="telemetry_derived",
-    # This query updates the entire existing table every day rather than appending
-    # a new partition, so we need to disable date_partition_parameter and instead
-    # pass submission_date as a generic param.
-    date_partition_parameter=None,
-    parameters=["submission_date:DATE:{{ds}}"],
-    dag=dag)
-
-clients_last_seen = bigquery_etl_query(
-    task_id="clients_last_seen",
-    destination_table="clients_last_seen_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
-    depends_on_past=True,
-    start_date=datetime(2019, 4, 15),
-    dag=dag)
-
-exact_mau_by_dimensions = bigquery_etl_query(
-    task_id="exact_mau_by_dimensions",
-    destination_table="firefox_desktop_exact_mau28_by_dimensions_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    dag=dag)
-
-exact_mau_by_client_count_dimensions = bigquery_etl_query(
-    task_id="exact_mau_by_client_count_dimensions",
-    project_id='moz-fx-data-shared-prod',
-    destination_table="firefox_desktop_exact_mau28_by_client_count_dimensions_v1",
-    dataset_id="telemetry_derived",
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
-devtools_panel_usage = bigquery_etl_query(
-    task_id="devtools_panel_usage",
-    destination_table="devtools_panel_usage_v1",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
-    start_date=datetime(2019, 11, 25),
-    dag=dag)
-
-=======
->>>>>>> Move queries out of main_summary
 experiments_daily_active_clients = bigquery_etl_query(
     task_id="experiments_daily_active_clients",
     destination_table="experiments_daily_active_clients_v1",
