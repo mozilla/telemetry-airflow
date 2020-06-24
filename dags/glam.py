@@ -41,7 +41,7 @@ gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
     project_id=project_id,
-    external_dag_id="main_summary",
+    external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=-1),
     check_existence=True,

@@ -30,14 +30,14 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
 
     wait_for_clients_daily_export = ExternalTaskSensor(
         task_id="wait_for_clients_daily_export",
-        external_dag_id="main_summary",
+        external_dag_id="parquet_export",
         external_task_id="clients_daily_export",
         dag=dag,
     )
 
     wait_for_main_summary_export = ExternalTaskSensor(
         task_id="wait_for_main_summary_export",
-        external_dag_id="main_summary",
+        external_dag_id="parquet_export",
         external_task_id="main_summary_export",
         dag=dag,
     )
@@ -51,7 +51,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
 
     wait_for_bq_events = ExternalTaskSensor(
         task_id="wait_for_bq_events",
-        external_dag_id="main_summary",
+        external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
         dag=dag,
     )

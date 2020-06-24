@@ -36,7 +36,7 @@ with DAG("anomdtct", default_args=default_args, schedule_interval="0 1 * * *") a
 
     wait_for_clients_first_seen = ExternalTaskSensor(
         task_id="wait_for_clients_first_seen",
-        external_dag_id="bqetl_clients",
+        external_dag_id="bqetl_clients_daily",
         external_task_id="telemetry_derived__clients_first_seen__v1",
         dag=dag,
     )

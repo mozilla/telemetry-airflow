@@ -28,7 +28,7 @@ with DAG("asn_aggregates", default_args=default_args, schedule_interval="0 1 * *
 
     wait_for_bq_events = ExternalTaskSensor(
         task_id="wait_for_bq_events",
-        external_dag_id="main_summary",
+        external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
         dag=dag,
     )

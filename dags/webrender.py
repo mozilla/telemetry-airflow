@@ -21,7 +21,7 @@ with DAG(
     # Make sure all the data for the given day has arrived before running.
     wait_for_main_ping = ExternalTaskSensor(
         task_id="wait_for_main_ping",
-        external_dag_id="main_summary",
+        external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
         execution_delta=timedelta(hours=-1),
         check_existence=True,
