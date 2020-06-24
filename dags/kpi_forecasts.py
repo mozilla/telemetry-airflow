@@ -18,20 +18,12 @@ default_args = {
     'retry_delay': datetime.timedelta(minutes=10),
 }
 
-dag_name = 'kpi_dashboard'
+dag_name = 'kpi_forecasts'
 
 with models.DAG(
         dag_name,
-        # KPI dashboard refreshes at 16:00 UTC, so run this 15 minutes beforehand.
         schedule_interval='0 1 * * *',
         default_args=default_args) as dag:
-
-    kpi_dashboard = bigquery_etl_query(
-        destination_table='firefox_kpi_dashboard_v1',
-        dataset_id='telemetry',
-        date_partition_parameter=None,
-        email=['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
-    )
 
     simpleprophet_forecasts_mobile = simpleprophet_forecast(
         task_id="simpleprophet_forecasts_mobile",
@@ -95,9 +87,3 @@ with models.DAG(
     )
 
     simpleprophet_forecasts_fxa.set_upstream(wait_for_firefox_accounts_exact_mau28_raw)
-
-    kpi_dashboard.set_upstream([
-        simpleprophet_forecasts_desktop,
-        simpleprophet_forecasts_mobile,
-        simpleprophet_forecasts_fxa,
-    ])

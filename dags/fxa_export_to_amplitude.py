@@ -86,6 +86,7 @@ with models.DAG(
     sync_send_tab_task_id = 'sync_send_tab_amplitude_export'
     sync_send_tab_args = default_args.copy()
     sync_send_tab_args['email'] = ['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
+    sync_send_tab_args['owner'] = 'jklukas@mozilla.com'
     sync_send_tab_export = SubDagOperator(
         subdag=export_to_amplitude(
             dag_name=sync_send_tab_task_id,
@@ -100,3 +101,21 @@ with models.DAG(
     )
 
     fxa_amplitude_user_ids >> sync_send_tab_export
+
+    fxa_email_click_task_id = 'fxa_email_click_amplitude_export'
+    fxa_email_click_args = default_args.copy()
+    fxa_email_click_args['email'] = ['telemetry-alerts@mozilla.com', 'jklukas@mozilla.com']
+    fxa_email_click_args['owner'] = 'jklukas@mozilla.com'
+    fxa_email_click_export = SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=fxa_email_click_task_id,
+            parent_dag_name=dag_name,
+            default_args=fxa_email_click_args,
+            project='moz-fx-data-shared-prod',
+            dataset='firefox_accounts',
+            table_or_view='fxa_amplitude_email_clicks',
+            s3_prefix='fxa_email_click',
+            recreate_view=True,
+        ),
+        task_id=fxa_email_click_task_id
+    )
