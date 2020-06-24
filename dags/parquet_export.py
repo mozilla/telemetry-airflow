@@ -35,44 +35,7 @@ default_args = {
 
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
-dag = DAG('main_summary', default_args=default_args, schedule_interval='0 1 * * *', max_active_runs=10)
-
-# We copy yesterday's main pings from telemetry_live to telemetry_stable
-# at the root of this DAG because telemetry_stable.main_v4 will become
-# the source for main_summary, etc. once we are comfortable retiring parquet
-# data imports.
-copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
-    task_id="copy_deduplicate_main_ping",
-    target_project_id="moz-fx-data-shared-prod",
-    only_tables=["telemetry_live.main_v4"],
-    parallelism=24,
-    slices=100,
-    owner="jklukas@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
-    dag=dag)
-
-bq_main_events = bigquery_etl_query(
-    task_id="bq_main_events",
-    project_id="moz-fx-data-shared-prod",
-    destination_table="main_events_v1",
-    dataset_id="telemetry_derived",
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-    dag=dag,
-    arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
-)
-
-main_summary = bigquery_etl_query(
-    task_id="main_summary",
-    destination_table="main_summary_v4",
-    project_id="moz-fx-data-shared-prod",
-    dataset_id="telemetry_derived",
-    sql_file_path="sql/telemetry_derived/main_summary_v4/",
-    multipart=True,
-    owner="relud@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "relud@mozilla.com"],
-    start_date=datetime(2019, 10, 25),
-    dag=dag)
+dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 1 * * *', max_active_runs=10)
 
 main_summary_bigint_columns = [
     # bigquery does not have 32-bit int, and int->bigint is not a
@@ -186,26 +149,17 @@ clients_daily_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
-experiments_daily_active_clients = bigquery_etl_query(
-    task_id="experiments_daily_active_clients",
-    destination_table="experiments_daily_active_clients_v1",
-    dataset_id="telemetry_derived",
-    project_id="moz-fx-data-shared-prod",
-    owner="ssuh@mozilla.com",
-    email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-    dag=dag)
-
 wait_for_clients_daily = ExternalTaskSensor(
     task_id="wait_for_clients_daily",
     external_dag_id="bqetl_clients_daily",
     external_task_id="telemetry_derived__clients_daily__v6",
     dag=dag)
 
+wait_for_main_summary = ExternalTaskSensor(
+    task_id="wait_for_main_summary",
+    external_dag_id="bqetl_main_summary",
+    external_task_id="telemetry_derived__main_summary__v4",
+    dag=dag)
 
-main_summary.set_upstream(copy_deduplicate_main_ping)
-main_summary_export.set_upstream(main_summary)
+main_summary_export.set_upstream(wait_for_main_summary)
 clients_daily_export.set_upstream(wait_for_clients_daily)
-
-bq_main_events.set_upstream(copy_deduplicate_main_ping)
-
-experiments_daily_active_clients.set_upstream(wait_for_clients_daily)

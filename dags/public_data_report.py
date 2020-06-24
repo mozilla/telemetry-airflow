@@ -40,7 +40,7 @@ aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credent
 # therefore we need to wait for yesterday's Main Ping deduplication task to finish
 wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
-    external_dag_id="main_summary",
+    external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(days=-6),
     check_existence=True,

@@ -58,8 +58,8 @@ with models.DAG(
 
     wait_for_exact_mau_by_dimensions = ExternalTaskSensor(
         task_id="wait_for_exact_mau_by_dimensions",
-        external_dag_id="main_summary",
-        external_task_id="exact_mau_by_dimensions",
+        external_dag_id="bqetl_clients_daily",
+        external_task_id="firefox_desktop_exact_mau28_by_dimensions",
         check_existence=True,
         mode="reschedule",
         dag=dag,

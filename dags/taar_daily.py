@@ -87,13 +87,13 @@ editorial_whitelist = GKEPodOperator(
 
 wait_for_clients_daily_export = ExternalTaskSensor(
     task_id="wait_for_clients_daily_export",
-    external_dag_id="main_summary",
+    external_dag_id="parquet_export",
     external_task_id="clients_daily_export",
     dag=dag)
 
 wait_for_main_summary_export = ExternalTaskSensor(
     task_id="wait_for_main_summary_export",
-    external_dag_id="main_summary",
+    external_dag_id="parquet_export",
     external_task_id="main_summary_export",
     dag=dag)
 

@@ -20,7 +20,7 @@ with DAG("ssl_ratios", default_args=default_args, schedule_interval="@daily") as
     # most downstream dependency is search_clients_daily
     wait_for_main_summary = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
-        external_dag_id="main_summary",
+        external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
         execution_delta=timedelta(hours=-1),
         dag=dag,

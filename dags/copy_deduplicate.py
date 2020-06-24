@@ -40,6 +40,20 @@ with models.DAG(
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"])
 
+    # We copy yesterday's main pings from telemetry_live to telemetry_stable
+    # at the root of this DAG because telemetry_stable.main_v4 will become
+    # the source for main_summary, etc. once we are comfortable retiring parquet
+    # data imports.
+    copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_main_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        only_tables=["telemetry_live.main_v4"],
+        parallelism=24,
+        slices=100,
+        owner="jklukas@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
+        dag=dag)
+
 
     # Events.
 
@@ -55,14 +69,20 @@ with models.DAG(
 
     copy_deduplicate_all >> event_events
 
+    bq_main_events = bigquery_etl_query(
+        task_id="bq_main_events",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="main_events_v1",
+        dataset_id="telemetry_derived",
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+        dag=dag,
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
+    )
+
+    copy_deduplicate_main_ping >> bq_main_events
+
     # Experiment enrollment aggregates chain (depends on events)
-
-    wait_for_main_events = ExternalTaskSensor(
-        task_id="wait_for_main_events",
-        external_dag_id="main_summary",
-        external_task_id="bq_main_events",
-        dag=dag)
-
 
     experiment_enrollment_aggregates = bigquery_etl_query(
         task_id="experiment_enrollment_aggregates",
@@ -99,7 +119,7 @@ with models.DAG(
         owner="ssuh@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
 
-    wait_for_main_events >> experiment_enrollment_aggregates
+    bq_main_events >> experiment_enrollment_aggregates
     (event_events >>
      experiment_enrollment_aggregates >>
      experiment_enrollment_aggregates_live_generate_query >>
