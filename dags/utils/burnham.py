@@ -60,7 +60,7 @@ def new_burnham_operator(
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
-        image="gcr.io/{{ var.value.gcr_project_id }}/burnham:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0//burnham:latest",
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
@@ -121,7 +121,7 @@ def new_burnham_bigquery_operator(
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
-        image="gcr.io/{{ var.value.gcr_project_id }}/burnham-bigquery:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/burnham-bigquery:latest",
         image_pull_policy="Always",
         arguments=[
             "--verbose",
