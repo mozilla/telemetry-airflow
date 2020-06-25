@@ -7,11 +7,7 @@ import json
 import uuid
 
 from airflow import models
-from utils.burnham import (
-    new_burnham_bigquery_operator,
-    new_burnham_operator,
-    new_burnham_sensor,
-)
+from utils.burnham import burnham_bigquery_run, burnham_run, burnham_sensor
 
 DAG_OWNER = "rpierzina@mozilla.com"
 DAG_EMAIL = ["telemetry-alerts@mozilla.com", "rpierzina@mozilla.com"]
@@ -65,7 +61,7 @@ with models.DAG(
     burnham_test_run = str(uuid.uuid4())
     burnham_test_name = "test_labeled_counter_metrics"
 
-    client1 = new_burnham_operator(
+    client1 = burnham_run(
         task_id="client1",
         burnham_test_run=burnham_test_run,
         burnham_test_name=burnham_test_name,
@@ -75,7 +71,7 @@ with models.DAG(
         email=DAG_EMAIL,
     )
 
-    client2 = new_burnham_operator(
+    client2 = burnham_run(
         task_id="client2",
         burnham_test_run=burnham_test_run,
         burnham_test_name=burnham_test_name,
@@ -92,7 +88,7 @@ with models.DAG(
         email=DAG_EMAIL,
     )
 
-    client3 = new_burnham_operator(
+    client3 = burnham_run(
         task_id="client3",
         burnham_test_run=burnham_test_run,
         burnham_test_name=burnham_test_name,
@@ -104,7 +100,7 @@ with models.DAG(
 
     project_id = "moz-fx-data-shared-prod"
 
-    wait_for_data = new_burnham_sensor(
+    wait_for_data = burnham_sensor(
         task_id="wait_for_data",
         sql=SENSOR_TEMPLATE.format(
             project_id=project_id,
@@ -133,7 +129,7 @@ with models.DAG(
         ],
     }
 
-    verify_data = new_burnham_bigquery_operator(
+    verify_data = burnham_bigquery_run(
         task_id="verify_data",
         project_id=project_id,
         test_run_information=json.dumps(test_run_information),

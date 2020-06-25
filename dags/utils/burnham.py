@@ -14,7 +14,7 @@ DEFAULT_GKE_NAMESPACE = "default"
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
 
 
-def new_burnham_operator(
+def burnham_run(
     task_id,
     burnham_test_run,
     burnham_test_name,
@@ -68,7 +68,7 @@ def new_burnham_operator(
     )
 
 
-def new_burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
+def burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
     """Create a new BigQuerySQLSensorOperator that checks for burnham data.
 
     :param str task_id:                 [Required] ID for the task
@@ -88,7 +88,7 @@ def new_burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
     )
 
 
-def new_burnham_bigquery_operator(
+def burnham_bigquery_run(
     task_id,
     project_id,
     test_run_information,
