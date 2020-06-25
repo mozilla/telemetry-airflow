@@ -38,7 +38,6 @@ def new_burnham_operator(
     :param str gke_location:                    GKE cluster location
     :param str gke_cluster_name:                GKE cluster name
     :param str gke_namespace:                   GKE cluster namespace
-    :param str docker_image:                    Docker image to use
     :param Dict[str, Any] kwargs:               Additional kwargs for GKEPodOperator
 
     :return: GKEPodOperator
