@@ -36,6 +36,17 @@ LIMIT
   {limit}
 """
 
+SENSOR_TEMPLATE = """
+SELECT
+  COUNT(*) >= 10
+FROM
+  `{project_id}.burnham_live.discovery_v1`
+WHERE
+  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  AND metrics.uuid.test_run = "{test_run}"
+  AND metrics.string.test_name = "{test_name}"
+"""
+
 default_args = {
     "owner": DAG_OWNER,
     "email": DAG_EMAIL,
@@ -91,10 +102,14 @@ with models.DAG(
         email=DAG_EMAIL,
     )
 
-    # TODO: Update SQL for Sensor
-    # Wait for 10 pings with this test run ID in live tables
     wait_for_data = new_burnham_sensor(
-        task_id="wait_for_data", sql="TODO", timeout=60 * 60 * 1
+        task_id="wait_for_data",
+        sql=SENSOR_TEMPLATE.format(
+            project_id=project_id,
+            test_run=burnham_test_run,
+            test_name=burnham_test_name,
+        ),
+        timeout=60 * 60 * 1,
     )
 
     project_id = "moz-fx-data-shared-prod"
