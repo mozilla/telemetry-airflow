@@ -129,7 +129,7 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
         "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
         "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
         "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
-        "--subnetwork=regions/us-west1/subnetworks/gke-taar-nonprod-v1",
+        "--subnetwork=taar_dataflow_subnetwork",
         "--gcs-to-bigtable",
     ],
     dag=taar_weekly,
