@@ -102,6 +102,8 @@ with models.DAG(
         email=DAG_EMAIL,
     )
 
+    project_id = "moz-fx-data-shared-prod"
+
     wait_for_data = new_burnham_sensor(
         task_id="wait_for_data",
         sql=SENSOR_TEMPLATE.format(
@@ -111,8 +113,6 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-
-    project_id = "moz-fx-data-shared-prod"
 
     test_run_information = {
         "identifier": burnham_test_run,
