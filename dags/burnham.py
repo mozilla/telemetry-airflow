@@ -3,14 +3,38 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import json
 import uuid
 
 from airflow import models
-from utils.burnham import new_burnham_operator, new_burnham_sensor
+from utils.burnham import (
+    new_burnham_bigquery_operator,
+    new_burnham_operator,
+    new_burnham_sensor,
+)
 
 DAG_OWNER = "rpierzina@mozilla.com"
 DAG_EMAIL = ["telemetry-alerts@mozilla.com", "rpierzina@mozilla.com"]
 
+QUERY_TEMPLATE = """
+SELECT
+  technology_space_travel.key,
+  SUM(technology_space_travel.value) AS value_sum
+FROM
+  `{project_id}.burnham_live.discovery_v1`
+CROSS JOIN
+  UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
+WHERE
+  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  AND metrics.uuid.test_run = "{test_run}"
+  AND metrics.string.test_name = "{test_name}"
+GROUP BY
+  technology_space_travel.key
+ORDER BY
+  technology_space_travel.key
+LIMIT
+  {limit}
+"""
 
 default_args = {
     "owner": DAG_OWNER,
@@ -73,12 +97,32 @@ with models.DAG(
         task_id="wait_for_data", sql="TODO", timeout=60 * 60 * 1
     )
 
-    # TODO: Run another GKEPodOperator to verify the data
-    # Query for space_travel metrics and one client error
-    # expected_metrics = {
-    #     "labeled_counter": {
-    #         "technology.space_travel": {"spore_drive": 13, "warp_drive": 18}
-    #     }
-    # }
-    # verify_data = GKEPodOperator()
-    # verify_data.set_upstream(wait_for_data)
+    project_id = "moz-fx-data-shared-prod"
+
+    test_run_information = {
+        "identifier": burnham_test_run,
+        "tests": [
+            {
+                "name": burnham_test_name,
+                "query": QUERY_TEMPLATE.format(
+                    project_id=project_id,
+                    test_run=burnham_test_run,
+                    test_name=burnham_test_name,
+                    limit=10,
+                ),
+                "want": [
+                    {"key": "spore_drive", "value_sum": "13"},
+                    {"key": "warp_drive", "value_sum": "18"},
+                ],
+            },
+        ],
+    }
+
+    verify_data = new_burnham_bigquery_operator(
+        task_id="verify_data",
+        project_id=project_id,
+        test_run_information=json.dumps(test_run_information),
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+    verify_data.set_upstream(wait_for_data)
