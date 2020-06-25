@@ -20,6 +20,7 @@ taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 TAAR_BIGTABLE_INSTANCE_ID = Variable.get("taar_bigtable_instance_id")
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
 TAAR_PROFILE_PROJECT_ID = Variable.get("taar_gcp_project_id")
+TAAR_DATAFLOW_SUBNETWORK = Variable.get("taar_dataflow_subnetwork")
 
 TAAR_ETL_CONTAINER_IMAGE = (
     "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.4.7"
@@ -129,7 +130,7 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
         "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
         "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
         "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
-        "--subnetwork=taar_dataflow_subnetwork",
+        "--subnetwork=%s" % TAAR_DATAFLOW_SUBNETWORK,
         "--gcs-to-bigtable",
     ],
     dag=taar_weekly,
