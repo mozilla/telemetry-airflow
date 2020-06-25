@@ -7,6 +7,7 @@ import json
 import uuid
 
 from airflow import models
+from airflow.operators import PythonOperator
 from utils.burnham import burnham_bigquery_run, burnham_run, burnham_sensor
 
 DAG_OWNER = "rpierzina@mozilla.com"
@@ -58,7 +59,12 @@ with models.DAG(
 ) as dag:
 
     # Generate a UUID for this test run
-    burnham_test_run = str(uuid.uuid4())
+    generate_burnham_test_run_uuid = PythonOperator(
+        task_id="generate_burnham_test_run_uuid",
+        python_callable=lambda: str(uuid.uuid4()),
+    )
+
+    burnham_test_run = '{{ task_instance.xcom_pull("generate_burnham_test_run_uuid") }}'
     burnham_test_name = "test_labeled_counter_metrics"
 
     client1 = burnham_run(

@@ -29,7 +29,7 @@ def burnham_run(
     """Create a new GKEPodOperator that runs the burnham Docker image.
 
     :param str task_id:                         [Required] ID for the task
-    :param str burnham_test_run:                [Required] ID for the test run
+    :param str burnham_test_run:                [Required] UUID for the test run
     :param str burnham_test_name:               [Required] Name for the test item
     :param List[str] burnham_missions:          [Required] List of mission identifiers
 
