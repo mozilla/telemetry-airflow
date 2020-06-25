@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import uuid
 
 from airflow import models
 from utils.burnham import new_burnham_operator, new_burnham_sensor
@@ -25,9 +26,9 @@ with models.DAG(
     "burnham", schedule_interval="@daily", default_args=default_args,
 ) as dag:
 
-    # TODO: Update test information
-    burnham_test_run = "TEST RUN"
-    burnham_test_name = "TEST NAME"
+    # Generate a UUID for this test run
+    burnham_test_run = str(uuid.uuid4())
+    burnham_test_name = "test_labeled_counter_metrics"
 
     client1 = new_burnham_operator(
         task_id="client1",
