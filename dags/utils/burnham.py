@@ -87,3 +87,47 @@ def new_burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
         use_legacy_sql=False,
         **kwargs
     )
+
+
+def new_burnham_bigquery_operator(
+    task_id,
+    project_id,
+    test_run_information,
+    gcp_conn_id=DEFAULT_GCP_CONN_ID,
+    gke_location=DEFAULT_GKE_LOCATION,
+    gke_cluster_name=DEFAULT_GKE_CLUSTER_NAME,
+    gke_namespace=DEFAULT_GKE_NAMESPACE,
+    **kwargs
+):
+    """Create a new GKEPodOperator that runs the burnham-bigquery Docker image.
+
+    :param str task_id:                 [Required] ID for the task
+    :param str project_id:              [Required] Project ID where target table lives
+    :param str test_run_information:    [Required] JSON-encoded test run information
+
+    :param str gcp_conn_id:             Airflow connection id for GCP access
+    :param str gke_location:            GKE cluster location
+    :param str gke_cluster_name:        GKE cluster name
+    :param str gke_namespace:           GKE cluster namespace
+    :param Dict[str, Any] kwargs:       Additional kwargs for GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+
+    return GKEPodOperator(
+        task_id=task_id,
+        gcp_conn_id=gcp_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image="gcr.io/{{ var.value.gcr_project_id }}/burnham-bigquery:latest",
+        image_pull_policy="Always",
+        arguments=[
+            "--verbose",
+            "--project-id={}".format(project_id),
+            "--run={}".format(test_run_information),
+        ],
+        **kwargs
+    )
