@@ -1,18 +1,18 @@
 import json
 import os
-from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
+from datetime import datetime, timedelta
+from operators.backport.bigquery_operator_1_10_2 import BigQueryOperator
+from six.moves.urllib.request import urlopen
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     copy_artifacts_dev,
     get_dataproc_parameters,
 )
 
-
-EXPORT_TO_AVRO = True
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
@@ -101,3 +101,18 @@ else:
         dag=dag,
     )
     wait_for_search_clients_last_seen >> ltv_daily
+
+response = urlopen('/'.join([
+    'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
+    'revenue_derived', 'client_ltv_v1', 'query.sql']))
+
+ltv_revenue_join=BigQueryOperator(
+    task_id='ltv_revenue_join',
+    sql=response.read().decode('utf-8'),
+    destination_dataset_table='moz-it-eip-revenue-users.ltv_derived.client_ltv_v1',
+    bigquery_conn_id='google_cloud_it_revenue',
+    use_legacy_sql=False,
+    default_args=default_args
+)
+
+ltv_daily >> ltv_revenue_join
