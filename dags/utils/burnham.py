@@ -91,7 +91,8 @@ def burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
 def burnham_bigquery_run(
     task_id,
     project_id,
-    test_run_information,
+    burnham_test_run,
+    burnham_test_scenarios,
     gcp_conn_id=DEFAULT_GCP_CONN_ID,
     gke_location=DEFAULT_GKE_LOCATION,
     gke_cluster_name=DEFAULT_GKE_CLUSTER_NAME,
@@ -102,7 +103,8 @@ def burnham_bigquery_run(
 
     :param str task_id:                 [Required] ID for the task
     :param str project_id:              [Required] Project ID where target table lives
-    :param str test_run_information:    [Required] JSON-encoded test run information
+    :param str burnham_test_run:        [Required] UUID for the test run
+    :param str burnham_test_scenarios:  [Required] Encoded burnham test scenarios
 
     :param str gcp_conn_id:             Airflow connection id for GCP access
     :param str gke_location:            GKE cluster location
@@ -125,8 +127,9 @@ def burnham_bigquery_run(
         image_pull_policy="Always",
         arguments=[
             "--verbose",
-            "--project-id={}".format(project_id),
-            "--run={}".format(test_run_information),
+            "--project-id='{}'".format(project_id),
+            "--run-id='{}'".format(burnham_test_run),
+            "--scenarios='{}'".format(burnham_test_scenarios),
         ],
         **kwargs
     )
