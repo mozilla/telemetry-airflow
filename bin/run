@@ -128,6 +128,11 @@ init_variables() {
     airflow variables -s "surveygizmo_api_secret" "tapsekret"
     airflow variables -s "anomdtct_spreadsheet_id" "secret-id"
     airflow variables -s "anomdtct_spreadsheet_api_key" "secret-key"
+
+    airflow variables -s "taar_bigtable_instance_id" "taar_bigtable_instance_id"
+    airflow variables -s "taar_etl_storage_bucket" "taar_etl_storage_bucket"
+    airflow variables -s "taar_gcp_project_id" "taar_gcp_project_id"
+    airflow variables -s "taar_dataflow_subnetwork" "taar_dataflow_subnetwork"
 }
 
 [ $# -lt 1 ] && usage
