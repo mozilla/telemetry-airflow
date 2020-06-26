@@ -61,6 +61,19 @@ def wipe_gcs_files():
     ]
 
 
+def taar_profile_common_args():
+    return [
+        "-m",
+        "taar_etl.taar_profile_bigtable",
+        "--iso-date={{ ds_nodash }}",
+        "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
+        "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
+        "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
+        "--sample-rate=1.0",
+        "--subnetwork=%s" % TAAR_DATAFLOW_SUBNETWORK,
+    ]
+
+
 wipe_gcs_bucket = GKEPodOperator(
     owner="vng@mozilla.com",
     email=["vng@mozilla.com", "mlopatka@mozilla.com",],
@@ -79,16 +92,7 @@ dump_bq_to_tmp_table = GKEPodOperator(
     task_id="dump_bq_to_tmp_table",
     name="dump_bq_to_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=[
-        "-m",
-        "taar_etl.taar_profile_bigtable",
-        "--iso-date={{ ds_nodash }}",
-        "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
-        "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
-        "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
-        "--sample-rate=1.0",
-        "--fill-bq",
-    ],
+    arguments=taar_profile_common_args() + ["--fill-bq",],
     dag=taar_weekly,
 )
 
@@ -98,15 +102,7 @@ extract_bq_tmp_to_gcs_avro = GKEPodOperator(
     task_id="extract_bq_tmp_to_gcs_avro",
     name="extract_bq_tmp_to_gcs_avro",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=[
-        "-m",
-        "taar_etl.taar_profile_bigtable",
-        "--iso-date={{ ds_nodash }}",
-        "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
-        "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
-        "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
-        "--bq-to-gcs",
-    ],
+    arguments=taar_profile_common_args() + ["--bq-to-gcs",],
     dag=taar_weekly,
 )
 
@@ -121,16 +117,7 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
     # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
     # See: https://github.com/mozilla/telemetry-airflow/issues/844
     get_logs=False,
-    arguments=[
-        "-m",
-        "taar_etl.taar_profile_bigtable",
-        "--iso-date={{ ds_nodash }}",
-        "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
-        "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
-        "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
-        "--subnetwork=%s" % TAAR_DATAFLOW_SUBNETWORK,
-        "--gcs-to-bigtable",
-    ],
+    arguments=taar_profile_common_args() + ["--gcs-to-bigtable",],
     dag=taar_weekly,
 )
 
@@ -152,15 +139,7 @@ wipe_bigquery_tmp_table = GKEPodOperator(
     task_id="wipe_bigquery_tmp_table",
     name="wipe_bigquery_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=[
-        "-m",
-        "taar_etl.taar_profile_bigtable",
-        "--iso-date={{ ds_nodash }}",
-        "--gcp-project=%s" % TAAR_PROFILE_PROJECT_ID,
-        "--avro-gcs-bucket=%s" % TAAR_ETL_STORAGE_BUCKET,
-        "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
-        "--wipe-bigquery-tmp-table",
-    ],
+    arguments=taar_profile_common_args() + ["--wipe-bigquery-tmp-table",],
     dag=taar_weekly,
 )
 
