@@ -76,6 +76,7 @@ with models.DAG(
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
+    client1.set_upstream(generate_burnham_test_run_uuid)
 
     client2 = burnham_run(
         task_id="client2",
@@ -93,6 +94,7 @@ with models.DAG(
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
+    client2.set_upstream(generate_burnham_test_run_uuid)
 
     client3 = burnham_run(
         task_id="client3",
@@ -103,6 +105,7 @@ with models.DAG(
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
+    client3.set_upstream(generate_burnham_test_run_uuid)
 
     project_id = "moz-fx-data-shared-prod"
 
@@ -114,6 +117,9 @@ with models.DAG(
             test_name=burnham_test_name,
         ),
         timeout=60 * 60 * 1,
+    )
+    wait_for_data.set_upstream(
+        [generate_burnham_test_run_uuid, client1, client2, client3]
     )
 
     test_run_information = {
