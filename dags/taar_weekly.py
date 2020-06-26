@@ -78,7 +78,6 @@ dump_bq_to_tmp_table = GKEPodOperator(
     email=["vng@mozilla.com", "mlopatka@mozilla.com",],
     task_id="dump_bq_to_tmp_table",
     name="dump_bq_to_tmp_table",
-    # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image=TAAR_ETL_CONTAINER_IMAGE,
     arguments=[
         "-m",
@@ -98,7 +97,6 @@ extract_bq_tmp_to_gcs_avro = GKEPodOperator(
     email=["vng@mozilla.com", "mlopatka@mozilla.com",],
     task_id="extract_bq_tmp_to_gcs_avro",
     name="extract_bq_tmp_to_gcs_avro",
-    # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image=TAAR_ETL_CONTAINER_IMAGE,
     arguments=[
         "-m",
@@ -117,7 +115,6 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
     email=["vng@mozilla.com", "mlopatka@mozilla.com",],
     task_id="dataflow_import_avro_to_bigtable",
     name="dataflow_import_avro_to_bigtable",
-    # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image=TAAR_ETL_CONTAINER_IMAGE,
     # Due to the nature of the container run, we set get_logs to False,
     # To avoid urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes read)' errors
@@ -144,7 +141,6 @@ wipe_gcs_bucket_cleanup = GKEPodOperator(
     name="wipe_taar_gcs_bucket",
     location="us-central1-a",
     cluster_name="bq-load-gke-1",
-    namespace="default",
     image="google/cloud-sdk:242.0.0-alpine",
     arguments=wipe_gcs_files(),
     dag=taar_weekly,
@@ -155,7 +151,6 @@ wipe_bigquery_tmp_table = GKEPodOperator(
     email=["vng@mozilla.com", "mlopatka@mozilla.com",],
     task_id="wipe_bigquery_tmp_table",
     name="wipe_bigquery_tmp_table",
-    # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image=TAAR_ETL_CONTAINER_IMAGE,
     arguments=[
         "-m",
