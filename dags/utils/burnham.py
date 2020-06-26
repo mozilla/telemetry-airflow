@@ -60,7 +60,7 @@ def burnham_run(
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
-        image="gcr.io/moz-fx-data-airflow-prod-88e0//burnham:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/burnham:latest",
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
