@@ -179,9 +179,9 @@ def burnham_bigquery_run(
         image_pull_policy="Always",
         arguments=[
             "--verbose",
-            "--project-id='{}'".format(project_id),
-            "--run-id='{}'".format(burnham_test_run),
-            "--scenarios='{}'".format(burnham_test_scenarios),
+            "--project-id", project_id,
+            "--run-id", burnham_test_run,
+            "--scenarios", burnham_test_scenarios,
         ],
         **kwargs
     )
