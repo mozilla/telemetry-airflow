@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import base64
 import datetime
 import json
 import uuid
@@ -122,29 +123,30 @@ with models.DAG(
         [generate_burnham_test_run_uuid, client1, client2, client3]
     )
 
-    test_run_information = {
-        "identifier": burnham_test_run,
-        "tests": [
-            {
-                "name": burnham_test_name,
-                "query": QUERY_TEMPLATE.format(
-                    project_id=project_id,
-                    test_run=burnham_test_run,
-                    test_name=burnham_test_name,
-                    limit=10,
-                ),
-                "want": [
-                    {"key": "spore_drive", "value_sum": "13"},
-                    {"key": "warp_drive", "value_sum": "18"},
-                ],
-            },
-        ],
-    }
+    burnham_test_scenarios = [
+        {
+            "name": burnham_test_name,
+            "query": QUERY_TEMPLATE.format(
+                project_id=project_id,
+                test_run=burnham_test_run,
+                test_name=burnham_test_name,
+                limit=10,
+            ),
+            "want": [
+                {"key": "spore_drive", "value_sum": "13"},
+                {"key": "warp_drive", "value_sum": "18"},
+            ],
+        },
+    ]
+    json_encoded = json.dumps(burnham_test_scenarios)
+    utf_encoded = json_encoded.encode("utf-8")
+    b64_encoded = base64.b64encode(utf_encoded)
 
     verify_data = burnham_bigquery_run(
         task_id="verify_data",
         project_id=project_id,
-        test_run_information=json.dumps(test_run_information),
+        burnham_test_run=burnham_test_run,
+        burnham_test_scenarios=b64_encoded,
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
