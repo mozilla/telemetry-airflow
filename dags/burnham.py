@@ -17,6 +17,9 @@ from operators.gcp_container_operator import GKEPodOperator
 DAG_OWNER = "rpierzina@mozilla.com"
 DAG_EMAIL = ["telemetry-alerts@mozilla.com", "rpierzina@mozilla.com"]
 
+# We use a template for the test run UUID in the DAG. Because we base64 encode
+# this query SQL before the template is rendered, we need to use a parameter
+# and replace the test run UUID in burnham-bigquery.
 QUERY_TEMPLATE = """
 SELECT
   technology_space_travel.key,
@@ -27,7 +30,7 @@ CROSS JOIN
   UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
 WHERE
   submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = "{test_run}"
+  AND metrics.uuid.test_run = @burnham_test_run
   AND metrics.string.test_name = "{test_name}"
 GROUP BY
   technology_space_travel.key
@@ -179,9 +182,12 @@ def burnham_bigquery_run(
         image_pull_policy="Always",
         arguments=[
             "--verbose",
-            "--project-id", project_id,
-            "--run-id", burnham_test_run,
-            "--scenarios", burnham_test_scenarios,
+            "--project-id",
+            project_id,
+            "--run-id",
+            burnham_test_run,
+            "--scenarios",
+            burnham_test_scenarios,
         ],
         **kwargs
     )
@@ -259,10 +265,7 @@ with models.DAG(
         {
             "name": burnham_test_name,
             "query": QUERY_TEMPLATE.format(
-                project_id=project_id,
-                test_run=burnham_test_run,
-                test_name=burnham_test_name,
-                limit=10,
+                project_id=project_id, test_name=burnham_test_name, limit=10,
             ),
             "want": [
                 {"key": "spore_drive", "value_sum": "13"},
