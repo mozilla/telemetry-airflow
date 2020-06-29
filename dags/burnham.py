@@ -181,7 +181,7 @@ def burnham_bigquery_run(
         image="gcr.io/moz-fx-data-airflow-prod-88e0/burnham-bigquery:latest",
         image_pull_policy="Always",
         arguments=[
-            "--verbose",
+            "-vv",
             "--project-id",
             project_id,
             "--run-id",
@@ -268,8 +268,8 @@ with models.DAG(
                 project_id=project_id, test_name=burnham_test_name, limit=10,
             ),
             "want": [
-                {"key": "spore_drive", "value_sum": "13"},
-                {"key": "warp_drive", "value_sum": "18"},
+                {"key": "spore_drive", "value_sum": 13},
+                {"key": "warp_drive", "value_sum": 18},
             ],
         },
     ]
