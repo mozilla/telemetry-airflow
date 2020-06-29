@@ -15,12 +15,12 @@ from utils.dataproc import (
 
 
 default_args = {
-    "owner": "amiyaguchi@mozilla.com",
+    "owner": "frank@mozilla.com",
     "depends_on_past": True,
     "start_date": datetime(2020, 3, 15),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "amiyaguchi@mozilla.com",
+        "frank@mozilla.com",
         "bmiroglio@mozilla.com",
     ],
     "email_on_failure": True,
