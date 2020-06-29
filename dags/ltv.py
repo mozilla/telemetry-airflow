@@ -106,13 +106,16 @@ response = urlopen('/'.join([
     'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
     'revenue_derived', 'client_ltv_v1', 'query.sql']))
 
+BigQueryOperator.template_fields += ('query_params',)
 ltv_revenue_join=BigQueryOperator(
     task_id='ltv_revenue_join',
     sql=response.read().decode('utf-8'),
-    destination_dataset_table='moz-it-eip-revenue-users.ltv_derived.client_ltv_v1',
+    query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
+    destination_dataset_table='moz-it-eip-revenue-users.ltv_derived.client_ltv_v1${{ ds_nodash }}',
     bigquery_conn_id='google_cloud_it_revenue',
     use_legacy_sql=False,
-    default_args=default_args
+    default_args=default_args,
+    time_partitioning={"type": "DAY", "field": "submission_date"},
 )
 
 ltv_daily >> ltv_revenue_join
