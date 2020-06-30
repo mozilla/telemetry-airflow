@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
-from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
-from airflow.contrib.operators.gcs_to_gcs import GoogleCloudStorageToGoogleCloudStorageOperator
 from utils.gcp import gke_command
 
 default_args = {
@@ -21,8 +19,6 @@ default_args = {
 dag = DAG(
     "glam_org_mozilla_fenix", default_args=default_args, schedule_interval="@daily"
 )
-
-glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate",
@@ -53,21 +49,4 @@ export_csv = gke_command(
     dag=dag,
 )
 
-gcs_delete = GoogleCloudStorageDeleteOperator(
-    task_id="gcs_delete",
-    bucket_name=glam_bucket,
-    prefix="glam-extract-fenix",
-    gcp_conn_id="google_cloud_airflow_dataproc",
-    dag=dag,
-)
-
-gcs_copy = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="gcs_copy",
-    source_bucket="glam-fenix-dev",
-    source_object="*.csv",
-    destination_bucket=glam_bucket,
-    gcp_conn_id="google_cloud_airflow_dataproc",
-    dag=dag,
-)
-
-wait_for_copy_deduplicate >> run_sql >> export_csv >> gcs_delete >> gcs_copy
+wait_for_copy_deduplicate >> run_sql >> export_csv
