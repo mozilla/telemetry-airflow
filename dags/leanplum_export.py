@@ -28,7 +28,6 @@ with DAG('leanplum_export',
         s3_prefix='firefox_android',
         bq_dataset_id='firefox_android_release_external',
         table_prefix='leanplum',
-        aws_conn_id='aws_data_iam_s3',
         version='2',
         dag=dag
     )
@@ -39,7 +38,6 @@ with DAG('leanplum_export',
         s3_prefix='firefox_ios',
         bq_dataset_id='firefox_ios_release_external',
         table_prefix='leanplum',
-        aws_conn_id='aws_data_iam_s3',
         version='2',
         dag=dag
     )

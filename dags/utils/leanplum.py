@@ -15,7 +15,7 @@ def export(
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/leanplum-data-export:latest",
-    aws_conn_id="aws_dev_iam_s3",
+    aws_conn_id="aws_data_iam_s3",
     **kwargs
 ):
     """ Export a day of data from Leanplum for a single application,
