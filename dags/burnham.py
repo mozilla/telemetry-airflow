@@ -147,7 +147,7 @@ LIMIT
 WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
     {
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
-        "glean_error_invalid_value": [{"key": "mission.status", "value": "1"}],
+        "glean_error_invalid_value": [{"key": "mission.status", "value": 1}],
     }
 ]
 
