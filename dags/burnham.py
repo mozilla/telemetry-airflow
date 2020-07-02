@@ -20,7 +20,11 @@ DAG_EMAIL = ["telemetry-alerts@mozilla.com", "rpierzina@mozilla.com"]
 # We use a template for the test run UUID in the DAG. Because we base64 encode
 # this query SQL before the template is rendered, we need to use a parameter
 # and replace the test run UUID in burnham-bigquery.
-QUERY_TEMPLATE = """
+
+# Test scenario test_labeled_counter_metrics: Verify that labeled_counter
+# metric values reported by the Glean SDK across several documents from three
+# different clients are correct.
+TEST_LABELED_COUNTER_METRICS = """
 SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
@@ -31,14 +35,121 @@ CROSS JOIN
 WHERE
   submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
-  AND metrics.string.test_name = "{test_name}"
 GROUP BY
   technology_space_travel.key
 ORDER BY
   technology_space_travel.key
 LIMIT
-  {limit}
+  10
 """
+
+WANT_TEST_LABELED_COUNTER_METRICS = [
+    {"key": "spore_drive", "value_sum": 13},
+    {"key": "warp_drive", "value_sum": 18},
+]
+
+# Test scenario test_client_ids: Verify that the Glean SDK generated three
+# distinct client IDs for three different clients.
+TEST_CLIENT_IDS = """
+SELECT
+  COUNT(DISTINCT client_info.client_id) AS count_client_ids
+FROM
+  `{project_id}.burnham_live.discovery_v1`
+WHERE
+  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  AND metrics.uuid.test_run = @burnham_test_run
+LIMIT
+  10
+"""
+WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
+
+# Test scenario test_experiments: Verify that the Glean SDK correctly reports
+# experiment information. The following query counts the number of documents
+# submitted from a client which is not enrolled in any experiments, a client
+# which is enrolled in the spore_drive experiment on branch tardigrade, and a
+# client which is enrolled in the spore_drive experiment on branch
+# tardigrade-dna.
+TEST_EXPERIMENTS = """
+WITH
+  base AS (
+  SELECT
+    ARRAY(
+    SELECT
+      CONCAT(key, ':', value.branch) AS key
+    FROM
+      UNNEST(ping_info.experiments)) AS experiments,
+  FROM
+    `{project_id}.burnham_live.discovery_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run
+  LIMIT
+    10 ),
+  experiment_counts AS (
+  SELECT
+    experiment,
+    COUNT(*) AS document_count
+  FROM
+    base,
+    UNNEST(experiments) AS experiment
+  GROUP BY
+    experiment),
+  no_experiments AS (
+  SELECT
+    'no_experiments' AS experiment,
+    COUNT(*) AS document_count
+  FROM
+    base
+  WHERE
+    ARRAY_LENGTH(experiments) = 0 ),
+  unioned AS (
+  SELECT
+    *
+  FROM
+    experiment_counts
+  UNION ALL
+  SELECT
+    *
+  FROM
+    no_experiments )
+SELECT
+  *
+FROM
+  unioned
+ORDER BY
+  experiment
+"""
+
+WANT_TEST_EXPERIMENTS = [
+    {"experiment": "no_experiments", "document_count": 2},
+    {"experiment": "spore_drive:tardigrade", "document_count": 2},
+    {"experiment": "spore_drive:tardigrade-dna", "document_count": 6},
+]
+
+# Test scenario test_glean_error_invalid_value: Verify that the Glean SDK
+# correctly reports the number of times a metric was set to an invalid value.
+TEST_GLEAN_ERROR_INVALID_VALUE = """
+SELECT
+  metrics.string.mission_identifier,
+  metrics.labeled_counter.glean_error_invalid_value
+FROM
+  `{project_id}.burnham_live.discovery_v1`
+WHERE
+  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  AND metrics.uuid.test_run = @burnham_test_run
+  AND ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
+ORDER BY
+  metrics.string.mission_identifier
+LIMIT
+  10
+"""
+
+WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
+    {
+        "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
+        "glean_error_invalid_value": [{"key": "mission.status", "value": "1"}],
+    }
+]
 
 SENSOR_TEMPLATE = """
 SELECT
@@ -48,7 +159,6 @@ FROM
 WHERE
   submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = "{test_run}"
-  AND metrics.string.test_name = "{test_name}"
 """
 
 DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
@@ -202,9 +312,12 @@ with models.DAG(
         task_id="generate_burnham_test_run_uuid",
         python_callable=lambda: str(uuid.uuid4()),
     )
-
     burnham_test_run = '{{ task_instance.xcom_pull("generate_burnham_test_run_uuid") }}'
-    burnham_test_name = "test_labeled_counter_metrics"
+
+    # We cover multiple test scenarios with pings submitted from the following
+    # clients, so they don't submit using a specific test name, but all share
+    # the following value.
+    burnham_test_name = "test_burnham"
 
     client1 = burnham_run(
         task_id="client1",
@@ -263,16 +376,27 @@ with models.DAG(
 
     burnham_test_scenarios = [
         {
-            "name": burnham_test_name,
-            "query": QUERY_TEMPLATE.format(
-                project_id=project_id, test_name=burnham_test_name, limit=10,
-            ),
-            "want": [
-                {"key": "spore_drive", "value_sum": 13},
-                {"key": "warp_drive", "value_sum": 18},
-            ],
+            "name": "test_labeled_counter_metrics",
+            "query": TEST_LABELED_COUNTER_METRICS.format(project_id=project_id),
+            "want": WANT_TEST_LABELED_COUNTER_METRICS,
+        },
+        {
+            "name": "test_client_ids",
+            "query": TEST_CLIENT_IDS.format(project_id=project_id),
+            "want": WANT_TEST_CLIENT_IDS,
+        },
+        {
+            "name": "test_experiments",
+            "query": TEST_EXPERIMENTS.format(project_id=project_id),
+            "want": WANT_TEST_EXPERIMENTS,
+        },
+        {
+            "name": "test_glean_error_invalid_value",
+            "query": TEST_GLEAN_ERROR_INVALID_VALUE.format(project_id=project_id),
+            "want": WANT_TEST_GLEAN_ERROR_INVALID_VALUE,
         },
     ]
+
     json_encoded = json.dumps(burnham_test_scenarios)
     utf_encoded = json_encoded.encode("utf-8")
     b64_encoded = base64.b64encode(utf_encoded)
