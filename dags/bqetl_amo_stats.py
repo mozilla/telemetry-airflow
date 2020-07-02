@@ -117,14 +117,13 @@ with DAG(
         dag=dag,
     )
 
-    amo_prod__amo_stats_installs__v1.set_upstream(
-        wait_for_telemetry_derived__clients_daily__v6
-    )
     amo_prod__fenix_addons_by_client__v1.set_upstream(
         wait_for_copy_deduplicate_copy_deduplicate_all
     )
 
     amo_prod__amo_stats_dau__v2.set_upstream(amo_prod__desktop_addons_by_client__v1)
+
+    amo_prod__amo_stats_dau__v2.set_upstream(amo_prod__fenix_addons_by_client__v1)
 
     wait_for_copy_deduplicate_copy_deduplicate_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_copy_deduplicate_main_ping",
