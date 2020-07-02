@@ -15,7 +15,7 @@ from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
 
 DAG_OWNER = "rpierzina@mozilla.com"
-DAG_EMAIL = ["telemetry-alerts@mozilla.com", "rpierzina@mozilla.com"]
+DAG_EMAIL = ["rpierzina@mozilla.com"]
 
 # We use a template for the test run UUID in the DAG. Because we base64 encode
 # this query SQL before the template is rendered, we need to use a parameter
@@ -147,7 +147,7 @@ LIMIT
 WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
     {
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
-        "glean_error_invalid_value": [{"key": "mission.status", "value": "1"}],
+        "glean_error_invalid_value": [{"key": "mission.status", "value": 1}],
     }
 ]
 
