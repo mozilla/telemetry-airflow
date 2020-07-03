@@ -9,6 +9,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
+from glam_subdags.generate_query import generate_and_run_query
 from utils.gcp import bigquery_etl_query, gke_command
 
 
@@ -22,6 +23,7 @@ default_args = {
         "telemetry-alerts@mozilla.com",
         "msamuel@mozilla.com",
         "robhudson@mozilla.com",
+        "bewu@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -66,86 +68,33 @@ latest_versions = bigquery_etl_query(
 
 # This task runs first and replaces the relevant partition, followed
 # by the next two tasks that append to the same partition of the same table.
-clients_daily_scalar_aggregates = gke_command(
+clients_daily_scalar_aggregates = generate_and_run_query(
     task_id="clients_daily_scalar_aggregates",
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-        "bewu@mozilla.com",
-    ],
-    cmds=["bash"],
-    env_vars={
-        "PROJECT": project_id,
-        "PROD_DATASET": dataset_id,
-        "DATASET": dataset_id,
-        "SUBMISSION_DATE": "{{ ds }}",
-        "RUN_QUERY": "t",
-    },
-    command=[
-        "script/glam/generate_and_run_desktop_sql",
-        "scalar",
-        PERCENT_RELEASE_WINDOWS_SAMPLING,
-    ],
-    docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    project_id=project_id,
+    dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    append_results=False,
+    probe_type="scalar",
     dag=dag,
 )
 
-clients_daily_keyed_scalar_aggregates = gke_command(
+clients_daily_keyed_scalar_aggregates = generate_and_run_query(
     task_id="clients_daily_keyed_scalar_aggregates",
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-        "bewu@mozilla.com",
-    ],
-    cmds=["bash"],
-    env_vars={
-        "PROJECT": project_id,
-        "PROD_DATASET": dataset_id,
-        "DATASET": dataset_id,
-        "SUBMISSION_DATE": "{{ ds }}",
-        "RUN_QUERY": "t",
-        "APPEND": "t",
-    },
-    command=[
-        "script/glam/generate_and_run_desktop_sql",
-        "keyed_scalar",
-        PERCENT_RELEASE_WINDOWS_SAMPLING,
-    ],
-    docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    project_id=project_id,
+    dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    append_results=True,
+    probe_type="keyed_scalar",
     dag=dag,
 )
 
-clients_daily_keyed_boolean_aggregates = gke_command(
+clients_daily_keyed_boolean_aggregates = generate_and_run_query(
     task_id="clients_daily_keyed_boolean_aggregates",
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-        "bewu@mozilla.com",
-    ],
-    cmds=["bash"],
-    env_vars={
-        "PROJECT": project_id,
-        "PROD_DATASET": dataset_id,
-        "DATASET": dataset_id,
-        "SUBMISSION_DATE": "{{ ds }}",
-        "RUN_QUERY": "t",
-        "APPEND": "t",
-    },
-    command=[
-        "script/glam/generate_and_run_desktop_sql",
-        "keyed_boolean",
-        PERCENT_RELEASE_WINDOWS_SAMPLING,
-    ],
-    docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    project_id=project_id,
+    dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    append_results=True,
+    probe_type="keyed_boolean",
     dag=dag,
 )
 
@@ -183,6 +132,30 @@ scalar_percentiles = bigquery_etl_query(
     dag=dag,
 )
 
+clients_daily_histogram_aggregates_parent = generate_and_run_query(
+    task_id="clients_daily_histogram_aggregates_parent",
+    project_id=project_id,
+    dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    append_results=False,
+    probe_type="histogram",
+    process="parent",
+    get_logs=False,
+    dag=dag,
+)
+
+clients_daily_histogram_aggregates_content = generate_and_run_query(
+    task_id="clients_daily_histogram_aggregates_content",
+    project_id=project_id,
+    dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    append_results=False,
+    probe_type="histogram",
+    process="content",
+    get_logs=False,
+    dag=dag,
+)
+
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
 clients_daily_histogram_aggregates = bigquery_etl_query(
@@ -190,47 +163,19 @@ clients_daily_histogram_aggregates = bigquery_etl_query(
     destination_table="clients_daily_histogram_aggregates_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-        "bewu@mozilla.com",
-    ],
     arguments=("--replace",),
-    parameters=(
-        "sample_size:INT64:{}".format(PERCENT_RELEASE_WINDOWS_SAMPLING),
-    ),
     dag=dag,
 )
 
-clients_daily_keyed_histogram_aggregates = gke_command(
+clients_daily_keyed_histogram_aggregates = generate_and_run_query(
     task_id="clients_daily_keyed_histogram_aggregates",
-    owner="msamuel@mozilla.com",
-    email=[
-        "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
-        "robhudson@mozilla.com",
-        "bewu@mozilla.com",
-    ],
-    cmds=["bash"],
-    env_vars={
-        "PROJECT": project_id,
-        "PROD_DATASET": dataset_id,
-        "DATASET": dataset_id,
-        "SUBMISSION_DATE": "{{ ds }}",
-        "RUN_QUERY": "t",
-        "APPEND": "t",
-    },
-    command=[
-        "script/glam/generate_and_run_desktop_sql",
-        "keyed_histogram",
-        PERCENT_RELEASE_WINDOWS_SAMPLING,
-    ],
-    docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
-    dag=dag,
+    project_id=project_id,
+    dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    append_results=True,
+    probe_type="keyed_histogram",
     get_logs=False,
+    dag=dag,
 )
 
 clients_histogram_aggregates = SubDagOperator(
@@ -366,7 +311,10 @@ clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
 clients_scalar_aggregates >> scalar_percentiles
 clients_scalar_aggregates >> client_scalar_probe_counts
 
-latest_versions >> clients_daily_histogram_aggregates
+latest_versions >> clients_daily_histogram_aggregates_parent
+latest_versions >> clients_daily_histogram_aggregates_content
+clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates
+clients_daily_histogram_aggregates_content >> clients_daily_histogram_aggregates
 clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
