@@ -28,6 +28,15 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         dag=dag,
     )
 
+    pensieve_export_json = GKEPodOperator(
+        task_id="pensieve_export_json",
+        name="pensieve_export_json",
+        image=pensieve_image,
+        email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
+        arguments=["export_json"],
+        dag=dag,
+    )
+
     wait_for_clients_daily_export = ExternalTaskSensor(
         task_id="wait_for_clients_daily_export",
         external_dag_id="parquet_export",
@@ -72,3 +81,5 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
             wait_for_copy_deduplicate_events,
         ]
     )
+
+    pensieve_export_json.set_upstream(pensieve)
