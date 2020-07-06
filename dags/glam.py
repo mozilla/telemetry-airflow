@@ -304,7 +304,6 @@ clients_scalar_aggregates >> scalar_percentiles
 clients_scalar_aggregates >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates_parent
-latest_versions >> clients_daily_histogram_aggregates_content
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
 clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
 clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
