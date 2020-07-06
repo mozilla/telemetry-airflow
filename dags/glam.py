@@ -132,6 +132,9 @@ scalar_percentiles = bigquery_etl_query(
     dag=dag,
 )
 
+
+# This task runs first and replaces the relevant partition, followed
+# by the next task below that appends to the same partition of the same table.
 clients_daily_histogram_aggregates_parent = generate_and_run_query(
     task_id="clients_daily_histogram_aggregates_parent",
     project_id=project_id,
@@ -149,21 +152,10 @@ clients_daily_histogram_aggregates_content = generate_and_run_query(
     project_id=project_id,
     source_dataset_id=dataset_id,
     sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
-    overwrite=True,
+    overwrite=False,
     probe_type="histogram",
     process="content",
     get_logs=False,
-    dag=dag,
-)
-
-# This task runs first and replaces the relevant partition, followed
-# by the next task below that appends to the same partition of the same table.
-clients_daily_histogram_aggregates = bigquery_etl_query(
-    task_id="clients_daily_histogram_aggregates",
-    destination_table="clients_daily_histogram_aggregates_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    arguments=("--replace",),
     dag=dag,
 )
 
@@ -313,9 +305,9 @@ clients_scalar_aggregates >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates_parent
 latest_versions >> clients_daily_histogram_aggregates_content
-clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates
-clients_daily_histogram_aggregates_content >> clients_daily_histogram_aggregates
-clients_daily_histogram_aggregates >> clients_daily_keyed_histogram_aggregates
+clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
+clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
+clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
