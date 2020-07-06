@@ -33,7 +33,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         name="pensieve_export_json",
         image=pensieve_image,
         email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
-        arguments=["export_json"],
+        arguments=["export_statistics_to_json"],
         dag=dag,
     )
 
