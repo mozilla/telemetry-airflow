@@ -40,10 +40,6 @@ with models.DAG(
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"])
 
-    # We copy yesterday's main pings from telemetry_live to telemetry_stable
-    # at the root of this DAG because telemetry_stable.main_v4 will become
-    # the source for main_summary, etc. once we are comfortable retiring parquet
-    # data imports.
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
         target_project_id="moz-fx-data-shared-prod",
