@@ -81,7 +81,6 @@ with models.DAG(
         external_dag_id="fxa_events",
         external_task_id="firefox_accounts_exact_mau28_raw",
         check_existence=True,
-        execution_delta=timedelta(hours=-9),
         mode="reschedule",
         dag=dag,
     )
