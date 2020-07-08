@@ -32,6 +32,7 @@ with DAG('incline_dashboard',
         task_id="wait_for_core_clients_last_seen",
         external_dag_id="bqetl_core",
         external_task_id="telemetry_derived__core_clients_last_seen__v1",
+        execution_delta=timedelta(hours=-1),
     )
 
     project = "moz-fx-data-shared-prod"

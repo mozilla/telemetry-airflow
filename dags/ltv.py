@@ -96,7 +96,7 @@ else:
         task_id="wait_for_search_clients_last_seen",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_last_seen__v1",
-        execution_delta=timedelta(hours=-1),
+        execution_delta=timedelta(hours=-2),
         check_existence=True,
         dag=dag,
     )
