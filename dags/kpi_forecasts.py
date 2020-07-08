@@ -41,6 +41,7 @@ with models.DAG(
         external_task_id="telemetry_derived__firefox_nondesktop_exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
+        execution_delta=timedelta(hours=-1),
         dag=dag,
     )
 
