@@ -12,6 +12,8 @@ Migrated from https://github.com/mozilla/python_mozetl/blob/3d1ca45f7460c3efa333
 
 from datetime import date, timedelta
 
+import io
+import bz2
 from collections.abc import Mapping, Iterable
 from decimal import Decimal
 import json
@@ -22,6 +24,7 @@ import os
 
 import click
 import numpy as np
+from google.cloud import storage
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from pyspark.ml.feature import HashingTF, IDF
@@ -30,101 +33,30 @@ from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
 from pyspark.statcounter import StatCounter
 from scipy.spatial import distance
-import boto3
 from google.cloud import bigquery
 
 
-def aws_env_credentials():
-    """
-    Load the AWS credentials from the enviroment
-    """
-    result = {
-        "aws_access_key_id": os.environ.get("AWS_ACCESS_KEY_ID", None),
-        "aws_secret_access_key": os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-    }
-    return result
+def read_from_gcs(fname, prefix, bucket):
+    with io.BytesIO() as tmpfile:
+        client = storage.Client()
+        bucket = client.get_bucket(bucket)
+        simple_fname = f"{prefix}/{fname}.bz2"
+        blob = bucket.blob(simple_fname)
+        blob.download_to_file(tmpfile)
+        tmpfile.seek(0)
+        payload = tmpfile.read()
+        payload = bz2.decompress(payload)
+        return json.loads(payload.decode("utf8"))
 
 
-@contextlib.contextmanager
-def selfdestructing_path(dirname):
-    import shutil
-
-    yield dirname
-    shutil.rmtree(dirname)
-
-
-def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
-    """Store the new json file containing current top addons per locale to S3.
-
-    :param source_file_name: The name of the local source file.
-    :param s3_dest_file_name: The name of the destination file on S3.
-    :param s3_prefix: The S3 prefix in the bucket.
-    :param bucket: The S3 bucket.
-    """
-    client = boto3.client(
-        service_name="s3", region_name="us-west-2", **aws_env_credentials()
-    )
-    transfer = boto3.s3.transfer.S3Transfer(client)
-
-    # Update the state in the analysis bucket.
-    key_path = s3_prefix + s3_dest_file_name
-    transfer.upload_file(source_file_name, bucket, key_path)
-    print("Completed saving s3://{}/{}".format(bucket, key_path))
-
-
-def read_from_s3(s3_dest_file_name, s3_prefix, bucket):
-    """
-    Read JSON from an S3 bucket and return the decoded JSON blob
-    """
-
-    full_s3_name = "{}{}".format(s3_prefix, s3_dest_file_name)
-    conn = boto3.resource("s3", region_name="us-west-2")
-    stored_data = json.loads(
-        conn.Object(bucket, full_s3_name).get()["Body"].read().decode("utf-8")
-    )
-    return stored_data
-
-
-def load_amo_curated_whitelist():
+def load_amo_curated_whitelist(bucket):
     """
     Return the curated whitelist of addon GUIDs
     """
-    whitelist = read_from_s3(
-        "only_guids_top_200.json",
-        "telemetry-ml/addon_recommender/",
-        "telemetry-parquet",
+    whitelist = read_from_gcs(
+        "only_guids_top_200.json", "addon_recommender", bucket,
     )
-    print("Whitelist loaded %d items" % len(whitelist))
     return list(whitelist)
-
-
-def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
-    """Saves the JSON data to a local file and then uploads it to S3.
-
-    Two copies of the file will get uploaded: one with as "<base_filename>.json"
-    and the other as "<base_filename><YYYYMMDD>.json" for backup purposes.
-
-    :param json_data: A string with the JSON content to write.
-    :param base_filename: A string with the base name of the file to use for saving
-        locally and uploading to S3.
-    :param date: A date string in the "YYYYMMDD" format.
-    :param prefix: The S3 prefix.
-    :param bucket: The S3 bucket name.
-    """
-
-    tempdir = tempfile.mkdtemp()
-
-    with selfdestructing_path(tempdir):
-        JSON_FILENAME = "{}.json".format(base_filename)
-        FULL_FILENAME = os.path.join(tempdir, JSON_FILENAME)
-        with open(FULL_FILENAME, "w+") as json_file:
-            json_file.write(json_data)
-
-        archived_file_copy = "{}{}.json".format(base_filename, date)
-
-        # Store a copy of the current JSON with datestamp.
-        write_to_s3(FULL_FILENAME, archived_file_copy, prefix, bucket)
-        write_to_s3(FULL_FILENAME, JSON_FILENAME, prefix, bucket)
 
 
 # Define the set of feature names to be used in the donor computations.
@@ -526,20 +458,49 @@ class DecimalEncoder(json.JSONEncoder):
         return super().encode(obj)
 
 
+def store_json_to_gcs(
+    bucket, prefix, filename, json_obj, iso_date_str,
+):
+    """Saves the JSON data to a local file and then uploads it to GCS.  
+    Two copies of the file will get uploaded: one with as "<base_filename>.json"
+    and the other as "<base_filename><YYYYMMDD>.json" for backup purposes.
+
+    :param bucket: The GCS bucket name.
+    :param prefix: The GCS prefix.
+    :param filename: A string with the base name of the file to use for saving
+        locally and uploading to GCS
+    :param json_data: A string with the JSON content to write.
+    :param date: A date string in the "YYYYMMDD" format.
+    """
+    byte_data = json.dumps(json_obj, cls=DecimalEncoder).encode("utf8")
+
+    byte_data = bz2.compress(byte_data)
+    logger.info(f"Compressed data is {len(byte_data)} bytes")
+
+    client = storage.Client()
+    bucket = client.get_bucket(bucket)
+    simple_fname = f"{prefix}/{filename}.bz2"
+    blob = bucket.blob(simple_fname)
+    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+    print(f"Wrote out {simple_fname}")
+    blob.upload_from_string(byte_data)
+    long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
+    blob = bucket.blob(long_fname)
+    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+    print(f"Wrote out {long_fname}")
+    blob.upload_from_string(byte_data)
+
+
 @click.command()
 @click.option("--date", required=True)
-@click.option("--aws_access_key_id", required=True)
-@click.option("--aws_secret_access_key", required=True)
-@click.option("--bucket", default="telemetry-parquet")
-@click.option("--prefix", default="taar/similarity/")
+@click.option("--bucket", default="taar_models")
+@click.option("--prefix", default="taar/similarity")
 @click.option("--num_clusters", default=20)
 @click.option("--num_donors", default=1000)
 @click.option("--kernel_bandwidth", default=0.35)
 @click.option("--num_pdf_points", default=1000)
 def main(
     date,
-    aws_access_key_id,
-    aws_secret_access_key,
     bucket,
     prefix,
     num_clusters,
@@ -548,10 +509,6 @@ def main(
     num_pdf_points,
 ):
     logger.info("Sampling clients since {}".format(date))
-
-    # Clobber the AWS access credentials
-    os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key_id
-    os.environ["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
 
     spark = (
         SparkSession.builder.appName("taar_similarity")
@@ -566,7 +523,7 @@ def main(
         num_donors = 100
 
     logger.info("Loading the AMO whitelist...")
-    whitelist = load_amo_curated_whitelist()
+    whitelist = load_amo_curated_whitelist(bucket)
 
     logger.info("Computing the list of donors...")
 
@@ -582,20 +539,9 @@ def main(
     # Store them.
     donors = format_donors_dictionary(donors_df)
 
-    store_json_to_s3(
-        json.dumps(donors, indent=2, cls=DecimalEncoder),
-        "donors",
-        date,
-        prefix,
-        bucket,
-    )
-    store_json_to_s3(
-        json.dumps(lr_curves, indent=2, cls=DecimalEncoder),
-        "lr_curves",
-        date,
-        prefix,
-        bucket,
-    )
+    store_json_to_gcs(bucket, prefix, "donors.json", donors, date)
+    store_json_to_gcs(bucket, prefix, "lr_curves.json", lr_curves, date)
+
     spark.stop()
 
 
