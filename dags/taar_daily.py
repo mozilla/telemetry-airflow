@@ -91,13 +91,6 @@ wait_for_clients_daily_export = ExternalTaskSensor(
     external_task_id="clients_daily_export",
     dag=dag)
 
-wait_for_main_summary_export = ExternalTaskSensor(
-    task_id="wait_for_main_summary_export",
-    external_dag_id="parquet_export",
-    external_task_id="main_summary_export",
-    dag=dag)
-
-
 taar_locale = SubDagOperator(
     task_id="taar_locale",
     subdag=moz_dataproc_pyspark_runner(
