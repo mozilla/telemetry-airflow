@@ -37,20 +37,20 @@ with models.DAG(
         task_id=fenix_task_id
     )
 
-#    fenix_shredder = gke_command(
-#        task_id="fenix_amplitude_shredder",
-#        name="shredder-amplitude-fenix",
-#        command=[
-#            "script/shredder_amplitude",
-#            "--date={{ ds }}",
-#            "--api-key={{ var.value.amplitude_api_key }}",
-#            "--secret-key={{ var.value.amplitude_secret_key }}",
-#            "--table-id=moz-fx-data-shared-prod.org_mozilla_fenix.deletion_request_v1",
-#            "--device-id-field=client_info.client_id",
-#        ],
-#        docker_image="mozilla/bigquery-etl:latest",
-#        dag=dag,
-#    )
+    shredder_fenix = gke_command(
+        task_id="shredder_amplitude_fenix",
+        name="shredder-amplitude-fenix",
+        command=[
+            "script/shredder_amplitude",
+            "--date={{ ds }}",
+            "--api-key={{ var.value.fenix_amplitude_api_key }}",
+            "--secret-key={{ var.value.fenix_amplitude_secret_key }}",
+            "--table-id=moz-fx-data-shared-prod.org_mozilla_fenix.deletion_request_v1",
+            "--device-id-field=client_info.client_id",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        dag=dag,
+    )
 
     fennec_ios_task_id = 'fennec_ios_amplitude_export'
     fennec_ios_args = default_args.copy()
@@ -115,23 +115,23 @@ with models.DAG(
         task_id=devtools_task_id
     )
 
-#    devtools_shredder = gke_command(
-#        task_id="devtools_amplitude_shredder",
-#        name="shredder-amplitude-devtools",
-#        command=[
-#            "script/shredder_amplitude",
-#            "--date={{ ds }}",
-#            "--api-key={{ var.value.amplitude_api_key }}",
-#            "--secret-key={{ var.value.amplitude_secret_key }}",
-#            "--table-id=moz-fx-data-shared-prod.telemetry.deletion_request_v4",
-#            "--user-id-field=client_id",
-#        ],
-#        docker_image="mozilla/bigquery-etl:latest",
-#        dag=dag,
-#    )
+    shredder_devtools = gke_command(
+        task_id="shredder_amplitude_devtools",
+        name="shredder-amplitude-devtools",
+        command=[
+            "script/shredder_amplitude",
+            "--date={{ ds }}",
+            "--api-key={{ var.value.devtools_amplitude_api_key }}",
+            "--secret-key={{ var.value.devtools_amplitude_secret_key }}",
+            "--table-id=moz-fx-data-shared-prod.telemetry.deletion_request_v4",
+            "--user-id-field=client_id",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        dag=dag,
+    )
 
     [wait_for_copy_deduplicate_all, wait_for_copy_deduplicate_main_ping] >> devtools_export
-#    wait_for_copy_deduplicate_all >> [fenix_shredder, devtools_shredder]
+    wait_for_copy_deduplicate_all >> [shredder_fenix, shredder_devtools]
 
     onboarding_task_id = 'onboarding_amplitude_export'
     onboarding_args = default_args.copy()
