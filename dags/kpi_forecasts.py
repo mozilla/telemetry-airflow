@@ -22,7 +22,7 @@ dag_name = 'kpi_forecasts'
 
 with models.DAG(
         dag_name,
-        schedule_interval='0 1 * * *',
+        schedule_interval='0 3 * * *',
         default_args=default_args) as dag:
 
     simpleprophet_forecasts_mobile = simpleprophet_forecast(
@@ -41,6 +41,7 @@ with models.DAG(
         external_task_id="telemetry_derived__firefox_nondesktop_exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
+        execution_delta=timedelta(hours=1),
         dag=dag,
     )
 
@@ -62,6 +63,7 @@ with models.DAG(
         external_task_id="firefox_desktop_exact_mau28_by_dimensions",
         check_existence=True,
         mode="reschedule",
+        execution_delta=timedelta(hours=2),
         dag=dag,
     )
 
@@ -81,8 +83,8 @@ with models.DAG(
         external_dag_id="fxa_events",
         external_task_id="firefox_accounts_exact_mau28_raw",
         check_existence=True,
-        execution_delta=timedelta(hours=-9),
         mode="reschedule",
+        execution_delta=timedelta(hours=1),
         dag=dag,
     )
 
