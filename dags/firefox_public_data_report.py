@@ -1,14 +1,15 @@
 from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
+from operators.gcp_container_operator import GKEPodOperator
 
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     get_dataproc_parameters,
 )
+from utils.gcp import bigquery_etl_query
 
 
 """
@@ -30,7 +31,7 @@ default_args = {
     "retry_delay": timedelta(minutes=10),
 }
 
-dag = DAG("public_data_hardware_report", default_args=default_args, schedule_interval="0 1 * * MON")
+dag = DAG("firefox_public_data_report", default_args=default_args, schedule_interval="0 1 * * MON")
 
 # Required to write json output to s3://telemetry-public-analysis-2/public-data-report/hardware/
 write_aws_conn_id='aws_dev_telemetry_public_analysis_2_rw'
@@ -82,4 +83,60 @@ hardware_report = SubDagOperator(
     )
 )
 
+wait_for_clients_last_seen = ExternalTaskSensor(
+    task_id="wait_for_clients_last_seen",
+    external_dag_id="bqetl_clients_daily",
+    external_task_id="telemetry_derived__clients_last_seen__v1",
+    execution_delta=timedelta(days=-6),
+    check_existence=True,
+    dag=dag,
+)
+
+user_activity = bigquery_etl_query(
+    task_id="user_activity",
+    destination_table="public_data_report_user_activity_v1",
+    project_id="moz-fx-data-shared-prod",
+    dataset_id="telemetry_derived",
+    dag=dag,
+)
+
+user_activity_usage_behavior_export = GKEPodOperator(
+    task_id="user_activity_export",
+    name="user_activity_export",
+    image="gcr.io/{{ var.value.gcr_project_id }}/firefox-public-data-report-etl:latest",
+    arguments=[
+        "-m", "public_data_report.cli",
+        "user_activity",
+        "--bq_table", "moz-fx-data-shared-prod.telemetry_derived.public_data_report_user_activity_v1",
+        "--s3_bucket", "telemetry-public-analysis-2",
+        "--s3_path", "public-data-report/user_activity",
+    ],
+    env_vars={
+        "AWS_ACCESS_KEY_ID": aws_access_key,
+        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+    },
+    image_pull_policy="Always",
+    dag=dag,
+)
+
+annotations_export = GKEPodOperator(
+    task_id="annotations_export",
+    name="annotations_export",
+    image="gcr.io/{{ var.value.gcr_project_id }}/firefox-public-data-report-etl:latest",
+    arguments=[
+        "-m", "public_data_report.cli",
+        "annotations",
+        "--date_to", "{{ ds }}",
+        "--output_bucket", "telemetry-public-analysis-2",
+        "--output_prefix", "public-data-report/annotations",
+    ],
+    env_vars={
+        "AWS_ACCESS_KEY_ID": aws_access_key,
+        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+    },
+    image_pull_policy="Always",
+    dag=dag,
+)
+
 wait_for_main_ping >> hardware_report
+wait_for_clients_last_seen >> user_activity >> user_activity_usage_behavior_export
