@@ -63,7 +63,7 @@ hardware_report = SubDagOperator(
         python_driver_code="gs://{}/jobs/moz_dataproc_runner.py".format(params.artifact_bucket),
         init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
         additional_metadata={'PIP_PACKAGES': "git+https://github.com/mozilla/firefox-public-data-report-etl.git"},
-        additional_properties={"spark:spark.jars":"gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+        additional_properties={"spark:spark.jars":"gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
                                "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
                                "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key},
         py_args=[
