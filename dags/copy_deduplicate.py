@@ -36,6 +36,7 @@ with models.DAG(
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all",
         target_project_id="moz-fx-data-shared-prod",
+        priority_weight=100,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"])
@@ -48,6 +49,7 @@ with models.DAG(
         slices=100,
         owner="jklukas@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
+        priority_weight=100,
         dag=dag)
 
 
