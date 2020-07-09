@@ -76,7 +76,7 @@ with models.DAG(
             '--api-key={{ var.value.fxa_amplitude_api_key }}',
             '--secret-key={{ var.value.fxa_amplitude_secret_key }}',
             '--table-id=moz-fx-data-shared-prod.firefox_accounts_derived.fxa_delete_events_v1',
-            '--user-id-field=amplitude_user_id',
+            '--user-id-field=hmac_user_id',
         ],
         docker_image='mozilla/bigquery-etl:latest',
     )
