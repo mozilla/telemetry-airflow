@@ -20,7 +20,7 @@ default_args = {
 
 with DAG('incline_dashboard',
          default_args=default_args,
-         schedule_interval="0 3 * * *") as dag:
+         schedule_interval="0 4 * * *") as dag:
 
     wait_for_baseline_clients_last_seen = ExternalTaskSensor(
         task_id="wait_for_baseline_clients_last_seen",

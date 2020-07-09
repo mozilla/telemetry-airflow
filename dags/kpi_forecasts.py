@@ -22,7 +22,7 @@ dag_name = 'kpi_forecasts'
 
 with models.DAG(
         dag_name,
-        schedule_interval='0 3 * * *',
+        schedule_interval='0 4 * * *',
         default_args=default_args) as dag:
 
     simpleprophet_forecasts_mobile = simpleprophet_forecast(
