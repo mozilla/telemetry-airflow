@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import models
-from utils.gcp import bigquery_etl_query
+from utils.gcp import bigquery_etl_query, gke_command
 
 default_args = {
     'owner': 'jklukas@mozilla.com',
@@ -59,6 +59,29 @@ with models.DAG(
         dataset_id='firefox_accounts_derived',
         project_id='moz-fx-data-shared-prod',
     )
+
+    fxa_delete_events = bigquery_etl_query(
+        task_id='fxa_delete_events',
+        destination_table='fxa_delete_events_v1',
+        dataset_id='firefox_accounts_derived',
+        project_id='moz-fx-data-shared-prod',
+    )
+
+    shredder_amplitude_fxa = gke_command(
+        task_id='shredder_amplitude_fxa',
+        name='shredder-amplitude-fxa',
+        command=[
+            'script/shredder_amplitude',
+            '--date={{ ds }}',
+            '--api-key={{ var.value.fxa_amplitude_api_key }}',
+            '--secret-key={{ var.value.fxa_amplitude_secret_key }}',
+            '--table-id=moz-fx-data-shared-prod.firefox_accounts_derived.fxa_delete_events_v1',
+            '--user-id-field=amplitude_user_id',
+        ],
+        docker_image='mozilla/bigquery-etl:latest',
+    )
+
+    fxa_delete_events >> shredder_amplitude_fxa
 
     fxa_users_daily = bigquery_etl_query(
         task_id='fxa_users_daily',
