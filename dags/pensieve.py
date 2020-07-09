@@ -14,7 +14,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") as dag:
+with DAG("pensieve", default_args=default_args, schedule_interval="0 3 * * *") as dag:
 
     # Built from repo https://github.com/mozilla/pensieve
     pensieve_image = "gcr.io/moz-fx-data-experiments/pensieve:latest"
@@ -41,6 +41,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         task_id="wait_for_clients_daily_export",
         external_dag_id="parquet_export",
         external_task_id="clients_daily_export",
+        execution_delta=timedelta(hours=2),
         dag=dag,
     )
 
@@ -48,6 +49,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         task_id="wait_for_main_summary_export",
         external_dag_id="parquet_export",
         external_task_id="main_summary_export",
+        execution_delta=timedelta(hours=2),
         dag=dag,
     )
 
@@ -55,6 +57,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         task_id="wait_for_search_clients_daily",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_daily__v8",
+        execution_delta=timedelta(hours=1),
         dag=dag,
     )
 
@@ -62,6 +65,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         task_id="wait_for_bq_events",
         external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
+        execution_delta=timedelta(hours=2),
         dag=dag,
     )
 
@@ -69,6 +73,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 1 * * *") a
         task_id="wait_for_copy_deduplicate_events",
         external_dag_id="copy_deduplicate",
         external_task_id="event_events",
+        execution_delta=timedelta(hours=2),
         dag=dag,
     )
 

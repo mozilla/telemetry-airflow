@@ -41,3 +41,23 @@ with DAG('leanplum_export',
         version='2',
         dag=dag
     )
+
+    firefox_android_beta_export = leanplum.export(
+        task_id='firefox_android_beta_export',
+        bq_project='moz-fx-data-shared-prod',
+        s3_prefix='firefox_android_beta',
+        bq_dataset_id='firefox_android_beta_external',
+        table_prefix='leanplum',
+        version='2',
+        dag=dag
+    )
+
+    firefox_android_nightly_export = leanplum.export(
+        task_id='firefox_android_nightly_export',
+        bq_project='moz-fx-data-shared-prod',
+        s3_prefix='firefox_android_nightly',
+        bq_dataset_id='firefox_android_nightly_external',
+        table_prefix='leanplum',
+        version='2',
+        dag=dag
+    )
