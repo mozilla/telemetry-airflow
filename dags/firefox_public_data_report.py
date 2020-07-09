@@ -85,8 +85,8 @@ hardware_report = SubDagOperator(
 
 wait_for_clients_last_seen = ExternalTaskSensor(
     task_id="wait_for_clients_last_seen",
-    external_dag_id="main_summary",
-    external_task_id="clients_last_seen",
+    external_dag_id="bqetl_clients_daily",
+    external_task_id="telemetry_derived__clients_last_seen__v1",
     execution_delta=timedelta(days=-6),
     check_existence=True,
     dag=dag,
