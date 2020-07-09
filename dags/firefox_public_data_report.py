@@ -55,6 +55,7 @@ hardware_report = SubDagOperator(
     dag=dag,
     subdag = moz_dataproc_pyspark_runner(
         parent_dag_name=dag.dag_id,
+        image_version='1.5',
         dag_name="public_data_hardware_report",
         default_args=default_args,
         cluster_name="public-data-hardware-report-{{ ds }}",
@@ -97,6 +98,7 @@ user_activity = bigquery_etl_query(
     destination_table="public_data_report_user_activity_v1",
     project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
+    date_partition_parameter="week_start",
     dag=dag,
 )
 
