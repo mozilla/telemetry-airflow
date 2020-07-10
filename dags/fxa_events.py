@@ -19,7 +19,7 @@ dag_name = 'fxa_events'
 
 with models.DAG(
         dag_name,
-        schedule_interval='0 1 * * *',
+        schedule_interval='30 1 * * *',
         default_args=default_args) as dag:
 
     fxa_auth_events = bigquery_etl_query(

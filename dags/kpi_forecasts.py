@@ -84,7 +84,7 @@ with models.DAG(
         external_task_id="firefox_accounts_exact_mau28_raw",
         check_existence=True,
         mode="reschedule",
-        execution_delta=timedelta(hours=3),
+        execution_delta=timedelta(hours=2, minutes=30),
         dag=dag,
     )
 

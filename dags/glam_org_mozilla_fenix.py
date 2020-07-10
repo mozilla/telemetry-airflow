@@ -17,14 +17,14 @@ default_args = {
 }
 
 dag = DAG(
-    "glam_org_mozilla_fenix", default_args=default_args, schedule_interval="@daily"
+    "glam_org_mozilla_fenix", default_args=default_args, schedule_interval="0 2 * * *"
 )
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_all",
-    execution_delta=timedelta(hours=-1),
+    execution_delta=timedelta(hours=1),
     check_existence=True,
     dag=dag,
 )

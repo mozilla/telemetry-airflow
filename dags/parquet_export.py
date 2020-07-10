@@ -35,7 +35,7 @@ default_args = {
 
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
-dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 1 * * *')
+dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *')
 
 main_summary_bigint_columns = [
     # bigquery does not have 32-bit int, and int->bigint is not a
