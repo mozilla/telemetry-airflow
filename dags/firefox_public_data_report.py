@@ -98,14 +98,13 @@ user_activity = bigquery_etl_query(
     destination_table="public_data_report_user_activity_v1",
     project_id="moz-fx-data-shared-prod",
     dataset_id="telemetry_derived",
-    date_partition_parameter="week_start",
     dag=dag,
 )
 
 user_activity_usage_behavior_export = GKEPodOperator(
     task_id="user_activity_export",
     name="user_activity_export",
-    image="gcr.io/{{ var.value.gcr_project_id }}/firefox-public-data-report-etl:latest",
+    image="gcr.io/moz-fx-data-airflow-prod-88e0/firefox-public-data-report-etl:latest",
     arguments=[
         "-m", "public_data_report.cli",
         "user_activity",
@@ -124,7 +123,7 @@ user_activity_usage_behavior_export = GKEPodOperator(
 annotations_export = GKEPodOperator(
     task_id="annotations_export",
     name="annotations_export",
-    image="gcr.io/{{ var.value.gcr_project_id }}/firefox-public-data-report-etl:latest",
+    image="gcr.io/moz-fx-data-airflow-prod-88e0/firefox-public-data-report-etl:latest",
     arguments=[
         "-m", "public_data_report.cli",
         "annotations",
