@@ -35,7 +35,7 @@ GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
-dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="@daily")
+dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 3 * * *")
 
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 
@@ -45,7 +45,7 @@ wait_for_main_ping = ExternalTaskSensor(
     project_id=project_id,
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
-    execution_delta=timedelta(hours=-1),
+    execution_delta=timedelta(hours=2),
     check_existence=True,
     dag=dag,
 )

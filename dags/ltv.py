@@ -29,7 +29,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("ltv_daily", default_args=default_args, schedule_interval="@daily")
+dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *")
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
@@ -96,7 +96,7 @@ else:
         task_id="wait_for_search_clients_last_seen",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_last_seen__v1",
-        execution_delta=timedelta(hours=-3),
+        execution_delta=timedelta(hours=1),
         check_existence=True,
         dag=dag,
     )

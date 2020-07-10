@@ -38,17 +38,17 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 3 * * *") a
     )
 
     wait_for_clients_daily_export = ExternalTaskSensor(
-        task_id="wait_for_clients_daily_export",
-        external_dag_id="parquet_export",
-        external_task_id="clients_daily_export",
+        task_id="wait_for_clients_daily",
+        external_dag_id="bqetl_clients_daily",
+        external_task_id="telemetry_derived__clients_daily__v6",
         execution_delta=timedelta(hours=2),
         dag=dag,
     )
 
     wait_for_main_summary_export = ExternalTaskSensor(
-        task_id="wait_for_main_summary_export",
-        external_dag_id="parquet_export",
-        external_task_id="main_summary_export",
+        task_id="wait_for_main_summary",
+        external_dag_id="bqetl_main_summary",
+        external_task_id="telemetry_derived__main_summary__v4",
         execution_delta=timedelta(hours=2),
         dag=dag,
     )

@@ -13,7 +13,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("mozfun", default_args=default_args, schedule_interval="0 1 * * *") as dag:
+with DAG("mozfun", default_args=default_args, schedule_interval="@daily") as dag:
     docker_image = "mozilla/bigquery-etl:latest"
 
     publish_public_udfs = gke_command(

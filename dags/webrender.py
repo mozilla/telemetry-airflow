@@ -15,7 +15,7 @@ default_args = {
 }
 
 with DAG(
-    "webrender_ds_283", default_args=default_args, schedule_interval="@daily"
+    "webrender_ds_283", default_args=default_args, schedule_interval="0 2 * * *"
 ) as dag:
 
     # Make sure all the data for the given day has arrived before running.
@@ -23,7 +23,7 @@ with DAG(
         task_id="wait_for_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
-        execution_delta=timedelta(hours=-1),
+        execution_delta=timedelta(hours=1),
         check_existence=True,
         dag=dag,
     )

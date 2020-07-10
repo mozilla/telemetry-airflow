@@ -35,7 +35,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 1 * * *")
+dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *")
 
 amodump = GKEPodOperator(
     task_id="taar_amodump",
@@ -89,6 +89,7 @@ wait_for_clients_daily_export = ExternalTaskSensor(
     task_id="wait_for_clients_daily_export",
     external_dag_id="parquet_export",
     external_task_id="clients_daily_export",
+    execution_delta=timedelta(hours=1),
     dag=dag)
 
 taar_locale = SubDagOperator(
