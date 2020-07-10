@@ -19,7 +19,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("anomdtct", default_args=default_args, schedule_interval="0 2 * * *") as dag:
+with DAG("anomdtct", default_args=default_args, schedule_interval="0 3 * * *") as dag:
     # Built from https://github.com/mozilla/forecasting/tree/master/anomdtct
     anomdtct_image = "gcr.io/moz-fx-data-airflow-prod-88e0/anomdtct:latest"
 
@@ -36,7 +36,7 @@ with DAG("anomdtct", default_args=default_args, schedule_interval="0 2 * * *") a
 
     wait_for_clients_first_seen = ExternalTaskSensor(
         task_id="wait_for_clients_first_seen",
-        external_dag_id="bqetl_clients_daily",
+        external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__clients_first_seen__v1",
         execution_delta=timedelta(hours=1),
         dag=dag,

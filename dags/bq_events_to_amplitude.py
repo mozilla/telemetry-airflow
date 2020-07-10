@@ -21,7 +21,7 @@ dag_name = 'bq_events_to_amplitude'
 with models.DAG(
         dag_name,
         default_args=default_args,
-        schedule_interval='0 3 * * *') as dag:
+        schedule_interval='0 2 * * *') as dag:
 
     fenix_task_id = 'fenix_amplitude_export'
     SubDagOperator(
@@ -90,13 +90,13 @@ with models.DAG(
         task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
-        execution_delta=datetime.timedelta(hours=2),
+        execution_delta=datetime.timedelta(hours=1),
         dag=dag)
     wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
-        execution_delta=datetime.timedelta(hours=2),
+        execution_delta=datetime.timedelta(hours=1),
         dag=dag,
     )
 

@@ -14,7 +14,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("asn_aggregates", default_args=default_args, schedule_interval="0 3 * * *") as dag:
+with DAG("asn_aggregates", default_args=default_args, schedule_interval="0 2 * * *") as dag:
 
     asn_aggregates = bigquery_etl_query(
         task_id="asn_aggregates",
@@ -30,7 +30,7 @@ with DAG("asn_aggregates", default_args=default_args, schedule_interval="0 3 * *
         task_id="wait_for_bq_events",
         external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
-        execution_delta=timedelta(hours=2),
+        execution_delta=timedelta(hours=1),
         dag=dag,
     )
 
@@ -38,7 +38,7 @@ with DAG("asn_aggregates", default_args=default_args, schedule_interval="0 3 * *
         task_id="wait_for_copy_deduplicate_events",
         external_dag_id="copy_deduplicate",
         external_task_id="event_events",
-        execution_delta=timedelta(hours=2),
+        execution_delta=timedelta(hours=1),
         dag=dag,
     )
 
