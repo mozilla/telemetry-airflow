@@ -90,13 +90,13 @@ with models.DAG(
         task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
-        execution_delta=timedelta(hours=2),
+        execution_delta=datetime.timedelta(hours=2),
         dag=dag)
     wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
-        execution_delta=timedelta(hours=2),
+        execution_delta=datetime.timedelta(hours=2),
         dag=dag,
     )
 
