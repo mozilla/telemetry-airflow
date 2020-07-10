@@ -151,14 +151,16 @@ clients_daily_export = SubDagOperator(
 
 wait_for_clients_daily = ExternalTaskSensor(
     task_id="wait_for_clients_daily",
-    external_dag_id="bqetl_clients_daily",
+    external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__clients_daily__v6",
+    execution_delta=timedelta(hours=1),
     dag=dag)
 
 wait_for_main_summary = ExternalTaskSensor(
     task_id="wait_for_main_summary",
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__main_summary__v4",
+    execution_delta=timedelta(hours=1),
     dag=dag)
 
 main_summary_export.set_upstream(wait_for_main_summary)

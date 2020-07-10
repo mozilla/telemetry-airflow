@@ -27,7 +27,7 @@ wait_for_main_summary = ExternalTaskSensor(
     task_id='wait_for_main_summary',
     external_dag_id='parquet_export',
     external_task_id='main_summary_export',
-    execution_delta=timedelta(days=-7, hours=-3), # main_summary waits one hour, execution date is beginning of the week
+    execution_delta=timedelta(days=-7, hours=-2), # main_summary waits two hours, execution date is beginning of the week
     dag=dag)
 
 

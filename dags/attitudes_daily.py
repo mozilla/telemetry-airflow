@@ -22,7 +22,7 @@ dag_name = "attitudes_daily"
 
 with models.DAG(
         dag_name,
-        schedule_interval="0 1 * * *",
+        schedule_interval="0 3 * * *",
         default_args=default_args) as dag:
 
     surveygizmo_attitudes_daily_import = gke_command(
@@ -48,13 +48,15 @@ with models.DAG(
         task_id="wait_for_copy_deduplicate",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
+        execution_delta=datetime.timedelta(hours=2),
         dag=dag)
 
 
     wait_for_clients_daily = ExternalTaskSensor(
         task_id="wait_for_clients_daily",
-        external_dag_id="bqetl_clients_daily",
+        external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__clients_daily__v6",
+        execution_delta=datetime.timedelta(hours=1),
         dag=dag)
 
 
