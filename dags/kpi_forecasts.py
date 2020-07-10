@@ -63,7 +63,7 @@ with models.DAG(
         external_task_id="firefox_desktop_exact_mau28_by_dimensions",
         check_existence=True,
         mode="reschedule",
-        execution_delta=timedelta(hours=2),
+        execution_delta=timedelta(hours=3),
         dag=dag,
     )
 
@@ -84,7 +84,7 @@ with models.DAG(
         external_task_id="firefox_accounts_exact_mau28_raw",
         check_existence=True,
         mode="reschedule",
-        execution_delta=timedelta(hours=1),
+        execution_delta=timedelta(hours=3),
         dag=dag,
     )
 
