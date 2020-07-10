@@ -20,7 +20,7 @@ default_args = {
 
 with DAG('leanplum_export',
          default_args=default_args,
-         schedule_interval='@daily') as dag:
+         schedule_interval='0 4 * * *') as dag:
 
     fennec_release_export = leanplum.export(
         task_id='fennec_release_export',
