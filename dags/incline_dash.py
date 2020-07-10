@@ -26,7 +26,7 @@ with DAG('incline_dashboard',
         task_id="wait_for_baseline_clients_last_seen",
         external_dag_id="copy_deduplicate",
         external_task_id="baseline_clients_last_seen",
-        execution_delta=timedelta(hours=2),
+        execution_delta=timedelta(hours=3),
     )
 
     wait_for_core_clients_last_seen = ExternalTaskSensor(
