@@ -78,14 +78,14 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     )
 
-    wait_for_firefox_accounts_exact_mau28_raw = ExternalTaskSensor(
-        task_id="wait_for_firefox_accounts_exact_mau28_raw",
-        external_dag_id="fxa_events",
-        external_task_id="firefox_accounts_exact_mau28_raw",
+    wait_for_firefox_accounts_exact_mau = ExternalTaskSensor(
+        task_id="wait_for_firefox_accounts_exact_mau",
+        external_dag_id="bqetl_fxa_events",
+        external_task_id="firefox_accounts_derived__exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
         execution_delta=timedelta(hours=2, minutes=30),
         dag=dag,
     )
 
-    simpleprophet_forecasts_fxa.set_upstream(wait_for_firefox_accounts_exact_mau28_raw)
+    simpleprophet_forecasts_fxa.set_upstream(wait_for_firefox_accounts_exact_mau)

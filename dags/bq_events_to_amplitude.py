@@ -150,3 +150,29 @@ with models.DAG(
         ),
         task_id=onboarding_task_id
     )
+
+    shredder_amplitude_fxa = gke_command(
+        task_id='shredder_amplitude_fxa',
+        name='shredder-amplitude-fxa',
+        command=[
+            'script/shredder_amplitude',
+            '--date={{ ds }}',
+            '--api-key={{ var.value.fxa_amplitude_api_key }}',
+            '--secret-key={{ var.value.fxa_amplitude_secret_key }}',
+            '--table-id=moz-fx-data-shared-prod.firefox_accounts_derived.fxa_delete_events_v1',
+            '--user-id-field=hmac_user_id',
+        ],
+        docker_image='mozilla/bigquery-etl:latest',
+    )
+
+    wait_for_fxa_delete_events = ExternalTaskSensor(
+        task_id="wait_for_fxa_delete_events",
+        external_dag_id="bqetl_fxa_events",
+        external_task_id="firefox_accounts_derived__fxa_delete_events__v1",
+        check_existence=True,
+        mode="reschedule",
+        execution_delta=datetime.timedelta(minutes=30),
+        dag=dag,
+    )
+
+    wait_for_fxa_delete_events >> shredder_amplitude_fxa
