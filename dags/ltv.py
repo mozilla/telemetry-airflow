@@ -116,6 +116,7 @@ ltv_revenue_join=BigQueryOperator(
     use_legacy_sql=False,
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
+    write_disposition='WRITE_TRUNCATE',
 )
 
 response = urlopen('/'.join([
