@@ -31,21 +31,6 @@ AMO_STEPS = [
                 "--date", "{{ ds }}",
             ]
         }
-    },
-    {
-        # VAMO nginx logs - stats
-        "Name": "versioncheck.addons.mozilla.org",
-        "ActionOnFailure": "TERMINATE_JOB_FLOW",
-        "HadoopJarStep": {
-            "Jar": "command-runner.jar",
-            "Args": [
-                "/usr/local/bin/processlogs",
-                "--domain", "versioncheck.addons.mozilla.org",
-                "--bucket", "amo-metrics-logs-prod",
-                "--reducers", "120",
-                "--date", "{{ ds }}"
-            ]
-        }
     }
 ]
 
@@ -65,20 +50,6 @@ AMO_DEV_STAGE_STEPS = [
         }
     },
     {
-        # VAMO DEV nginx logs - stats
-        "Name": "versioncheck-dev.allizom.org",
-        "ActionOnFailure": "TERMINATE_JOB_FLOW",
-        "HadoopJarStep": {
-            "Jar": "command-runner.jar",
-            "Args": [
-                "/usr/local/bin/processlogs",
-                "--domain", "versioncheck-dev.allizom.org",
-                "--bucket", "amo-metrics-logs-dev",
-                "--date", "{{ ds }}"
-            ]
-        }
-    },
-    {
         # AMO STAGE nginx - stats
         "Name": "addons.allizom.org",
         "ActionOnFailure": "TERMINATE_JOB_FLOW",
@@ -92,20 +63,6 @@ AMO_DEV_STAGE_STEPS = [
             ]
         }
     },
-    {
-        # VAMO STAGE nginx logs - stats
-        "Name": "versioncheck.allizom.org",
-        "ActionOnFailure": "TERMINATE_JOB_FLOW",
-        "HadoopJarStep": {
-            "Jar": "command-runner.jar",
-            "Args": [
-                "/usr/local/bin/processlogs",
-                "--domain", "versioncheck.allizom.org",
-                "--bucket", "amo-metrics-logs-stage",
-                "--date", "{{ ds }}"
-            ]
-        }
-    }
 ]
 
 amo_dag = DAG(
