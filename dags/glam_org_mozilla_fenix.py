@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
+from glam_subdags.generate_query import generate_and_run_glean_query
 from utils.gcp import gke_command
 
 default_args = {
@@ -29,18 +29,36 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
     dag=dag,
 )
 
-run_sql = gke_command(
-    task_id="run_sql",
-    cmds=["bash", "-c"],
-    env_vars={"DATASET": "glam_etl", "SUBMISSION_DATE": "{{ ds }}"},
-    command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
-    docker_image="mozilla/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+org_mozilla_fenix = generate_and_run_glean_query(
+    task_id="org_mozilla_fenix",
+    product="org_mozilla_fenix",
+    destination_project_id="glam-fenix-dev",
     dag=dag,
 )
 
-export_csv = gke_command(
-    task_id="export_csv",
+org_mozilla_firefox = generate_and_run_glean_query(
+    task_id="org_mozilla_firefox",
+    product="org_mozilla_firefox",
+    destination_project_id="glam-fenix-dev",
+    dag=dag,
+)
+
+org_mozilla_firefox_beta = generate_and_run_glean_query(
+    task_id="org_mozilla_firefox_beta",
+    product="org_mozilla_firefox_beta",
+    destination_project_id="glam-fenix-dev",
+    dag=dag,
+)
+
+org_mozilla_fennec_aurora = generate_and_run_glean_query(
+    task_id="org_mozilla_fennec_aurora",
+    product="org_mozilla_fennec_aurora",
+    destination_project_id="glam-fenix-dev",
+    dag=dag,
+)
+
+export_org_mozilla_fenix = gke_command(
+    task_id="export_org_mozilla_fenix",
     cmds=["bash"],
     env_vars={"DATASET": "glam_etl"},
     command=["script/glam/export_csv"],
@@ -49,4 +67,4 @@ export_csv = gke_command(
     dag=dag,
 )
 
-wait_for_copy_deduplicate >> run_sql >> export_csv
+wait_for_copy_deduplicate >> org_mozilla_fenix >> export_org_mozilla_fenix
