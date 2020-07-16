@@ -9,7 +9,7 @@ default_args = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 2, 19),
-    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com", "bewu@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
@@ -31,9 +31,9 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
 
 run_sql = gke_command(
     task_id="run_sql",
-    cmds=["bash"],
+    cmds=["bash", "-c"],
     env_vars={"DATASET": "glam_etl", "SUBMISSION_DATE": "{{ ds }}"},
-    command=["script/glam/run_glam_sql"],
+    command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
     docker_image="mozilla/bigquery-etl:latest",
     gcp_conn_id="google_cloud_derived_datasets",
     dag=dag,
