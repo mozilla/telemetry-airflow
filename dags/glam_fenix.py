@@ -17,7 +17,7 @@ default_args = {
 }
 
 dag = DAG(
-    "glam_org_mozilla_fenix", default_args=default_args, schedule_interval="0 2 * * *"
+    "glam_fenix", default_args=default_args, schedule_interval="0 2 * * *"
 )
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
