@@ -65,19 +65,16 @@ def generate_and_run_glean_query(task_id,
                                  **kwargs):
     """
     :param task_id:                     Airflow task id
-    :param project_id:                  GCP project to write to
-    :param source_dataset_id:           Bigquery dataset to read from in queries
-    :param sample_size:                 Value to use for windows release client sampling
-    :param overwrite:                   Overwrite the destination table
-    :param probe_type:                  Probe type to generate query
-    :param destination_dataset_id:      Bigquery dataset to write results to.  Defaults to source_dataset_id
-    :param process:                     Process to filter probes for.  Gets all processes by default.
+    :param product:                     Product name of glean app
+    :param destination_project_id:      Project to store derived tables
+    :param destination_dataset_id:      Name of the dataset to store derived tables
+    :param source_project_id:           Project containing the source datasets
     :param docker_image:                Docker image
     :param gcp_conn_id:                 Airflow GCP connection
     """
     env_vars = {
         "PRODUCT": product,
-        "SOURCE_PROJECT": source_project_id,
+        "SRC_PROJECT": source_project_id,
         "PROJECT": destination_project_id,
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",

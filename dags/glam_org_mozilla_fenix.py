@@ -36,10 +36,30 @@ org_mozilla_fenix = generate_and_run_glean_query(
     dag=dag,
 )
 
+
+export_org_mozilla_fenix = gke_command(
+    task_id="export_org_mozilla_fenix",
+    cmds=["bash"],
+    env_vars={"DATASET": "glam_etl", "PRODUCT": "org_mozilla_fenix"},
+    command=["script/glam/export_csv"],
+    docker_image="mozilla/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
+    dag=dag,
+)
 org_mozilla_firefox = generate_and_run_glean_query(
     task_id="org_mozilla_firefox",
     product="org_mozilla_firefox",
     destination_project_id="glam-fenix-dev",
+    dag=dag,
+)
+
+export_org_mozilla_firefox = gke_command(
+    task_id="export_org_mozilla_firefox",
+    cmds=["bash"],
+    env_vars={"DATASET": "glam_etl", "PRODUCT": "org_mozilla_firefox"},
+    command=["script/glam/export_csv"],
+    docker_image="mozilla/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
     dag=dag,
 )
 
@@ -50,6 +70,16 @@ org_mozilla_firefox_beta = generate_and_run_glean_query(
     dag=dag,
 )
 
+export_org_mozilla_firefox_beta = gke_command(
+    task_id="export_org_mozilla_firefox_beta",
+    cmds=["bash"],
+    env_vars={"DATASET": "glam_etl", "PRODUCT": "org_mozilla_firefox_beta"},
+    command=["script/glam/export_csv"],
+    docker_image="mozilla/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
+    dag=dag,
+)
+
 org_mozilla_fennec_aurora = generate_and_run_glean_query(
     task_id="org_mozilla_fennec_aurora",
     product="org_mozilla_fennec_aurora",
@@ -57,10 +87,10 @@ org_mozilla_fennec_aurora = generate_and_run_glean_query(
     dag=dag,
 )
 
-export_org_mozilla_fenix = gke_command(
-    task_id="export_org_mozilla_fenix",
+export_org_mozilla_fennec_aurora = gke_command(
+    task_id="export_org_mozilla_fennec_aurora",
     cmds=["bash"],
-    env_vars={"DATASET": "glam_etl"},
+    env_vars={"DATASET": "glam_etl", "PRODUCT": "org_mozilla_fennec_aurora"},
     command=["script/glam/export_csv"],
     docker_image="mozilla/bigquery-etl:latest",
     gcp_conn_id="google_cloud_derived_datasets",
@@ -68,3 +98,9 @@ export_org_mozilla_fenix = gke_command(
 )
 
 wait_for_copy_deduplicate >> org_mozilla_fenix >> export_org_mozilla_fenix
+
+wait_for_copy_deduplicate >> org_mozilla_firefox >> export_org_mozilla_firefox
+
+wait_for_copy_deduplicate >> org_mozilla_firefox_beta >> export_org_mozilla_firefox_beta
+
+wait_for_copy_deduplicate >> org_mozilla_fennec_aurora >> export_org_mozilla_fennec_aurora
