@@ -36,7 +36,6 @@ org_mozilla_fenix = generate_and_run_glean_query(
     dag=dag,
 )
 
-
 export_org_mozilla_fenix = gke_command(
     task_id="export_org_mozilla_fenix",
     cmds=["bash"],
@@ -46,6 +45,7 @@ export_org_mozilla_fenix = gke_command(
     gcp_conn_id="google_cloud_derived_datasets",
     dag=dag,
 )
+
 org_mozilla_firefox = generate_and_run_glean_query(
     task_id="org_mozilla_firefox",
     product="org_mozilla_firefox",
