@@ -9,7 +9,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
-from glam_subdags.generate_query import generate_and_run_query
+from glam_subdags.generate_query import generate_and_run_desktop_query
 from utils.gcp import bigquery_etl_query, gke_command
 
 
@@ -68,7 +68,7 @@ latest_versions = bigquery_etl_query(
 
 # This task runs first and replaces the relevant partition, followed
 # by the next two tasks that append to the same partition of the same table.
-clients_daily_scalar_aggregates = generate_and_run_query(
+clients_daily_scalar_aggregates = generate_and_run_desktop_query(
     task_id="clients_daily_scalar_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -78,7 +78,7 @@ clients_daily_scalar_aggregates = generate_and_run_query(
     dag=dag,
 )
 
-clients_daily_keyed_scalar_aggregates = generate_and_run_query(
+clients_daily_keyed_scalar_aggregates = generate_and_run_desktop_query(
     task_id="clients_daily_keyed_scalar_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -88,7 +88,7 @@ clients_daily_keyed_scalar_aggregates = generate_and_run_query(
     dag=dag,
 )
 
-clients_daily_keyed_boolean_aggregates = generate_and_run_query(
+clients_daily_keyed_boolean_aggregates = generate_and_run_desktop_query(
     task_id="clients_daily_keyed_boolean_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -135,7 +135,7 @@ scalar_percentiles = bigquery_etl_query(
 
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
-clients_daily_histogram_aggregates_parent = generate_and_run_query(
+clients_daily_histogram_aggregates_parent = generate_and_run_desktop_query(
     task_id="clients_daily_histogram_aggregates_parent",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -147,7 +147,7 @@ clients_daily_histogram_aggregates_parent = generate_and_run_query(
     dag=dag,
 )
 
-clients_daily_histogram_aggregates_content = generate_and_run_query(
+clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
     task_id="clients_daily_histogram_aggregates_content",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -159,7 +159,7 @@ clients_daily_histogram_aggregates_content = generate_and_run_query(
     dag=dag,
 )
 
-clients_daily_keyed_histogram_aggregates = generate_and_run_query(
+clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
     task_id="clients_daily_keyed_histogram_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
