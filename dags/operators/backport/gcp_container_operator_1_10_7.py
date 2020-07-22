@@ -27,7 +27,7 @@ from airflow import AirflowException
 from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
 
 # Modified to import KubernetesPodOperator which imports 1.10.2 kube_client
-from kubernetes_pod_operator_1_10_7 import KubernetesPodOperator
+from .kubernetes_pod_operator_1_10_7 import KubernetesPodOperator
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults

@@ -5,7 +5,7 @@ from os import environ
 import boto3
 from io import BytesIO
 from gzip import GzipFile
-from urlparse import urlparse
+from urllib.parse import urlparse
 import requests
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults

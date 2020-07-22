@@ -10,7 +10,7 @@ from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
 
 # We import upstream GKEPodOperator/KubernetesPodOperator from 1.10.7, modified to point to kube_client
 # from 1.10.2, because of some Xcom push breaking changes when using GKEPodOperator.
-from backport.gcp_container_operator_1_10_7 import GKEPodOperator as UpstreamGKEPodOperator
+from .backport.gcp_container_operator_1_10_7 import GKEPodOperator as UpstreamGKEPodOperator
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
 GCLOUD_APP_CRED = "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE"
