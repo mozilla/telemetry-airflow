@@ -1,4 +1,4 @@
-FROM python:2.7-slim
+FROM python:3.7-slim
 MAINTAINER Jannis Leidel <jezdez@mozilla.com>
 
 # add a non-privileged user for installing and running the application
