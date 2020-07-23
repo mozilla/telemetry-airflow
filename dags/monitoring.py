@@ -8,7 +8,7 @@ default_args = {
     "owner": "ascholtz@mozilla.com",
     "email": ["ascholtz@mozilla.com"],
     "depends_on_past": False,
-    "start_date": datetime(2020, 7, 1),
+    "start_date": datetime(2018, 10, 30),
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
@@ -40,7 +40,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="stable_table_sizes",
         command=[
             "python",
-            "sql/monitoring/telemetry_stable_sizes_v1/query.py",
+            "sql/monitoring/stable_table_sizes_v1/query.py",
             "--date",
             "{{ ds }}",
         ],
