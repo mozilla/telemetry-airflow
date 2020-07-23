@@ -34,7 +34,12 @@ def repeated_subdag(
     # This task runs first and replaces the relevant partition, followed
     # by the next tasks that append to the same partition of the same table.
     NUM_SAMPLE_IDS = 100
-    PARTITION_SIZE = NUM_SAMPLE_IDS / num_partitions
+    PARTITION_SIZE = NUM_SAMPLE_IDS // num_partitions
+
+    if NUM_SAMPLE_IDS % num_partitions != 0:
+        raise ValueError(f"Number of partitions must be a divisor "
+                         f"of the number of sample ids ({NUM_SAMPLE_IDS})")
+
     task_0 = bigquery_etl_query(
         task_id="{dag_name}_0".format(dag_name=child_dag_name),
         destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
