@@ -20,7 +20,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
-        execution_delta=datetime.timedelta(seconds=3600),
+        execution_delta=timedelta(seconds=3600),
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
@@ -30,7 +30,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
-        execution_delta=datetime.timedelta(seconds=3600),
+        execution_delta=timedelta(seconds=3600),
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
@@ -47,3 +47,6 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         docker_image="mozilla/bigquery-etl:latest",
         owner="ascholtz@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
+
+    stable_table_sizes.set_upstream(wait_for_copy_deduplicate_all)
+    stable_table_sizes.set_upstream(wait_for_copy_deduplicate_all)
