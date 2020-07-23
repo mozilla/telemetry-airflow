@@ -63,7 +63,6 @@ with DAG(
         execution_delta=datetime.timedelta(seconds=7200),
         check_existence=True,
         mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     telemetry_derived__firefox_nondesktop_day_2_7_activation__v1.set_upstream(
@@ -76,7 +75,6 @@ with DAG(
         execution_delta=datetime.timedelta(seconds=3600),
         check_existence=True,
         mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     telemetry_derived__firefox_nondesktop_day_2_7_activation__v1.set_upstream(

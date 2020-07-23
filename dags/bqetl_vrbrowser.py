@@ -95,7 +95,6 @@ with DAG(
         execution_delta=datetime.timedelta(seconds=3600),
         check_existence=True,
         mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     org_mozilla_vrbrowser_derived__baseline_daily__v1.set_upstream(

@@ -103,7 +103,6 @@ with DAG(
         execution_delta=datetime.timedelta(seconds=3600),
         check_existence=True,
         mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     amo_prod__amo_stats_installs__v1.set_upstream(
@@ -117,7 +116,6 @@ with DAG(
         execution_delta=datetime.timedelta(seconds=7200),
         check_existence=True,
         mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     amo_prod__fenix_addons_by_client__v1.set_upstream(wait_for_copy_deduplicate_all)
@@ -133,7 +131,6 @@ with DAG(
         execution_delta=datetime.timedelta(seconds=7200),
         check_existence=True,
         mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     amo_prod__desktop_addons_by_client__v1.set_upstream(
