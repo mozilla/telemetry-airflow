@@ -399,7 +399,7 @@ with models.DAG(
 
     json_encoded = json.dumps(burnham_test_scenarios)
     utf_encoded = json_encoded.encode("utf-8")
-    b64_encoded = base64.b64encode(utf_encoded)
+    b64_encoded = base64.b64encode(utf_encoded).decode("utf-8")
 
     verify_data = burnham_bigquery_run(
         task_id="verify_data",
