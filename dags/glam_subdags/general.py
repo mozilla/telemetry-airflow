@@ -5,8 +5,8 @@ from utils.gcp import bigquery_etl_query
 
 def merge_params(min_param, max_param, additional_params):
     parameters = (
-        "min_sample_id:INT64:{}".format(min_param),
-        "max_sample_id:INT64:{}".format(max_param),
+        f"min_sample_id:INT64:{min_param}",
+        f"max_sample_id:INT64:{max_param}",
     )
 
     if additional_params is not None:
@@ -26,7 +26,7 @@ def repeated_subdag(
     date_partition_parameter="submission_date",
 ):
     dag = DAG(
-        "%s.%s" % (parent_dag_name, child_dag_name),
+        f"{parent_dag_name}.{child_dag_name}",
         default_args=default_args,
         schedule_interval=schedule_interval,
     )
@@ -34,10 +34,15 @@ def repeated_subdag(
     # This task runs first and replaces the relevant partition, followed
     # by the next tasks that append to the same partition of the same table.
     NUM_SAMPLE_IDS = 100
-    PARTITION_SIZE = NUM_SAMPLE_IDS / num_partitions
+    PARTITION_SIZE = NUM_SAMPLE_IDS // num_partitions
+
+    if NUM_SAMPLE_IDS % num_partitions != 0:
+        raise ValueError(f"Number of partitions must be a divisor "
+                         f"of the number of sample ids ({NUM_SAMPLE_IDS})")
+
     task_0 = bigquery_etl_query(
-        task_id="{dag_name}_0".format(dag_name=child_dag_name),
-        destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
+        task_id=f"{child_dag_name}_0",
+        destination_table=f"{child_dag_name}_v1",
         dataset_id=dataset_id,
         project_id="moz-fx-data-shared-prod",
         owner="msamuel@mozilla.com",
@@ -54,8 +59,8 @@ def repeated_subdag(
         max_param = min_param + PARTITION_SIZE - 1
 
         task = bigquery_etl_query(
-            task_id="{}_{}".format(child_dag_name, partition),
-            destination_table="{dag_name}_v1".format(dag_name=child_dag_name),
+            task_id=f"{child_dag_name}_{partition}",
+            destination_table=f"{child_dag_name}_v1",
             dataset_id=dataset_id,
             project_id="moz-fx-data-shared-prod",
             owner="msamuel@mozilla.com",
