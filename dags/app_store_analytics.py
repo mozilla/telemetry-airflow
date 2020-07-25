@@ -59,6 +59,11 @@ with DAG("app_store_analytics",
             docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/app-store-analytics-export:latest",
             gcp_conn_id="google_cloud_derived_datasets",
             dag=dag,
+            # rerun dag on failure to avoid duplicate writes
+            on_retry_callback=lambda context: dag.clear(
+                start_date=context['execution_date'],
+                end_date=context['execution_date'],
+            ),
         )
 
         if i != 0:
