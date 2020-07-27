@@ -114,6 +114,8 @@ init_connections() {
 
 init_variables() {
     airflow variables -s "bugzilla_probe_expiry_bot_api_key" "bugzilla-api-key"
+    airflow variables -s "app_store_connect_username" "username"
+    airflow variables -s "app_store_connect_password" "password"
     airflow variables -s "LEANPLUM_FENNEC_NIGHTLY_APP_ID" "fennec-nightly-app-id"
     airflow variables -s "LEANPLUM_FENNEC_NIGHTLY_CLIENT_KEY" "fennec-nightly-client-key"
     airflow variables -s "LEANPLUM_FENNEC_BETA_APP_ID" "fennec-beta-app-id"
