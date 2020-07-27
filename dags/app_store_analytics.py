@@ -17,7 +17,7 @@ default_args = {
 }
 
 PROJECT_ID = "moz-fx-data-marketing-prod"
-DATASET_ID = "apple_app_store_exported"
+DATASET_ID = "apple_app_store_export"
 
 apps = [
     ("989804926", "Firefox"),
@@ -59,11 +59,6 @@ with DAG("app_store_analytics",
             docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/app-store-analytics-export:latest",
             gcp_conn_id="google_cloud_derived_datasets",
             dag=dag,
-            # rerun dag on failure to avoid duplicate writes
-            on_retry_callback=lambda context: dag.clear(
-                start_date=context['execution_date'],
-                end_date=context['execution_date'],
-            ),
         )
 
         if i != 0:
