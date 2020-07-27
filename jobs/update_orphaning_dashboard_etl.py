@@ -104,15 +104,26 @@ AGGREGATION_TABLE_DATASET = "analysis"
 AGGREGATION_TABLE_NAME = "out_of_date_longitudinal_shim"
 
 def longitudinal_shim_aggregate(date_from, date_to, destination_project, destination_dataset, destination_table):
-    """Aggregate selected metrics to destination table.
-
-       Until full GCP backfill is completed, we have to union `telemetry.main` table with
-       `moz-fx-data-shared-prod.static.main_1pct_backfill` in the query. The latter contains a sample of main pings
-       having sample_id=42 from '2019-01-01' to '2019-09-01'."""
+    """Aggregate selected metrics to destination table."""
 
     bq = bigquery.Client()
 
     longitudinal_shim_sql = f"""
+    -- This function uses mozfun.hist.extract to tolerate compact string encodings
+    -- and then turns the parsed struct back into a JSON string to maintain compatibility
+    -- with the existing python-level logic that expects JSON blobs.
+    -- Note that we only include "values" in the JSON output since that's the only
+    -- histogram field used in the python code.
+    CREATE TEMP FUNCTION hist_to_json(h STRING) AS (
+    IF
+      (h IS NULL,
+        NULL,
+        FORMAT('{"values":{%s}}', ARRAY_TO_STRING(ARRAY(
+            SELECT
+              FORMAT('"%d":%d', key, value)
+            FROM
+              UNNEST(mozfun.hist.extract(h).`values`)), ','))) );
+
     WITH
         main_sample_1pct AS (
         SELECT
@@ -125,26 +136,26 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
             environment.settings.update.enabled,
             payload.info.subsession_start_date,
             payload.info.subsession_length,
-            payload.histograms.update_check_code_notify,
-            payload.keyed_histograms.update_check_extended_error_notify,
-            payload.histograms.update_check_no_update_notify,
-            payload.histograms.update_not_pref_update_auto_notify,
-            payload.histograms.update_ping_count_notify,
-            payload.histograms.update_unable_to_apply_notify,
-            payload.histograms.update_download_code_partial,
-            payload.histograms.update_download_code_complete,
-            payload.histograms.update_state_code_partial_stage,
-            payload.histograms.update_state_code_complete_stage,
-            payload.histograms.update_state_code_unknown_stage,
-            payload.histograms.update_state_code_partial_startup,
-            payload.histograms.update_state_code_complete_startup,
-            payload.histograms.update_state_code_unknown_startup,
-            payload.histograms.update_status_error_code_complete_startup,
-            payload.histograms.update_status_error_code_partial_startup,
-            payload.histograms.update_status_error_code_unknown_startup,
-            payload.histograms.update_status_error_code_complete_stage,
-            payload.histograms.update_status_error_code_partial_stage,
-            payload.histograms.update_status_error_code_unknown_stage
+            hist_to_json(payload.histograms.update_check_code_notify) AS update_check_code_notify,
+            ARRAY(SELECT AS STRUCT key, hist_to_json(value) AS value FROM UNNEST(payload.keyed_histograms.update_check_extended_error_notify)) AS update_check_extended_error_notify,
+            hist_to_json(payload.histograms.update_check_no_update_notify) AS update_check_no_update_notify,
+            hist_to_json(payload.histograms.update_not_pref_update_auto_notify) AS update_not_pref_update_auto_notify,
+            hist_to_json(payload.histograms.update_ping_count_notify) AS update_ping_count_notify,
+            hist_to_json(payload.histograms.update_unable_to_apply_notify) AS update_unable_to_apply_notify,
+            hist_to_json(payload.histograms.update_download_code_partial) AS update_download_code_partial,
+            hist_to_json(payload.histograms.update_download_code_complete) AS update_download_code_complete,
+            hist_to_json(payload.histograms.update_state_code_partial_stage) AS update_state_code_partial_stage,
+            hist_to_json(payload.histograms.update_state_code_complete_stage) AS update_state_code_complete_stage,
+            hist_to_json(payload.histograms.update_state_code_unknown_stage) AS update_state_code_unknown_stage,
+            hist_to_json(payload.histograms.update_state_code_partial_startup) AS update_state_code_partial_startup,
+            hist_to_json(payload.histograms.update_state_code_complete_startup) AS update_state_code_complete_startup,
+            hist_to_json(payload.histograms.update_state_code_unknown_startup) AS update_state_code_unknown_startup,
+            hist_to_json(payload.histograms.update_status_error_code_complete_startup) AS update_status_error_code_complete_startup,
+            hist_to_json(payload.histograms.update_status_error_code_partial_startup) AS update_status_error_code_partial_startup,
+            hist_to_json(payload.histograms.update_status_error_code_unknown_startup) AS update_status_error_code_unknown_startup,
+            hist_to_json(payload.histograms.update_status_error_code_complete_stage) AS update_status_error_code_complete_stage,
+            hist_to_json(payload.histograms.update_status_error_code_partial_stage) AS update_status_error_code_partial_stage,
+            hist_to_json(payload.histograms.update_status_error_code_unknown_stage) AS update_status_error_code_unknown_stage,
         FROM
             `moz-fx-data-shared-prod.telemetry.main`
         WHERE
