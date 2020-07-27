@@ -17,7 +17,7 @@ default_args = {
 }
 
 PROJECT_ID = "moz-fx-data-marketing-prod"
-DATASET_ID = "apple_app_store_export"
+DATASET_ID = "apple_app_store_exported"
 
 apps = [
     ("989804926", "Firefox"),
@@ -63,7 +63,7 @@ with DAG("app_store_analytics",
             dag=dag,
         )
 
-        if i != 0:
+        if i > 0:
             app_store_analytics.set_upstream(tasks[i - 1])
 
         tasks.append(app_store_analytics)
