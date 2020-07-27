@@ -50,6 +50,8 @@ with DAG("app_store_analytics",
             f"--dataset={DATASET_ID}",
         ]
 
+        # First task will clear the day partition so that the only data in the table partition
+        # is the data written by the current dag run and does not include unrecognized apps
         if i == 0:
             commands.append("--overwrite")
 
