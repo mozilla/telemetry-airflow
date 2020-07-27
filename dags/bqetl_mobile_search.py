@@ -29,6 +29,7 @@ with DAG(
         email=["bewu@mozilla.com", "telemetry-alerts@mozilla.com"],
         date_partition_parameter="submission_date",
         depends_on_past=False,
+        allow_field_addition_on_date="2020-07-13",
         dag=dag,
     )
 
@@ -44,20 +45,36 @@ with DAG(
         dag=dag,
     )
 
-    wait_for_copy_deduplicate_copy_deduplicate_all = ExternalTaskSensor(
-        task_id="wait_for_copy_deduplicate_copy_deduplicate_all",
+    search_derived__mobile_search_clients_last_seen__v1 = bigquery_etl_query(
+        task_id="search_derived__mobile_search_clients_last_seen__v1",
+        destination_table="mobile_search_clients_last_seen_v1",
+        dataset_id="search_derived",
+        project_id="moz-fx-data-shared-prod",
+        owner="bewu@mozilla.com",
+        email=["bewu@mozilla.com", "telemetry-alerts@mozilla.com"],
+        date_partition_parameter="submission_date",
+        depends_on_past=True,
+        dag=dag,
+    )
+
+    wait_for_copy_deduplicate_all = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         execution_delta=datetime.timedelta(seconds=3600),
         check_existence=True,
         mode="reschedule",
-        dag=dag,
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     search_derived__mobile_search_clients_daily__v1.set_upstream(
-        wait_for_copy_deduplicate_copy_deduplicate_all
+        wait_for_copy_deduplicate_all
     )
 
     search_derived__mobile_search_aggregates__v1.set_upstream(
+        search_derived__mobile_search_clients_daily__v1
+    )
+
+    search_derived__mobile_search_clients_last_seen__v1.set_upstream(
         search_derived__mobile_search_clients_daily__v1
     )
