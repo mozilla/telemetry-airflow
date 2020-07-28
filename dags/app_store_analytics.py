@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from utils.gcp import gke_command
 
 from airflow import DAG
-from airflow.macros import ds_add
 
 default_args = {
     "owner": "bewu@mozilla.com",
