@@ -108,7 +108,7 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
 
     bq = bigquery.Client()
 
-    longitudinal_shim_sql = f"""
+    longitudinal_shim_sql = """
     -- This function uses mozfun.hist.extract to tolerate compact string encodings
     -- and then turns the parsed struct back into a JSON string to maintain compatibility
     -- with the existing python-level logic that expects JSON blobs.
@@ -192,15 +192,20 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
     FROM
         main_sample_1pct
     WHERE
-        DATE(submission_timestamp)>='{date_from}'
-        AND DATE(submission_timestamp)<='{date_to}'
+        DATE(submission_timestamp) >= @date_from
+        AND DATE(submission_timestamp) <= @date_to
     GROUP BY
         client_id
     """
 
     dataset_id = destination_dataset
     table_ref = bq.dataset(dataset_id, project=destination_project).table(destination_table)
-    job_config = bigquery.QueryJobConfig()
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("date_from", "DATE", date_from),
+            bigquery.ScalarQueryParameter("date_to", "DATE", date_to),
+        ]
+    )
     job_config.destination = table_ref
     job_config.write_disposition = 'WRITE_TRUNCATE'
 
