@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from utils.gcp import gke_command
+from utils.gcp import bigquery_etl_query, gke_command
 
 from airflow import DAG
 
@@ -17,9 +17,10 @@ default_args = {
 }
 
 PROJECT_ID = "moz-fx-data-marketing-prod"
-DATASET_ID = "apple_app_store_exported"
+SOURCE_DATASET_ID = "apple_app_store_exported"
+DESTINATION_DATASET_ID = "apple_app_store"
 
-apps = [
+APPS = [
     ("989804926", "Firefox"),
     ("1489407738", "VPN"),
     ("1295998056", "WebXRViewer"),
@@ -28,15 +29,29 @@ apps = [
     ("1055677337", "Focus"),
 ]
 
+DERIVED_TABLES = [
+    "metrics_by_app_referrer",
+    "metrics_by_app_version",
+    "metrics_by_campaign",
+    "metrics_by_platform",
+    "metrics_by_platform_version",
+    "metrics_by_region",
+    "metrics_by_source",
+    "metrics_by_storefront",
+    "metrics_by_web_referrer",
+    "metrics_total",
+]
+
 with DAG("app_store_analytics",
          default_args=default_args,
          max_active_runs=1,
          schedule_interval="@daily") as dag:
 
+    export_date = "macros.ds_add(ds, -2)"  # previous day data is incomplete
     tasks = []
 
     # App exports are scheduled sequentially to avoid hit api rate limit
-    for i, (app_id, app_name) in enumerate(apps):
+    for i, (app_id, app_name) in enumerate(APPS):
         commands = [
             "yarn",
             "--silent",  # silent to hide arguments from logs
@@ -45,9 +60,9 @@ with DAG("app_store_analytics",
             "--password={{ var.value.app_store_connect_password }}",
             f"--app-id={app_id}",
             f"--app-name={app_name}",
-            "--start-date={{ macros.ds_add(ds, -2) }}",  # previous day data is incomplete
+            f"--start-date={{{{ {export_date} }}}}",
             f"--project={PROJECT_ID}",
-            f"--dataset={DATASET_ID}",
+            f"--dataset={SOURCE_DATASET_ID}",
         ]
 
         # First task will clear the day partition so that the only data in the table partition
@@ -67,3 +82,21 @@ with DAG("app_store_analytics",
             app_store_analytics.set_upstream(tasks[i - 1])
 
         tasks.append(app_store_analytics)
+
+    # derived tables combine all metrics per dimension
+    for derived_table in DERIVED_TABLES:
+        combined_metrics_query = bigquery_etl_query(
+            task_id=f"{derived_table}_query",
+            project_id=PROJECT_ID,
+            dataset_id=DESTINATION_DATASET_ID,
+            sql_file_path=f"sql/{DESTINATION_DATASET_ID}/{derived_table}/query.sql",
+            # Override default date partition because data has multiple day lag
+            destination_table=(
+                f"{derived_table}${{{{ macros.ds_format({export_date}, '%Y-%m-%d', '%Y%m%d') }}}}"
+            ),
+            date_partition_parameter=None,
+            parameters=[f"date:DATE:{{{{ {export_date} }}}}"],
+            dag=dag,
+        )
+
+        combined_metrics_query.set_upstream(tasks[-1])
