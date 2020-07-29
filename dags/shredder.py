@@ -41,6 +41,7 @@ on_demand = gke_command(
         "--only=telemetry_stable.main_v4",
     ],
     docker_image=docker_image,
+    is_delete_operator_pod=True,
     dag=dag,
 )
 
@@ -56,6 +57,7 @@ flat_rate_main_summary = gke_command(
         "--only=telemetry_derived.main_summary_v4",
     ],
     docker_image=docker_image,
+    is_delete_operator_pod=True,
     dag=dag,
 )
 
@@ -71,5 +73,6 @@ flat_rate = gke_command(
         "telemetry_derived.main_summary_v4",
     ],
     docker_image=docker_image,
+    is_delete_operator_pod=True,
     dag=dag,
 )
