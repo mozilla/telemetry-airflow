@@ -164,6 +164,7 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
                  project_id,
                  cluster_name,
                  num_workers,
+                 job_name=None, # Moz specific
                  zone=None,
                  network_uri=None,
                  subnetwork_uri=None,
@@ -204,6 +205,7 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         super(DataprocClusterCreateOperator, self).__init__(
             project_id=project_id, region=region, *args, **kwargs)
         self.cluster_name = cluster_name
+        self.job_name = job_name
         self.num_masters = num_masters
         self.num_workers = num_workers
         self.num_preemptible_workers = num_preemptible_workers
@@ -343,10 +345,7 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         cluster_data = {
             'projectId': self.project_id,
             'clusterName': self.cluster_name,
-            'labels': { # Moz specific start
-                'owner': self.owner,
-                'env': os.getenv('DEPLOY_ENVIRONMENT', 'env_not_set')
-            }, # Moz specific end
+            'labels': {},
             'config': {
                 'gceClusterConfig': {
                 },
@@ -393,6 +392,11 @@ class DataprocClusterCreateOperator(DataprocOperationBaseOperator):
         # semantic versioning spec: x.y.z).
         cluster_data['labels'].update({'airflow-version':
                                        'v' + version.replace('.', '-').replace('+', '-')})
+        # Moz specific
+        cluster_data['labels'].update({'owner': self.owner.lower().replace('@mozilla.com', '').replace('.', '-'),
+                                       'env': os.getenv('DEPLOY_ENVIRONMENT', 'env_not_set'),
+                                       'jobname': self.job_name.lower().replace('_', '-')})
+
         if self.storage_bucket:
             cluster_data['config']['configBucket'] = self.storage_bucket
 
