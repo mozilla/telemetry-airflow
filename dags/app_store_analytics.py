@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from utils.gcp import gke_command
 
 from airflow import DAG
-from airflow.macros import ds_add
 
 default_args = {
     "owner": "bewu@mozilla.com",
@@ -46,7 +45,7 @@ with DAG("app_store_analytics",
             "--password={{ var.value.app_store_connect_password }}",
             f"--app-id={app_id}",
             f"--app-name={app_name}",
-            f"--start-date={{ macros.ds_add(ds, -2) }}",  # previous day data is incomplete
+            "--start-date={{ macros.ds_add(ds, -2) }}",  # previous day data is incomplete
             f"--project={PROJECT_ID}",
             f"--dataset={DATASET_ID}",
         ]
