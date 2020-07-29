@@ -26,6 +26,7 @@ class DataProcHelper:
 
     def __init__(self,
                  cluster_name=None,
+                 job_name=None,
                  num_workers=2,
                  image_version='1.4',
                  region='us-west1',
@@ -55,6 +56,7 @@ class DataProcHelper:
                 ):
 
         self.cluster_name = cluster_name
+        self.job_name = job_name
         self.num_workers = num_workers
         self.image_version = image_version
         self.region = region
@@ -134,6 +136,7 @@ class DataProcHelper:
         return DataprocClusterCreateOperator(
             task_id='create_dataproc_cluster',
             cluster_name=self.cluster_name,
+            job_name=self.job_name,
             gcp_conn_id=self.gcp_conn_id,
             service_account=self.service_account,
             project_id=self.connection.project_id,
@@ -316,6 +319,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
         raise AirflowException('Please specify cluster_name and/or python_driver_code.')
 
     dataproc_helper = DataProcHelper(cluster_name=cluster_name,
+                                     job_name=job_name,
                                      num_workers=num_workers,
                                      image_version=image_version,
                                      region=region,
@@ -447,6 +451,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
         raise AirflowException('Please specify cluster_name, jar_urls, and/or main_class.')
 
     dataproc_helper = DataProcHelper(cluster_name=cluster_name,
+                                     job_name=job_name,
                                      num_workers=num_workers,
                                      image_version=image_version,
                                      region=region,
@@ -587,6 +592,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
         raise AirflowException('Please specify job_name, uri, and cluster_name.')
 
     dataproc_helper = DataProcHelper(cluster_name=cluster_name,
+                                     job_name=job_name,
                                      num_workers=num_workers,
                                      image_version=image_version,
                                      region=region,
