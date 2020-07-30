@@ -17,8 +17,8 @@ default_args = {
 }
 
 PROJECT_ID = "moz-fx-data-marketing-prod"
-SOURCE_DATASET_ID = "apple_app_store_exported"
-DESTINATION_DATASET_ID = "apple_app_store"
+EXPORT_DATASET_ID = "apple_app_store_exported"
+DERIVED_DATASET_ID = "apple_app_store"
 
 APPS = [
     ("989804926", "Firefox"),
@@ -62,7 +62,7 @@ with DAG("app_store_analytics",
             f"--app-name={app_name}",
             f"--start-date={{{{ {export_date} }}}}",
             f"--project={PROJECT_ID}",
-            f"--dataset={SOURCE_DATASET_ID}",
+            f"--dataset={EXPORT_DATASET_ID}",
         ]
 
         # First task will clear the day partition so that the only data in the table partition
@@ -88,8 +88,8 @@ with DAG("app_store_analytics",
         combined_metrics_query = bigquery_etl_query(
             task_id=f"{derived_table}_query",
             project_id=PROJECT_ID,
-            dataset_id=DESTINATION_DATASET_ID,
-            sql_file_path=f"sql/{DESTINATION_DATASET_ID}/{derived_table}/query.sql",
+            dataset_id=DERIVED_DATASET_ID,
+            sql_file_path=f"sql/{DERIVED_DATASET_ID}/{derived_table}/query.sql",
             # Override default date partition because data has multiple day lag
             destination_table=(
                 f"{derived_table}${{{{ macros.ds_format({export_date}, '%Y-%m-%d', '%Y%m%d') }}}}"
