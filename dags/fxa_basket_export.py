@@ -26,7 +26,7 @@ GCS_BUCKET = "fxa-prod-basket"
 GCS_PREFIX = "last-active-timestamp"
 
 with models.DAG(
-    "adjust_import", default_args=default_args, schedule_interval="15 1 * * *"
+    "fxa_basket_export", default_args=default_args, schedule_interval="15 1 * * *"
 ):
     # Create the table with yesterday's data
     gcp_conn_id = "google_cloud_derived_datasets"
