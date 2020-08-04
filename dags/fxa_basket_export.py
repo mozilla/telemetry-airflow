@@ -27,10 +27,10 @@ GCS_PREFIX = "last-active-timestamp"
 
 with models.DAG(
     "fxa_basket_export", default_args=default_args, schedule_interval="15 1 * * *"
-):
+) as dag:
     # Create the table with yesterday's data
     gcp_conn_id = "google_cloud_derived_datasets"
-    project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
+    project_id = "moz-fx-data-shared-prod"
     dataset = "tmp"
     temp_table_name = "fxa_basket_export_{{ ds_nodash }}"
     fully_qualified_table_name = "{}.{}.{}".format(project_id, dataset, temp_table_name)
