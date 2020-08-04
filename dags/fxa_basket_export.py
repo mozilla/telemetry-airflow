@@ -10,8 +10,6 @@ from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOper
 from airflow.contrib.operators.gcs_delete_operator import (
     GoogleCloudStorageDeleteOperator,
 )
-from airflow.contrib.operators.gcs_to_s3 import GoogleCloudStorageToS3Operator
-from operators.bq_sensor import BigQuerySQLSensorOperator
 
 
 default_args = {
@@ -64,9 +62,18 @@ with models.DAG(
     directory = "/".join((GCS_PREFIX, "{{ ds_nodash }}"))
     extension = ".csv"
 
+    # Remove any existing data in the destination directory from previous runs.
+    gcs_delete = GoogleCloudStorageDeleteOperator(
+        task_id="gcs_delete",
+        bucket_name=GCS_BUCKET,
+        prefix=directory,
+        google_cloud_storage_conn_id=gcp_conn_id,
+    )
+
     # Export from bq to gcs
     # Docs: https://github.com/apache/airflow/blob/master/airflow/contrib/operators/bigquery_to_gcs.py#L28 # noqa: E501
     gcs_uri = "gs://{}/{}/*{}".format(GCS_BUCKET, directory, extension)
+
     table_extract = BigQueryToCloudStorageOperator(
         task_id="bq_to_gcs",
         source_project_dataset_table=fully_qualified_table_name,
@@ -86,4 +93,4 @@ with models.DAG(
         use_legacy_sql=False,
     )
 
-    create_table >> table_extract >> table_drop
+    create_table >> gcs_delete >> table_extract >> table_drop
