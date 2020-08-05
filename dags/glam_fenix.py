@@ -9,23 +9,28 @@ default_args = {
     "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 2, 19),
-    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com", "bewu@mozilla.com"],
+    "email": [
+        "telemetry-alerts@mozilla.com",
+        "amiyaguchi@mozilla.com",
+        "bewu@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
     "retry_delay": timedelta(minutes=30),
 }
 
+# Fenix as a product has a convoluted app_id history.
+# https://docs.google.com/spreadsheets/d/18PzkzZxdpFl23__-CIO735NumYDqu7jHpqllo0sBbPA
 PRODUCTS = [
-    "org_mozilla_fenix",
-    "org_mozilla_firefox",
-    "org_mozilla_firefox_beta",
-    "org_mozilla_fennec_aurora",
+    "org_mozilla_fenix",  # 2019-07-03 - present (nightly)
+    "org_mozilla_fenix_nightly",  # 2019-06-30 - 2020-07-03
+    "org_mozilla_firefox",  # 2020-07-28 - present
+    "org_mozilla_firefox_beta",  # 2020-03-26 - present
+    "org_mozilla_fennec_aurora", # 2020-01-21 - present
 ]
 
-dag = DAG(
-    "glam_fenix", default_args=default_args, schedule_interval="0 2 * * *"
-)
+dag = DAG("glam_fenix", default_args=default_args, schedule_interval="0 2 * * *")
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate",
@@ -47,10 +52,7 @@ for product in PRODUCTS:
     export = gke_command(
         task_id="export_{}".format(product),
         cmds=["bash"],
-        env_vars={
-            "DATASET": "glam_etl",
-            "PRODUCT": product,
-        },
+        env_vars={"DATASET": "glam_etl", "PRODUCT": product},
         command=["script/glam/export_csv"],
         docker_image="mozilla/bigquery-etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",
