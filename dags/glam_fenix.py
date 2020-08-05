@@ -20,14 +20,15 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-# Fenix as a product has a convoluted app_id history.
+# Fenix as a product has a convoluted app_id history. The comments note the
+# start and end dates of the id in the app store.
 # https://docs.google.com/spreadsheets/d/18PzkzZxdpFl23__-CIO735NumYDqu7jHpqllo0sBbPA
 PRODUCTS = [
-    "org_mozilla_fenix",  # 2019-07-03 - present (nightly)
+    "org_mozilla_fenix",  # 2019-06-29 - 2020-07-03 (beta), 2020-07-03 - present (nightly)
     "org_mozilla_fenix_nightly",  # 2019-06-30 - 2020-07-03
     "org_mozilla_firefox",  # 2020-07-28 - present
     "org_mozilla_firefox_beta",  # 2020-03-26 - present
-    "org_mozilla_fennec_aurora", # 2020-01-21 - present
+    "org_mozilla_fennec_aurora",  # 2020-01-21 - 2020-07-03
 ]
 
 dag = DAG("glam_fenix", default_args=default_args, schedule_interval="0 2 * * *")
