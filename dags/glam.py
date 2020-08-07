@@ -110,8 +110,6 @@ clients_scalar_aggregates = bigquery_etl_query(
         "robhudson@mozilla.com",
     ],
     depends_on_past=True,
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
 )
@@ -128,6 +126,7 @@ scalar_percentiles = bigquery_etl_query(
         "robhudson@mozilla.com",
     ],
     date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
 )
@@ -228,6 +227,7 @@ client_scalar_probe_counts = bigquery_etl_query(
         "robhudson@mozilla.com",
     ],
     date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
 )
