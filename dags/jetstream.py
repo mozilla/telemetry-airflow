@@ -14,24 +14,24 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("pensieve", default_args=default_args, schedule_interval="0 4 * * *") as dag:
+with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") as dag:
 
-    # Built from repo https://github.com/mozilla/pensieve
-    pensieve_image = "gcr.io/moz-fx-data-experiments/pensieve:latest"
+    # Built from repo https://github.com/mozilla/jetstream
+    jetstream_image = "gcr.io/moz-fx-data-experiments/jetstream:latest"
 
-    pensieve = GKEPodOperator(
-        task_id="pensieve",
-        name="pensieve",
-        image=pensieve_image,
+    jetstream = GKEPodOperator(
+        task_id="jetstream",
+        name="jetstream",
+        image=jetstream_image,
         email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
         arguments=["--date={{ds}}"],
         dag=dag,
     )
 
-    pensieve_export_json = GKEPodOperator(
-        task_id="pensieve_export_json",
-        name="pensieve_export_json",
-        image=pensieve_image,
+    jetstream_export_json = GKEPodOperator(
+        task_id="jetstream_export_json",
+        name="jetstream_export_json",
+        image=jetstream_image,
         email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
         arguments=["export_statistics_to_json"],
         dag=dag,
@@ -77,7 +77,7 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 4 * * *") a
         dag=dag,
     )
 
-    pensieve.set_upstream(
+    jetstream.set_upstream(
         [
             wait_for_clients_daily_export,
             wait_for_main_summary_export,
@@ -87,4 +87,4 @@ with DAG("pensieve", default_args=default_args, schedule_interval="0 4 * * *") a
         ]
     )
 
-    pensieve_export_json.set_upstream(pensieve)
+    jetstream_export_json.set_upstream(jetstream)

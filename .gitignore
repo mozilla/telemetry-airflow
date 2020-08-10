@@ -8,4 +8,7 @@ logs
 unittests.cfg
 .config
 
+/dags/bigquery-etl-dags
+/dags/bigquery-etl-dags/*
+
 *~

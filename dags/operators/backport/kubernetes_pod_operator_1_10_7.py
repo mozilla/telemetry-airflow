@@ -24,7 +24,7 @@ from airflow.utils.decorators import apply_defaults
 from airflow.contrib.kubernetes import pod_generator, pod_launcher
 
 # import our own kube_client from 1.10.2. We also add pod name label to the pod.
-from kube_client_1_10_2 import get_kube_client
+from .kube_client_1_10_2 import get_kube_client
 
 from airflow.contrib.kubernetes.pod import Resources
 from airflow.utils.helpers import validate_key

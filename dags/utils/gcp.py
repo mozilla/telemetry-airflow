@@ -457,6 +457,7 @@ def bigquery_etl_query(
     docker_image="mozilla/bigquery-etl:latest",
     date_partition_parameter="submission_date",
     multipart=False,
+    allow_field_addition_on_date=None,
     **kwargs
 ):
     """ Generate.
@@ -479,6 +480,8 @@ def bigquery_etl_query(
                                                    rather than partition
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
+    :param Optional[str] allow_field_addition_on_date: Optional {{ds}} value that
+                                                   should be run with ALLOW_FIELD_ADDITION
 
     :return: GKEPodOperator
     """
@@ -500,6 +503,15 @@ def bigquery_etl_query(
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
+        + (
+            [
+                "--schema_update_option="
+                + "{{ 'ALLOW_FIELD_ADDITION' if ds == %r else '' }}"
+                % allow_field_addition_on_date
+            ]
+            if allow_field_addition_on_date
+            else []
+        )
         + list(arguments)
         + [sql_file_path],
         **kwargs
