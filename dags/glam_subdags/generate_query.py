@@ -62,6 +62,7 @@ def generate_and_run_glean_query(task_id,
                                  source_project_id="moz-fx-data-shared-prod",
                                  docker_image="mozilla/bigquery-etl:latest",
                                  gcp_conn_id="google_cloud_derived_datasets",
+                                 env_vars={},
                                  **kwargs):
     """
     :param task_id:                     Airflow task id
@@ -71,6 +72,7 @@ def generate_and_run_glean_query(task_id,
     :param source_project_id:           Project containing the source datasets
     :param docker_image:                Docker image
     :param gcp_conn_id:                 Airflow GCP connection
+    :param env_vars:                    Additional environment variables to pass
     """
     env_vars = {
         "PRODUCT": product,
@@ -78,6 +80,7 @@ def generate_and_run_glean_query(task_id,
         "PROJECT": destination_project_id,
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",
+        **env_vars
     }
 
     return gke_command(
