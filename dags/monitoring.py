@@ -1,8 +1,7 @@
 from airflow import DAG
 from airflow.operators.sensors import ExternalTaskSensor
 from datetime import timedelta, datetime
-from operators.gcp_container_operator import GKEPodOperator
-from utils.gcp import gke_command
+from utils.gcp import bigquery_etl_query, gke_command
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
@@ -46,7 +45,37 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         ],
         docker_image="mozilla/bigquery-etl:latest",
         owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
+        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"],
+    )
+
+    structured_distinct_docids = gke_command(
+        task_id="structured_distinct_docids",
+        command=[
+            "python3",
+            "sql/monitoring/structured_distinct_docids_v1/query.py",
+            "--date",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        owner="bewu@mozilla.com",
+        email=["bewu@mozilla.com"],
+        dag=dag,
+    )
+
+    telemetry_distinct_docids = bigquery_etl_query(
+        task_id="telemetry_distinct_docids",
+        destination_table="telemetry_distinct_docids_v1",
+        dataset_id="monitoring",
+        owner="bewu@mozilla.com",
+        email=["bewu@mozilla.com"],
+        dag=dag,
+    )
 
     stable_table_sizes.set_upstream(wait_for_copy_deduplicate_main_ping)
     stable_table_sizes.set_upstream(wait_for_copy_deduplicate_all)
+
+    structured_distinct_docids.set_upstream(wait_for_copy_deduplicate_main_ping)
+    structured_distinct_docids.set_upstream(wait_for_copy_deduplicate_all)
+
+    telemetry_distinct_docids.set_upstream(wait_for_copy_deduplicate_main_ping)
+    telemetry_distinct_docids.set_upstream(wait_for_copy_deduplicate_all)
