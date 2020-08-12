@@ -64,6 +64,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
 
     telemetry_distinct_docids = bigquery_etl_query(
         task_id="telemetry_distinct_docids",
+        project_id="moz-fx-data-shared-prod",
         destination_table="telemetry_distinct_docids_v1",
         dataset_id="monitoring",
         owner="bewu@mozilla.com",
