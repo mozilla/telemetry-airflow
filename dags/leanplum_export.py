@@ -17,47 +17,61 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
+# tuples of (app_name, s3_prefix)
+LEANPLUM_APPS = [
+    (
+        "firefox_android_release",
+        "firefox_android",
+        "{{ var.value.LEANPLUM_FIREFOX_ANDROID_RELEASE_APP_ID }}",
+        "{{ var.value.LEANPLUM_FIREFOX_ANDROID_RELEASE_CLIENT_KEY }}"
+    ),
+    (
+        "firefox_android_beta",
+        "firefox_android_beta",
+        "{{ var.value.LEANPLUM_FIREFOX_ANDROID_BETA_APP_ID }}",
+        "{{ var.value.LEANPLUM_FIREFOX_ANDROID_BETA_CLIENT_KEY }}"
+    ),
+    (
+        "firefox_android_nightly",
+        "firefox_android_nightly",
+        "{{ var.value.LEANPLUM_FIREFOX_ANDROID_NIGHTLY_APP_ID }}",
+        "{{ var.value.LEANPLUM_FIREFOX_ANDROID_NIGHTLY_CLIENT_KEY }}"
+    ),
+    (
+        "firefox_ios_release",
+        "firefox_ios",
+        "{{ var.value.LEANPLUM_FIREFOX_IOS_RELEASE_APP_ID }}",
+        "{{ var.value.LEANPLUM_FIREFOX_IOS_RELEASE_CLIENT_KEY }}"
+    ),
+]
 
-with DAG("leanplum_export",
-         default_args=default_args,
-         schedule_interval=timedelta(hours=4)) as dag:
+with DAG(
+        "leanplum_export",
+        default_args=default_args,
+        schedule_interval="0 2/4 * * *",
+        max_active_runs=1,
+) as dag:
 
-    fennec_release_export = leanplum.export(
-        task_id="fennec_release_export",
-        bq_project="moz-fx-data-shared-prod",
-        s3_prefix="firefox_android",
-        bq_dataset_id="firefox_android_release_external",
-        table_prefix="leanplum",
-        version="2",
-        dag=dag
-    )
+    for app_name, s3_bucket, app_id_var, client_key_var in LEANPLUM_APPS:
+        data_export = leanplum.export(
+            task_id=f"{app_name}_export",
+            bq_project="moz-fx-data-shared-prod",
+            s3_prefix=s3_bucket,
+            bq_dataset_id=f"{app_name}_external",
+            table_prefix="leanplum",
+            version="2",
+            dag=dag,
+        )
 
-    firefox_ios_release_export = leanplum.export(
-        task_id="firefox_ios_release_export",
-        bq_project="moz-fx-data-shared-prod",
-        s3_prefix="firefox_ios",
-        bq_dataset_id="firefox_ios_release_external",
-        table_prefix="leanplum",
-        version="2",
-        dag=dag
-    )
+        message_export = leanplum.get_messages(
+            task_id=f"{app_name}_messages",
+            app_id=app_id_var,
+            client_key=client_key_var,
+            bq_project="moz-fx-data-shared-prod",
+            bq_dataset_id=f"{app_name}_external",
+            table_prefix="leanplum",
+            version="2",
+            dag=dag,
+        )
 
-    firefox_android_beta_export = leanplum.export(
-        task_id="firefox_android_beta_export",
-        bq_project="moz-fx-data-shared-prod",
-        s3_prefix="firefox_android_beta",
-        bq_dataset_id="firefox_android_beta_external",
-        table_prefix="leanplum",
-        version="2",
-        dag=dag
-    )
-
-    firefox_android_nightly_export = leanplum.export(
-        task_id="firefox_android_nightly_export",
-        bq_project="moz-fx-data-shared-prod",
-        s3_prefix="firefox_android_nightly",
-        bq_dataset_id="firefox_android_nightly_external",
-        table_prefix="leanplum",
-        version="2",
-        dag=dag
-    )
+        message_export.set_upstream(data_export)
