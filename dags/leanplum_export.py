@@ -48,7 +48,8 @@ LEANPLUM_APPS = [
 with DAG(
         "leanplum_export",
         default_args=default_args,
-        schedule_interval="0 2/4 * * *",
+        # last run of a day will be at 03:59 of the next day
+        schedule_interval="59 3/4 * * *",
         max_active_runs=1,
 ) as dag:
 
