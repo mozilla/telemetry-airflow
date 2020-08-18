@@ -136,11 +136,11 @@ with models.DAG(
     experiment_search_query_task_id = "experiment_search_aggregates_live_generate_query"
 
     # setting xcom_push to True outputs this query to an xcom
-    experiment_search_aggregates_live_generate_query = gke_command(
+    experiment_search_aggregates_live_generate_view = gke_command(
         task_id=experiment_search_query_task_id,
         command=[
             "python",
-            "sql/telemetry_derived/experiment_search_aggregates_live/view.sql.py",
+            "sql/telemetry_derived/experiment_search_aggregates_live_v1/view.sql.py",
             "--submission-date",
             "{{ ds }}",
             "--json-output",
@@ -152,8 +152,8 @@ with models.DAG(
         owner="ascholtz@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
 
-    experiment_enrollment_aggregates_live_run_query = bigquery_xcom_query(
-        task_id="experiment_search_aggregates_live_run_query",
+    experiment_search_aggregates_live_run_view = bigquery_xcom_query(
+        task_id="experiment_search_aggregates_live_run_view",
         destination_table=None,
         dataset_id="telemetry_derived",
         xcom_task_id=experiment_search_query_task_id,
@@ -161,9 +161,9 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
 
     (copy_deduplicate_main_ping >>
-     experiment_enrollment_aggregates >>
-     experiment_enrollment_aggregates_live_generate_query >>
-     experiment_enrollment_aggregates_live_run_query)
+     experiment_search_aggregates >>
+     experiment_search_aggregates_live_generate_view >>
+     experiment_search_aggregates_live_run_view)
 
     # Daily and last seen views on top of every Glean application.
 
