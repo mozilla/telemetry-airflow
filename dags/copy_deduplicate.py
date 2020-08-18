@@ -123,6 +123,48 @@ with models.DAG(
      experiment_enrollment_aggregates_live_generate_query >>
      experiment_enrollment_aggregates_live_run_query)
 
+    # Experiment search aggregates chain (depends on main)
+
+    experiment_search_aggregates = bigquery_etl_query(
+        task_id="experiment_search_aggregates",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="experiment_search_aggregates_v1",
+        dataset_id="telemetry_derived",
+        owner="ascholtz@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
+
+    experiment_search_query_task_id = "experiment_search_aggregates_live_generate_query"
+
+    # setting xcom_push to True outputs this query to an xcom
+    experiment_search_aggregates_live_generate_query = gke_command(
+        task_id=experiment_search_query_task_id,
+        command=[
+            "python",
+            "sql/telemetry_derived/experiment_search_aggregates_live/view.sql.py",
+            "--submission-date",
+            "{{ ds }}",
+            "--json-output",
+            "--wait-seconds",
+            "15",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        xcom_push=True,
+        owner="ascholtz@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
+
+    experiment_enrollment_aggregates_live_run_query = bigquery_xcom_query(
+        task_id="experiment_search_aggregates_live_run_query",
+        destination_table=None,
+        dataset_id="telemetry_derived",
+        xcom_task_id=experiment_search_query_task_id,
+        owner="ascholtz@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
+
+    (copy_deduplicate_main_ping >>
+     experiment_enrollment_aggregates >>
+     experiment_enrollment_aggregates_live_generate_query >>
+     experiment_enrollment_aggregates_live_run_query)
+
     # Daily and last seen views on top of every Glean application.
 
     gcp_conn_id = "google_cloud_derived_datasets"
