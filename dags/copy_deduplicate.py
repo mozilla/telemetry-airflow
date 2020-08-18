@@ -152,8 +152,8 @@ with models.DAG(
         owner="ascholtz@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
 
-    experiment_search_aggregates_live_run_view = bigquery_xcom_query(
-        task_id="experiment_search_aggregates_live_run_view",
+    experiment_search_aggregates_live_deploy_view = bigquery_xcom_query(
+        task_id="experiment_search_aggregates_live_deploy_view",
         destination_table=None,
         dataset_id="telemetry_derived",
         xcom_task_id=experiment_search_query_task_id,
@@ -163,7 +163,7 @@ with models.DAG(
     (copy_deduplicate_main_ping >>
      experiment_search_aggregates >>
      experiment_search_aggregates_live_generate_view >>
-     experiment_search_aggregates_live_run_view)
+     experiment_search_aggregates_live_deploy_view)
 
     # Daily and last seen views on top of every Glean application.
 
