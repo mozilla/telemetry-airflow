@@ -31,6 +31,20 @@ PRODUCTS = [
     "org_mozilla_fennec_aurora",  # 2020-01-21 - 2020-07-03
 ]
 
+# This is only required if there is a logical mapping defined within the
+# bigquery-etl module within the templates/logical_app_id folder. This builds
+# the dependency graph such that the view with the logical clients daily table
+# is always pointing to a concrete partition in BigQuery.
+LOGICAL_MAPPING = {
+    "org_mozilla_fenix_glam_nightly": [
+        "org_mozilla_fenix_nightly",
+        "org_mozilla_fenix",
+        "org_mozilla_fennec_aurora",
+    ],
+    "org_mozilla_fenix_glam_beta": ["org_mozilla_fenix", "org_mozilla_firefox_beta"],
+    "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
+}
+
 dag = DAG("glam_fenix", default_args=default_args, schedule_interval="0 2 * * *")
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
@@ -42,16 +56,37 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
     dag=dag,
 )
 
+mapping = {}
 for product in PRODUCTS:
     query = generate_and_run_glean_query(
-        task_id=product,
+        task_id=f"daily_{product}",
         product=product,
         destination_project_id="glam-fenix-dev",
+        env_vars=dict(STAGE="daily"),
         dag=dag,
     )
+    mapping[product] = query
+    wait_for_copy_deduplicate >> query
+
+# the set of logical ids and the set of ids that are not mapped to logical ids
+final_products = set(LOGICAL_MAPPING.keys()) | set(PRODUCTS) - set(
+    sum(LOGICAL_MAPPING.values(), [])
+)
+for product in final_products:
+    query = generate_and_run_glean_query(
+        task_id=f"incremental_{product}",
+        product=product,
+        destination_project_id="glam-fenix-dev",
+        env_vars=dict(STAGE="incremental"),
+        dag=dag,
+    )
+    # get the dependencies for the logical mapping, or just pass through the
+    # daily query unmodified
+    for dependency in LOGICAL_MAPPING.get(product, [product]):
+        mapping[dependency] >> query
 
     export = gke_command(
-        task_id="export_{}".format(product),
+        task_id=f"export_{product}",
         cmds=["bash"],
         env_vars={"DATASET": "glam_etl", "PRODUCT": product},
         command=["script/glam/export_csv"],
@@ -60,4 +95,4 @@ for product in PRODUCTS:
         dag=dag,
     )
 
-    wait_for_copy_deduplicate >> query >> export
+    query >> export
