@@ -74,5 +74,3 @@ with DAG(
             version="2",
             dag=dag,
         )
-
-        message_export.set_upstream(data_export)
