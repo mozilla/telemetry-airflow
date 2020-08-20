@@ -24,7 +24,7 @@ def export(
     See bug 1588654 for information on which buckets and datasets
     these tabes should live in.
 
-    :param str bq_dataset_id:           [Required] BigQuery default dataset id
+    :param str bq_dataset_id:        [Required] BigQuery default dataset id
     :param str task_id:              [Required] The task ID for this task
     :param str bq_project:           [Required] The project to create tables in
     :param str s3_prefix:            Prefix for data in the s3 bucket
@@ -66,3 +66,63 @@ def export(
         gke_namespace=gke_namespace,
         aws_conn_id=aws_conn_id,
         **kwargs)
+
+
+def get_messages(
+    task_id,
+    app_id,
+    client_key,
+    bq_project,
+    bq_dataset_id,
+    version,
+    table_prefix=None,
+    gcp_conn_id="google_cloud_derived_datasets",
+    gke_location="us-central1-a",
+    gke_cluster_name="bq-load-gke-1",
+    gke_namespace="default",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/leanplum-data-export:latest",
+    **kwargs
+):
+    """Get all leanplum messages and save to bigquery,
+
+    :param str app_id:              [Required] Leanplum app id
+    :param str client_key:          [Required] Leanplum content read-only key for the app
+    :param str task_id:             [Required] The task ID for this task
+    :param str bq_project:          [Required] The project to create tables in
+    :param str bq_dataset_id:       [Required] BigQuery dataset id
+    :param str table_prefix:        Prefix of tables in Bigquery
+    :param str version:             Version of the destination table
+    :param str gcp_conn_id:         Airflow connection id for GCP access
+    :param str gke_location:        GKE cluster location
+    :param str gke_cluster_name:    GKE cluster name
+    :param str gke_namespace:       GKE cluster namespace
+    :param str docker_image:        docker image to use
+    :param Dict[str, Any] kwargs:   Additional keyword arguments for
+                                    GKEPodOperator
+
+    :return: GKEPodOperator
+    """
+    args = [
+        "leanplum-data-export",
+        "get-messages",
+        "--date", "{{ ds }}",
+        "--app-id", app_id,
+        "--client-key", client_key,
+        "--project", bq_project,
+        "--bq-dataset", bq_dataset_id,
+        "--version", version,
+    ]
+
+    if table_prefix is not None:
+        args += ["--table-prefix", table_prefix]
+
+    return gke_command(
+        task_id=task_id,
+        docker_image=docker_image,
+        command=args,
+        gcp_conn_id=gcp_conn_id,
+        gke_location=gke_location,
+        gke_cluster_name=gke_cluster_name,
+        gke_namespace=gke_namespace,
+        **kwargs
+    )
