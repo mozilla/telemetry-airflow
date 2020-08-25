@@ -298,6 +298,10 @@ def burnham_bigquery_run(
             burnham_test_run,
             "--scenarios",
             burnham_test_scenarios,
+            "--results-table",
+            "burnham_derived.test_results_v1",
+            "--log-url",
+            "{{ task_instance.log_url }}",
         ],
         **kwargs
     )
