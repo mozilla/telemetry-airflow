@@ -24,7 +24,7 @@ with DAG("play_store_export",
         command=[
             "python", "play_store_export/export.py",
             "--date={{ yesterday_ds }}",
-            "--backfill-day-count=35",
+            "--backfill-day-count=60",
             "--project", project_id,
             "--transfer-config={{ var.value.play_store_transfer_config_id }}",
         ],
