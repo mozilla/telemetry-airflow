@@ -39,7 +39,7 @@ with models.DAG(
         priority_weight=100,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
-        except_tables=["telemetry_live.main_v4", "xfocsp_error_report_live.xfocsp_error_report_v4"])
+        except_tables=["telemetry_live.main_v4"])
 
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
