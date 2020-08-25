@@ -25,23 +25,38 @@ DAG_EMAIL = ["rpierzina@mozilla.com"]
 # metric values reported by the Glean SDK across several documents from three
 # different clients are correct.
 TEST_LABELED_COUNTER_METRICS = """
+WITH
+  numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{project_id}.burnham_live.discovery_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run ),
+  deduped AS (
+  SELECT
+    * EXCEPT(_n)
+  FROM
+    numbered
+  WHERE
+    _n = 1 )
 SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
 FROM
-  `{project_id}.burnham_live.discovery_v1`
+  deduped
 CROSS JOIN
   UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
-WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = @burnham_test_run
 GROUP BY
   technology_space_travel.key
 ORDER BY
   technology_space_travel.key
 LIMIT
-  10
+  20
 """
+
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
     {"key": "spore_drive", "value_sum": 13},
