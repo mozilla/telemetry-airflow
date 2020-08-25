@@ -74,7 +74,7 @@ WHERE
   submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
 LIMIT
-  10
+  20
 """
 WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 
@@ -99,7 +99,7 @@ WITH
     submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run
   LIMIT
-    10 ),
+    20 ),
   experiment_counts AS (
   SELECT
     experiment,
@@ -156,7 +156,7 @@ WHERE
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
-  10
+  20
 """
 
 WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
