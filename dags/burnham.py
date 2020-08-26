@@ -21,10 +21,9 @@ DAG_EMAIL = ["rpierzina@mozilla.com"]
 # this query SQL before the template is rendered, we need to use a parameter
 # and replace the test run UUID in burnham-bigquery.
 
-# Test scenario test_labeled_counter_metrics: Verify that labeled_counter
-# metric values reported by the Glean SDK across several documents from three
-# different clients are correct.
-TEST_LABELED_COUNTER_METRICS = """
+# Live tables are not guaranteed to be deduplicated. To ensure reproducibility,
+# we need to deduplicate Glean pings produced by burnham for these tests.
+WITH_DISCOVERY_V1_DEDUPED = """
 WITH
   numbered AS (
   SELECT
@@ -41,7 +40,12 @@ WITH
   FROM
     numbered
   WHERE
-    _n = 1 )
+    _n = 1 )"""
+
+# Test scenario test_labeled_counter_metrics: Verify that labeled_counter
+# metric values reported by the Glean SDK across several documents from three
+# different clients are correct.
+TEST_LABELED_COUNTER_METRICS = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
@@ -84,24 +88,7 @@ WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 # which is enrolled in the spore_drive experiment on branch tardigrade, and a
 # client which is enrolled in the spore_drive experiment on branch
 # tardigrade-dna.
-TEST_EXPERIMENTS = """
-WITH
-  numbered AS (
-  SELECT
-    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
-    *
-  FROM
-    `{project_id}.burnham_live.discovery_v1`
-  WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-    AND metrics.uuid.test_run = @burnham_test_run ),
-  deduped AS (
-  SELECT
-    * EXCEPT(_n)
-  FROM
-    numbered
-  WHERE
-    _n = 1 ),
+TEST_EXPERIMENTS = f"""{WITH_DISCOVERY_V1_DEDUPED},
   base AS (
   SELECT
     ARRAY(
@@ -156,30 +143,14 @@ WANT_TEST_EXPERIMENTS = [
 
 # Test scenario test_glean_error_invalid_value: Verify that the Glean SDK
 # correctly reports the number of times a metric was set to an invalid value.
-TEST_GLEAN_ERROR_INVALID_VALUE = """
-WITH
-  numbered AS (
-  SELECT
-    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
-    *
-  FROM
-    `{project_id}.burnham_live.discovery_v1`
-  WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-    AND metrics.uuid.test_run = @burnham_test_run
-    AND ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
-  deduped AS (
-  SELECT
-    * EXCEPT(_n)
-  FROM
-    numbered
-  WHERE
-    _n = 1 )
+TEST_GLEAN_ERROR_INVALID_VALUE = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_value
 FROM
   deduped
+WHERE
+  ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
@@ -231,7 +202,7 @@ def burnham_run(
     gke_location=DEFAULT_GKE_LOCATION,
     gke_cluster_name=DEFAULT_GKE_CLUSTER_NAME,
     gke_namespace=DEFAULT_GKE_NAMESPACE,
-    **kwargs
+    **kwargs,
 ):
     """Create a new GKEPodOperator that runs the burnham Docker image.
 
@@ -271,7 +242,7 @@ def burnham_run(
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -291,7 +262,7 @@ def burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
         sql=sql,
         bigquery_conn_id=gcp_conn_id,
         use_legacy_sql=False,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -304,7 +275,7 @@ def burnham_bigquery_run(
     gke_location=DEFAULT_GKE_LOCATION,
     gke_cluster_name=DEFAULT_GKE_CLUSTER_NAME,
     gke_namespace=DEFAULT_GKE_NAMESPACE,
-    **kwargs
+    **kwargs,
 ):
     """Create a new GKEPodOperator that runs the burnham-bigquery Docker image.
 
@@ -345,7 +316,7 @@ def burnham_bigquery_run(
             "--log-url",
             "{{ task_instance.log_url }}",
         ],
-        **kwargs
+        **kwargs,
     )
 
 
