@@ -157,15 +157,29 @@ WANT_TEST_EXPERIMENTS = [
 # Test scenario test_glean_error_invalid_value: Verify that the Glean SDK
 # correctly reports the number of times a metric was set to an invalid value.
 TEST_GLEAN_ERROR_INVALID_VALUE = """
+WITH
+  numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{project_id}.burnham_live.discovery_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run
+    AND ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
+  deduped AS (
+  SELECT
+    * EXCEPT(_n)
+  FROM
+    numbered
+  WHERE
+    _n = 1 )
 SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_value
 FROM
-  `{project_id}.burnham_live.discovery_v1`
-WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = @burnham_test_run
-  AND ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
+  deduped
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
