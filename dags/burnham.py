@@ -86,6 +86,22 @@ WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 # tardigrade-dna.
 TEST_EXPERIMENTS = """
 WITH
+  numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{project_id}.burnham_live.discovery_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run ),
+  deduped AS (
+  SELECT
+    * EXCEPT(_n)
+  FROM
+    numbered
+  WHERE
+    _n = 1 ),
   base AS (
   SELECT
     ARRAY(
@@ -94,10 +110,7 @@ WITH
     FROM
       UNNEST(ping_info.experiments)) AS experiments,
   FROM
-    `{project_id}.burnham_live.discovery_v1`
-  WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-    AND metrics.uuid.test_run = @burnham_test_run
+    deduped
   LIMIT
     20 ),
   experiment_counts AS (
