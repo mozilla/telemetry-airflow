@@ -17,31 +17,52 @@ from operators.gcp_container_operator import GKEPodOperator
 DAG_OWNER = "rpierzina@mozilla.com"
 DAG_EMAIL = ["rpierzina@mozilla.com"]
 
+PROJECT_ID = "moz-fx-data-shared-prod"
+
 # We use a template for the test run UUID in the DAG. Because we base64 encode
 # this query SQL before the template is rendered, we need to use a parameter
 # and replace the test run UUID in burnham-bigquery.
 
+# Live tables are not guaranteed to be deduplicated. To ensure reproducibility,
+# we need to deduplicate Glean pings produced by burnham for these tests.
+WITH_DISCOVERY_V1_DEDUPED = f"""
+WITH
+  numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{PROJECT_ID}.burnham_live.discovery_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run ),
+  deduped AS (
+  SELECT
+    * EXCEPT(_n)
+  FROM
+    numbered
+  WHERE
+    _n = 1 )"""
+
 # Test scenario test_labeled_counter_metrics: Verify that labeled_counter
 # metric values reported by the Glean SDK across several documents from three
 # different clients are correct.
-TEST_LABELED_COUNTER_METRICS = """
+TEST_LABELED_COUNTER_METRICS = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
 FROM
-  `{project_id}.burnham_live.discovery_v1`
+  deduped
 CROSS JOIN
   UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
-WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = @burnham_test_run
 GROUP BY
   technology_space_travel.key
 ORDER BY
   technology_space_travel.key
 LIMIT
-  10
+  20
 """
+
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
     {"key": "spore_drive", "value_sum": 13},
@@ -50,16 +71,16 @@ WANT_TEST_LABELED_COUNTER_METRICS = [
 
 # Test scenario test_client_ids: Verify that the Glean SDK generated three
 # distinct client IDs for three different clients.
-TEST_CLIENT_IDS = """
+TEST_CLIENT_IDS = f"""
 SELECT
   COUNT(DISTINCT client_info.client_id) AS count_client_ids
 FROM
-  `{project_id}.burnham_live.discovery_v1`
+  `{PROJECT_ID}.burnham_live.discovery_v1`
 WHERE
   submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
 LIMIT
-  10
+  20
 """
 WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 
@@ -69,8 +90,7 @@ WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 # which is enrolled in the spore_drive experiment on branch tardigrade, and a
 # client which is enrolled in the spore_drive experiment on branch
 # tardigrade-dna.
-TEST_EXPERIMENTS = """
-WITH
+TEST_EXPERIMENTS = f"""{WITH_DISCOVERY_V1_DEDUPED},
   base AS (
   SELECT
     ARRAY(
@@ -79,12 +99,9 @@ WITH
     FROM
       UNNEST(ping_info.experiments)) AS experiments,
   FROM
-    `{project_id}.burnham_live.discovery_v1`
-  WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-    AND metrics.uuid.test_run = @burnham_test_run
+    deduped
   LIMIT
-    10 ),
+    20 ),
   experiment_counts AS (
   SELECT
     experiment,
@@ -128,20 +145,18 @@ WANT_TEST_EXPERIMENTS = [
 
 # Test scenario test_glean_error_invalid_value: Verify that the Glean SDK
 # correctly reports the number of times a metric was set to an invalid value.
-TEST_GLEAN_ERROR_INVALID_VALUE = """
+TEST_GLEAN_ERROR_INVALID_VALUE = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_value
 FROM
-  `{project_id}.burnham_live.discovery_v1`
+  deduped
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = @burnham_test_run
-  AND ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
+  ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
-  10
+  20
 """
 
 WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
@@ -189,7 +204,7 @@ def burnham_run(
     gke_location=DEFAULT_GKE_LOCATION,
     gke_cluster_name=DEFAULT_GKE_CLUSTER_NAME,
     gke_namespace=DEFAULT_GKE_NAMESPACE,
-    **kwargs
+    **kwargs,
 ):
     """Create a new GKEPodOperator that runs the burnham Docker image.
 
@@ -229,7 +244,7 @@ def burnham_run(
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -249,7 +264,7 @@ def burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
         sql=sql,
         bigquery_conn_id=gcp_conn_id,
         use_legacy_sql=False,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -262,7 +277,7 @@ def burnham_bigquery_run(
     gke_location=DEFAULT_GKE_LOCATION,
     gke_cluster_name=DEFAULT_GKE_CLUSTER_NAME,
     gke_namespace=DEFAULT_GKE_NAMESPACE,
-    **kwargs
+    **kwargs,
 ):
     """Create a new GKEPodOperator that runs the burnham-bigquery Docker image.
 
@@ -303,7 +318,7 @@ def burnham_bigquery_run(
             "--log-url",
             "{{ task_instance.log_url }}",
         ],
-        **kwargs
+        **kwargs,
     )
 
 
@@ -363,12 +378,10 @@ with models.DAG(
     )
     client3.set_upstream(generate_burnham_test_run_uuid)
 
-    project_id = "moz-fx-data-shared-prod"
-
     wait_for_data = burnham_sensor(
         task_id="wait_for_data",
         sql=SENSOR_TEMPLATE.format(
-            project_id=project_id,
+            project_id=PROJECT_ID,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
@@ -381,22 +394,22 @@ with models.DAG(
     burnham_test_scenarios = [
         {
             "name": "test_labeled_counter_metrics",
-            "query": TEST_LABELED_COUNTER_METRICS.format(project_id=project_id),
+            "query": TEST_LABELED_COUNTER_METRICS,
             "want": WANT_TEST_LABELED_COUNTER_METRICS,
         },
         {
             "name": "test_client_ids",
-            "query": TEST_CLIENT_IDS.format(project_id=project_id),
+            "query": TEST_CLIENT_IDS,
             "want": WANT_TEST_CLIENT_IDS,
         },
         {
             "name": "test_experiments",
-            "query": TEST_EXPERIMENTS.format(project_id=project_id),
+            "query": TEST_EXPERIMENTS,
             "want": WANT_TEST_EXPERIMENTS,
         },
         {
             "name": "test_glean_error_invalid_value",
-            "query": TEST_GLEAN_ERROR_INVALID_VALUE.format(project_id=project_id),
+            "query": TEST_GLEAN_ERROR_INVALID_VALUE,
             "want": WANT_TEST_GLEAN_ERROR_INVALID_VALUE,
         },
     ]
@@ -407,7 +420,7 @@ with models.DAG(
 
     verify_data = burnham_bigquery_run(
         task_id="verify_data",
-        project_id=project_id,
+        project_id=PROJECT_ID,
         burnham_test_run=burnham_test_run,
         burnham_test_scenarios=b64_encoded,
         owner=DAG_OWNER,
