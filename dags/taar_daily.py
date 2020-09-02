@@ -254,35 +254,6 @@ taar_lite_guidranking = SubDagOperator(
     dag=dag,
 )
 
-taar_delete_requests = SubDagOperator(
-    task_id="taar_locale",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="taar_locale",
-        default_args=default_args,
-        cluster_name=taar_locale_cluster_name,
-        job_name="TAAR_Locale",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_locale.py",
-        num_workers=12,
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--aws_access_key_id",
-            taar_aws_access_key,
-            "--aws_secret_access_key",
-            taar_aws_secret_key,
-            "--bucket",
-            "telemetry-private-analysis-2",
-            "--prefix",
-            "taar/locale/",
-        ],
-        aws_conn_id=taar_aws_conn_id,
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-    ),
-    dag=dag,
-)
-
-
 amodump >> amowhitelist
 amodump >> editorial_whitelist
 
