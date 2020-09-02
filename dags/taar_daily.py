@@ -244,6 +244,10 @@ taar_lite_guidranking = SubDagOperator(
         ],
         aws_conn_id=taar_aws_conn_id,
         gcp_conn_id=taar_gcpdataproc_conn_id,
+        # The SSDs are added here to improve the spark
+        # execution speed.  They can probably be removed as this job
+        # runs fairly quickly (single digit minutes) using the current
+        # configuration.
         master_disk_type="pd-ssd",
         worker_disk_type="pd-ssd",
         master_disk_size=1024,
