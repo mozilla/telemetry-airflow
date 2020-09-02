@@ -5,6 +5,7 @@ rate for all whitelisted addons.
 """
 
 
+from google.cloud import bigquery
 import click
 import contextlib
 import boto3
@@ -42,35 +43,64 @@ def selfdestructing_path(dirname):
     shutil.rmtree(dirname)
 
 
-def extract_telemetry(spark):
-    """ Load some training data from telemetry given a sparkContext
-    """
+def get_table(view):
+    """Helper for determining what table underlies a user-facing view, since the Storage API can't read views."""
+    bq = bigquery.Client()
+    view = view.replace(":", ".")
+    # partition filter is required, so try a couple options
+    for partition_column in ["DATE(submission_timestamp)", "submission_date"]:
+        try:
+            job = bq.query(
+                f"SELECT * FROM `{view}` WHERE {partition_column} = CURRENT_DATE",
+                bigquery.QueryJobConfig(dry_run=True),
+            )
+            break
+        except Exception:
+            continue
+    else:
+        raise ValueError("could not determine partition column")
+    assert len(job.referenced_tables) == 1, "View combines multiple tables"
+    table = job.referenced_tables[0]
+    return f"{table.project}:{table.dataset_id}.{table.table_id}"
 
-    gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6"
-    parquetFile = spark.read.parquet(gs_url)
-    # Use the parquet files to create a temporary view and then used
-    # in SQL statements.
-    parquetFile.createOrReplaceTempView("clients_daily")
 
-    frame = spark.sql(
-        """
-    SELECT
-        addon_row.addon_id as addon_guid,
-        count(*) as install_count
-    FROM
-        (SELECT
-            explode(active_addons) as addon_row
-        FROM
-            clients_daily
-        WHERE
-            channel='release' AND
-            app_name='Firefox' and
-            size(active_addons) > 0
-        )
-        GROUP BY addon_row.addon_id
+def extract_telemetry(spark, iso_today):
     """
+    Get a DataFrame with a valid set of sample to base the next
+    processing on.
+
+    Sample is limited to submissions received since `date_from` and
+    latest row per each client.
+
+    Reference documentation is found here:
+
+    Firefox Clients Daily telemetry table
+    https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html
+
+    BUG 1485152: PR include active_addons to clients_daily table:
+    https://github.com/mozilla/telemetry-batch-view/pull/490
+    """
+    df = (
+        spark.read.format("bigquery")
+        .option("table", get_table("moz-fx-data-shared-prod.telemetry.addons"),)
+        .option("filter", "submission_date = '{}'".format(iso_today))
+        .load()
     )
-    return frame
+    df.createOrReplaceTempView("tiny_addons")
+
+    df = spark.sql(
+        """
+        SELECT
+            addon_id as addon_guid,
+            count(client_id) as install_count
+        FROM
+            tiny_addons
+        WHERE
+          group by addon_id
+     """
+    )
+
+    return df
 
 
 def transform(frame):
@@ -162,7 +192,7 @@ def main(date, aws_access_key_id, aws_secret_access_key, bucket, prefix):
 
     logging.info("Processing GUID install rankings")
 
-    data_frame = extract_telemetry(spark)
+    data_frame = extract_telemetry(spark, date)
     result_data = transform(data_frame)
     load_s3(result_data, date, prefix, bucket)
 
