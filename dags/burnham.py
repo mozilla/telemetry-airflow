@@ -8,9 +8,8 @@ import json
 import uuid
 
 from airflow import models
-from airflow.operators import PythonOperator
-
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.operators import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
 
@@ -33,6 +32,44 @@ WITH
     *
   FROM
     `{PROJECT_ID}.burnham_live.discovery_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run ),
+  deduped AS (
+  SELECT
+    * EXCEPT(_n)
+  FROM
+    numbered
+  WHERE
+    _n = 1 )"""
+
+WITH_STARBASE46_V1_DEDUPED = f"""
+WITH
+  numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{PROJECT_ID}.burnham_live.starbase46_v1`
+  WHERE
+    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = @burnham_test_run ),
+  deduped AS (
+  SELECT
+    * EXCEPT(_n)
+  FROM
+    numbered
+  WHERE
+    _n = 1 )"""
+
+WITH_SPACE_SHIP_READY_V1_DEDUPED = f"""
+WITH
+  numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{PROJECT_ID}.burnham_live.space_ship_ready_v1`
   WHERE
     submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
@@ -168,7 +205,34 @@ WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
     }
 ]
 
-SENSOR_TEMPLATE = """
+# Test scenario test_starbase46_ping: Verify that the Glean SDK and the
+# Data Platform support custom pings using the numbered naming scheme
+TEST_STARBASE46_PING = f"""{WITH_STARBASE46_V1_DEDUPED}
+SELECT
+  COUNT(*) AS count_documents
+FROM
+  deduped
+LIMIT
+  20
+"""
+
+WANT_TEST_STARBASE46_PING = [{"count_documents": 1}]
+
+# Test scenario test_space_ship_ready_ping: Verify that the Glean SDK and the
+# Data Platform support custom pings using the kebab-case naming scheme
+TEST_SPACE_SHIP_READY_PING = f"""{WITH_SPACE_SHIP_READY_V1_DEDUPED}
+SELECT
+  COUNT(*) AS count_documents
+FROM
+  deduped
+LIMIT
+  20
+"""
+
+WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
+
+# Sensor templates for the different tables
+DISCOVERY_SENSOR_TEMPLATE = """
 SELECT
   COUNT(*) >= 10
 FROM
@@ -178,6 +242,27 @@ WHERE
   AND metrics.uuid.test_run = "{test_run}"
 """
 
+STARBASE46_SENSOR_TEMPLATE = """
+SELECT
+  COUNT(*) >= 1
+FROM
+  `{project_id}.burnham_live.starbase46_v1`
+WHERE
+  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  AND metrics.uuid.test_run = "{test_run}"
+"""
+
+SPACE_SHIP_READY_SENSOR_TEMPLATE = """
+SELECT
+  COUNT(*) >= 3
+FROM
+  `{project_id}.burnham_live.space_ship_ready_v1`
+WHERE
+  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  AND metrics.uuid.test_run = "{test_run}"
+"""
+
+# GCP and GKE default values
 DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
 DEFAULT_GKE_LOCATION = "us-central1-a"
 DEFAULT_GKE_CLUSTER_NAME = "bq-load-gke-1"
@@ -185,7 +270,7 @@ DEFAULT_GKE_NAMESPACE = "default"
 
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
 
-default_args = {
+DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": DAG_EMAIL,
     "email_on_failure": True,
@@ -324,8 +409,20 @@ def burnham_bigquery_run(
     )
 
 
+def encode_test_scenarios(test_scenarios):
+    """Encode the given test scenarios as a str.
+
+    :param List[Dict[str, object]] test_scenarios:  [Required] ID for the task
+    :return: str
+    """
+    json_encoded = json.dumps(test_scenarios)
+    utf_encoded = json_encoded.encode("utf-8")
+    b64_encoded = base64.b64encode(utf_encoded).decode("utf-8")
+    return b64_encoded
+
+
 with models.DAG(
-    "burnham", schedule_interval="@daily", default_args=default_args,
+    "burnham", schedule_interval="@daily", default_args=DEFAULT_ARGS,
 ) as dag:
 
     # Generate a UUID for this test run
@@ -340,6 +437,7 @@ with models.DAG(
     # the following value.
     burnham_test_name = "test_burnham"
 
+    # Create burnham clients that complete missions and submit pings
     client1 = burnham_run(
         task_id="client1",
         burnham_test_run=burnham_test_run,
@@ -380,20 +478,21 @@ with models.DAG(
     )
     client3.set_upstream(generate_burnham_test_run_uuid)
 
-    wait_for_data = burnham_sensor(
-        task_id="wait_for_data",
-        sql=SENSOR_TEMPLATE.format(
+    # Tasks related to the discovery table
+    wait_for_discovery_data = burnham_sensor(
+        task_id="wait_for_discovery_data",
+        sql=DISCOVERY_SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_data.set_upstream(
+    wait_for_discovery_data.set_upstream(
         [generate_burnham_test_run_uuid, client1, client2, client3]
     )
 
-    burnham_test_scenarios = [
+    discovery_test_scenarios = [
         {
             "name": "test_labeled_counter_metrics",
             "query": TEST_LABELED_COUNTER_METRICS,
@@ -416,16 +515,76 @@ with models.DAG(
         },
     ]
 
-    json_encoded = json.dumps(burnham_test_scenarios)
-    utf_encoded = json_encoded.encode("utf-8")
-    b64_encoded = base64.b64encode(utf_encoded).decode("utf-8")
-
-    verify_data = burnham_bigquery_run(
-        task_id="verify_data",
+    verify_discovery_data = burnham_bigquery_run(
+        task_id="verify_discovery_data",
         project_id=PROJECT_ID,
         burnham_test_run=burnham_test_run,
-        burnham_test_scenarios=b64_encoded,
+        burnham_test_scenarios=encode_test_scenarios(discovery_test_scenarios),
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
-    verify_data.set_upstream(wait_for_data)
+    verify_discovery_data.set_upstream(wait_for_discovery_data)
+
+    # Tasks related to the starbase46 table
+    wait_for_starbase46_data = burnham_sensor(
+        task_id="wait_for_starbase46_data",
+        sql=STARBASE46_SENSOR_TEMPLATE.format(
+            project_id=PROJECT_ID,
+            test_run=burnham_test_run,
+            test_name=burnham_test_name,
+        ),
+        timeout=60 * 60 * 1,
+    )
+    wait_for_starbase46_data.set_upstream(
+        [generate_burnham_test_run_uuid, client1, client2, client3]
+    )
+
+    starbase46_test_scenarios = [
+        {
+            "name": "test_starbase46_ping",
+            "query": TEST_STARBASE46_PING,
+            "want": WANT_TEST_STARBASE46_PING,
+        },
+    ]
+
+    verify_starbase46_data = burnham_bigquery_run(
+        task_id="verify_starbase46_data",
+        project_id=PROJECT_ID,
+        burnham_test_run=burnham_test_run,
+        burnham_test_scenarios=encode_test_scenarios(starbase46_test_scenarios),
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+    verify_starbase46_data.set_upstream(wait_for_starbase46_data)
+
+    # Tasks related to the space_ship_ready table
+    wait_for_space_ship_ready_data = burnham_sensor(
+        task_id="wait_for_space_ship_ready_data",
+        sql=STARBASE46_SENSOR_TEMPLATE.format(
+            project_id=PROJECT_ID,
+            test_run=burnham_test_run,
+            test_name=burnham_test_name,
+        ),
+        timeout=60 * 60 * 1,
+    )
+    wait_for_space_ship_ready_data.set_upstream(
+        [generate_burnham_test_run_uuid, client1, client2, client3]
+    )
+
+    space_ship_ready_test_scenarios = [
+        {
+            "name": "test_space_ship_ready_ping",
+            "query": TEST_SPACE_SHIP_READY_PING,
+            "want": WANT_TEST_SPACE_SHIP_READY_PING,
+        },
+    ]
+
+    verify_space_ship_ready_data = burnham_bigquery_run(
+        task_id="verify_space_ship_ready_data",
+        project_id=PROJECT_ID,
+        burnham_test_run=burnham_test_run,
+        burnham_test_scenarios=encode_test_scenarios(space_ship_ready_test_scenarios),
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+    verify_space_ship_ready_data.set_upstream(wait_for_space_ship_ready_data)
