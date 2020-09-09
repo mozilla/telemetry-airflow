@@ -15,7 +15,7 @@ from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
 
 DAG_OWNER = "rpierzina@mozilla.com"
-DAG_EMAIL = ["rpierzina@mozilla.com"]
+DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com"]
 
 PROJECT_ID = "moz-fx-data-shared-prod"
 
