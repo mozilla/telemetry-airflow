@@ -126,10 +126,34 @@ if EXPORT_TO_AVRO:
         dag=dag,
     ).set_downstream(mobile_aggregate_view_dataproc)
 
+    gke_command(
+        task_id="export_saved_session_avro",
+        cmds=["bash"],
+        command=[
+            "bin/export-avro.sh",
+            "moz-fx-data-shared-prod",
+            "moz-fx-data-shared-prod:analysis",
+            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/mobile",
+            "saved_session_v4",
+            "'nightly', 'beta'",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/python_mozaggregator:latest",
+        dag=dag,
+    ).set_downstream(mobile_aggregate_view_dataproc)
+
     GoogleCloudStorageDeleteOperator(
         task_id="delete_mobile_metrics_avro",
         bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
         prefix="avro/mozaggregator/mobile/moz-fx-data-shared-prod/{{ ds_nodash }}/mobile_metrics_v1",
+        google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
+        dag=dag
+    ).set_upstream(mobile_aggregate_view_dataproc)
+
+    GoogleCloudStorageDeleteOperator(
+        task_id="delete_saved_session_avro",
+        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        prefix="avro/mozaggregator/mobile/moz-fx-data-shared-prod/{{ ds_nodash }}/saved_session_v4",
         google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
         dag=dag
     ).set_upstream(mobile_aggregate_view_dataproc)
