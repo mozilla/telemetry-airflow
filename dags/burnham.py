@@ -144,7 +144,9 @@ WANT_TEST_EXPERIMENTS = [
 ]
 
 # Test scenario test_glean_error_invalid_overflow: Verify that the Glean SDK
-# correctly reports the number of times a metric was set to an invalid value.
+# correctly reports the number of times a string metric was set to a value that
+# exceeds the maximum string length measured in the number of bytes when the
+# string is encoded in UTF-8.
 TEST_GLEAN_ERROR_INVALID_OVERFLOW = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
