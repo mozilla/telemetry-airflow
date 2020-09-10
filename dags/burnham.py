@@ -148,11 +148,11 @@ WANT_TEST_EXPERIMENTS = [
 TEST_GLEAN_ERROR_INVALID_VALUE = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
-  metrics.labeled_counter.glean_error_invalid_value
+  metrics.labeled_counter.glean_error_invalid_overflow
 FROM
   deduped
 WHERE
-  ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_value) > 0
+  ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_overflow) > 0
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
@@ -162,7 +162,7 @@ LIMIT
 WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
     {
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
-        "glean_error_invalid_value": [{"key": "mission.status", "value": 1}],
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
     }
 ]
 
