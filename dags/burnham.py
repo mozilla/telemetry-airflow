@@ -143,9 +143,9 @@ WANT_TEST_EXPERIMENTS = [
     {"experiment": "spore_drive:tardigrade-dna", "document_count": 6},
 ]
 
-# Test scenario test_glean_error_invalid_value: Verify that the Glean SDK
+# Test scenario test_glean_error_invalid_overflow: Verify that the Glean SDK
 # correctly reports the number of times a metric was set to an invalid value.
-TEST_GLEAN_ERROR_INVALID_VALUE = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_GLEAN_ERROR_INVALID_OVERFLOW = f"""{WITH_DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_overflow
@@ -159,7 +159,7 @@ LIMIT
   20
 """
 
-WANT_TEST_GLEAN_ERROR_INVALID_VALUE = [
+WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
     {
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
         "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
@@ -408,9 +408,9 @@ with models.DAG(
             "want": WANT_TEST_EXPERIMENTS,
         },
         {
-            "name": "test_glean_error_invalid_value",
-            "query": TEST_GLEAN_ERROR_INVALID_VALUE,
-            "want": WANT_TEST_GLEAN_ERROR_INVALID_VALUE,
+            "name": "test_glean_error_invalid_overflow",
+            "query": TEST_GLEAN_ERROR_INVALID_OVERFLOW,
+            "want": WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW,
         },
     ]
 
