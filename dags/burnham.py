@@ -560,7 +560,7 @@ with models.DAG(
     # Tasks related to the space_ship_ready table
     wait_for_space_ship_ready_data = burnham_sensor(
         task_id="wait_for_space_ship_ready_data",
-        sql=STARBASE46_SENSOR_TEMPLATE.format(
+        sql=SPACE_SHIP_READY_SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
