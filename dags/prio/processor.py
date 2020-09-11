@@ -74,22 +74,16 @@ PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
 PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
 PROJECT_B = GoogleCloudStorageHook(PRIO_B_CONN).project_id
 
-SERVICE_ACCOUNT_ADMIN = "prio-admin-runner@{}.iam.gserviceaccount.com".format(
-    PROJECT_ADMIN
-)
-SERVICE_ACCOUNT_A = "prio-runner-{}-a@{}.iam.gserviceaccount.com".format(
-    ENVIRONMENT, PROJECT_A
-)
-SERVICE_ACCOUNT_B = "prio-runner-{}-b@{}.iam.gserviceaccount.com".format(
-    ENVIRONMENT, PROJECT_B
-)
+SERVICE_ACCOUNT_ADMIN = f"prio-admin-runner@{PROJECT_ADMIN}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_A = f"prio-runner-{ENVIRONMENT}-a@{PROJECT_A}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_B = f"prio-runner-{ENVIRONMENT}-b@{PROJECT_B}.iam.gserviceaccount.com"
 
-BUCKET_PRIVATE_A = "moz-fx-prio-{}-a-private".format(ENVIRONMENT)
-BUCKET_PRIVATE_B = "moz-fx-prio-{}-b-private".format(ENVIRONMENT)
-BUCKET_SHARED_A = "moz-fx-prio-{}-a-shared".format(ENVIRONMENT)
-BUCKET_SHARED_B = "moz-fx-prio-{}-b-shared".format(ENVIRONMENT)
-BUCKET_DATA_ADMIN = "moz-fx-data-{}-prio-data".format(ENVIRONMENT)
-BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
+BUCKET_PRIVATE_A = f"moz-fx-prio-{ENVIRONMENT}-a-private"
+BUCKET_PRIVATE_B = f"moz-fx-prio-{ENVIRONMENT}-b-private"
+BUCKET_SHARED_A = f"moz-fx-prio-{ENVIRONMENT}-a-shared"
+BUCKET_SHARED_B = f"moz-fx-prio-{ENVIRONMENT}-b-shared"
+BUCKET_DATA_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-data"
+BUCKET_BOOTSTRAP_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-bootstrap"
 
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
@@ -170,10 +164,10 @@ def clean_buckets(google_cloud_storage_conn_id, private_bucket, shared_bucket):
     shared = [(shared_bucket, name) for name in hook.list(shared_bucket)]
 
     for bucket_name, object_name in private + shared:
-        logging.info("Deleting gs://{}/{}".format(bucket_name, object_name))
+        logging.info(f"Deleting gs://{bucket_name}/{object_name}")
         hook.delete(bucket_name, object_name)
         total += 1
-    logging.info("Deleted {} objects".format(total))
+    logging.info(f"Deleted {total} objects")
 
 
 clean_processor_a = PythonOperator(

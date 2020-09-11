@@ -53,7 +53,7 @@ def container_subdag(
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
-    cluster_name = "gke-prio-{}".format(server_id)
+    cluster_name = f"gke-prio-{server_id}"
 
     shared_config = {
         "project_id": connection.project_id,
