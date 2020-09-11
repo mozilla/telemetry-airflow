@@ -72,6 +72,7 @@ def container_subdag(
                 owner_label=owner_label,
                 team_label=team_label,
                 machine_type=machine_type,
+                location=location,
                 # DataProc clusters require VPC with auto-created subnets
                 subnetwork="default" if server_id == "admin" else "gke-subnet",
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
