@@ -23,10 +23,11 @@ def container_subdag(
     env_vars={},
     arguments=[],
     machine_type="n1-standard-1",
-    image="mozilla/prio-processor:v1.6.1",
-    location="us-west1-b",
+    image="gcr.io/amiyaguchi-dev/prio-processor:latest",
+    location="us-west1-a",
     owner_label="amiyaguchi",
     team_label="dataeng",
+    **kwargs,
 ):
     """Run a command on an ephemeral container running the
     `mozilla/prio-processor:latest` image.
