@@ -118,6 +118,11 @@ ltv_revenue_join=BigQueryOperator(
     time_partitioning={"type": "DAY", "field": "submission_date"},
 )
 
+response = urlopen('/'.join([
+    'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
+    'revenue_derived', 'client_ltv_normalized', 'query.sql']))
+
+# Normalized LTV View is for general-use and doesn't contain any revenue data
 ltv_normalized_view=BigQueryOperator(
     task_id='ltv_normalized_view',
     sql=response.read().decode('utf-8'),
