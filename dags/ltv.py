@@ -118,4 +118,15 @@ ltv_revenue_join=BigQueryOperator(
     time_partitioning={"type": "DAY", "field": "submission_date"},
 )
 
-ltv_daily >> ltv_revenue_join
+ltv_normalized_view=BigQueryOperator(
+    task_id='ltv_normalized_view',
+    sql=response.read().decode('utf-8'),
+    query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
+    destination_dataset_table='moz-fx-data-shared-prod.revenue_derived.client_ltv_v1${{ ds_nodash }}',
+    bigquery_conn_id='google_cloud_it_revenue',
+    use_legacy_sql=False,
+    default_args=default_args,
+    time_partitioning={"type": "DAY", "field": "submission_date"},
+)
+
+ltv_daily >> ltv_revenue_join >> ltv_normalized_view
