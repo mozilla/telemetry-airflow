@@ -74,22 +74,16 @@ PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
 PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
 PROJECT_B = GoogleCloudStorageHook(PRIO_B_CONN).project_id
 
-SERVICE_ACCOUNT_ADMIN = "prio-admin-runner@{}.iam.gserviceaccount.com".format(
-    PROJECT_ADMIN
-)
-SERVICE_ACCOUNT_A = "prio-runner-{}-a@{}.iam.gserviceaccount.com".format(
-    ENVIRONMENT, PROJECT_A
-)
-SERVICE_ACCOUNT_B = "prio-runner-{}-b@{}.iam.gserviceaccount.com".format(
-    ENVIRONMENT, PROJECT_B
-)
+SERVICE_ACCOUNT_ADMIN = f"prio-admin-runner@{PROJECT_ADMIN}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_A = f"prio-runner-{ENVIRONMENT}-a@{PROJECT_A}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_B = f"prio-runner-{ENVIRONMENT}-b@{PROJECT_B}.iam.gserviceaccount.com"
 
-BUCKET_PRIVATE_A = "moz-fx-prio-{}-a-private".format(ENVIRONMENT)
-BUCKET_PRIVATE_B = "moz-fx-prio-{}-b-private".format(ENVIRONMENT)
-BUCKET_SHARED_A = "moz-fx-prio-{}-a-shared".format(ENVIRONMENT)
-BUCKET_SHARED_B = "moz-fx-prio-{}-b-shared".format(ENVIRONMENT)
-BUCKET_DATA_ADMIN = "moz-fx-data-{}-prio-data".format(ENVIRONMENT)
-BUCKET_BOOTSTRAP_ADMIN = "moz-fx-data-{}-prio-bootstrap".format(ENVIRONMENT)
+BUCKET_PRIVATE_A = f"moz-fx-prio-{ENVIRONMENT}-a-private"
+BUCKET_PRIVATE_B = f"moz-fx-prio-{ENVIRONMENT}-b-private"
+BUCKET_SHARED_A = f"moz-fx-prio-{ENVIRONMENT}-a-shared"
+BUCKET_SHARED_B = f"moz-fx-prio-{ENVIRONMENT}-b-shared"
+BUCKET_DATA_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-data"
+BUCKET_BOOTSTRAP_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-bootstrap"
 
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
@@ -114,11 +108,10 @@ prio_staging_bootstrap = SubDagOperator(
         service_account=SERVICE_ACCOUNT_ADMIN,
         arguments=[
             "bash",
-            "-c",
-            "cd processor; prio-processor bootstrap --output gs://{}".format(
-                BUCKET_BOOTSTRAP_ADMIN
-            ),
+            "-xc",
+            f"source bin/dataproc; bootstrap gs://{BUCKET_BOOTSTRAP_ADMIN}",
         ],
+        env_var=dict(SUBMODULE="origin"),
     ),
     task_id="bootstrap",
     dag=dag,
@@ -132,8 +125,8 @@ prio_staging = SubDagOperator(
         default_args=DEFAULT_ARGS,
         gcp_conn_id=PRIO_ADMIN_CONN,
         service_account=SERVICE_ACCOUNT_ADMIN,
-        main="gs://{}/runner.py".format(BUCKET_BOOTSTRAP_ADMIN),
-        pyfiles=["gs://{}/prio_processor.egg".format(BUCKET_BOOTSTRAP_ADMIN)],
+        main=f"gs://{BUCKET_BOOTSTRAP_ADMIN}/processor-origin.py",
+        pyfiles=[f"gs://{BUCKET_BOOTSTRAP_ADMIN}/prio_processor.egg"],
         arguments=[
             "staging",
             "--date",
@@ -143,8 +136,9 @@ prio_staging = SubDagOperator(
             "--input",
             "moz-fx-data-shared-prod.payload_bytes_decoded.telemetry_telemetry__prio_v4",
             "--output",
-            "gs://{}/staging/".format(BUCKET_DATA_ADMIN),
+            f"gs://{BUCKET_DATA_ADMIN}/staging/",
         ],
+        bootstrap_bucket=f"gs://{BUCKET_BOOTSTRAP_ADMIN}",
         num_preemptible_workers=2,
     ),
     task_id="staging",
@@ -170,10 +164,10 @@ def clean_buckets(google_cloud_storage_conn_id, private_bucket, shared_bucket):
     shared = [(shared_bucket, name) for name in hook.list(shared_bucket)]
 
     for bucket_name, object_name in private + shared:
-        logging.info("Deleting gs://{}/{}".format(bucket_name, object_name))
+        logging.info(f"Deleting gs://{bucket_name}/{object_name}")
         hook.delete(bucket_name, object_name)
         total += 1
-    logging.info("Deleted {} objects".format(total))
+    logging.info(f"Deleted {total} objects")
 
 
 clean_processor_a = PythonOperator(
@@ -252,9 +246,9 @@ processor_a = SubDagOperator(
         server_id="a",
         gcp_conn_id=PRIO_A_CONN,
         service_account=SERVICE_ACCOUNT_A,
-        arguments=["processor/bin/process"],
+        arguments=["bin/process"],
         env_vars={
-            "DATA_CONFIG": "/app/processor/config/content.json",
+            "DATA_CONFIG": "/app/config/content.json",
             "SERVER_ID": "A",
             "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
@@ -281,9 +275,9 @@ processor_b = SubDagOperator(
         server_id="b",
         gcp_conn_id=PRIO_B_CONN,
         service_account=SERVICE_ACCOUNT_B,
-        arguments=["processor/bin/process"],
+        arguments=["bin/process"],
         env_vars={
-            "DATA_CONFIG": "/app/processor/config/content.json",
+            "DATA_CONFIG": "/app/config/content.json",
             "SERVER_ID": "B",
             "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
             "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
@@ -314,10 +308,10 @@ insert_into_bigquery = SubDagOperator(
         server_id="admin",
         gcp_conn_id=PRIO_ADMIN_CONN,
         service_account=SERVICE_ACCOUNT_ADMIN,
-        arguments=["bash", "-c", "cd processor; bin/insert"],
+        arguments=["bash", "-c", "bin/insert"],
         env_vars={
-            "DATA_CONFIG": "/app/processor/config/content.json",
-            "ORIGIN_CONFIG": "/app/processor/config/telemetry_origin_data_inc.json",
+            "DATA_CONFIG": "/app/config/content.json",
+            "ORIGIN_CONFIG": "/app/config/telemetry_origin_data_inc.json",
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
             "DATASET": "telemetry",
             "TABLE": "origin_content_blocking",

@@ -23,10 +23,11 @@ def container_subdag(
     env_vars={},
     arguments=[],
     machine_type="n1-standard-1",
-    image="mozilla/prio-processor:v1.6.1",
-    location="us-west1-b",
+    image="mozilla/prio-processor:v2.3.0",
+    location="us-west1-a",
     owner_label="amiyaguchi",
     team_label="dataeng",
+    **kwargs,
 ):
     """Run a command on an ephemeral container running the
     `mozilla/prio-processor:latest` image.
@@ -52,7 +53,7 @@ def container_subdag(
 
     connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
-    cluster_name = "gke-prio-{}".format(server_id)
+    cluster_name = f"gke-prio-{server_id}"
 
     shared_config = {
         "project_id": connection.project_id,
@@ -71,6 +72,7 @@ def container_subdag(
                 owner_label=owner_label,
                 team_label=team_label,
                 machine_type=machine_type,
+                location=location,
                 # DataProc clusters require VPC with auto-created subnets
                 subnetwork="default" if server_id == "admin" else "gke-subnet",
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
