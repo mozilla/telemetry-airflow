@@ -47,8 +47,8 @@ ltv_daily = SubDagOperator(
         job_name="ltv-daily",
         cluster_name="ltv-daily-{{ ds_nodash }}",
         idle_delete_ttl="600",
-        num_workers=5,
-        worker_machine_type="n1-standard-8",
+        num_workers=20,
+        worker_machine_type="n2-standard-16",
         optional_components=["ANACONDA"],
         init_actions_uris=[
             "gs://dataproc-initialization-actions/python/pip-install.sh"
