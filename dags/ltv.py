@@ -133,6 +133,7 @@ ltv_normalized_view=BigQueryOperator(
     use_legacy_sql=False,
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
+    write_disposition='WRITE_TRUNCATE',
 )
 
 ltv_daily >> ltv_revenue_join >> ltv_normalized_view
