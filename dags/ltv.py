@@ -117,6 +117,7 @@ ltv_revenue_join=BigQueryOperator(
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
     write_disposition='WRITE_TRUNCATE',
+    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
 
 response = urlopen('/'.join([
@@ -134,6 +135,7 @@ ltv_normalized_view=BigQueryOperator(
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
     write_disposition='WRITE_TRUNCATE',
+    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
 
 ltv_daily >> ltv_revenue_join >> ltv_normalized_view
