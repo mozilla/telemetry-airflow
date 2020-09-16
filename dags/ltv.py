@@ -116,6 +116,7 @@ ltv_revenue_join=BigQueryOperator(
     use_legacy_sql=False,
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
+    cluster_fields=["engine", "country"],
     write_disposition='WRITE_TRUNCATE',
     schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
@@ -134,6 +135,7 @@ ltv_normalized_view=BigQueryOperator(
     use_legacy_sql=False,
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
+    cluster_fields=["engine", "country"],
     write_disposition='WRITE_TRUNCATE',
     schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
