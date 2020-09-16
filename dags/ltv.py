@@ -47,8 +47,8 @@ ltv_daily = SubDagOperator(
         job_name="ltv-daily",
         cluster_name="ltv-daily-{{ ds_nodash }}",
         idle_delete_ttl="600",
-        num_workers=5,
-        worker_machine_type="n1-standard-8",
+        num_workers=30,
+        worker_machine_type="n2-standard-16",
         optional_components=["ANACONDA"],
         init_actions_uris=[
             "gs://dataproc-initialization-actions/python/pip-install.sh"
@@ -116,6 +116,26 @@ ltv_revenue_join=BigQueryOperator(
     use_legacy_sql=False,
     default_args=default_args,
     time_partitioning={"type": "DAY", "field": "submission_date"},
+    write_disposition='WRITE_TRUNCATE',
+    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
 
-ltv_daily >> ltv_revenue_join
+response = urlopen('/'.join([
+    'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
+    'revenue_derived', 'client_ltv_normalized', 'query.sql']))
+
+# Normalized LTV View is for general-use and doesn't contain any revenue data
+ltv_normalized_view=BigQueryOperator(
+    task_id='ltv_normalized_view',
+    sql=response.read().decode('utf-8'),
+    query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
+    destination_dataset_table='moz-fx-data-shared-prod.revenue_derived.client_ltv_v1${{ ds_nodash }}',
+    bigquery_conn_id='google_cloud_shared_prod',
+    use_legacy_sql=False,
+    default_args=default_args,
+    time_partitioning={"type": "DAY", "field": "submission_date"},
+    write_disposition='WRITE_TRUNCATE',
+    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
+)
+
+ltv_daily >> ltv_revenue_join >> ltv_normalized_view
