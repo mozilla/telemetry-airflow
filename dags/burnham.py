@@ -212,8 +212,6 @@ SELECT
   COUNT(*) AS count_documents
 FROM
   deduped
-LIMIT
-  20
 """
 
 WANT_TEST_STARBASE46_PING = [{"count_documents": 1}]
@@ -225,8 +223,6 @@ SELECT
   COUNT(*) AS count_documents
 FROM
   deduped
-LIMIT
-  20
 """
 
 WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
