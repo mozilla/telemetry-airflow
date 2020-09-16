@@ -24,14 +24,14 @@ PROJECT_ID = "moz-fx-data-shared-prod"
 
 # Live tables are not guaranteed to be deduplicated. To ensure reproducibility,
 # we need to deduplicate Glean pings produced by burnham for these tests.
-WITH_DISCOVERY_V1_DEDUPED = f"""
+WITH_DEDUPED_TABLE = """
 WITH
   numbered AS (
   SELECT
     ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
     *
   FROM
-    `{PROJECT_ID}.burnham_live.discovery_v1`
+    `{project_id}.burnham_live.{table}`
   WHERE
     submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
@@ -43,43 +43,17 @@ WITH
   WHERE
     _n = 1 )"""
 
-WITH_STARBASE46_V1_DEDUPED = f"""
-WITH
-  numbered AS (
-  SELECT
-    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
-    *
-  FROM
-    `{PROJECT_ID}.burnham_live.starbase46_v1`
-  WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-    AND metrics.uuid.test_run = @burnham_test_run ),
-  deduped AS (
-  SELECT
-    * EXCEPT(_n)
-  FROM
-    numbered
-  WHERE
-    _n = 1 )"""
+WITH_DISCOVERY_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+    project_id=PROJECT_ID, table="discovery_v1"
+)
 
-WITH_SPACE_SHIP_READY_V1_DEDUPED = f"""
-WITH
-  numbered AS (
-  SELECT
-    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
-    *
-  FROM
-    `{PROJECT_ID}.burnham_live.space_ship_ready_v1`
-  WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-    AND metrics.uuid.test_run = @burnham_test_run ),
-  deduped AS (
-  SELECT
-    * EXCEPT(_n)
-  FROM
-    numbered
-  WHERE
-    _n = 1 )"""
+WITH_STARBASE46_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+    project_id=PROJECT_ID, table="starbase46_v1"
+)
+
+WITH_SPACE_SHIP_READY_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+    project_id=PROJECT_ID, table="space_ship_ready_v1"
+)
 
 # Test scenario test_labeled_counter_metrics: Verify that labeled_counter
 # metric values reported by the Glean SDK across several documents from three
