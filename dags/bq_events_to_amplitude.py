@@ -151,6 +151,22 @@ with models.DAG(
         task_id=onboarding_task_id
     )
 
+    onboarding_retention_task_id = 'onboarding_retention_amplitude_export'
+    onboarding_retention_args = default_args.copy()
+    onboarding_retention_args["start_date"] = datetime.datetime(2020, 8, 30)
+    SubDagOperator(
+        subdag=export_to_amplitude(
+            dag_name=onboarding_retention_task_id,
+            parent_dag_name=dag_name,
+            default_args=onboarding_retention_args,
+            project='moz-fx-data-shared-prod',
+            dataset='messaging_system',
+            table_or_view='onboarding_retention_events_amplitude',
+            s3_prefix='onboarding_retention',
+        ),
+        task_id=onboarding_retention_task_id
+    )
+
     shredder_amplitude_fxa = gke_command(
         task_id='shredder_amplitude_fxa',
         name='shredder-amplitude-fxa',
