@@ -29,9 +29,9 @@ TAAR_ETL_CONTAINER_IMAGE = (
 
 
 default_args_weekly = {
-    "owner": "vng@mozilla.com",
+    "owner": "anatal@mozilla.com",
     "email": [
-        "vng@mozilla.com",
+        "anatal@mozilla.com",
         "mlopatka@mozilla.com",
         "telemetry-alerts@mozilla.com",
     ],
@@ -75,8 +75,8 @@ def taar_profile_common_args():
 
 
 wipe_gcs_bucket = GKEPodOperator(
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com",],
+    owner="anatal@mozilla.com",
+    email=["anatal@mozilla.com", "mlopatka@mozilla.com",],
     task_id="wipe_taar_gcs_bucket",
     name="wipe_taar_gcs_bucket",
     image="google/cloud-sdk:242.0.0-alpine",
@@ -87,8 +87,8 @@ wipe_gcs_bucket = GKEPodOperator(
 )
 
 dump_bq_to_tmp_table = GKEPodOperator(
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com",],
+    owner="anatal@mozilla.com",
+    email=["anatal@mozilla.com", "mlopatka@mozilla.com",],
     task_id="dump_bq_to_tmp_table",
     name="dump_bq_to_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -97,8 +97,8 @@ dump_bq_to_tmp_table = GKEPodOperator(
 )
 
 extract_bq_tmp_to_gcs_avro = GKEPodOperator(
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com",],
+    owner="anatal@mozilla.com",
+    email=["anatal@mozilla.com", "mlopatka@mozilla.com",],
     task_id="extract_bq_tmp_to_gcs_avro",
     name="extract_bq_tmp_to_gcs_avro",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -107,8 +107,8 @@ extract_bq_tmp_to_gcs_avro = GKEPodOperator(
 )
 
 dataflow_import_avro_to_bigtable = GKEPodOperator(
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com",],
+    owner="anatal@mozilla.com",
+    email=["anatal@mozilla.com", "mlopatka@mozilla.com",],
     task_id="dataflow_import_avro_to_bigtable",
     name="dataflow_import_avro_to_bigtable",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -122,8 +122,8 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
 )
 
 wipe_gcs_bucket_cleanup = GKEPodOperator(
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com",],
+    owner="anatal@mozilla.com",
+    email=["anatal@mozilla.com", "mlopatka@mozilla.com",],
     task_id="wipe_gcs_bucket_cleanup",
     name="wipe_taar_gcs_bucket",
     location="us-central1-a",
@@ -134,8 +134,8 @@ wipe_gcs_bucket_cleanup = GKEPodOperator(
 )
 
 wipe_bigquery_tmp_table = GKEPodOperator(
-    owner="vng@mozilla.com",
-    email=["vng@mozilla.com", "mlopatka@mozilla.com",],
+    owner="anatal@mozilla.com",
+    email=["anatal@mozilla.com", "mlopatka@mozilla.com",],
     task_id="wipe_bigquery_tmp_table",
     name="wipe_bigquery_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
