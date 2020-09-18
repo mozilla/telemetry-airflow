@@ -33,7 +33,8 @@ WITH
   FROM
     `{project_id}.burnham_live.{table}`
   WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_execution_date, INTERVAL 1 HOUR)
+    AND TIMESTAMP_ADD(@burnham_execution_date, INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
   deduped AS (
   SELECT
@@ -88,7 +89,8 @@ SELECT
 FROM
   `{PROJECT_ID}.burnham_live.discovery_v1`
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_execution_date, INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD(@burnham_execution_date, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
 LIMIT
   20
@@ -208,7 +210,8 @@ SELECT
 FROM
   `{project_id}.burnham_live.discovery_v1`
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB("{{ execution_date.isoformat() }}", INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD("{{ execution_date.isoformat() }}", INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = "{test_run}"
 """
 
@@ -218,7 +221,8 @@ SELECT
 FROM
   `{project_id}.burnham_live.starbase46_v1`
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB("{{ execution_date.isoformat() }}", INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD("{{ execution_date.isoformat() }}", INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = "{test_run}"
 """
 
@@ -228,7 +232,8 @@ SELECT
 FROM
   `{project_id}.burnham_live.space_ship_ready_v1`
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB("{{ execution_date.isoformat() }}", INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD("{{ execution_date.isoformat() }}", INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = "{test_run}"
 """
 
@@ -376,6 +381,8 @@ def burnham_bigquery_run(
             "burnham_derived.test_results_v1",
             "--log-url",
             "{{ task_instance.log_url }}",
+            "--execution-timestamp",
+            "{{ execution_date.isoformat() }}",
         ],
         **kwargs,
     )
