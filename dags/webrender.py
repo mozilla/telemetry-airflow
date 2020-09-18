@@ -5,7 +5,7 @@ from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
-    "email": ["amiyaguchi@mozilla.com", "sguha@mozilla.com"],
+    "email": ["amiyaguchi@mozilla.com", "tdsmith@mozilla.com"],
     "depends_on_past": False,
     "start_date": datetime(2020, 5, 19),
     "email_on_failure": True,
