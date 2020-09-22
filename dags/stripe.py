@@ -23,7 +23,7 @@ with DAG("stripe", default_args=default_args, schedule_interval="@daily") as dag
             "--date={{ ds }}",
             "--api-key={{ var.value.stripe_api_key }}",
             "--resource=Event",
-            "--table-id=moz-fx-data-shared-prod.stripe_external.events_v1",
+            "--table=moz-fx-data-shared-prod.stripe_external.events_v1",
         ],
         docker_image="mozilla/bigquery-etl:latest",
     )
