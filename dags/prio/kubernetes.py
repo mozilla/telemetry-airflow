@@ -68,28 +68,34 @@ def container_subdag(
         # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
         # https://cloud.google.com/composer/docs/how-to/using/using-kubernetes-pod-operator
         # https://airflow.apache.org/docs/stable/_api/airflow/contrib/operators/kubernetes_pod_operator/index.html
-        def failure_callback(context):
-            return GKEClusterCreateOperator(
-                task_id="create_gke_cluster",
-                body=create_gke_config(
-                    name=cluster_name,
-                    service_account=service_account,
-                    owner_label=owner_label,
-                    team_label=team_label,
-                    machine_type=machine_type,
-                    location=location,
-                    # DataProc clusters require VPC with auto-created subnets
-                    subnetwork="default" if server_id == "admin" else "gke-subnet",
-                    is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
-                ),
-                # If set as a normal operator, typically a trigger rule as below
-                # would be set.
-                # trigger_rule="one_failed",
-                dag=dag,
-                **shared_config,
-            ).execute(context)
+        create_gke_cluster = GKEClusterCreateOperator(
+            task_id="create_gke_cluster",
+            body=create_gke_config(
+                name=cluster_name,
+                service_account=service_account,
+                owner_label=owner_label,
+                team_label=team_label,
+                machine_type=machine_type,
+                location=location,
+                # DataProc clusters require VPC with auto-created subnets
+                subnetwork="default" if server_id == "admin" else "gke-subnet",
+                is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
+            ),
+            dag=dag,
+            **shared_config,
+        )
 
-        run = GKEPodOperator(
+        # Running the pod without any time in-between will cause the scope-based
+        # authentication in Google Cloud Platform to fail. For example:
+        #
+        # `ServiceException: 401 Anonymous caller does not have
+        # storage.objects.get access to moz-fx-prio-dev-a-private/processed/`
+        #
+        # Sleeping by a small amount solves this problem. This issue was first
+        # noticed intermittently on 2019-09-09.
+        sleep = BashOperator(task_id="sleep", bash_command="sleep 60", dag=dag)
+
+        run_prio = GKEPodOperator(
             task_id=f"processor_{server_id}",
             name=f"processor_{server_id}",
             cluster_name=cluster_name,
@@ -132,9 +138,17 @@ def container_subdag(
             startup_timeout_seconds=240,
             # delete the pod after running
             is_delete_operator_pod=True,
-            on_failure_callback=failure_callback,
             **shared_config,
             **kwargs,
         )
 
+        delete_gke_cluster = GKEClusterDeleteOperator(
+            task_id="delete_gke_cluster",
+            name=cluster_name,
+            trigger_rule="all_done",
+            dag=dag,
+            **shared_config,
+        )
+
+        create_gke_cluster >> sleep >> run_prio >> delete_gke_cluster
         return dag
