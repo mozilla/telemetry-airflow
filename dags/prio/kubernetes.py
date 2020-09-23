@@ -61,9 +61,13 @@ def container_subdag(
         "location": location,
     }
 
-    with DAG(
-        "{}.{}".format(parent_dag_name, child_dag_name), default_args=default_args
-    ) as dag:
+    with DAG(f"{parent_dag_name}.{child_dag_name}", default_args=default_args) as dag:
+        # https://cloud.google.com/composer/docs/how-to/using/using-kubernetes-pod-operator#kubernetespodoperator_configuration
+        # https://medium.com/google-cloud/scale-your-kubernetes-cluster-to-almost-zero-with-gke-autoscaler-9c78051cbf40
+        # https://docs.openshift.com/container-platform/3.6/admin_guide/scheduling/pod_affinity.html
+        # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+        # https://cloud.google.com/composer/docs/how-to/using/using-kubernetes-pod-operator
+        # https://airflow.apache.org/docs/stable/_api/airflow/contrib/operators/kubernetes_pod_operator/index.html
         create_gke_cluster = GKEClusterCreateOperator(
             task_id="create_gke_cluster",
             body=create_gke_config(
@@ -78,7 +82,7 @@ def container_subdag(
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
             ),
             dag=dag,
-            **shared_config
+            **shared_config,
         )
 
         # Running the pod without any time in-between will cause the scope-based
@@ -92,15 +96,50 @@ def container_subdag(
         sleep = BashOperator(task_id="sleep", bash_command="sleep 60", dag=dag)
 
         run_prio = GKEPodOperator(
-            task_id="processor_{}".format(server_id),
-            name="run-prio-project-{}".format(server_id),
+            task_id=f"processor_{server_id}",
+            name=f"processor_{server_id}",
             cluster_name=cluster_name,
             namespace="default",
             image=image,
             arguments=arguments,
             env_vars=env_vars,
             dag=dag,
-            **shared_config
+            # choose the autoscaling node-pool for any jobs
+            node_selectors={"node-label": "burstable"},
+            labels={"pod-label": "burstable-pod"},
+            affinity={
+                "podAntiAffinity": {
+                    "requiredDuringSchedulingIgnoredDuringExecution": [
+                        {
+                            "labelSelector": {
+                                "matchExpressions": [
+                                    {
+                                        "key": "pod-label",
+                                        "operator": "In",
+                                        "values": ["burstable-pod"],
+                                    }
+                                ]
+                            },
+                            "topologyKey": "kubernetes.io/hostname",
+                        }
+                    ]
+                }
+            },
+            # tolerate the tainted node
+            tolerations=[
+                {
+                    "key": "reserved-pool",
+                    "operator": "Equal",
+                    "value": "true",
+                    "effect": "NoSchedule",
+                }
+            ],
+            # A new VM instance may take more than 120 seconds to boot
+            startup_timeout_seconds=240,
+            # delete the pod after running
+            is_delete_operator_pod=True,
+            **shared_config,
+            **kwargs,
         )
 
         delete_gke_cluster = GKEClusterDeleteOperator(
@@ -108,7 +147,7 @@ def container_subdag(
             name=cluster_name,
             trigger_rule="all_done",
             dag=dag,
-            **shared_config
+            **shared_config,
         )
 
         create_gke_cluster >> sleep >> run_prio >> delete_gke_cluster
