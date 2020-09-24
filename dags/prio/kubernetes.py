@@ -23,7 +23,7 @@ def container_subdag(
     env_vars={},
     arguments=[],
     machine_type="n1-standard-1",
-    image="mozilla/prio-processor:v2.3.0",
+    image="mozilla/prio-processor:v3.0.0",
     location="us-west1-a",
     owner_label="amiyaguchi",
     team_label="dataeng",

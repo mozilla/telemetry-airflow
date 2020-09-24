@@ -257,6 +257,8 @@ processor_a = SubDagOperator(
         service_account=SERVICE_ACCOUNT_A,
         arguments=["bin/process"],
         env_vars={
+            "APP_NAME": APP_NAME,
+            "SUBMISSION_DATE": "{{ ds }}",
             "DATA_CONFIG": "/app/config/content.json",
             "SERVER_ID": "A",
             "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
@@ -266,6 +268,7 @@ processor_a = SubDagOperator(
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
             "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
             "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
+            "BUCKET_PREFIX": BUCKET_PREFIX,
             # 15 minutes of timeout
             "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
@@ -286,6 +289,8 @@ processor_b = SubDagOperator(
         service_account=SERVICE_ACCOUNT_B,
         arguments=["bin/process"],
         env_vars={
+            "APP_NAME": APP_NAME,
+            "SUBMISSION_DATE": "{{ ds }}",
             "DATA_CONFIG": "/app/config/content.json",
             "SERVER_ID": "B",
             "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
@@ -295,6 +300,7 @@ processor_b = SubDagOperator(
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_B,
             "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
             "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
+            "BUCKET_PREFIX": BUCKET_PREFIX,
             # 15 minutes of time-out
             "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
