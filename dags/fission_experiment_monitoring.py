@@ -40,4 +40,20 @@ with models.DAG(
         arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
+    wait_for_copy_deduplicate_crash_ping = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_crash_ping",
+        external_dag_id="copy_deduplicate",
+        external_task_id="copy_deduplicate_all",
+        execution_delta=datetime.timedelta(hours=1),
+        dag=dag,
+    )
+
+    fission_monitoring_crash_v1 = bigquery_etl_query(
+        task_id="fission_monitoring_crash_v1",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="fission_monitoring_crash_v1",
+        dataset_id="telemetry_derived",
+    )
+
     wait_for_copy_deduplicate_main_ping >> fission_monitoring_main_v1
+    wait_for_copy_deduplicate_crash_ping >> fission_monitoring_crash_v1
