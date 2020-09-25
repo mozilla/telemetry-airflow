@@ -2,6 +2,7 @@ import datetime
 
 from airflow import models
 from airflow.operators.sensors import ExternalTaskSensor
+from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import  bigquery_etl_query
 
 
@@ -55,5 +56,18 @@ with models.DAG(
         dataset_id="telemetry_derived",
     )
 
+    # Built from https://github.com/mozilla/fission_monitoring_nightly
+    fission_aggregation_for_dashboard = GKEPodOperator(
+        task_id="fission_aggregation_for_dashboard",
+        name="fission_aggregation_for_dashboard",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/fission-monitoring:latest",
+        env_vars=dict(
+            ENV_VARS="go here",
+        ),
+        image_pull_policy="Always",
+        dag=dag,
+    )
+
     wait_for_copy_deduplicate_main_ping >> fission_monitoring_main_v1
     wait_for_copy_deduplicate_crash_ping >> fission_monitoring_crash_v1
+    [fission_monitoring_main_v1, fission_monitoring_crash_v1] >> fission_aggregation_for_dashboard
