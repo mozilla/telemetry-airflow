@@ -285,6 +285,8 @@ def burnham_run(
         "BURNHAM_PLATFORM_URL": BURNHAM_PLATFORM_URL,
         "BURNHAM_TEST_RUN": burnham_test_run,
         "BURNHAM_TEST_NAME": burnham_test_name,
+        "BURNHAM_VERBOSE": "true",
+        "GLEAN_LOG_PINGS": "true",
     }
 
     if burnham_spore_drive is not None:
