@@ -33,8 +33,8 @@ WITH
   FROM
     `{project_id}.burnham_live.{table}`
   WHERE
-    submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_execution_date, INTERVAL 1 HOUR)
-    AND TIMESTAMP_ADD(@burnham_execution_date, INTERVAL 3 HOUR)
+    submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_start_timestamp, INTERVAL 1 HOUR)
+    AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
   deduped AS (
   SELECT
@@ -89,8 +89,8 @@ SELECT
 FROM
   `{PROJECT_ID}.burnham_live.discovery_v1`
 WHERE
-  submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_execution_date, INTERVAL 1 HOUR)
-  AND TIMESTAMP_ADD(@burnham_execution_date, INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_start_timestamp, INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
 LIMIT
   20
@@ -210,8 +210,8 @@ SELECT
 FROM
   `{project_id}.burnham_live.{table}`
 WHERE
-  submission_timestamp BETWEEN TIMESTAMP_SUB("{execution_timestamp}", INTERVAL 1 HOUR)
-  AND TIMESTAMP_ADD("{execution_timestamp}", INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB("{start_timestamp}", INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD("{start_timestamp}", INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = "{test_run}"
 """
 
@@ -360,8 +360,8 @@ def burnham_bigquery_run(
             "burnham_derived.test_results_v1",
             "--log-url",
             "{{ task_instance.log_url }}",
-            "--execution-timestamp",
-            "{{ execution_date.isoformat() }}",
+            "--start-timestamp",
+            "{{ dag_run.start_date.isoformat() }}",
         ],
         **kwargs,
     )
@@ -391,7 +391,7 @@ with models.DAG(
     burnham_test_run = '{{ task_instance.xcom_pull("generate_burnham_test_run_uuid") }}'
 
     # This Airflow macro is added to sensors to filter out rows by submission_timestamp
-    execution_timestamp = "{{ execution_date.isoformat() }}"
+    start_timestamp = "{{ dag_run.start_date.isoformat() }}"
 
     # We cover multiple test scenarios with pings submitted from the following
     # clients, so they don't submit using a specific test name, but all share
@@ -446,7 +446,7 @@ with models.DAG(
             project_id=PROJECT_ID,
             table="discovery_v1",
             min_count_rows=10,
-            execution_timestamp=execution_timestamp,
+            start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
@@ -496,7 +496,7 @@ with models.DAG(
             project_id=PROJECT_ID,
             table="starbase46_v1",
             min_count_rows=1,
-            execution_timestamp=execution_timestamp,
+            start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
@@ -531,7 +531,7 @@ with models.DAG(
             project_id=PROJECT_ID,
             table="space_ship_ready_v1",
             min_count_rows=3,
-            execution_timestamp=execution_timestamp,
+            start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
