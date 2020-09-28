@@ -65,7 +65,7 @@ with models.DAG(
             BQ_BILLING_PROJECT_ID="moz-fx-data-shared-prod",
             BQ_INPUT_MAIN_TABLE="moz-fx-data-shared-prod.telemetry_derived.fission_monitoring_main_v1",
             BQ_INPUT_CRASH_TABLE="moz-fx-data-shared-prod.telemetry_derived.fission_monitoring_crash_v1",
-            BQ_OUTPUT_TABLE="TODO",
+            BQ_OUTPUT_TABLE="moz-fx-data-shared-prod.analysis.fission_monitoring_analyzed_v1",
         ),
         image_pull_policy="Always",
         dag=dag,
