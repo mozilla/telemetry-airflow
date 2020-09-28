@@ -325,6 +325,9 @@ insert_into_bigquery = SubDagOperator(
         service_account=SERVICE_ACCOUNT_ADMIN,
         arguments=["bash", "-c", "bin/insert"],
         env_vars={
+            "APP_NAME": APP_NAME,
+            "SUBMISSION_DATE": "{{ ds }}",
+            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
             "DATA_CONFIG": "/app/config/content.json",
             "ORIGIN_CONFIG": "/app/config/telemetry_origin_data_inc.json",
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
