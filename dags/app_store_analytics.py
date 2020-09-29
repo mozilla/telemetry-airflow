@@ -89,7 +89,7 @@ with DAG("app_store_analytics",
             task_id=f"{derived_table}_query",
             project_id=PROJECT_ID,
             dataset_id=DERIVED_DATASET_ID,
-            sql_file_path=f"sql/{DERIVED_DATASET_ID}/{derived_table}/query.sql",
+            sql_file_path=f"moz-fx-data-shared-prod/sql/{DERIVED_DATASET_ID}/{derived_table}/query.sql",
             # Override default date partition because data has multiple day lag
             destination_table=(
                 f"{derived_table}${{{{ macros.ds_format({export_date}, '%Y-%m-%d', '%Y%m%d') }}}}"

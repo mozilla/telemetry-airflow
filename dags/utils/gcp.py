@@ -487,7 +487,9 @@ def bigquery_etl_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    sql_file_path = sql_file_path or "sql/{}/{}/query.sql".format(dataset_id, destination_table)
+    if not project_id:
+        project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
+    sql_file_path = sql_file_path or "{}/sql/{}/{}/query.sql".format(project_id, dataset_id, destination_table)
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
