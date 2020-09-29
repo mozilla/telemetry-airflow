@@ -203,7 +203,11 @@ FROM
 
 WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
 
-# Sensor templates for the different tables
+# Sensor template for the different burnham tables. Note that we use BigQuery
+# query parameters in queries for test scenarios, because we need to serialize
+# the test scenarios to JSON and b64-encode them to ensure we can safely pass
+# this information to the burnham-bigquery Docker container. We can use
+# string-formatting here, because Airflow executes the query directly.
 SENSOR_TEMPLATE = """
 SELECT
   COUNT(*) >= {min_count_rows}
