@@ -39,7 +39,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="stable_table_sizes",
         command=[
             "python",
-            "sql/monitoring/stable_table_sizes_v1/query.py",
+            "moz-fx-data-shared-prod/sql/monitoring/stable_table_sizes_v1/query.py",
             "--date",
             "{{ ds }}",
         ],
@@ -52,7 +52,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="structured_distinct_docids",
         command=[
             "python3",
-            "sql/monitoring/structured_distinct_docids_v1/query.py",
+            "moz-fx-data-shared-prod/sql/monitoring/structured_distinct_docids_v1/query.py",
             "--date",
             "{{ ds }}",
         ],
@@ -76,7 +76,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="bigquery_etl_queries_cost",
         command=[
             "python",
-            "sql/monitoring/bigquery_etl_scheduled_queries_cost_v1/query.py",
+            "moz-fx-data-shared-prod/sql/monitoring/bigquery_etl_scheduled_queries_cost_v1/query.py",
             "--date",
             "{{ ds }}",
         ],

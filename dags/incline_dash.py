@@ -47,7 +47,7 @@ with DAG('incline_dashboard',
         # taking the last seen migration ping over all time for each client.
         destination_table=None,
         date_partition_parameter=None,
-        sql_file_path="sql/org_mozilla_firefox_derived/migrated_clients_v1/init.sql",
+        sql_file_path="moz-fx-data-shared-prod/sql/org_mozilla_firefox_derived/migrated_clients_v1/init.sql",
         owner="frank@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "frank@mozilla.com"]
     )
