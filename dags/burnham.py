@@ -33,7 +33,8 @@ WITH
   FROM
     `{project_id}.burnham_live.{table}`
   WHERE
-    submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+    submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_start_timestamp, INTERVAL 1 HOUR)
+    AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
   deduped AS (
   SELECT
@@ -88,7 +89,8 @@ SELECT
 FROM
   `{PROJECT_ID}.burnham_live.discovery_v1`
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_start_timestamp, INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
 LIMIT
   20
@@ -201,36 +203,22 @@ FROM
 
 WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
 
-# Sensor templates for the different tables
-DISCOVERY_SENSOR_TEMPLATE = """
+# Sensor template for the different burnham tables. Note that we use BigQuery
+# query parameters in queries for test scenarios, because we need to serialize
+# the test scenarios to JSON and b64-encode them to ensure we can safely pass
+# this information to the burnham-bigquery Docker container. We can use
+# string-formatting here, because Airflow executes the query directly.
+SENSOR_TEMPLATE = """
 SELECT
-  COUNT(*) >= 10
+  COUNT(*) >= {min_count_rows}
 FROM
-  `{project_id}.burnham_live.discovery_v1`
+  `{project_id}.burnham_live.{table}`
 WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
+  submission_timestamp BETWEEN TIMESTAMP_SUB("{start_timestamp}", INTERVAL 1 HOUR)
+  AND TIMESTAMP_ADD("{start_timestamp}", INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = "{test_run}"
 """
 
-STARBASE46_SENSOR_TEMPLATE = """
-SELECT
-  COUNT(*) >= 1
-FROM
-  `{project_id}.burnham_live.starbase46_v1`
-WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = "{test_run}"
-"""
-
-SPACE_SHIP_READY_SENSOR_TEMPLATE = """
-SELECT
-  COUNT(*) >= 3
-FROM
-  `{project_id}.burnham_live.space_ship_ready_v1`
-WHERE
-  submission_timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = "{test_run}"
-"""
 
 # GCP and GKE default values
 DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
@@ -285,6 +273,8 @@ def burnham_run(
         "BURNHAM_PLATFORM_URL": BURNHAM_PLATFORM_URL,
         "BURNHAM_TEST_RUN": burnham_test_run,
         "BURNHAM_TEST_NAME": burnham_test_name,
+        "BURNHAM_VERBOSE": "true",
+        "GLEAN_LOG_PINGS": "true",
     }
 
     if burnham_spore_drive is not None:
@@ -374,6 +364,8 @@ def burnham_bigquery_run(
             "burnham_derived.test_results_v1",
             "--log-url",
             "{{ task_instance.log_url }}",
+            "--start-timestamp",
+            "{{ dag_run.start_date.isoformat() }}",
         ],
         **kwargs,
     )
@@ -401,6 +393,9 @@ with models.DAG(
         python_callable=lambda: str(uuid.uuid4()),
     )
     burnham_test_run = '{{ task_instance.xcom_pull("generate_burnham_test_run_uuid") }}'
+
+    # This Airflow macro is added to sensors to filter out rows by submission_timestamp
+    start_timestamp = "{{ dag_run.start_date.isoformat() }}"
 
     # We cover multiple test scenarios with pings submitted from the following
     # clients, so they don't submit using a specific test name, but all share
@@ -451,8 +446,11 @@ with models.DAG(
     # Tasks related to the discovery table
     wait_for_discovery_data = burnham_sensor(
         task_id="wait_for_discovery_data",
-        sql=DISCOVERY_SENSOR_TEMPLATE.format(
+        sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
+            table="discovery_v1",
+            min_count_rows=10,
+            start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
@@ -498,8 +496,11 @@ with models.DAG(
     # Tasks related to the starbase46 table
     wait_for_starbase46_data = burnham_sensor(
         task_id="wait_for_starbase46_data",
-        sql=STARBASE46_SENSOR_TEMPLATE.format(
+        sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
+            table="starbase46_v1",
+            min_count_rows=1,
+            start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
@@ -530,8 +531,11 @@ with models.DAG(
     # Tasks related to the space_ship_ready table
     wait_for_space_ship_ready_data = burnham_sensor(
         task_id="wait_for_space_ship_ready_data",
-        sql=SPACE_SHIP_READY_SENSOR_TEMPLATE.format(
+        sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
+            table="space_ship_ready_v1",
+            min_count_rows=3,
+            start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=burnham_test_name,
         ),
