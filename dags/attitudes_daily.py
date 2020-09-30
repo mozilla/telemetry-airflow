@@ -29,7 +29,7 @@ with models.DAG(
         task_id="surveygizmo_attitudes_daily_import",
         command=[
             "python",
-            "moz-fx-data-shared-prod/sql/telemetry_derived/surveygizmo_daily_attitudes/import_responses.py",
+            "sql/moz-fx-data-shared-prod/telemetry_derived/surveygizmo_daily_attitudes/import_responses.py",
             "--date",
             "{{ ds }}",
             "--survey_id",

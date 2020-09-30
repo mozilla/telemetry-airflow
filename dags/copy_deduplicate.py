@@ -97,7 +97,7 @@ with models.DAG(
         task_id=gen_query_task_id,
         command=[
             "python",
-            "moz-fx-data-shared-prod/sql/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
+            "sql/moz-fx-data-shared-prod/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
             "--submission-date",
             "{{ ds }}",
             "--json-output",
@@ -140,7 +140,7 @@ with models.DAG(
         task_id=experiment_search_query_task_id,
         command=[
             "python",
-            "moz-fx-data-shared-prod/sql/telemetry_derived/experiment_search_aggregates_live_v1/view.sql.py",
+            "sql/moz-fx-data-shared-prod/telemetry_derived/experiment_search_aggregates_live_v1/view.sql.py",
             "--submission-date",
             "{{ ds }}",
             "--json-output",

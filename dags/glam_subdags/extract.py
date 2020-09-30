@@ -68,7 +68,7 @@ def extract_channel_subdag(
         ],
         date_partition_parameter=None,
         arguments=("--replace",),
-        sql_file_path="moz-fx-data-shared-prod/sql/{}/glam_client_probe_counts_extract_v1/query.sql".format(
+        sql_file_path="sql/moz-fx-data-shared-prod/{}/glam_client_probe_counts_extract_v1/query.sql".format(
             dataset_id
         ),
         parameters=("channel:STRING:{}".format(channel),),
