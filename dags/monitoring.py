@@ -85,6 +85,19 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"],
     )
 
+    bigquery_etl_query_usage = gke_command(
+        task_id="bigquery_etl_query_usage",
+        command=[
+            "python",
+            "sql/monitoring/bigquery_etl_scheduled_query_usage_v1/query.py",
+            "--date",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        owner="ascholtz@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"],
+    )
+
     stable_table_sizes.set_upstream(wait_for_copy_deduplicate_main_ping)
     stable_table_sizes.set_upstream(wait_for_copy_deduplicate_all)
 
