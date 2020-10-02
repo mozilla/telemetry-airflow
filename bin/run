@@ -127,8 +127,6 @@ init_variables() {
     airflow variables -s "surveygizmo_daily_attitudes_survey_id" "12345"
     airflow variables -s "surveygizmo_api_token" "tokentokentoken"
     airflow variables -s "surveygizmo_api_secret" "tapsekret"
-    airflow variables -s "anomdtct_spreadsheet_id" "secret-id"
-    airflow variables -s "anomdtct_spreadsheet_api_key" "secret-key"
 
     airflow variables -s "taar_bigtable_instance_id" "taar_bigtable_instance_id"
     airflow variables -s "taar_etl_storage_bucket" "taar_etl_storage_bucket"
