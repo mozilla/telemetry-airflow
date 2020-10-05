@@ -36,6 +36,7 @@ the environment.
 """
 from datetime import datetime, timedelta
 from os import environ
+from functools import partial
 
 from airflow import DAG
 from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
@@ -84,6 +85,9 @@ BUCKET_SHARED_A = f"moz-fx-prio-{ENVIRONMENT}-a-shared"
 BUCKET_SHARED_B = f"moz-fx-prio-{ENVIRONMENT}-b-shared"
 BUCKET_DATA_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-data"
 BUCKET_BOOTSTRAP_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-bootstrap"
+
+APP_NAME = "origin-telemetry"
+BUCKET_PREFIX = "data/v1"
 
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
@@ -146,89 +150,94 @@ prio_staging = SubDagOperator(
     dag=dag,
 )
 
-# Copy the partitioned data from the staging bucket into the corresponding
-# receiving buckets in each processor. The job then submits a `_SUCCESS` file
-# which indicates the data is ready for processing.
-#
-# See: https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
 
-# NOTE: GoogleCloudStorageDeleteOperator does not exist in v1.10.2
-def clean_buckets(google_cloud_storage_conn_id, private_bucket, shared_bucket):
-    import logging
+def transfer_data_subdag(
+    parent_dag_name,
+    child_dag_name,
+    default_args,
+    source_bucket,
+    destination_bucket,
+    destination_bucket_prefix,
+    app_name,
+    submission_date,
+    server_id,
+    public_key_hex_external,
+    google_cloud_storage_conn_id,
+):
+    """Copy the partitioned data from the staging bucket into the corresponding
+    receiving buckets in each processor. The job then submits a `_SUCCESS` file
+    which indicates the data is ready for processing.
 
-    hook = GoogleCloudStorageHook(google_cloud_storage_conn_id)
-    total = 0
+    See the tests for the staging job for preprocessing convention:
+    https://github.com/mozilla/prio-processor/blob/3cdc368707f8dc0f917d7b3d537c31645f4260f7/processor/tests/test_staging.py#L190-L205
 
-    # clean the entire bucket
-    private = [(private_bucket, name) for name in hook.list(private_bucket)]
-    shared = [(shared_bucket, name) for name in hook.list(shared_bucket)]
+    See the `bin/generate` script for an example around conventions around processing:
+    https://github.com/mozilla/prio-processor/blob/1a4a58a738c3d39bfb04bbaa33a323412f1398ec/bin/generate#L53-L67
+    """
+    with DAG(f"{parent_dag_name}.{child_dag_name}", default_args=default_args) as dag:
+        prefix = "/".join(
+            [
+                destination_bucket_prefix,
+                public_key_hex_external,
+                app_name,
+                submission_date,
+                "raw/shares",
+            ]
+        )
+        transfer_dataset = GoogleCloudStorageToGoogleCloudStorageOperator(
+            task_id="transfer_dataset",
+            source_bucket=source_bucket,
+            source_object=f"staging/submission_date={submission_date}/server_id={server_id}/*",
+            destination_bucket=destination_bucket,
+            destination_object=f"{prefix}/",
+            google_cloud_storage_conn_id=google_cloud_storage_conn_id,
+            dag=dag,
+        )
+        mark_dataset_success = GoogleCloudStorageToGoogleCloudStorageOperator(
+            task_id="mark_dataset_success",
+            source_bucket=source_bucket,
+            source_object="staging/_SUCCESS",
+            destination_bucket=destination_bucket,
+            destination_object=f"{prefix}/_SUCCESS",
+            google_cloud_storage_conn_id=google_cloud_storage_conn_id,
+            dag=dag,
+        )
+        transfer_dataset >> mark_dataset_success
+        return dag
 
-    for bucket_name, object_name in private + shared:
-        logging.info(f"Deleting gs://{bucket_name}/{object_name}")
-        hook.delete(bucket_name, object_name)
-        total += 1
-    logging.info(f"Deleted {total} objects")
 
-
-clean_processor_a = PythonOperator(
-    task_id="clean_processor_a",
-    python_callable=clean_buckets,
-    op_kwargs={
-        "private_bucket": BUCKET_PRIVATE_A,
-        "shared_bucket": BUCKET_SHARED_A,
-        "google_cloud_storage_conn_id": PRIO_A_CONN,
-    },
-    dag=dag,
-)
-
-clean_processor_b = PythonOperator(
-    task_id="clean_processor_b",
-    python_callable=clean_buckets,
-    op_kwargs={
-        "private_bucket": BUCKET_PRIVATE_B,
-        "shared_bucket": BUCKET_SHARED_B,
-        "google_cloud_storage_conn_id": PRIO_B_CONN,
-    },
-    dag=dag,
-)
-
-load_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="load_processor_a",
+transfer_data_subdag_partial = partial(
+    transfer_data_subdag,
+    parent_dag_name=dag.dag_id,
+    default_args=DEFAULT_ARGS,
     source_bucket=BUCKET_DATA_ADMIN,
-    source_object="staging/submission_date={{ ds }}/server_id=a/*",
-    destination_bucket=BUCKET_PRIVATE_A,
-    destination_object="raw/submission_date={{ ds }}/",
+    destination_bucket_prefix=BUCKET_PREFIX,
+    app_name=APP_NAME,
+    submission_date="{{ ds }}",
     google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
+)
+
+transfer_a = SubDagOperator(
+    subdag=transfer_data_subdag_partial(
+        child_dag_name="transfer_a",
+        destination_bucket=BUCKET_PRIVATE_A,
+        server_id="a",
+        public_key_hex_external="{{ var.value.prio_public_key_hex_external }}",
+    ),
+    task_id="transfer_a",
+    default_args=DEFAULT_ARGS,
     dag=dag,
 )
 
-load_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="load_processor_b",
-    source_bucket=BUCKET_DATA_ADMIN,
-    source_object="staging/submission_date={{ ds }}/server_id=b/*",
-    destination_bucket=BUCKET_PRIVATE_B,
-    destination_object="raw/submission_date={{ ds }}/",
-    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
-    dag=dag,
-)
-
-trigger_processor_a = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="trigger_processor_a",
-    source_bucket=BUCKET_DATA_ADMIN,
-    source_object="staging/_SUCCESS",
-    destination_bucket=BUCKET_PRIVATE_A,
-    destination_object="raw/_SUCCESS",
-    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
-    dag=dag,
-)
-
-trigger_processor_b = GoogleCloudStorageToGoogleCloudStorageOperator(
-    task_id="trigger_processor_b",
-    source_bucket=BUCKET_DATA_ADMIN,
-    source_object="staging/_SUCCESS",
-    destination_bucket=BUCKET_PRIVATE_B,
-    destination_object="raw/_SUCCESS",
-    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
+transfer_b = SubDagOperator(
+    subdag=transfer_data_subdag_partial(
+        child_dag_name="transfer_b",
+        destination_bucket=BUCKET_PRIVATE_B,
+        server_id="b",
+        public_key_hex_external="{{ var.value.prio_public_key_hex_internal }}",
+    ),
+    task_id="transfer_b",
+    default_args=DEFAULT_ARGS,
     dag=dag,
 )
 
@@ -248,6 +257,8 @@ processor_a = SubDagOperator(
         service_account=SERVICE_ACCOUNT_A,
         arguments=["bin/process"],
         env_vars={
+            "APP_NAME": APP_NAME,
+            "SUBMISSION_DATE": "{{ ds }}",
             "DATA_CONFIG": "/app/config/content.json",
             "SERVER_ID": "A",
             "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
@@ -257,6 +268,7 @@ processor_a = SubDagOperator(
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
             "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
             "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
+            "BUCKET_PREFIX": BUCKET_PREFIX,
             # 15 minutes of timeout
             "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
@@ -277,6 +289,8 @@ processor_b = SubDagOperator(
         service_account=SERVICE_ACCOUNT_B,
         arguments=["bin/process"],
         env_vars={
+            "APP_NAME": APP_NAME,
+            "SUBMISSION_DATE": "{{ ds }}",
             "DATA_CONFIG": "/app/config/content.json",
             "SERVER_ID": "B",
             "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
@@ -286,6 +300,7 @@ processor_b = SubDagOperator(
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_B,
             "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
             "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
+            "BUCKET_PREFIX": BUCKET_PREFIX,
             # 15 minutes of time-out
             "RETRY_LIMIT": "90",
             "RETRY_DELAY": "10",
@@ -310,6 +325,9 @@ insert_into_bigquery = SubDagOperator(
         service_account=SERVICE_ACCOUNT_ADMIN,
         arguments=["bash", "-c", "bin/insert"],
         env_vars={
+            "APP_NAME": APP_NAME,
+            "SUBMISSION_DATE": "{{ ds }}",
+            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
             "DATA_CONFIG": "/app/config/content.json",
             "ORIGIN_CONFIG": "/app/config/telemetry_origin_data_inc.json",
             "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
@@ -326,8 +344,8 @@ insert_into_bigquery = SubDagOperator(
 
 # Stitch the operators together into a directed acyclic graph.
 prio_staging_bootstrap >> prio_staging
-prio_staging >> clean_processor_a >> load_processor_a >> trigger_processor_a >> processor_a
-prio_staging >> clean_processor_b >> load_processor_b >> trigger_processor_b >> processor_b
+prio_staging >> transfer_a >> processor_a
+prio_staging >> transfer_b >> processor_b
 
 # Wait for both parents to finish (though only a dependency on processor a is
 # technically necessary)
