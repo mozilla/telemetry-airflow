@@ -78,7 +78,7 @@ def export_to_amplitude(
         if recreate_view:
             response = urlopen('/'.join([
                 'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
-                dataset, table_or_view, 'view.sql']))
+                project, dataset, table_or_view, 'view.sql']))
             sql = response.read().decode('utf-8')
             recreate_view = BigQueryOperator(
                 task_id='recreate_view',
