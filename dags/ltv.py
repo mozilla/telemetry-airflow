@@ -104,7 +104,7 @@ else:
 
 response = urlopen('/'.join([
     'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
-    'revenue_derived', 'client_ltv_v1', 'query.sql']))
+    'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_v1', 'query.sql']))
 
 BigQueryOperator.template_fields += ('query_params',)
 ltv_revenue_join=BigQueryOperator(
@@ -123,7 +123,7 @@ ltv_revenue_join=BigQueryOperator(
 
 response = urlopen('/'.join([
     'https://raw.githubusercontent.com/mozilla/bigquery-etl/master/sql',
-    'revenue_derived', 'client_ltv_normalized', 'query.sql']))
+    'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_normalized', 'query.sql']))
 
 # Normalized LTV View is for general-use and doesn't contain any revenue data
 ltv_normalized_view=BigQueryOperator(
