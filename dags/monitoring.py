@@ -89,7 +89,7 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         task_id="bigquery_etl_query_usage",
         command=[
             "python",
-            "sql/monitoring/bigquery_etl_scheduled_query_usage_v1/query.py",
+            "sql/moz-fx-data-shared-prod/monitoring/bigquery_etl_scheduled_query_usage_v1/query.py",
             "--date",
             "{{ ds }}",
         ],
