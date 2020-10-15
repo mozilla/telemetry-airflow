@@ -266,7 +266,9 @@ clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
 clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
 clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
 clients_scalar_aggregates >> scalar_percentiles
-clients_scalar_aggregates >> client_scalar_probe_counts
+# workaround resources exceeded exception
+# client_scalar_probe_counts is not dependent on scalar_percentiles
+scalar_percentiles >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates_parent
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
