@@ -130,7 +130,7 @@ class Backfill(get_baseview()):
             while g.is_pending():
                 lines = g.readlines()
                 for proc, line in lines:
-                    result = re.match(pattern, line)
+                    result = re.match(pattern, line.decode("utf-8"))
 
                     if result:
                         # Adhere to text/event-stream format
