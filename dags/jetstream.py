@@ -24,16 +24,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         name="jetstream",
         image=jetstream_image,
         email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
-        arguments=["--date={{ds}}"],
-        dag=dag,
-    )
-
-    jetstream_export_json = GKEPodOperator(
-        task_id="jetstream_export_json",
-        name="jetstream_export_json",
-        image=jetstream_image,
-        email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
-        arguments=["export_statistics_to_json"],
+        arguments=["--date={{ds}} --argo"],
         dag=dag,
     )
 
@@ -86,5 +77,3 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
             wait_for_copy_deduplicate_events,
         ]
     )
-
-    jetstream_export_json.set_upstream(jetstream)
