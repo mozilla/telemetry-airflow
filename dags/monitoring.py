@@ -98,6 +98,19 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"],
     )
 
+    column_sizes = gke_command(
+        task_id="column_sizes",
+        command=[
+            "python",
+            "sql/moz-fx-data-shared-prod/monitoring/column_size_v1/query.py",
+            "--date",
+            "{{ ds }}",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        owner="ascholtz@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"],
+    )
+
     stable_table_sizes.set_upstream(wait_for_copy_deduplicate_main_ping)
     stable_table_sizes.set_upstream(wait_for_copy_deduplicate_all)
 
@@ -106,3 +119,6 @@ with DAG("monitoring", default_args=default_args, schedule_interval="0 2 * * *")
 
     telemetry_distinct_docids.set_upstream(wait_for_copy_deduplicate_main_ping)
     telemetry_distinct_docids.set_upstream(wait_for_copy_deduplicate_all)
+
+    column_sizes.set_upstream(wait_for_copy_deduplicate_main_ping)
+    column_sizes.set_upstream(wait_for_copy_deduplicate_all)
