@@ -714,7 +714,7 @@ def gke_command(
         namespace=gke_namespace,
         image=docker_image,
         arguments=command,
-        xcom_push=xcom_push,
+        do_xcom_push=xcom_push,
         env_vars=context_env_vars,
         **kwargs
     )

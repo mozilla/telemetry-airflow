@@ -6,7 +6,9 @@ venv
 
 logs
 unittests.cfg
+airflow-webserver.pid
 .config
+.credentials
 
 /dags/bigquery-etl-dags
 /dags/bigquery-etl-dags/*

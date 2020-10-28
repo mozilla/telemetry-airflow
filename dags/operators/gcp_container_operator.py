@@ -8,9 +8,7 @@ from airflow import AirflowException
 
 from airflow.contrib.hooks.gcp_container_hook import GKEClusterHook
 
-# We import upstream GKEPodOperator/KubernetesPodOperator from 1.10.7, modified to point to kube_client
-# from 1.10.2, because of some Xcom push breaking changes when using GKEPodOperator.
-from .backport.gcp_container_operator_1_10_7 import GKEPodOperator as UpstreamGKEPodOperator
+from airflow.contrib.operators.gcp_container_operator import GKEPodOperator as UpstreamGKEPodOperator
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
 GCLOUD_APP_CRED = "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE"
@@ -28,15 +26,17 @@ class GKEPodOperator(UpstreamGKEPodOperator):
 
     - Adjust when NamedTemporaryFile file descriptor is closed.
 
-    - Preserve XCOM result when xcom_push is True.
+    - Preserve XCOM result when do_xcom_push is True.
 
-    - Override init to default image_pull_policy=Always, in_cluster=False, xcom_push=False and GKE params
+    - Override init to default image_pull_policy=Always, in_cluster=False, do_xcom_push=False and GKE params
+
+    - set reattach_on_restart=False when do_xcom_push=True to address an error (details below)
 
     """
     def __init__(self,
                  image_pull_policy='Always',
                  in_cluster=False,
-                 xcom_push=False,
+                 do_xcom_push=False,
                  # Defined in Airflow's UI -> Admin -> Connections
                  gcp_conn_id='google_cloud_derived_datasets',
                  project_id='moz-fx-data-derived-datasets',
@@ -46,10 +46,19 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                  *args,
                  **kwargs):
 
+        """
+        Retrying a failed task with do_xcom_push=True causes airflow to reattach to the pod
+        eventually causing a 'Handshake status 500 Internal Server Error'. Logs will indicate
+        'found a running pod with ... different try_number. Will attach to this pod and monitor
+        instead of starting new one'
+        """
+        reattach_on_restart = False if do_xcom_push else True
+
         super(GKEPodOperator, self).__init__(
             image_pull_policy=image_pull_policy,
             in_cluster=in_cluster,
-            xcom_push=xcom_push,
+            do_xcom_push=do_xcom_push,
+            reattach_on_restart=reattach_on_restart,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             location=location,
@@ -94,7 +103,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             # Tell `KubernetesPodOperator` where the config file is located
             self.config_file = os.environ[KUBE_CONFIG_ENV_VAR]
             result = super(UpstreamGKEPodOperator, self).execute(context) # Moz specific
-            if self.xcom_push: # Moz specific
+            if self.do_xcom_push: # Moz specific
                 return result # Moz specific
 
 

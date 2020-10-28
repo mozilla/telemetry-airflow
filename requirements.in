@@ -1,7 +1,8 @@
 boto3
 kombu==4.6.3 # CeleryExecutor issues with 1.10.2 supposedly fixed in 1.10.5 airflow, but still observed issues on 1.10.7
 # removed hdfs
-apache-airflow[celery,postgres,hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,s3,mysql,google_auth,gcp_api,kubernetes]==1.10.10
+apache-airflow[celery,postgres,hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,s3,mysql,google_auth,gcp_api,kubernetes]==1.10.12
+cryptography>=3.2
 mozlogging
 retrying
 newrelic

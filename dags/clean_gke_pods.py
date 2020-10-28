@@ -4,6 +4,23 @@ from operators.gcp_container_operator import GKEPodOperator
 
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
+docs = """
+### Clean GKE Pods
+
+Built from cloudops-infra repo, projects/airflow/pod-clean
+
+#### Purpose
+
+This DAG executes a GKEPodOperator to clean out old completed pods
+on the shared derived-datasets gke cluster. We need to do this periodically
+because GCP has a 1500 object limit quota.
+
+#### Owner
+
+hwoo@mozilla.com
+"""
+
+
 default_args = {
     'owner': 'hwoo@mozilla.com',
     'depends_on_past': False,
@@ -14,11 +31,9 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-dag = DAG("clean-gke-pods", default_args=default_args, schedule_interval="@daily")
+dag = DAG("clean-gke-pods", default_args=default_args, schedule_interval="@daily", doc_md = docs)
 
-# Built from cloudops-infra repo, projects/airflow/pod-clean
-docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/gke-pod-clean:1.0'
-
+docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/gke-pod-clean:1.3'
 gke_cluster_name='bq-load-gke-1'
 gke_location='us-central1-a'
 
@@ -35,4 +50,3 @@ clean_gke_pods = GKEPodOperator(
     image=docker_image,
     arguments=docker_args,
     dag=dag)
-
