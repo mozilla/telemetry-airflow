@@ -507,11 +507,9 @@ def bigquery_etl_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + (
             [
-                "--schema_update_option="
-                + "{{ 'ALLOW_FIELD_ADDITION' if ds == %r else '' }}"
-                % allow_field_addition_on_date
+                "--schema_update_option=ALLOW_FIELD_ADDITION"
             ]
-            if allow_field_addition_on_date
+            if allow_field_addition_on_date == "${{ds}}"
             else []
         )
         + list(arguments)
