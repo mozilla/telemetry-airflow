@@ -506,10 +506,16 @@ def bigquery_etl_query(
         + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
         + (
+            # Date comparisons for field additions need to happen within the parameter.
+            # Template substitution occurs only within the operator with `arguments` being
+            # one of the options of GKEPodOperator that allows templated arguments.
+            # See also: https://github.com/mozilla/telemetry-airflow/pull/1174#discussion_r517505678
             [
-                "--schema_update_option=ALLOW_FIELD_ADDITION"
+                "--schema_update_option="
+                + "{{ 'ALLOW_FIELD_ADDITION' if ds == %r else '' }}"
+                % allow_field_addition_on_date
             ]
-            if allow_field_addition_on_date == "${{ds}}"
+            if allow_field_addition_on_date
             else []
         )
         + list(arguments)
