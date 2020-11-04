@@ -24,7 +24,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         name="jetstream",
         image=jetstream_image,
         email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
-        arguments=["--date={{ds}} --argo"],
+        arguments=["run-argo --date={{ds}}"],
         dag=dag,
     )
 
