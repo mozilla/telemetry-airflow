@@ -34,121 +34,15 @@ The following Airflow variables should be set:
 These variables are encrypted and passed into the prio-processor container via
 the environment.
 """
-from datetime import datetime, timedelta
-from os import environ
 from functools import partial
 
 from airflow import DAG
-from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
 from airflow.contrib.operators.gcs_to_gcs import (
     GoogleCloudStorageToGoogleCloudStorageOperator,
 )
-from airflow.operators import PythonOperator
+from airflow.operators import DummyOperator, PythonOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from prio import dataproc, kubernetes
-
-DEFAULT_ARGS = {
-    "owner": "amiyaguchi@mozilla.com",
-    "depends_on_past": False,
-    "start_date": datetime(2019, 8, 22),
-    "email": [
-        "amiyaguchi@mozilla.com",
-        "hwoo@mozilla.com",
-        "dataops+alerts@mozilla.com",
-    ],
-    "email_on_failure": True,
-    "email_on_retry": True,
-    "retries": 0,
-    "retry_delay": timedelta(minutes=5),
-    "dagrun_timeout": timedelta(hours=4),
-}
-
-# use a less than desirable method of generating the service account name
-IS_DEV = environ.get("DEPLOY_ENVIRONMENT") != "prod"
-ENVIRONMENT = "dev" if IS_DEV else "prod"
-
-PRIO_ADMIN_CONN = "google_cloud_prio_admin"
-PRIO_A_CONN = "google_cloud_prio_a"
-PRIO_B_CONN = "google_cloud_prio_b"
-
-PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
-PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
-PROJECT_B = GoogleCloudStorageHook(PRIO_B_CONN).project_id
-
-SERVICE_ACCOUNT_ADMIN = f"prio-admin-runner@{PROJECT_ADMIN}.iam.gserviceaccount.com"
-SERVICE_ACCOUNT_A = f"prio-runner-{ENVIRONMENT}-a@{PROJECT_A}.iam.gserviceaccount.com"
-SERVICE_ACCOUNT_B = f"prio-runner-{ENVIRONMENT}-b@{PROJECT_B}.iam.gserviceaccount.com"
-
-BUCKET_PRIVATE_A = f"moz-fx-prio-{ENVIRONMENT}-a-private"
-BUCKET_PRIVATE_B = f"moz-fx-prio-{ENVIRONMENT}-b-private"
-BUCKET_SHARED_A = f"moz-fx-prio-{ENVIRONMENT}-a-shared"
-BUCKET_SHARED_B = f"moz-fx-prio-{ENVIRONMENT}-b-shared"
-BUCKET_DATA_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-data"
-BUCKET_BOOTSTRAP_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-bootstrap"
-
-APP_NAME = "origin-telemetry"
-BUCKET_PREFIX = "data/v1"
-
-# https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
-# max_active_runs controls the number of DagRuns at a given time.
-dag = DAG(
-    dag_id="prio_processor",
-    max_active_runs=1,
-    default_args=DEFAULT_ARGS,
-    schedule_interval="@daily",
-)
-
-# Copy the dependencies necessary for running the `prio-processor staging` job
-# into the relevant GCS locations. This includes the runner and the egg
-# containing the bundled dependencies.
-
-prio_staging_bootstrap = SubDagOperator(
-    subdag=kubernetes.container_subdag(
-        parent_dag_name=dag.dag_id,
-        child_dag_name="bootstrap",
-        default_args=DEFAULT_ARGS,
-        server_id="admin",
-        gcp_conn_id=PRIO_ADMIN_CONN,
-        service_account=SERVICE_ACCOUNT_ADMIN,
-        arguments=[
-            "bash",
-            "-xc",
-            f"source bin/dataproc; bootstrap gs://{BUCKET_BOOTSTRAP_ADMIN}",
-        ],
-        env_var=dict(SUBMODULE="origin"),
-    ),
-    task_id="bootstrap",
-    dag=dag,
-)
-
-# Run the PySpark job for range-partioning Prio pings.
-prio_staging = SubDagOperator(
-    subdag=dataproc.spark_subdag(
-        parent_dag_name=dag.dag_id,
-        child_dag_name="staging",
-        default_args=DEFAULT_ARGS,
-        gcp_conn_id=PRIO_ADMIN_CONN,
-        service_account=SERVICE_ACCOUNT_ADMIN,
-        main=f"gs://{BUCKET_BOOTSTRAP_ADMIN}/processor-origin.py",
-        pyfiles=[f"gs://{BUCKET_BOOTSTRAP_ADMIN}/prio_processor.egg"],
-        arguments=[
-            "staging",
-            "--date",
-            "{{ ds }}",
-            "--source",
-            "bigquery",
-            "--input",
-            "moz-fx-data-shared-prod.payload_bytes_decoded.telemetry_telemetry__prio_v4",
-            "--output",
-            f"gs://{BUCKET_DATA_ADMIN}/staging/",
-        ],
-        bootstrap_bucket=f"gs://{BUCKET_BOOTSTRAP_ADMIN}",
-        num_preemptible_workers=2,
-    ),
-    task_id="staging",
-    default_args=DEFAULT_ARGS,
-    dag=dag,
-)
 
 
 def transfer_data_subdag(
@@ -206,148 +100,153 @@ def transfer_data_subdag(
         return dag
 
 
-transfer_data_subdag_partial = partial(
-    transfer_data_subdag,
-    parent_dag_name=dag.dag_id,
-    default_args=DEFAULT_ARGS,
-    source_bucket=BUCKET_DATA_ADMIN,
-    destination_bucket_prefix=BUCKET_PREFIX,
-    app_name=APP_NAME,
-    submission_date="{{ ds }}",
-    google_cloud_storage_conn_id=PRIO_ADMIN_CONN,
-)
+def ingestion_subdag(
+    dag,
+    default_args,
+    gcp_conn_id,
+    service_account,
+    bucket_bootstrap_admin,
+    bucket_data_admin,
+    bucket_prefix,
+    app_name,
+    bucket_private_internal,
+    bucket_private_external,
+    public_key_hex_internal,
+    public_key_hex_external,
+):
+    # Copy the dependencies necessary for running the `prio-processor staging` job
+    # into the relevant GCS locations. This includes the runner and the egg
+    # containing the bundled dependencies.
 
-transfer_a = SubDagOperator(
-    subdag=transfer_data_subdag_partial(
-        child_dag_name="transfer_a",
-        destination_bucket=BUCKET_PRIVATE_A,
-        server_id="a",
-        public_key_hex_external="{{ var.value.prio_public_key_hex_external }}",
-    ),
-    task_id="transfer_a",
-    default_args=DEFAULT_ARGS,
-    dag=dag,
-)
+    prio_staging_bootstrap = SubDagOperator(
+        subdag=kubernetes.container_subdag(
+            parent_dag_name=dag.dag_id,
+            child_dag_name="bootstrap",
+            default_args=default_args,
+            server_id="admin",
+            gcp_conn_id=gcp_conn_id,
+            service_account=service_account,
+            arguments=[
+                "bash",
+                "-xc",
+                f"source bin/dataproc; bootstrap gs://{bucket_bootstrap_admin}",
+            ],
+            env_var=dict(SUBMODULE="origin"),
+        ),
+        task_id="bootstrap",
+        dag=dag,
+    )
 
-transfer_b = SubDagOperator(
-    subdag=transfer_data_subdag_partial(
-        child_dag_name="transfer_b",
-        destination_bucket=BUCKET_PRIVATE_B,
-        server_id="b",
-        public_key_hex_external="{{ var.value.prio_public_key_hex_internal }}",
-    ),
-    task_id="transfer_b",
-    default_args=DEFAULT_ARGS,
-    dag=dag,
-)
+    # Run the PySpark job for range-partioning Prio pings.
+    prio_staging = SubDagOperator(
+        subdag=dataproc.spark_subdag(
+            parent_dag_name=dag.dag_id,
+            child_dag_name="staging",
+            default_args=default_args,
+            gcp_conn_id=gcp_conn_id,
+            service_account=service_account,
+            main=f"gs://{bucket_bootstrap_admin}/processor-origin.py",
+            pyfiles=[f"gs://{bucket_bootstrap_admin}/prio_processor.egg"],
+            arguments=[
+                "staging",
+                "--date",
+                "{{ ds }}",
+                "--source",
+                "bigquery",
+                "--input",
+                "moz-fx-data-shared-prod.payload_bytes_decoded.telemetry_telemetry__prio_v4",
+                "--output",
+                f"gs://{bucket_data_admin}/staging/",
+            ],
+            bootstrap_bucket=f"gs://{bucket_bootstrap_admin}",
+            # TODO: reconfigure the number of workers
+            num_preemptible_workers=2,
+        ),
+        task_id="staging",
+        default_args=default_args,
+        dag=dag,
+    )
 
-# Initiate the processors by spinning up GKE clusters and running the main
-# processing loop. These SubDags are coordinated by a higher level graph, but
-# they can be decoupled and instead run on the same schedule. This structure is
-# done for convenience, since both processors are running on the same
-# infrastructure (but partitioned along project boundaries).
-
-processor_a = SubDagOperator(
-    subdag=kubernetes.container_subdag(
+    transfer_data_subdag_partial = partial(
+        transfer_data_subdag,
         parent_dag_name=dag.dag_id,
-        child_dag_name="processor_a",
-        default_args=DEFAULT_ARGS,
-        server_id="a",
-        gcp_conn_id=PRIO_A_CONN,
-        service_account=SERVICE_ACCOUNT_A,
-        arguments=["bin/process"],
-        env_vars={
-            "APP_NAME": APP_NAME,
-            "SUBMISSION_DATE": "{{ ds }}",
-            "DATA_CONFIG": "/app/config/content.json",
-            "SERVER_ID": "A",
-            "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
-            "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
-            "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
-            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-            "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
-            "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
-            "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
-            "BUCKET_PREFIX": BUCKET_PREFIX,
-            # 15 minutes of timeout
-            "RETRY_LIMIT": "90",
-            "RETRY_DELAY": "10",
-            "RETRY_BACKOFF_EXPONENT": "1",
-        },
-    ),
-    task_id="processor_a",
-    dag=dag,
-)
+        default_args=default_args,
+        source_bucket=bucket_data_admin,
+        destination_bucket_prefix=bucket_prefix,
+        app_name=app_name,
+        submission_date="{{ ds }}",
+        google_cloud_storage_conn_id=gcp_conn_id,
+    )
 
-processor_b = SubDagOperator(
-    subdag=kubernetes.container_subdag(
-        parent_dag_name=dag.dag_id,
-        child_dag_name="processor_b",
-        default_args=DEFAULT_ARGS,
-        server_id="b",
-        gcp_conn_id=PRIO_B_CONN,
-        service_account=SERVICE_ACCOUNT_B,
-        arguments=["bin/process"],
-        env_vars={
-            "APP_NAME": APP_NAME,
-            "SUBMISSION_DATE": "{{ ds }}",
-            "DATA_CONFIG": "/app/config/content.json",
-            "SERVER_ID": "B",
-            "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
-            "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
-            "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
-            "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_B,
-            "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
-            "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
-            "BUCKET_PREFIX": BUCKET_PREFIX,
-            # 15 minutes of time-out
-            "RETRY_LIMIT": "90",
-            "RETRY_DELAY": "10",
-            "RETRY_BACKOFF_EXPONENT": "1",
-        },
-    ),
-    task_id="processor_b",
-    dag=dag,
-)
+    transfer_a = SubDagOperator(
+        subdag=transfer_data_subdag_partial(
+            child_dag_name="transfer_a",
+            destination_bucket=bucket_private_internal,
+            server_id="a",
+            public_key_hex_external=public_key_hex_external,
+        ),
+        task_id="transfer_a",
+        default_args=default_args,
+        dag=dag,
+    )
 
-# Take the resulting aggregates and insert them into a BigQuery table. This
-# table is effectively append-only, so rerunning the dag will cause duplicate
-# results. In practice, rerunning the DAG is problematic when operation is
-# distributed.
-insert_into_bigquery = SubDagOperator(
-    subdag=kubernetes.container_subdag(
-        parent_dag_name=dag.dag_id,
-        child_dag_name="insert_into_bigquery",
-        default_args=DEFAULT_ARGS,
-        server_id="admin",
-        gcp_conn_id=PRIO_ADMIN_CONN,
-        service_account=SERVICE_ACCOUNT_ADMIN,
-        arguments=["bash", "-c", "bin/insert"],
-        env_vars={
-            "APP_NAME": APP_NAME,
-            "SUBMISSION_DATE": "{{ ds }}",
-            "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-            "DATA_CONFIG": "/app/config/content.json",
-            "ORIGIN_CONFIG": "/app/config/telemetry_origin_data_inc.json",
-            "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
-            "DATASET": "telemetry",
-            "TABLE": "origin_content_blocking",
-            "BQ_REPLACE": "false",
-            "GOOGLE_APPLICATION_CREDENTIALS": "",
-        },
-    ),
-    task_id="insert_into_bigquery",
-    dag=dag,
-)
+    transfer_b = SubDagOperator(
+        subdag=transfer_data_subdag_partial(
+            child_dag_name="transfer_b",
+            destination_bucket=bucket_private_external,
+            server_id="b",
+            public_key_hex_external=public_key_hex_internal,
+        ),
+        task_id="transfer_b",
+        default_args=default_args,
+        dag=dag,
+    )
+
+    transfer_complete = DummyOperator(task_id="transfer_complete", dag=dag)
+
+    prio_staging_bootstrap >> prio_staging
+    prio_staging >> transfer_a
+    prio_staging >> transfer_b
+    transfer_a >> transfer_complete
+    transfer_b >> transfer_complete
+    return transfer_complete
 
 
-# Stitch the operators together into a directed acyclic graph.
-prio_staging_bootstrap >> prio_staging
-prio_staging >> transfer_a >> processor_a
-prio_staging >> transfer_b >> processor_b
+def prio_processor_subdag(
+    dag, default_args, gcp_conn_id, service_account, server_id, env_vars
+):
+    return SubDagOperator(
+        subdag=kubernetes.container_subdag(
+            parent_dag_name=dag.dag_id,
+            child_dag_name=f"processor_{server_id}",
+            default_args=default_args,
+            gcp_conn_id=gcp_conn_id,
+            service_account=service_account,
+            server_id=server_id,
+            arguments=["bin/process"],
+            env_vars=env_vars,
+        ),
+        task_id=f"processor_{server_id}",
+        dag=dag,
+    )
 
-# Wait for both parents to finish (though only a dependency on processor a is
-# technically necessary)
-processor_a >> insert_into_bigquery
-processor_b >> insert_into_bigquery
+
+def load_bigquery_subdag(dag, default_args, gcp_conn_id, service_account, env_vars):
+    # Take the resulting aggregates and insert them into a BigQuery table. This
+    # table is effectively append-only, so rerunning the dag will cause duplicate
+    # results. In practice, rerunning the DAG is problematic when operation is
+    # distributed.
+    return SubDagOperator(
+        subdag=kubernetes.container_subdag(
+            parent_dag_name=dag.dag_id,
+            child_dag_name="insert_into_bigquery",
+            default_args=default_args,
+            server_id="admin",
+            gcp_conn_id=gcp_conn_id,
+            service_account=service_account,
+            arguments=["bash", "-c", "bin/insert"],
+            env_vars=env_vars,
+        ),
+        task_id="insert_into_bigquery",
+        dag=dag,
+    )

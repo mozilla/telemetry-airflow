@@ -7,10 +7,9 @@ from airflow.contrib.operators.gcp_container_operator import (
     GKEClusterCreateOperator,
     GKEClusterDeleteOperator,
 )
-from operators.gcp_container_operator import GKEPodOperator
-
-from utils.gke import create_gke_config
 from airflow.operators.bash_operator import BashOperator
+from operators.gcp_container_operator import GKEPodOperator
+from utils.gke import create_gke_config
 
 
 def container_subdag(
