@@ -73,5 +73,5 @@ with models.DAG(
     )
 
     wait_for_copy_deduplicate_main_ping >> fission_monitoring_main_v1
-    wait_for_copy_deduplicate_crash_ping >> fission_monitoring_crash_v1
+    [wait_for_copy_deduplicate_main_ping, wait_for_copy_deduplicate_crash_ping] >> fission_monitoring_crash_v1
     [fission_monitoring_main_v1, fission_monitoring_crash_v1] >> fission_aggregation_for_dashboard
