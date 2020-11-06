@@ -16,7 +16,7 @@ DEFAULT_ARGS = {
     ],
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 2,
+    "retries": 0,
     "retry_delay": timedelta(minutes=5),
     "dagrun_timeout": timedelta(hours=4),
 }
