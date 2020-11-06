@@ -16,7 +16,7 @@ DEFAULT_ARGS = {
     ],
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 0,
+    "retries": 2,
     "retry_delay": timedelta(minutes=5),
     "dagrun_timeout": timedelta(hours=4),
 }
@@ -27,7 +27,6 @@ ENVIRONMENT = "dev" if IS_DEV else "prod"
 
 PRIO_ADMIN_CONN = "google_cloud_prio_admin"
 PRIO_A_CONN = "google_cloud_prio_a"
-PRIO_B_CONN = "google_cloud_prio_b"
 
 PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
 PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
