@@ -31,12 +31,11 @@ PRIO_B_CONN = "google_cloud_prio_b"
 
 PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
 PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
-PROJECT_B = GoogleCloudStorageHook(PRIO_B_CONN).project_id
 
 SERVICE_ACCOUNT_ADMIN = f"prio-admin-runner@{PROJECT_ADMIN}.iam.gserviceaccount.com"
 SERVICE_ACCOUNT_A = f"prio-runner-{ENVIRONMENT}-a@{PROJECT_A}.iam.gserviceaccount.com"
-SERVICE_ACCOUNT_B = f"prio-runner-{ENVIRONMENT}-b@{PROJECT_B}.iam.gserviceaccount.com"
 
+# Private bucket of server B is necessary for transfer
 BUCKET_PRIVATE_A = f"moz-fx-prio-{ENVIRONMENT}-a-private"
 BUCKET_PRIVATE_B = f"moz-fx-prio-{ENVIRONMENT}-b-private"
 BUCKET_SHARED_A = f"moz-fx-prio-{ENVIRONMENT}-a-shared"
@@ -97,32 +96,6 @@ processor_a = prio_processor_subdag(
     },
 )
 
-processor_b = prio_processor_subdag(
-    dag,
-    DEFAULT_ARGS,
-    PRIO_B_CONN,
-    SERVICE_ACCOUNT_B,
-    "b",
-    {
-        "APP_NAME": APP_NAME,
-        "SUBMISSION_DATE": "{{ ds }}",
-        "DATA_CONFIG": "/app/config/content.json",
-        "SERVER_ID": "B",
-        "SHARED_SECRET": "{{ var.value.prio_shared_secret }}",
-        "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
-        "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-        "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
-        "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_B,
-        "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
-        "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
-        "BUCKET_PREFIX": BUCKET_PREFIX,
-        # 15 minutes of time-out
-        "RETRY_LIMIT": "90",
-        "RETRY_DELAY": "10",
-        "RETRY_BACKOFF_EXPONENT": "1",
-    },
-)
-
 load_bigquery = load_bigquery_subdag(
     dag,
     DEFAULT_ARGS,
@@ -143,6 +116,4 @@ load_bigquery = load_bigquery_subdag(
 )
 
 ingest >> processor_a
-ingest >> processor_b
 processor_a >> load_bigquery
-processor_b >> load_bigquery
