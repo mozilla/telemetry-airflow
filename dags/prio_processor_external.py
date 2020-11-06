@@ -16,7 +16,7 @@ DEFAULT_ARGS = {
     ],
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 2,
+    "retries": 0,
     "retry_delay": timedelta(minutes=5),
     "dagrun_timeout": timedelta(hours=4),
 }
@@ -64,7 +64,7 @@ processor_b = prio_processor_subdag(
         "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
         "BUCKET_PREFIX": BUCKET_PREFIX,
         # 15 minutes of time-out
-        "RETRY_LIMIT": "90",
+        "RETRY_LIMIT": "180",
         "RETRY_DELAY": "10",
         "RETRY_BACKOFF_EXPONENT": "1",
     },
