@@ -32,6 +32,8 @@ RUN export SLUGIFY_USES_TEXT_UNIDECODE=yes && pip install --no-cache-dir -r requ
 # Switch back to home directory
 WORKDIR /app
 
+COPY ./config/ /app
+
 USER 10001
 
 ENV PYTHONUNBUFFERED=1 \
