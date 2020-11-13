@@ -240,6 +240,8 @@ FROM
   deduped
 WHERE
   metrics.string.test_name = "test_disable_upload"
+GROUP BY
+  metrics.string.mission_identifier
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
