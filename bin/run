@@ -127,6 +127,8 @@ init_variables() {
     airflow variables -s "surveygizmo_daily_attitudes_survey_id" "12345"
     airflow variables -s "surveygizmo_api_token" "tokentokentoken"
     airflow variables -s "surveygizmo_api_secret" "tapsekret"
+    airflow variables -s "jetstream_cluster_ip" "127.0.0.1"
+    airflow variables -s "jetstream_cluster_cert" "cert"
 
     airflow variables -s "taar_bigtable_instance_id" "taar_bigtable_instance_id"
     airflow variables -s "taar_etl_storage_bucket" "taar_etl_storage_bucket"
