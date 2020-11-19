@@ -15,13 +15,13 @@ default_args = {
 }
 
 GA_PROPERTIES = [
-    ("65789850", "mozilla.org"),
-    ("66602784", "blog.mozilla.org"),
-    ("65912487", "support.mozilla.org"),
-    ("180612539", "monitor.firefox.com"),
-    ("220432379", "vpn.mozilla.org"),
-    ("65887927", "hacks.mozilla.org"),
-    ("66726481", "developer.mozilla.org"),
+    ("65789850", "www_mozilla_org"),
+    ("66602784", "blog_mozilla_org"),
+    ("65912487", "support_mozilla_org"),
+    ("180612539", "monitor_firefox_com"),
+    ("220432379", "vpn_mozilla_org"),
+    ("65887927", "hacks_mozilla_org"),
+    ("66726481", "developer_mozilla_org"),
 ]
 
 with DAG(
@@ -31,6 +31,7 @@ with DAG(
 ) as dag:
     for property_id, property_name in GA_PROPERTIES:
         commands = [
+            "python3", "script/marketing/copy_ga_sessions.py",
             "--start-date", "{{ macros.ds_add(ds, -2) }}",
             "--src-project", "ga-mozilla-org-prod-001",
             "--dst-project", "moz-fx-data-marketing-prod",
