@@ -33,13 +33,20 @@ with models.DAG(
     # This single task is responsible for sequentially running copy queries
     # over all the tables in _live datasets into _stable datasets except those
     # that are specifically used in another DAG.
+    resources = {'request_memory':'10240Mi', 'request_cpu': None,
+                'limit_memory':'20480Mi', 'limit_cpu': None, 'limit_gpu': None}
+
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all",
         target_project_id="moz-fx-data-shared-prod",
         priority_weight=100,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
-        except_tables=["telemetry_live.main_v4"])
+        except_tables=["telemetry_live.main_v4"],
+        kwargs={
+            "node_selectors": {"nodepool" : "highmem"},
+            "resources": resources
+        })
 
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
