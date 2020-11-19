@@ -43,10 +43,8 @@ with models.DAG(
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"],
-        kwargs={
-            "node_selectors": {"nodepool" : "highmem"},
-            "resources": resources
-        })
+        node_selectors={"nodepool" : "highmem"},
+        resources=resources)
 
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
