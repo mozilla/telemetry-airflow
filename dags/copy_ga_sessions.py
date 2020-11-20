@@ -27,12 +27,12 @@ GA_PROPERTIES = [
 with DAG(
     "copy_ga_sessions",
     default_args=default_args,
-    schedule_interval="0 1 * * *",
+    schedule_interval="0 21 * * *",
 ) as dag:
     for property_id, property_name in GA_PROPERTIES:
         commands = [
             "python3", "script/marketing/copy_ga_sessions.py",
-            "--start-date", "{{ macros.ds_add(ds, -2) }}",
+            "--start-date", "{{ ds }}",
             "--src-project", "ga-mozilla-org-prod-001",
             "--dst-project", "moz-fx-data-marketing-prod",
             "--overwrite",
