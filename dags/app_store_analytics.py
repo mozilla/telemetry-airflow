@@ -95,7 +95,7 @@ with DAG("app_store_analytics",
                 f"{derived_table}${{{{ macros.ds_format({export_date}, '%Y-%m-%d', '%Y%m%d') }}}}"
             ),
             date_partition_parameter=None,
-            parameters=[f"date:DATE:{{{{ {export_date} }}}}"],
+            parameters=[f"submission_date:DATE:{{{{ {export_date} }}}}"],
             dag=dag,
         )
 
