@@ -29,8 +29,7 @@ DEFAULT_TEST_NAME = "test_burnham"
 
 # Live tables are not guaranteed to be deduplicated. To ensure reproducibility,
 # we need to deduplicate Glean pings produced by burnham for these tests.
-WITH_DEDUPED_TABLE = """
-WITH
+DEDUPED_TABLE = """
   {table}_numbered AS (
   SELECT
     ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
@@ -49,19 +48,17 @@ WITH
   WHERE
     _n = 1 )"""
 
-WITH_DISCOVERY_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
-    project_id=PROJECT_ID, table="discovery_v1"
-)
+DISCOVERY_V1_DEDUPED = DEDUPED_TABLE.format(project_id=PROJECT_ID, table="discovery_v1")
 
-WITH_STARBASE46_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+STARBASE46_V1_DEDUPED = DEDUPED_TABLE.format(
     project_id=PROJECT_ID, table="starbase46_v1"
 )
 
-WITH_SPACE_SHIP_READY_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+SPACE_SHIP_READY_V1_DEDUPED = DEDUPED_TABLE.format(
     project_id=PROJECT_ID, table="space_ship_ready_v1"
 )
 
-WITH_DELETION_REQUEST_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+DELETION_REQUEST_V1_DEDUPED = DEDUPED_TABLE.format(
     project_id=PROJECT_ID, table="deletion_request_v1"
 )
 
@@ -69,7 +66,7 @@ WITH_DELETION_REQUEST_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
 # Test scenario test_labeled_counter_metrics: Verify that labeled_counter
 # metric values reported by the Glean SDK across several documents from three
 # different clients are correct.
-TEST_LABELED_COUNTER_METRICS = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_LABELED_COUNTER_METRICS = f"""WITH {DISCOVERY_V1_DEDUPED}
 SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
@@ -118,7 +115,7 @@ WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 # which is enrolled in the spore_drive experiment on branch tardigrade, and a
 # client which is enrolled in the spore_drive experiment on branch
 # tardigrade-dna.
-TEST_EXPERIMENTS = f"""{WITH_DISCOVERY_V1_DEDUPED},
+TEST_EXPERIMENTS = f"""WITH {DISCOVERY_V1_DEDUPED},
   base AS (
   SELECT
     ARRAY(
@@ -178,7 +175,7 @@ WANT_TEST_EXPERIMENTS = [
 # correctly reports the number of times a string metric was set to a value that
 # exceeds the maximum string length measured in the number of bytes when the
 # string is encoded in UTF-8.
-TEST_GLEAN_ERROR_INVALID_OVERFLOW = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_GLEAN_ERROR_INVALID_OVERFLOW = f"""WITH {DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_overflow
@@ -203,7 +200,7 @@ WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
 
 # Test scenario test_starbase46_ping: Verify that the Glean SDK and the
 # Data Platform support custom pings using the numbered naming scheme
-TEST_STARBASE46_PING = f"""{WITH_STARBASE46_V1_DEDUPED}
+TEST_STARBASE46_PING = f"""WITH {STARBASE46_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
@@ -217,7 +214,7 @@ WANT_TEST_STARBASE46_PING = [{"count_documents": 1}]
 
 # Test scenario test_space_ship_ready_ping: Verify that the Glean SDK and the
 # Data Platform support custom pings using the kebab-case naming scheme
-TEST_SPACE_SHIP_READY_PING = f"""{WITH_SPACE_SHIP_READY_V1_DEDUPED}
+TEST_SPACE_SHIP_READY_PING = f"""WITH {SPACE_SHIP_READY_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
@@ -232,7 +229,7 @@ WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
 # Test scenario test_no_ping_after_upload_disabled: Verify that the Glean SDK
 # does not upload pings after upload was disabled and resumes to uploading
 # pings after it was re-enabled again.
-TEST_NO_PING_AFTER_UPLOAD_DISABLED = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_NO_PING_AFTER_UPLOAD_DISABLED = f"""WITH {DISCOVERY_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents,
   metrics.string.mission_identifier
@@ -276,7 +273,7 @@ WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 2}]
 
 # Test scenario test_deletion_request_ping: Verify that the Glean SDK submitted
 # a deletion-request ping after upload was disabled.
-TEST_DELETION_REQUEST_PING = f"""{WITH_DELETION_REQUEST_V1_DEDUPED}
+TEST_DELETION_REQUEST_PING = f"""WITH {DELETION_REQUEST_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
