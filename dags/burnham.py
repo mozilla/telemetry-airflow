@@ -31,7 +31,7 @@ DEFAULT_TEST_NAME = "test_burnham"
 # we need to deduplicate Glean pings produced by burnham for these tests.
 WITH_DEDUPED_TABLE = """
 WITH
-  numbered AS (
+  {table}_numbered AS (
   SELECT
     ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
     *
@@ -41,11 +41,11 @@ WITH
     submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_start_timestamp, INTERVAL 1 HOUR)
     AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
-  deduped AS (
+  {table}_deduped AS (
   SELECT
     * EXCEPT(_n)
   FROM
-    numbered
+    {table}_numbered
   WHERE
     _n = 1 )"""
 
@@ -74,7 +74,7 @@ SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
 FROM
-  deduped
+  discovery_v1_deduped
 CROSS JOIN
   UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
 WHERE
@@ -127,7 +127,7 @@ TEST_EXPERIMENTS = f"""{WITH_DISCOVERY_V1_DEDUPED},
     FROM
       UNNEST(ping_info.experiments)) AS experiments,
   FROM
-    deduped
+    discovery_v1_deduped
   WHERE
     metrics.string.test_name = "{DEFAULT_TEST_NAME}"
   LIMIT
@@ -183,7 +183,7 @@ SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_overflow
 FROM
-  deduped
+  discovery_v1_deduped
 WHERE
   ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_overflow) > 0
   AND metrics.string.test_name = "{DEFAULT_TEST_NAME}"
@@ -207,7 +207,7 @@ TEST_STARBASE46_PING = f"""{WITH_STARBASE46_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
-  deduped
+  starbase46_v1_deduped
 WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
@@ -221,7 +221,7 @@ TEST_SPACE_SHIP_READY_PING = f"""{WITH_SPACE_SHIP_READY_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
-  deduped
+  space_ship_ready_v1_deduped
 WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
@@ -237,7 +237,7 @@ SELECT
   COUNT(*) AS count_documents,
   metrics.string.mission_identifier
 FROM
-  deduped
+  discovery_v1_deduped
 WHERE
   metrics.string.test_name = "test_disable_upload"
 GROUP BY
@@ -280,7 +280,7 @@ TEST_DELETION_REQUEST_PING = f"""{WITH_DELETION_REQUEST_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
-  deduped
+  deletion_request_v1_deduped
 WHERE
   metrics.string.test_name = "test_disable_upload"
 """
