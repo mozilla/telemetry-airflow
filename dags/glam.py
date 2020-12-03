@@ -104,15 +104,16 @@ clients_scalar_aggregates = bigquery_etl_query(
     dag=dag,
 )
 
-scalar_percentiles = bigquery_etl_query(
+scalar_percentiles = gke_command(
     task_id="scalar_percentiles",
-    destination_table="scalar_percentiles_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
+    command=[
+        "python3", "script/glam/run_scalar_agg_clustered_query.py",
+        "--submission-date", "{{ds}}",
+        "--dst-table", "scalar_percentiles_v1",
+        "--project", project_id,
+        "--dataset", dataset_id,
+    ],
+    docker_image="mozilla/bigquery-etl:latest",
     dag=dag,
 )
 
@@ -190,15 +191,16 @@ glam_user_counts = bigquery_etl_query(
     dag=dag,
 )
 
-client_scalar_probe_counts = bigquery_etl_query(
+client_scalar_probe_counts = gke_command(
     task_id="client_scalar_probe_counts",
-    destination_table="clients_scalar_probe_counts_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
+    command=[
+        "python3", "script/glam/run_scalar_agg_clustered_query.py",
+        "--submission-date", "{{ds}}",
+        "--dst-table", "clients_scalar_probe_counts_v1",
+        "--project", project_id,
+        "--dataset", dataset_id,
+    ],
+    docker_image="mozilla/bigquery-etl:latest",
     dag=dag,
 )
 
