@@ -61,7 +61,7 @@ for product in PRODUCTS:
     query = generate_and_run_glean_query(
         task_id=f"daily_{product}",
         product=product,
-        destination_project_id="glam-fenix-dev",
+        destination_project_id="moz-fx-data-glam-prod-fca7",
         env_vars=dict(STAGE="daily"),
         dag=dag,
     )
@@ -76,7 +76,7 @@ for product in final_products:
     query = generate_and_run_glean_query(
         task_id=f"incremental_{product}",
         product=product,
-        destination_project_id="glam-fenix-dev",
+        destination_project_id="moz-fx-data-glam-prod-fca7",
         env_vars=dict(STAGE="incremental"),
         dag=dag,
     )
@@ -88,7 +88,11 @@ for product in final_products:
     export = gke_command(
         task_id=f"export_{product}",
         cmds=["bash"],
-        env_vars={"DATASET": "glam_etl", "PRODUCT": product},
+        env_vars={
+            "DATASET": "glam_etl",
+            "PRODUCT": product,
+            "BUCKET": "moz-fx-data-glam-prod-fca7-etl-data",
+        },
         command=["script/glam/export_csv"],
         docker_image="mozilla/bigquery-etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",
