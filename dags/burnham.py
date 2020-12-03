@@ -284,6 +284,46 @@ WHERE
 
 WANT_TEST_DELETION_REQUEST_PING = [{"count_documents": 1}]
 
+# Test scenario test_deletion_request_ping_client_id: Verify that the Glean SDK
+# submitted a deletion-request ping with the expected client ID by joining
+# deletion-request records with discovery records. The following query returns
+# only the mission.identifier values for discovery pings submitted from burnham
+# clients that also submitted a deletion-request ping with the same client ID.
+TEST_DELETION_REQUEST_PING_CLIENT_ID = f"""
+WITH
+  {DISCOVERY_V1_DEDUPED},
+  discovery AS (
+  SELECT
+    client_info.client_id,
+    metrics.string.mission_identifier
+  FROM
+    discovery_v1_deduped
+  WHERE
+    metrics.string.test_name = "test_disable_upload" ),
+  {DELETION_REQUEST_V1_DEDUPED},
+  deletion_request AS (
+  SELECT
+    client_info.client_id
+  FROM
+    deletion_request_v1_deduped
+  WHERE
+    metrics.string.test_name = "test_disable_upload")
+SELECT
+  discovery.mission_identifier
+FROM
+  discovery
+JOIN
+  deletion_request
+USING
+  (client_id)
+ORDER BY
+  discovery.mission_identifier
+"""
+
+WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
+    {"mission_identifier": "MISSION B: TWO WARPS"},
+    {"mission_identifier": "MISSION C: ONE JUMP"},
+]
 
 # Sensor template for the different burnham tables. Note that we use BigQuery
 # query parameters in queries for test scenarios, because we need to serialize
@@ -724,6 +764,11 @@ with models.DAG(
             "query": TEST_DELETION_REQUEST_PING,
             "want": WANT_TEST_DELETION_REQUEST_PING,
         },
+        {
+            "name": "test_deletion_request_ping_client_id",
+            "query": TEST_DELETION_REQUEST_PING_CLIENT_ID,
+            "want": WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID,
+        },
     ]
 
     verify_deletion_request_data = burnham_bigquery_run(
@@ -734,4 +779,7 @@ with models.DAG(
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
-    verify_deletion_request_data.set_upstream(wait_for_deletion_request_data)
+
+    verify_deletion_request_data.set_upstream(
+        [wait_for_discovery_data, wait_for_deletion_request_data]
+    )
