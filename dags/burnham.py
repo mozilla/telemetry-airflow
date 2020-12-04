@@ -522,7 +522,7 @@ with DAG(
     "burnham",
     schedule_interval="@daily",
     default_args=DEFAULT_ARGS,
-    docs_md=DOCS,
+    doc_md=DOCS,
 ) as dag:
 
     # Generate a UUID for this test run
