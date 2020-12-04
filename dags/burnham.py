@@ -7,7 +7,7 @@ import datetime
 import json
 import uuid
 
-from airflow import models
+from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
@@ -518,7 +518,7 @@ def encode_test_scenarios(test_scenarios):
     return b64_encoded
 
 
-with models.DAG(
+with DAG(
     "burnham",
     schedule_interval="@daily",
     default_args=DEFAULT_ARGS,
