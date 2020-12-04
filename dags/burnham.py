@@ -781,5 +781,5 @@ with models.DAG(
     )
 
     verify_deletion_request_data.set_upstream(
-        [wait_for_discovery_data, wait_for_deletion_request_data]
+        [wait_for_discovery_data_disable_upload, wait_for_deletion_request_data]
     )
