@@ -593,7 +593,7 @@ with models.DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_discovery_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
+        [client1, client2, client3]
     )
 
     discovery_test_scenarios = [
@@ -643,7 +643,7 @@ with models.DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_starbase46_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
+        [client1, client2, client3]
     )
 
     starbase46_test_scenarios = [
@@ -678,7 +678,7 @@ with models.DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_space_ship_ready_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
+        [client1, client2, client3]
     )
 
     space_ship_ready_test_scenarios = [
@@ -712,7 +712,7 @@ with models.DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_discovery_data_disable_upload.set_upstream(
-        [generate_burnham_test_run_uuid, client4]
+        [client4]
     )
 
     discovery_test_scenarios_disable_upload = [
@@ -755,7 +755,7 @@ with models.DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_deletion_request_data.set_upstream(
-        [generate_burnham_test_run_uuid, client4]
+        [client4]
     )
 
     deletion_request_test_scenarios = [
