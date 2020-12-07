@@ -28,7 +28,7 @@ default_args = {
     "owner": "anatal@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 7),
-    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com", "anatal@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com", "anatal@mozilla.com", "epavlov@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 0,
@@ -43,7 +43,7 @@ amodump = GKEPodOperator(
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.1",
     owner="anatal@mozilla.com",
-    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com"],
+    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com", "epavlov@mozilla.com"],
     arguments=["-m", "taar_etl.taar_amodump", "--date", "{{ ds_nodash }}"],
     env_vars={
         "AWS_ACCESS_KEY_ID": taar_aws_access_key,
@@ -58,7 +58,7 @@ amowhitelist = GKEPodOperator(
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.1",
     owner="anatal@mozilla.com",
-    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com"],
+    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com", "epavlov@mozilla.com"],
     # We are extracting addons from the AMO server's APIs which don't
     # support date based queries, so no date parameter is required
     # here.
@@ -76,7 +76,7 @@ editorial_whitelist = GKEPodOperator(
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
     image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.1",
     owner="anatal@mozilla.com",
-    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com"],
+    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com", "epavlov@mozilla.com"],
     arguments=["-m", "taar_etl.taar_update_whitelist", "--date", "{{ ds_nodash }}"],
     env_vars={
         "AWS_ACCESS_KEY_ID": taar_aws_access_key,
@@ -187,7 +187,8 @@ taar_collaborative_recommender = SubDagOperator(
             key: value
             for key, value in chain(default_args.items(), [
                 ("owner", "mlopatka@mozilla.com"),
-                ("email", ["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "anatal@mozilla.com"]),
+                ("email", ["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "anatal@mozilla.com",
+                           "epavlov@mozilla.com"]),
             ])
         },
     ),
