@@ -7,11 +7,23 @@ import datetime
 import json
 import uuid
 
-from airflow import models
+from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
+
+DOCS = """\
+# burnham 👩‍🚀📈🤖
+
+The burnham project is an end-to-end test suite that aims to automatically
+verify that Glean-based products correctly measure, collect, and submit
+non-personal information to the GCP-based Data Platform and that the received
+telemetry data is then correctly processed, stored to the respective tables
+and made available in BigQuery.
+
+See https://github.com/mozilla/burnham
+"""
 
 DAG_OWNER = "rpierzina@mozilla.com"
 DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com"]
@@ -506,8 +518,11 @@ def encode_test_scenarios(test_scenarios):
     return b64_encoded
 
 
-with models.DAG(
-    "burnham", schedule_interval="@daily", default_args=DEFAULT_ARGS,
+with DAG(
+    "burnham",
+    schedule_interval="@daily",
+    default_args=DEFAULT_ARGS,
+    doc_md=DOCS,
 ) as dag:
 
     # Generate a UUID for this test run
@@ -592,9 +607,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
-    )
+    wait_for_discovery_data.set_upstream([client1, client2, client3])
 
     discovery_test_scenarios = [
         {
@@ -642,9 +655,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_starbase46_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
-    )
+    wait_for_starbase46_data.set_upstream([client1, client2, client3])
 
     starbase46_test_scenarios = [
         {
@@ -677,9 +688,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_space_ship_ready_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
-    )
+    wait_for_space_ship_ready_data.set_upstream([client1, client2, client3])
 
     space_ship_ready_test_scenarios = [
         {
@@ -711,9 +720,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data_disable_upload.set_upstream(
-        [generate_burnham_test_run_uuid, client4]
-    )
+    wait_for_discovery_data_disable_upload.set_upstream([client4])
 
     discovery_test_scenarios_disable_upload = [
         {
@@ -754,9 +761,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_deletion_request_data.set_upstream(
-        [generate_burnham_test_run_uuid, client4]
-    )
+    wait_for_deletion_request_data.set_upstream([client4])
 
     deletion_request_test_scenarios = [
         {
