@@ -7,11 +7,23 @@ import datetime
 import json
 import uuid
 
-from airflow import models
+from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
+
+DOCS = """\
+# burnham 👩‍🚀📈🤖
+
+The burnham project is an end-to-end test suite that aims to automatically
+verify that Glean-based products correctly measure, collect, and submit
+non-personal information to the GCP-based Data Platform and that the received
+telemetry data is then correctly processed, stored to the respective tables
+and made available in BigQuery.
+
+See https://github.com/mozilla/burnham
+"""
 
 DAG_OWNER = "rpierzina@mozilla.com"
 DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com"]
@@ -29,9 +41,8 @@ DEFAULT_TEST_NAME = "test_burnham"
 
 # Live tables are not guaranteed to be deduplicated. To ensure reproducibility,
 # we need to deduplicate Glean pings produced by burnham for these tests.
-WITH_DEDUPED_TABLE = """
-WITH
-  numbered AS (
+DEDUPED_TABLE = """
+  {table}_numbered AS (
   SELECT
     ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
     *
@@ -41,27 +52,25 @@ WITH
     submission_timestamp BETWEEN TIMESTAMP_SUB(@burnham_start_timestamp, INTERVAL 1 HOUR)
     AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
     AND metrics.uuid.test_run = @burnham_test_run ),
-  deduped AS (
+  {table}_deduped AS (
   SELECT
     * EXCEPT(_n)
   FROM
-    numbered
+    {table}_numbered
   WHERE
     _n = 1 )"""
 
-WITH_DISCOVERY_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
-    project_id=PROJECT_ID, table="discovery_v1"
-)
+DISCOVERY_V1_DEDUPED = DEDUPED_TABLE.format(project_id=PROJECT_ID, table="discovery_v1")
 
-WITH_STARBASE46_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+STARBASE46_V1_DEDUPED = DEDUPED_TABLE.format(
     project_id=PROJECT_ID, table="starbase46_v1"
 )
 
-WITH_SPACE_SHIP_READY_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+SPACE_SHIP_READY_V1_DEDUPED = DEDUPED_TABLE.format(
     project_id=PROJECT_ID, table="space_ship_ready_v1"
 )
 
-WITH_DELETION_REQUEST_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
+DELETION_REQUEST_V1_DEDUPED = DEDUPED_TABLE.format(
     project_id=PROJECT_ID, table="deletion_request_v1"
 )
 
@@ -69,12 +78,12 @@ WITH_DELETION_REQUEST_V1_DEDUPED = WITH_DEDUPED_TABLE.format(
 # Test scenario test_labeled_counter_metrics: Verify that labeled_counter
 # metric values reported by the Glean SDK across several documents from three
 # different clients are correct.
-TEST_LABELED_COUNTER_METRICS = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_LABELED_COUNTER_METRICS = f"""WITH {DISCOVERY_V1_DEDUPED}
 SELECT
   technology_space_travel.key,
   SUM(technology_space_travel.value) AS value_sum
 FROM
-  deduped
+  discovery_v1_deduped
 CROSS JOIN
   UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
 WHERE
@@ -118,7 +127,7 @@ WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
 # which is enrolled in the spore_drive experiment on branch tardigrade, and a
 # client which is enrolled in the spore_drive experiment on branch
 # tardigrade-dna.
-TEST_EXPERIMENTS = f"""{WITH_DISCOVERY_V1_DEDUPED},
+TEST_EXPERIMENTS = f"""WITH {DISCOVERY_V1_DEDUPED},
   base AS (
   SELECT
     ARRAY(
@@ -127,7 +136,7 @@ TEST_EXPERIMENTS = f"""{WITH_DISCOVERY_V1_DEDUPED},
     FROM
       UNNEST(ping_info.experiments)) AS experiments,
   FROM
-    deduped
+    discovery_v1_deduped
   WHERE
     metrics.string.test_name = "{DEFAULT_TEST_NAME}"
   LIMIT
@@ -178,12 +187,12 @@ WANT_TEST_EXPERIMENTS = [
 # correctly reports the number of times a string metric was set to a value that
 # exceeds the maximum string length measured in the number of bytes when the
 # string is encoded in UTF-8.
-TEST_GLEAN_ERROR_INVALID_OVERFLOW = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_GLEAN_ERROR_INVALID_OVERFLOW = f"""WITH {DISCOVERY_V1_DEDUPED}
 SELECT
   metrics.string.mission_identifier,
   metrics.labeled_counter.glean_error_invalid_overflow
 FROM
-  deduped
+  discovery_v1_deduped
 WHERE
   ARRAY_LENGTH(metrics.labeled_counter.glean_error_invalid_overflow) > 0
   AND metrics.string.test_name = "{DEFAULT_TEST_NAME}"
@@ -203,11 +212,11 @@ WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
 
 # Test scenario test_starbase46_ping: Verify that the Glean SDK and the
 # Data Platform support custom pings using the numbered naming scheme
-TEST_STARBASE46_PING = f"""{WITH_STARBASE46_V1_DEDUPED}
+TEST_STARBASE46_PING = f"""WITH {STARBASE46_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
-  deduped
+  starbase46_v1_deduped
 WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
@@ -217,11 +226,11 @@ WANT_TEST_STARBASE46_PING = [{"count_documents": 1}]
 
 # Test scenario test_space_ship_ready_ping: Verify that the Glean SDK and the
 # Data Platform support custom pings using the kebab-case naming scheme
-TEST_SPACE_SHIP_READY_PING = f"""{WITH_SPACE_SHIP_READY_V1_DEDUPED}
+TEST_SPACE_SHIP_READY_PING = f"""WITH {SPACE_SHIP_READY_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
-  deduped
+  space_ship_ready_v1_deduped
 WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
@@ -232,12 +241,12 @@ WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
 # Test scenario test_no_ping_after_upload_disabled: Verify that the Glean SDK
 # does not upload pings after upload was disabled and resumes to uploading
 # pings after it was re-enabled again.
-TEST_NO_PING_AFTER_UPLOAD_DISABLED = f"""{WITH_DISCOVERY_V1_DEDUPED}
+TEST_NO_PING_AFTER_UPLOAD_DISABLED = f"""WITH {DISCOVERY_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents,
   metrics.string.mission_identifier
 FROM
-  deduped
+  discovery_v1_deduped
 WHERE
   metrics.string.test_name = "test_disable_upload"
 GROUP BY
@@ -276,17 +285,57 @@ WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 2}]
 
 # Test scenario test_deletion_request_ping: Verify that the Glean SDK submitted
 # a deletion-request ping after upload was disabled.
-TEST_DELETION_REQUEST_PING = f"""{WITH_DELETION_REQUEST_V1_DEDUPED}
+TEST_DELETION_REQUEST_PING = f"""WITH {DELETION_REQUEST_V1_DEDUPED}
 SELECT
   COUNT(*) AS count_documents
 FROM
-  deduped
+  deletion_request_v1_deduped
 WHERE
   metrics.string.test_name = "test_disable_upload"
 """
 
 WANT_TEST_DELETION_REQUEST_PING = [{"count_documents": 1}]
 
+# Test scenario test_deletion_request_ping_client_id: Verify that the Glean SDK
+# submitted a deletion-request ping with the expected client ID by joining
+# deletion-request records with discovery records. The following query returns
+# only the mission.identifier values for discovery pings submitted from burnham
+# clients that also submitted a deletion-request ping with the same client ID.
+TEST_DELETION_REQUEST_PING_CLIENT_ID = f"""
+WITH
+  {DISCOVERY_V1_DEDUPED},
+  discovery AS (
+  SELECT
+    client_info.client_id,
+    metrics.string.mission_identifier
+  FROM
+    discovery_v1_deduped
+  WHERE
+    metrics.string.test_name = "test_disable_upload" ),
+  {DELETION_REQUEST_V1_DEDUPED},
+  deletion_request AS (
+  SELECT
+    client_info.client_id
+  FROM
+    deletion_request_v1_deduped
+  WHERE
+    metrics.string.test_name = "test_disable_upload")
+SELECT
+  discovery.mission_identifier
+FROM
+  discovery
+JOIN
+  deletion_request
+USING
+  (client_id)
+ORDER BY
+  discovery.mission_identifier
+"""
+
+WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
+    {"mission_identifier": "MISSION B: TWO WARPS"},
+    {"mission_identifier": "MISSION C: ONE JUMP"},
+]
 
 # Sensor template for the different burnham tables. Note that we use BigQuery
 # query parameters in queries for test scenarios, because we need to serialize
@@ -469,8 +518,11 @@ def encode_test_scenarios(test_scenarios):
     return b64_encoded
 
 
-with models.DAG(
-    "burnham", schedule_interval="@daily", default_args=DEFAULT_ARGS,
+with DAG(
+    "burnham",
+    schedule_interval="@daily",
+    default_args=DEFAULT_ARGS,
+    doc_md=DOCS,
 ) as dag:
 
     # Generate a UUID for this test run
@@ -555,9 +607,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
-    )
+    wait_for_discovery_data.set_upstream([client1, client2, client3])
 
     discovery_test_scenarios = [
         {
@@ -605,9 +655,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_starbase46_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
-    )
+    wait_for_starbase46_data.set_upstream([client1, client2, client3])
 
     starbase46_test_scenarios = [
         {
@@ -640,9 +688,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_space_ship_ready_data.set_upstream(
-        [generate_burnham_test_run_uuid, client1, client2, client3]
-    )
+    wait_for_space_ship_ready_data.set_upstream([client1, client2, client3])
 
     space_ship_ready_test_scenarios = [
         {
@@ -674,9 +720,7 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data_disable_upload.set_upstream(
-        [generate_burnham_test_run_uuid, client4]
-    )
+    wait_for_discovery_data_disable_upload.set_upstream([client4])
 
     discovery_test_scenarios_disable_upload = [
         {
@@ -717,15 +761,18 @@ with models.DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_deletion_request_data.set_upstream(
-        [generate_burnham_test_run_uuid, client4]
-    )
+    wait_for_deletion_request_data.set_upstream([client4])
 
     deletion_request_test_scenarios = [
         {
             "name": "test_deletion_request_ping",
             "query": TEST_DELETION_REQUEST_PING,
             "want": WANT_TEST_DELETION_REQUEST_PING,
+        },
+        {
+            "name": "test_deletion_request_ping_client_id",
+            "query": TEST_DELETION_REQUEST_PING_CLIENT_ID,
+            "want": WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID,
         },
     ]
 
@@ -737,4 +784,7 @@ with models.DAG(
         owner=DAG_OWNER,
         email=DAG_EMAIL,
     )
-    verify_deletion_request_data.set_upstream(wait_for_deletion_request_data)
+
+    verify_deletion_request_data.set_upstream(
+        [wait_for_discovery_data_disable_upload, wait_for_deletion_request_data]
+    )
