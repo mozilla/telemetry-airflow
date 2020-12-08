@@ -11,7 +11,7 @@ from utils.gcp import bigquery_etl_query
 
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 project_id = "moz-fx-data-shared-prod"
-glam_bucket = "glam-dev-bespoke-nonprod-dataops-mozgcp-net"
+glam_bucket = "moz-fx-data-glam-prod-fca7-etl-data"
 
 
 def extracts_subdag(
