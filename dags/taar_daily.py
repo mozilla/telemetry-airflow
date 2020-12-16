@@ -13,6 +13,7 @@ from utils.dataproc import (
     moz_dataproc_jar_runner,
 )
 
+TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
 
 # Dataproc connection to GCP
 gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
@@ -173,6 +174,7 @@ taar_collaborative_recommender = SubDagOperator(
           "--inputTable=gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6",
           "--privateBucket=s3a://telemetry-parquet",
           "--publicBucket=s3a://telemetry-public-analysis-2",
+          f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints"
         ],
         cluster_name="addon-recommender-{{ds_nodash}}",
         image_version="1.3",
