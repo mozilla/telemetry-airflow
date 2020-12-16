@@ -47,8 +47,8 @@ with DAG(
         task_id="wait_for_socorro_import",
         external_dag_id="socorro_import",
         external_task_id="bigquery_load",
-        execution_delta=datetime.timedelta(hours=2),
         check_existence=True,
+        execution_delta=datetime.timedelta(hours=5),
         dag=dag,
     )
 
