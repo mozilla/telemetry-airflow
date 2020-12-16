@@ -64,7 +64,7 @@ with DAG(
             default_args=default_args,
             cluster_name="modules-with-missing-symbols-{{ ds }}",
             job_name="modules-with-missing-symbols",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/mozetl/symbolication/modules_with_missing_symbols.py",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/symbolication/modules_with_missing_symbols.py",
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
@@ -108,7 +108,7 @@ with DAG(
                 "spark-env:AWS_SECRET_ACCESS_KEY": analysis_secret_key,
             },
             py_args=[
-                "--run-on-days", "1 3 5",  # run monday, wednesday, friday
+                "--run-on-days", "1", "3", "5",  # run monday, wednesday, friday
                 "--date", "{{ ds }}",
             ],
             idle_delete_ttl="14400",
