@@ -54,15 +54,13 @@ with DAG(
             job_name="bhr-collection",
             python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/bhr_collection/bhr_collection.py",
             init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
-            additional_metadata={'PIP_PACKAGES': "boto3==1.16.20"},
+            additional_metadata={"PIP_PACKAGES": "boto3==1.16.20 click==7.1.2"},
             additional_properties={
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
                 "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
                 "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key
             },
-            py_args=[
-                "--sample-size", 0.5,
-            ],
+            py_args=["--sample-size", 0.5],
             idle_delete_ttl="14400",
             num_workers=5,
             worker_machine_type="n2-highmem-4",
