@@ -62,7 +62,7 @@ with DAG(
             },
             py_args=[
                 "--date", "{{ ds }}",
-                "--sample-size", 0.5,
+                "--sample-size", "0.5",
             ],
             idle_delete_ttl="14400",
             num_workers=5,
