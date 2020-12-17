@@ -64,7 +64,7 @@ with DAG(
             default_args=default_args,
             cluster_name="modules-with-missing-symbols-{{ ds }}",
             job_name="modules-with-missing-symbols",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/symbolication/modules_with_missing_symbols.py",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/modules_with_missing_symbols.py",
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
@@ -97,7 +97,7 @@ with DAG(
             default_args=default_args,
             cluster_name="top-signatures-correlations-{{ ds }}",
             job_name="top-signatures-correlations",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/symbolication/top_signatures_correlations.py",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
