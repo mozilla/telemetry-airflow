@@ -60,7 +60,10 @@ with DAG(
                 "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
                 "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key
             },
-            py_args=["--sample-size", 0.5],
+            py_args=[
+                "--date", "{{ ds }}",
+                "--sample-size", 0.5,
+            ],
             idle_delete_ttl="14400",
             num_workers=5,
             worker_machine_type="n2-highmem-4",
