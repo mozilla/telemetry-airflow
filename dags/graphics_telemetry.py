@@ -62,7 +62,7 @@ with DAG(
             default_args=default_args,
             cluster_name="graphics-trends-{{ ds }}",
             job_name="graphics-trends",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/graphics/graphics_telemetry_trends.py",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/graphics/graphics_telemetry_trends.py",
             init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
             additional_metadata={'PIP_PACKAGES': " ".join(PIP_PACKAGES)},
             additional_properties={
@@ -94,7 +94,7 @@ with DAG(
             default_args=default_args,
             cluster_name="graphics-dashboard-{{ ds }}",
             job_name="graphics-dashboard",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/master/mozetl/graphics/graphics_telemetry_dashboard.py",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/graphics/graphics_telemetry_dashboard.py",
             init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
             additional_metadata={'PIP_PACKAGES': " ".join(PIP_PACKAGES)},
             additional_properties={
