@@ -31,7 +31,7 @@ with DAG(
     "crash_symbolication",
     default_args=default_args,
     # dag runs daily but tasks only run on certain days
-    schedule_interval="0 5 * * *",
+    schedule_interval="0 5 * * 0,2,4",
 ) as dag:
     # top_signatures_correlations uploads results to public analysis bucket
     write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
@@ -75,7 +75,7 @@ with DAG(
                 "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
             },
             py_args=[
-                "--run-on-days", "1",  # run monday
+                "--run-on-days", "0",  # run monday
                 "--date", "{{ ds }}"
             ],
             idle_delete_ttl="14400",
@@ -108,7 +108,7 @@ with DAG(
                 "spark-env:AWS_SECRET_ACCESS_KEY": analysis_secret_key,
             },
             py_args=[
-                "--run-on-days", "1", "3", "5",  # run monday, wednesday, friday
+                "--run-on-days", "0", "2", "4",  # run monday, wednesday, friday
                 "--date", "{{ ds }}",
             ],
             idle_delete_ttl="14400",
