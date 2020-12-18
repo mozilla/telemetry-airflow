@@ -5,6 +5,7 @@ from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.models import Variable
 from itertools import chain
 
 from operators.gcp_container_operator import GKEPodOperator  # noqa
