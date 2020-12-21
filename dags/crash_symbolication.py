@@ -31,7 +31,7 @@ with DAG(
     "crash_symbolication",
     default_args=default_args,
     # dag runs daily but tasks only run on certain days
-    schedule_interval="0 5 * * 0,2,4",
+    schedule_interval="0 5 * * *",
 ) as dag:
     # top_signatures_correlations uploads results to public analysis bucket
     write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
