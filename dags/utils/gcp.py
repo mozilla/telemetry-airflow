@@ -527,6 +527,7 @@ def bigquery_etl_query(
 def bigquery_etl_copy_deduplicate(
     task_id,
     target_project_id,
+    billing_projects=(),
     only_tables=None,
     except_tables=None,
     parallelism=4,
@@ -545,6 +546,8 @@ def bigquery_etl_copy_deduplicate(
 
     :param str task_id:              [Required] ID for the task
     :param str target_project_id:    [Required] ID of project where target tables live
+    :param Tuple[str] billing_projects: ID of projects where queries will be executed,
+                                     defaults to gcp_conn_id project
     :param Tuple[str] only_tables:   Only process tables matching the given globs of form 'telemetry_live.main_v*'
     :param Tuple[str] except_tables: Process all tables except those matching the given globs
     :param int parallelism:          Maximum number of queries to execute concurrently
@@ -579,6 +582,7 @@ def bigquery_etl_copy_deduplicate(
         image=docker_image,
         arguments=["script/copy_deduplicate"]
         + ["--project-id=" + target_project_id]
+        + (["--billing-projects"] + list(bp) if billing_projects else [])
         + ["--date={{ds}}"]
         + ["--parallelism={}".format(parallelism)]
         + ["--priority={}".format(priority)]
