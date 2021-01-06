@@ -582,7 +582,7 @@ def bigquery_etl_copy_deduplicate(
         image=docker_image,
         arguments=["script/copy_deduplicate"]
         + ["--project-id=" + target_project_id]
-        + (["--billing-projects"] + list(bp) if billing_projects else [])
+        + (["--billing-projects"] + list(billing_projects) if billing_projects else [])
         + ["--date={{ds}}"]
         + ["--parallelism={}".format(parallelism)]
         + ["--priority={}".format(priority)]
