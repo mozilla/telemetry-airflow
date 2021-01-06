@@ -39,6 +39,7 @@ with models.DAG(
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all",
         target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
         priority_weight=100,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
@@ -49,6 +50,7 @@ with models.DAG(
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
         target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
         only_tables=["telemetry_live.main_v4"],
         parallelism=24,
         slices=100,
