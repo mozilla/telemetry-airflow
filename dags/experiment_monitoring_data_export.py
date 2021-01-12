@@ -21,10 +21,10 @@ with DAG('experiment_monitoring_data_export',
          default_args=default_args,
          schedule_interval="*/5 * * * *") as dag:
 
-    wait_for_experiment_enrollment_aggregates_recents = ExternalTaskSensor(
-        task_id="wait_for_experiment_enrollment_aggregates_recents",
+    wait_for_experiment_enrollment_cumulative_population_estimate = ExternalTaskSensor(
+        task_id="wait_for_experiment_enrollment_cumulative_population_estimate",
         external_dag_id="bqetl_experiments_live",
-        external_task_id="experiment_enrollment_aggregates_recents",
+        external_task_id="experiment_enrollment_cumulative_population_estimate",
         check_existence=True,
         dag=dag
     )
@@ -39,4 +39,4 @@ with DAG('experiment_monitoring_data_export',
         docker_image=docker_image
     )
 
-    export_monitoring_data.set_upstream(wait_for_experiment_enrollment_aggregates_recents)    
+    export_monitoring_data.set_upstream(wait_for_experiment_enrollment_cumulative_population_estimate)    
