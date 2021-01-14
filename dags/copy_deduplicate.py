@@ -88,6 +88,39 @@ with models.DAG(
     copy_deduplicate_main_ping >> bq_main_events
 
     # todo: remove
+
+    # Experiment enrollment aggregates chain
+
+    gen_query_task_id = "experiment_enrollment_aggregates_live_generate_query"
+
+    # setting xcom_push to True outputs this query to an xcom
+    experiment_enrollment_aggregates_live_generate_query = gke_command(
+        task_id=gen_query_task_id,
+        command=[
+            "python",
+            "sql/moz-fx-data-shared-prod/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
+            "--submission-date",
+            "{{ ds }}",
+            "--json-output",
+            "--wait-seconds",
+            "15",
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
+        xcom_push=True,
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+
+    experiment_enrollment_aggregates_live_run_query = bigquery_xcom_query(
+        task_id="experiment_enrollment_aggregates_live_run_query",
+        destination_table=None,
+        dataset_id="telemetry_derived",
+        xcom_task_id=gen_query_task_id,
+        owner="ssuh@mozilla.com",
+        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
+
+    experiment_enrollment_aggregates_live_generate_query >> experiment_enrollment_aggregates_live_run_query
+
+
     # Experiment search aggregates chain (depends on main)
 
     experiment_search_aggregates = bigquery_etl_query(
