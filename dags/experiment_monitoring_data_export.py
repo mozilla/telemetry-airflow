@@ -29,6 +29,30 @@ with DAG('experiment_monitoring_data_export',
         dag=dag
     )
 
+    wait_for_experiment_enrollment_other_events_overall = ExternalTaskSensor(
+        task_id="wait_for_experiment_enrollment_other_events_overall",
+        external_dag_id="bqetl_experiments_live",
+        external_task_id="experiment_enrollment_other_events_overall",
+        check_existence=True,
+        dag=dag
+    )
+
+    wait_for_experiment_enrollment_overall = ExternalTaskSensor(
+        task_id="wait_for_experiment_enrollment_overall",
+        external_dag_id="bqetl_experiments_live",
+        external_task_id="telemetry_derived__experiment_enrollment_overall__v1",
+        check_existence=True,
+        dag=dag
+    )
+
+    wait_for_experiment_unenrollment_overall = ExternalTaskSensor(
+        task_id="wait_for_experiment_unenrollment_overall",
+        external_dag_id="bqetl_experiments_live",
+        external_task_id="telemetry_derived__experiment_unenrollment_overall__v1",
+        check_existence=True,
+        dag=dag
+    )
+
     docker_image = "mozilla/bigquery-etl:latest"
     export_monitoring_data = gke_command(
         task_id="export_monitoring_data",
@@ -39,4 +63,7 @@ with DAG('experiment_monitoring_data_export',
         docker_image=docker_image
     )
 
-    export_monitoring_data.set_upstream(wait_for_experiment_enrollment_cumulative_population_estimate)    
+    export_monitoring_data.set_upstream(wait_for_experiment_enrollment_cumulative_population_estimate)
+    export_monitoring_data.set_upstream(wait_for_experiment_unenrollment_overall)
+    export_monitoring_data.set_upstream(wait_for_experiment_enrollment_overall)
+    export_monitoring_data.set_upstream(wait_for_experiment_enrollment_other_events_overall)
