@@ -104,7 +104,7 @@ with DAG(
             },
             py_args=[
                 "--output-bucket", "telemetry-public-analysis-2",
-                "--output-prefix", "public-data-report/hardware/",
+                "--output-prefix", "gfx/telemetry-data/",
                 "--release-fraction", "0.003",
             ],
             idle_delete_ttl="14400",
