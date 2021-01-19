@@ -41,7 +41,7 @@ with DAG('experiment_monitoring_data_export',
         },
         {
             "upstream_task": "telemetry_derived__experiment_unenrollment_overall__v1",
-            "dataset": "moz-fx-data-shared-prod.telemetry.experiment_enrollment_unenrollment_overall"
+            "dataset": "moz-fx-data-shared-prod.telemetry.experiment_unenrollment_overall"
         }
     ]
 
