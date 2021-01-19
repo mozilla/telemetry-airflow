@@ -54,7 +54,7 @@ with DAG('experiment_monitoring_data_export',
             command=[
                 "python",
                 "script/experiments/export_experiment_monitoring_data.py",
-                "--date", "{{ ds }}"
+                "--date", "{{ ds }}",
                 "--datasets", export_task["dataset"]
             ],
             docker_image=docker_image
