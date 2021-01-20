@@ -17,7 +17,7 @@ default_args = {
 
 with DAG('experiments_live',
          default_args=default_args,
-         concurrency=1,
+         concurrency=4,
          max_active_runs=1,
          schedule_interval="*/5 * * * *") as dag:
 
@@ -71,6 +71,7 @@ with DAG('experiments_live',
             docker_image=docker_image
         )
 
+        query_etl.set_upstream(experiment_enrollment_aggregates_recents)
         export_monitoring_data.set_upstream(query_etl)
 
     export_daily_active_population_monitoring_data = gke_command(
