@@ -17,7 +17,6 @@ from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
     export_to_parquet,
-    load_to_bigquery,
     gke_command,
 )
 
