@@ -17,7 +17,8 @@ default_args = {
 
 with DAG('experiments_live',
          default_args=default_args,
-         concurrency=5,
+         concurrency=1,
+         max_active_runs=1,
          schedule_interval="*/5 * * * *") as dag:
 
     docker_image = "mozilla/bigquery-etl:latest"
