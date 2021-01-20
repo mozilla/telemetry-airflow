@@ -45,6 +45,16 @@ with DAG('experiments_live',
         "moz-fx-data-shared-prod.telemetry_derived.experiment_unenrollment_overall_v1"
     ]
 
+    export_monitoring_data = gke_command(
+        task_id="export_monitoring_data",
+        command=[
+            "python",
+            "script/experiments/export_experiment_monitoring_data.py",
+            "--datasets"
+        ] + datasets,
+        docker_image=docker_image
+    )
+
     for dataset in datasets:
         task_id = dataset.split(".")[-1]
 
@@ -60,17 +70,6 @@ with DAG('experiments_live',
             dag=dag,
         )
 
-        export_monitoring_data = gke_command(
-            task_id=f"export_{task_id}",
-            command=[
-                "python",
-                "script/experiments/export_experiment_monitoring_data.py",
-                "--date", "{{ ds }}",
-                "--datasets", dataset
-            ],
-            docker_image=docker_image
-        )
-
         query_etl.set_upstream(experiment_enrollment_aggregates_recents)
         export_monitoring_data.set_upstream(query_etl)
 
@@ -79,7 +78,6 @@ with DAG('experiments_live',
         command=[
             "python",
             "script/experiments/export_experiment_monitoring_data.py",
-            "--date", "{{ ds }}",
             "--datasets", "moz-fx-data-shared-prod.telemetry.experiment_enrollment_daily_active_population"
         ],
         docker_image=docker_image
