@@ -175,7 +175,7 @@ histogram_percentiles = bigquery_etl_query(
     project_id=project_id,
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
-    arguments=("--replace",),
+    arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
 )
 
@@ -228,7 +228,7 @@ clients_histogram_probe_counts = bigquery_etl_query(
     project_id=project_id,
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
-    arguments=("--replace",),
+    arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
 )
 
