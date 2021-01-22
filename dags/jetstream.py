@@ -40,6 +40,8 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__clients_daily__v6",
         execution_delta=timedelta(hours=2),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 
@@ -48,6 +50,8 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__main_summary__v4",
         execution_delta=timedelta(hours=2),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 
@@ -56,6 +60,8 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_daily__v8",
         execution_delta=timedelta(hours=1),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 
@@ -64,6 +70,8 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
         execution_delta=timedelta(hours=3),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 
@@ -72,6 +80,8 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         external_dag_id="copy_deduplicate",
         external_task_id="event_events",
         execution_delta=timedelta(hours=3),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 

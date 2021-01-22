@@ -56,6 +56,8 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
     external_task_id="copy_deduplicate_all",
     execution_delta=timedelta(hours=1),
     check_existence=True,
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
     dag=dag,
 )
 

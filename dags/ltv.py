@@ -98,6 +98,8 @@ else:
         external_task_id="search_derived__search_clients_last_seen__v1",
         execution_delta=timedelta(hours=1),
         check_existence=True,
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
     wait_for_search_clients_last_seen >> ltv_daily

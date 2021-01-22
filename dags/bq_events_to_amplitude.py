@@ -91,12 +91,16 @@ with models.DAG(
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         execution_delta=datetime.timedelta(hours=1),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag)
     wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
         execution_delta=datetime.timedelta(hours=1),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 
@@ -187,6 +191,7 @@ with models.DAG(
         external_task_id="firefox_accounts_derived__fxa_delete_events__v1",
         check_existence=True,
         mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         execution_delta=datetime.timedelta(minutes=30),
         dag=dag,
     )
