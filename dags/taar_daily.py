@@ -230,7 +230,7 @@ taar_lite_guidranking = GKEPodOperator(
     owner="epavlov@mozilla.com",
     email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com", "epavlov@mozilla.com"],
     arguments=["-m", "taar_etl.taar_lite_guid_ranking",
-               "--date", "{{ ds_nodash }}",
+               "--date", "{{ ds }}",
                "--bucket", TAAR_ETL_STORAGE_BUCKET],
     dag=dag
 )
