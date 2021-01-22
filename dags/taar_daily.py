@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.models import Variable
@@ -223,6 +222,20 @@ taar_lite = SubDagOperator(
 )
 
 
+taar_lite_guidranking = GKEPodOperator(
+    task_id="taar_lite_guidranking",
+    name="taar_lite_guidranking",
+    # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
+    image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.0",
+    owner="epavlov@mozilla.com",
+    email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com", "epavlov@mozilla.com"],
+    arguments=["-m", "taar_etl.taar_lite_guid_ranking",
+               "--date", "{{ ds_nodash }}",
+               "--bucket", TAAR_ETL_STORAGE_BUCKET],
+    dag=dag
+)
+
+
 amodump >> amowhitelist
 amodump >> editorial_whitelist
 
@@ -230,3 +243,4 @@ wait_for_clients_daily_export >> taar_similarity
 wait_for_clients_daily_export >> taar_locale
 wait_for_clients_daily_export >> taar_collaborative_recommender
 wait_for_clients_daily_export >> taar_lite
+wait_for_clients_daily_export >> taar_lite_guidranking
