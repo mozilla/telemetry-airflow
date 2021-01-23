@@ -226,7 +226,7 @@ taar_lite_guidranking = GKEPodOperator(
     task_id="taar_lite_guidranking",
     name="taar_lite_guidranking",
     # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
-    image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.0",
+    image="gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.1",
     owner="epavlov@mozilla.com",
     email=["mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com", "epavlov@mozilla.com"],
     arguments=["-m", "taar_etl.taar_lite_guid_ranking",
