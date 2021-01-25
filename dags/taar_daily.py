@@ -91,6 +91,8 @@ wait_for_clients_daily_export = ExternalTaskSensor(
     external_dag_id="parquet_export",
     external_task_id="clients_daily_export",
     execution_delta=timedelta(hours=1),
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
     dag=dag)
 
 taar_locale = SubDagOperator(

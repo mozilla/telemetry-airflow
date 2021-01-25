@@ -49,6 +49,8 @@ with DAG(
         external_task_id="bigquery_load",
         check_existence=True,
         execution_delta=datetime.timedelta(hours=5),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         dag=dag,
     )
 

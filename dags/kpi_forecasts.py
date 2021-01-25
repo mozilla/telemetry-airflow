@@ -41,6 +41,7 @@ with models.DAG(
         external_task_id="telemetry_derived__firefox_nondesktop_exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         execution_delta=timedelta(hours=1),
         dag=dag,
     )
@@ -63,6 +64,7 @@ with models.DAG(
         external_task_id="firefox_desktop_exact_mau28_by_dimensions",
         check_existence=True,
         mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         execution_delta=timedelta(hours=2),
         dag=dag,
     )
@@ -84,6 +86,7 @@ with models.DAG(
         external_task_id="firefox_accounts_derived__exact_mau28__v1",
         check_existence=True,
         mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
         execution_delta=timedelta(hours=2, minutes=30),
         dag=dag,
     )

@@ -27,6 +27,8 @@ with DAG('incline_dashboard',
         external_dag_id="copy_deduplicate",
         external_task_id="baseline_clients_last_seen",
         execution_delta=timedelta(hours=3),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     wait_for_core_clients_last_seen = ExternalTaskSensor(
@@ -34,6 +36,8 @@ with DAG('incline_dashboard',
         external_dag_id="bqetl_core",
         external_task_id="telemetry_derived__core_clients_last_seen__v1",
         execution_delta=timedelta(hours=2),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
     )
 
     project = "moz-fx-data-shared-prod"

@@ -17,7 +17,6 @@ from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
     export_to_parquet,
-    load_to_bigquery,
     gke_command,
 )
 
@@ -154,6 +153,8 @@ wait_for_clients_daily = ExternalTaskSensor(
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__clients_daily__v6",
     execution_delta=timedelta(hours=1),
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
     dag=dag)
 
 wait_for_main_summary = ExternalTaskSensor(
@@ -161,6 +162,8 @@ wait_for_main_summary = ExternalTaskSensor(
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__main_summary__v4",
     execution_delta=timedelta(hours=1),
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
     dag=dag)
 
 main_summary_export.set_upstream(wait_for_main_summary)
