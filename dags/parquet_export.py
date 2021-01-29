@@ -5,7 +5,6 @@ from airflow.executors import get_default_executor
 from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.operators.sensors import ExternalTaskSensor
-from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     moz_dataproc_jar_runner,
