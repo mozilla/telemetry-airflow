@@ -3,7 +3,9 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
+from airflow.contrib.operators.gcs_delete_operator import (
+    GoogleCloudStorageDeleteOperator,
+)
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
@@ -119,6 +121,32 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
         default_args=subdag_args,
     ),
 )
+
+trim_database = gke_command(
+    task_id="trim_database",
+    cmds=["bash"],
+    command=[
+        "python",
+        "-m",
+        "mozaggregator.trim_db",
+        "--retention-period",
+        f"{365*2}",
+        "--postgres-db",
+        "telemetry",
+        "--postgres-user",
+        "root",
+        "--postgres-pass",
+        "{{ var.value.mozaggregator_postgres_pass }}",
+        "--postgres-host",
+        "{{ var.value.mozaggregator_postgres_host }}",
+        # TODO: uncomment this after a successful run
+        # "--no-dry-run",
+    ],
+    docker_image="mozilla/python_mozaggregator:latest",
+    dag=dag,
+)
+
+prerelease_telemetry_aggregate_view_dataproc >> trim_database
 
 # export to avro, if necessary
 if EXPORT_TO_AVRO:
