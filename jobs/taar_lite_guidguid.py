@@ -15,39 +15,22 @@ import contextlib
 import datetime as dt
 import json
 import logging
-import os
-import os.path
-import tempfile
+import bz2
+import io
+from google.cloud import storage, bigquery
 
-import boto3
-from botocore.exceptions import ClientError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-AMO_DUMP_BUCKET = "telemetry-parquet"
-AMO_DUMP_KEY = "telemetry-ml/addon_recommender/addons_database.json"
-
-AMO_WHITELIST_KEY = "telemetry-ml/addon_recommender/whitelist_addons_database.json"
-
-OUTPUT_BUCKET = "telemetry-parquet"
-OUTPUT_PREFIX = "taar/lite/"
-OUTPUT_BASE_FILENAME = "guid_coinstallation"
-
-MAIN_SUMMARY_PATH = "s3://telemetry-parquet/main_summary/v4/"
-ONE_WEEK_AGO = (dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y%m%d")
+AMO_DUMP_BUCKET = "taar_models"
+AMO_WHITELIST_PREFIX = "addon_recommender"
+AMO_WHITELIST_FNAME = "addons_database.json"
 
 
-def aws_env_credentials():
-    """
-    Load the AWS credentials from the enviroment
-    """
-    result = {
-        "aws_access_key_id": os.environ.get("AWS_ACCESS_KEY_ID", None),
-        "aws_secret_access_key": os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-    }
-    logging.info("Loading AWS credentials from enviroment: {}".format(str(result)))
-    return result
+OUTPUT_BUCKET = "taar_models"
+OUTPUT_PREFIX = "taar/lite"
+OUTPUT_FILENAME = "guid_coinstallation.json"
 
 
 def is_valid_addon(broadcast_amo_whitelist, guid, addon):
@@ -94,35 +77,73 @@ def get_addons_per_client(broadcast_amo_whitelist, users_df):
     return df
 
 
-def get_initial_sample(spark, thedate):
-    """ Takes an initial sample from the longitudinal dataset
-    (randomly sampled from main summary). Coarse filtering on:
-    - number of installed addons (greater than 1)
-    - corrupt and generally wierd telemetry entries
-    - isolating release channel
-    - column selection
+def get_table(view):
+    """Helper for determining what table underlies a user-facing view, since the Storage API can't read views."""
+    bq = bigquery.Client()
+    view = view.replace(":", ".")
+    # partition filter is required, so try a couple options
+    for partition_column in ["DATE(submission_timestamp)", "submission_date"]:
+        try:
+            job = bq.query(
+                f"SELECT * FROM `{view}` WHERE {partition_column} = CURRENT_DATE",
+                bigquery.QueryJobConfig(dry_run=True),
+            )
+            break
+        except Exception:
+            continue
+    else:
+        raise ValueError("could not determine partition column")
+    assert len(job.referenced_tables) == 1, "View combines multiple tables"
+    table = job.referenced_tables[0]
+    return f"{table.project}:{table.dataset_id}.{table.table_id}"
+
+
+def get_initial_sample(spark, ds_dash):
     """
-    # Could scale this up to grab more than what is in
-    # longitudinal and see how long it takes to run.
-    s3_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
-        thedate
-    )
-    logging.info("Loading data from : {}".format(s3_url))
+    Get a DataFrame with a valid set of sample to base the next
+    processing on.
+
+    Sample is limited to submissions received since `date_from` and latest row per each client.
+
+    Reference documentation is found here:
+
+    Firefox Clients Daily telemetry table
+    https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html
+
+    BUG 1485152: PR include active_addons to clients_daily table:
+    https://github.com/mozilla/telemetry-batch-view/pull/490
+    """
     df = (
-        spark.read.parquet(s3_url)
-        .where("active_addons IS NOT null")
-        .where("size(active_addons) > 1")
-        .where("channel = 'release'")
-        .where("normalized_channel = 'release'")
-        .where("app_name = 'Firefox'")
-        .selectExpr("client_id", "active_addons")
-        .sample(False, 0.05)
+        spark.read.format("bigquery")
+        .option(
+            "table",
+            get_table("moz-fx-data-shared-prod.telemetry.clients_last_seen"),
+        )
+        .option("filter", f"submission_date = '{ds_dash}'")
+        .load()
     )
-    logging.info("Initial dataframe loaded!")
+    df.createOrReplaceTempView("tiny_clients_daily")
+
+    df = spark.sql(
+        f"""
+        SELECT
+            client_id,
+            active_addons
+        FROM
+            tiny_clients_daily
+        WHERE
+            active_addons IS NOT null and
+            size(active_addons) > 1 and
+            channel = 'release' and
+            normalized_channel = 'release' and
+            app_name = 'Firefox'
+         """
+    )
+
     return df
 
 
-def extract_telemetry(spark, thedate):
+def extract_telemetry(spark, thedate, bucket):
     """ load some training data from telemetry given a sparkContext
     """
     sc = spark.sparkContext
@@ -131,7 +152,7 @@ def extract_telemetry(spark, thedate):
 
     client_features_frame = get_initial_sample(spark, thedate)
 
-    amo_white_list = load_amo_external_whitelist()
+    amo_white_list = load_amo_external_whitelist(bucket)
     logging.info("AMO White list loaded")
 
     broadcast_amo_whitelist = sc.broadcast(amo_white_list)
@@ -174,7 +195,8 @@ def transform(longitudinal_addons):
         .collect()
     )
     logging.info(
-        "Number of unique guids co-installed in sample: " + str(len(guid_set_unique))
+        "Number of unique guids co-installed in sample: "
+        + str(len(guid_set_unique))
     )
 
     restructured = longitudinal_addons.rdd.flatMap(
@@ -184,7 +206,8 @@ def transform(longitudinal_addons):
     # Explode the list of co-installs and count pair occurrences.
     addon_co_installations = (
         restructured.select(
-            "key_addon", F.explode("coinstalled_addons").alias("coinstalled_addon")
+            "key_addon",
+            F.explode("coinstalled_addons").alias("coinstalled_addon"),
         )  # noqa: E501 - long lines
         .groupBy("key_addon", "coinstalled_addon")
         .count()
@@ -193,7 +216,9 @@ def transform(longitudinal_addons):
     # Collect the set of coinstalled_addon, count pairs for each key_addon.
     combine_and_map_cols = F.udf(
         lambda x, y: (x, y),
-        StructType([StructField("id", StringType()), StructField("n", LongType())]),
+        StructType(
+            [StructField("id", StringType()), StructField("n", LongType())]
+        ),
     )
 
     # Spark functions are sometimes long and unwieldy. Tough luck.
@@ -201,7 +226,9 @@ def transform(longitudinal_addons):
     addon_co_installations_collapsed = (
         addon_co_installations.select(  # noqa: E128
             "key_addon",
-            combine_and_map_cols("coinstalled_addon", "count").alias(  # noqa: E501
+            combine_and_map_cols(
+                "coinstalled_addon", "count"
+            ).alias(  # noqa: E501
                 "id_n"
             ),
         )
@@ -214,7 +241,7 @@ def transform(longitudinal_addons):
     return addon_co_installations_collapsed
 
 
-def load_s3(result_df, date, prefix, bucket):
+def save_to_gcs(result_df, date, prefix, bucket):
     result_list = result_df.collect()
     result_json = {}
 
@@ -226,78 +253,68 @@ def load_s3(result_df, date, prefix, bucket):
             value_json[_id] = n
         result_json[key_addon] = value_json
 
-    store_json_to_s3(
-        json.dumps(result_json, indent=2), OUTPUT_BASE_FILENAME, date, prefix, bucket
+    store_json_to_gcs(
+        bucket, prefix, OUTPUT_FILENAME, result_json, date.strftime("%Y%m%d"),
     )
 
 
-def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
-    """Saves the JSON data to a local file and then uploads it to S3.
+def store_json_to_gcs(
+    bucket, prefix, filename, json_obj, iso_date_str, compress=True
+):
+    """Saves the JSON data to a local file and then uploads it to GCS.
 
     Two copies of the file will get uploaded: one with as "<base_filename>.json"
     and the other as "<base_filename><YYYYMMDD>.json" for backup purposes.
 
+    :param bucket: The GCS bucket name.
+    :param prefix: The GCS prefix.
+    :param filename: A string with the base name of the file to use for saving
+        locally and uploading to GCS
     :param json_data: A string with the JSON content to write.
-    :param base_filename: A string with the base name of the file to use for saving
-        locally and uploading to S3.
     :param date: A date string in the "YYYYMMDD" format.
-    :param prefix: The S3 prefix.
-    :param bucket: The S3 bucket name.
     """
+    byte_data = json.dumps(json_obj).encode("utf8")
 
-    tempdir = tempfile.mkdtemp()
+    byte_data = bz2.compress(byte_data)
+    logger.info(f"Compressed data is {len(byte_data)} bytes")
 
-    with selfdestructing_path(tempdir):
-        JSON_FILENAME = "{}.json".format(base_filename)
-        FULL_FILENAME = os.path.join(tempdir, JSON_FILENAME)
-        with open(FULL_FILENAME, "w+") as json_file:
-            json_file.write(json_data)
-
-        archived_file_copy = "{}{}.json".format(base_filename, date)
-
-        # Store a copy of the current JSON with datestamp.
-        write_to_s3(FULL_FILENAME, archived_file_copy, prefix, bucket)
-        write_to_s3(FULL_FILENAME, JSON_FILENAME, prefix, bucket)
-
-
-def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
-    """Store the new json file containing current top addons per locale to S3.
-
-    :param source_file_name: The name of the local source file.
-    :param s3_dest_file_name: The name of the destination file on S3.
-    :param s3_prefix: The S3 prefix in the bucket.
-    :param bucket: The S3 bucket.
-    """
-    client = boto3.client(
-        service_name="s3", region_name="us-west-2", **aws_env_credentials()
-    )
-    transfer = boto3.s3.transfer.S3Transfer(client)
-
-    # Update the state in the analysis bucket.
-    key_path = s3_prefix + s3_dest_file_name
-    transfer.upload_file(source_file_name, bucket, key_path)
+    client = storage.Client()
+    bucket = client.get_bucket(bucket)
+    simple_fname = f"{prefix}/{filename}.bz2"
+    blob = bucket.blob(simple_fname)
+    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+    print(f"Wrote out {simple_fname}")
+    blob.upload_from_string(byte_data)
+    long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
+    blob = bucket.blob(long_fname)
+    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+    print(f"Wrote out {long_fname}")
+    blob.upload_from_string(byte_data)
 
 
-def load_amo_external_whitelist():
+def read_from_gcs(fname, prefix, bucket):
+    with io.BytesIO() as tmpfile:
+        client = storage.Client()
+        bucket = client.get_bucket(bucket)
+        simple_fname = f"{prefix}/{fname}.bz2"
+        blob = bucket.blob(simple_fname)
+        blob.download_to_file(tmpfile)
+        tmpfile.seek(0)
+        payload = tmpfile.read()
+        payload = bz2.decompress(payload)
+        return json.loads(payload.decode("utf8"))
+
+
+def load_amo_external_whitelist(bucket):
     """ Download and parse the AMO add-on whitelist.
 
     :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
                           no valid add-ons.
     """
     final_whitelist = []
-    amo_dump = {}
-    try:
-        # Load the most current AMO dump JSON resource.
-        s3 = boto3.client(service_name="s3", **aws_env_credentials())
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_WHITELIST_KEY)
-        amo_dump = json.loads(s3_contents["Body"].read().decode("utf-8"))
-    except ClientError:
-        logger.exception(
-            "Failed to download from S3",
-            extra=dict(
-                bucket=AMO_DUMP_BUCKET, key=AMO_DUMP_KEY, **aws_env_credentials()
-            ),
-        )
+    amo_dump = read_from_gcs(
+        AMO_WHITELIST_FNAME, AMO_WHITELIST_PREFIX, bucket
+    )
 
     # If the load fails, we will have an empty whitelist, this may be problematic.
     for key, value in list(amo_dump.items()):
@@ -308,7 +325,6 @@ def load_amo_external_whitelist():
 
     if len(final_whitelist) == 0:
         raise RuntimeError("Empty AMO whitelist detected")
-
     return final_whitelist
 
 
@@ -322,17 +338,10 @@ def selfdestructing_path(dirname):
 
 @click.command()
 @click.option("--date", required=True)
-@click.option("--aws_access_key_id", required=True)
-@click.option("--aws_secret_access_key", required=True)
-@click.option("--date", required=True)
 @click.option("--bucket", default=OUTPUT_BUCKET)
 @click.option("--prefix", default=OUTPUT_PREFIX)
-def main(date, aws_access_key_id, aws_secret_access_key, bucket, prefix):
-    thedate = date
-
-    # Clobber the AWS access credentials
-    os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key_id
-    os.environ["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
+def main(date, bucket, prefix):
+    thedate = dt.datetime.strptime(date, "%Y-%m-%d")
 
     logging.info("Starting taarlite-guidguid")
     logging.info("Acquiring spark session")
@@ -340,9 +349,9 @@ def main(date, aws_access_key_id, aws_secret_access_key, bucket, prefix):
 
     logging.info("Loading telemetry sample.")
 
-    longitudinal_addons = extract_telemetry(spark, thedate)
+    longitudinal_addons = extract_telemetry(spark, date, bucket)
     result_df = transform(longitudinal_addons)
-    load_s3(result_df, thedate, prefix, bucket)
+    save_to_gcs(result_df, thedate, prefix, bucket)
 
     spark.stop()
 

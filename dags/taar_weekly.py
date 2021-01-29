@@ -19,21 +19,22 @@ taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 
 TAAR_BIGTABLE_INSTANCE_ID = Variable.get("taar_bigtable_instance_id")
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
+TAAR_ETL_MODEL_STORAGE_BUCKET = Variable.get("taar_etl_model_storage_bucket")
 TAAR_PROFILE_PROJECT_ID = Variable.get("taar_gcp_project_id")
 TAAR_DATAFLOW_SUBNETWORK = Variable.get("taar_dataflow_subnetwork")
 
 # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
 TAAR_ETL_CONTAINER_IMAGE = (
-    "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.4.7"
+    "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.1"
 )
 
 
 default_args_weekly = {
-    "owner": "anatal@mozilla.com",
+    "owner": "epavlov@mozilla.com",
     "email": [
         "anatal@mozilla.com",
         "mlopatka@mozilla.com",
-        "telemetry-alerts@mozilla.com",
+        "hwoo@mozilla.com",
         "epavlov@mozilla.com"
     ],
     "depends_on_past": False,
@@ -76,8 +77,6 @@ def taar_profile_common_args():
 
 
 wipe_gcs_bucket = GKEPodOperator(
-    owner="anatal@mozilla.com",
-    email=["anatal@mozilla.com", "mlopatka@mozilla.com", "epavlov@mozilla.com"],
     task_id="wipe_taar_gcs_bucket",
     name="wipe_taar_gcs_bucket",
     image="google/cloud-sdk:242.0.0-alpine",
@@ -88,8 +87,6 @@ wipe_gcs_bucket = GKEPodOperator(
 )
 
 dump_bq_to_tmp_table = GKEPodOperator(
-    owner="anatal@mozilla.com",
-    email=["anatal@mozilla.com", "mlopatka@mozilla.com", "epavlov@mozilla.com"],
     task_id="dump_bq_to_tmp_table",
     name="dump_bq_to_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -98,8 +95,6 @@ dump_bq_to_tmp_table = GKEPodOperator(
 )
 
 extract_bq_tmp_to_gcs_avro = GKEPodOperator(
-    owner="anatal@mozilla.com",
-    email=["anatal@mozilla.com", "mlopatka@mozilla.com", "epavlov@mozilla.com"],
     task_id="extract_bq_tmp_to_gcs_avro",
     name="extract_bq_tmp_to_gcs_avro",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -108,8 +103,6 @@ extract_bq_tmp_to_gcs_avro = GKEPodOperator(
 )
 
 dataflow_import_avro_to_bigtable = GKEPodOperator(
-    owner="anatal@mozilla.com",
-    email=["anatal@mozilla.com", "mlopatka@mozilla.com", "epavlov@mozilla.com"],
     task_id="dataflow_import_avro_to_bigtable",
     name="dataflow_import_avro_to_bigtable",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -123,8 +116,6 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
 )
 
 wipe_gcs_bucket_cleanup = GKEPodOperator(
-    owner="anatal@mozilla.com",
-    email=["anatal@mozilla.com", "mlopatka@mozilla.com", "epavlov@mozilla.com"],
     task_id="wipe_gcs_bucket_cleanup",
     name="wipe_taar_gcs_bucket",
     location="us-central1-a",
@@ -135,8 +126,6 @@ wipe_gcs_bucket_cleanup = GKEPodOperator(
 )
 
 wipe_bigquery_tmp_table = GKEPodOperator(
-    owner="anatal@mozilla.com",
-    email=["anatal@mozilla.com", "mlopatka@mozilla.com", "epavlov@mozilla.com"],
     task_id="wipe_bigquery_tmp_table",
     name="wipe_bigquery_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
@@ -158,8 +147,6 @@ taar_ensemble = SubDagOperator(
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_ensemble.py",
         additional_properties={
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
-            "spark:spark.hadoop.fs.s3a.access.key": taar_aws_access_key,
-            "spark:spark.hadoop.fs.s3a.secret.key": taar_aws_secret_key,
             "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             "spark:spark.python.profile": "true",
         },
@@ -170,20 +157,18 @@ taar_ensemble = SubDagOperator(
             "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/pip-install.sh"
         ],
         additional_metadata={
+            # TODO: update taar package version after migration to GCS
             "PIP_PACKAGES": "mozilla-taar3==0.4.12 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
         },
         optional_components=["ANACONDA", "JUPYTER"],
         py_args=[
             "--date",
             "{{ ds_nodash }}",
-            "--aws_access_key_id",
-            taar_aws_access_key,
-            "--aws_secret_access_key",
-            taar_aws_secret_key,
+            "--gcs_model_bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
             "--sample_rate",
             "0.005",
         ],
-        aws_conn_id=taar_aws_conn_id,
         gcp_conn_id=taar_gcpdataproc_conn_id,
         master_disk_type="pd-ssd",
         worker_disk_type="pd-ssd",
