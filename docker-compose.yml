@@ -51,7 +51,7 @@ services:
     extends:
       service: app
     restart: always
-    mem_limit: 4294967296
+    mem_limit: "4294967296"
     ports:
       - "8793:8793"
     links:
@@ -60,7 +60,7 @@ services:
     command: worker
 
   scheduler:
-    mem_limit: 4294967296
+    mem_limit: "4294967296"
     extends:
       service: app
     restart: always
