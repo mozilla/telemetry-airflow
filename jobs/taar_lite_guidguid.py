@@ -98,7 +98,7 @@ def get_table(view):
     return f"{table.project}:{table.dataset_id}.{table.table_id}"
 
 
-def get_initial_sample(spark, ds_dash):
+def get_initial_sample(spark, thedate):
     """
     Get a DataFrame with a valid set of sample to base the next
     processing on.
@@ -113,32 +113,53 @@ def get_initial_sample(spark, ds_dash):
     BUG 1485152: PR include active_addons to clients_daily table:
     https://github.com/mozilla/telemetry-batch-view/pull/490
     """
-    df = (
-        spark.read.format("bigquery")
-        .option(
-            "table",
-            get_table("moz-fx-data-shared-prod.telemetry.clients_last_seen"),
-        )
-        .option("filter", f"submission_date = '{ds_dash}'")
-        .load()
-    )
-    df.createOrReplaceTempView("tiny_clients_daily")
 
-    df = spark.sql(
-        f"""
-        SELECT
-            client_id,
-            active_addons
-        FROM
-            tiny_clients_daily
-        WHERE
-            active_addons IS NOT null and
-            size(active_addons) > 1 and
-            channel = 'release' and
-            normalized_channel = 'release' and
-            app_name = 'Firefox'
-         """
+    # Could scale this up to grab more than what is in
+    # longitudinal and see how long it takes to run.
+    s3_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
+        thedate.strftime("%Y%m%d")
     )
+    logging.info("Loading data from : {}".format(s3_url))
+    df = (
+        spark.read.parquet(s3_url)
+        .where("active_addons IS NOT null")
+        .where("size(active_addons) > 1")
+        .where("channel = 'release'")
+        .where("normalized_channel = 'release'")
+        .where("app_name = 'Firefox'")
+        .selectExpr("client_id", "active_addons")
+        .sample(False, 0.05)
+    )
+    # Victor tried to switch to this code while migrating everything to GCS
+    # to gather more data I suppose, but it doesn't work
+    # couldn't figure out why in reasonable amount of time, so leaving current version as is
+    # ds_dash = thedate.strftime("%Y-%m-%d")
+    # df = (
+    #     spark.read.format("bigquery")
+    #     .option(
+    #         "table",
+    #         get_table("moz-fx-data-shared-prod.telemetry.clients_last_seen"),
+    #     )
+    #     .option("filter", f"submission_date = '{ds_dash}'")
+    #     .load()
+    # )
+    # df.createOrReplaceTempView("tiny_clients_daily")
+    #
+    # df = spark.sql(
+    #     f"""
+    #     SELECT
+    #         client_id,
+    #         active_addons
+    #     FROM
+    #         tiny_clients_daily
+    #     WHERE
+    #         active_addons IS NOT null and
+    #         size(active_addons) > 1 and
+    #         channel = 'release' and
+    #         normalized_channel = 'release' and
+    #         app_name = 'Firefox'
+    #      """
+    # )
 
     return df
 
@@ -349,7 +370,7 @@ def main(date, bucket, prefix):
 
     logging.info("Loading telemetry sample.")
 
-    longitudinal_addons = extract_telemetry(spark, date, bucket)
+    longitudinal_addons = extract_telemetry(spark, thedate, bucket)
     result_df = transform(longitudinal_addons)
     save_to_gcs(result_df, thedate, prefix, bucket)
 
