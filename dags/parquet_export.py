@@ -2,7 +2,6 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import get_default_executor
-from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.operators.sensors import ExternalTaskSensor
 from utils.dataproc import (
