@@ -11,7 +11,6 @@ from utils.dataproc import (
     moz_dataproc_jar_runner,
     get_dataproc_parameters,
 )
-from utils.tbv import tbv_envvar
 from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
