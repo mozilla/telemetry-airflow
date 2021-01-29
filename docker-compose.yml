@@ -32,7 +32,6 @@ services:
     environment:
       - AWS_SECRET_ACCESS_KEY
       - AWS_ACCESS_KEY_ID
-      - DB_TOKEN
       - GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials
 
   web:
