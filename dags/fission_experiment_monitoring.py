@@ -58,6 +58,7 @@ with models.DAG(
         project_id="moz-fx-data-shared-prod",
         destination_table="fission_monitoring_crash_v1",
         dataset_id="telemetry_derived",
+        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     # Built from https://github.com/mozilla/fission_monitoring_nightly
