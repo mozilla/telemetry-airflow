@@ -213,7 +213,8 @@ taar_lite_guidranking = GKEPodOperator(
     image=TAAR_ETL_CONTAINER_IMAGE,
     arguments=["-m", "taar_etl.taar_lite_guid_ranking",
                "--date", "{{ ds }}",
-               "--bucket", TAAR_ETL_STORAGE_BUCKET],
+               "--prefix", "taar/lite",
+               "--bucket", TAAR_ETL_MODEL_STORAGE_BUCKET],
     dag=dag
 )
 
