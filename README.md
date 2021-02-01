@@ -39,16 +39,6 @@ An Airflow container can be built with
 make build
 ```
 
-### Export Credentials
-
-For now, DAGs that use the Databricks operator won't parse until the following environment variables are set (see issue #501):
-
-```
-AWS_SECRET_ACCESS_KEY
-AWS_ACCESS_KEY_ID
-DB_TOKEN
-```
-
 ### Migrate Database
 
 Airflow database migration is no longer a separate step for dev but is run by the web container if necessary on first run. That means, however, that you should run the web container (and the database container, of course) and wait for the database migrations to complete before running individual test commands per below. The easiest way to do this is to run `make up` and let it run until the migrations complete.
@@ -109,24 +99,6 @@ sed -i "s/10001/$(id -u)/g" Dockerfile.dev
 
 ```
 
-### Testing Databricks Jobs
-
-To run a job running on Databricks, run `make up` in the background. Follow
-[this guide on generating a
-token](https://docs.databricks.com/api/latest/authentication.html#generate-a-token)
-and save this to a secure location. Export the token to a an environment
-variable:
-
-```bash
-export DB_TOKEN=<TOKEN>
-```
-
-Finally, run the testing command using docker-compose directly:
-
-```bash
-docker-compose exec web airflow test example spark 20180101
-```
-
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
 For now, follow the steps outlined here to create a service account: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
@@ -173,14 +145,6 @@ variables:
 
 - `AWS_ACCESS_KEY_ID` -- The AWS access key ID to spin up the Spark clusters
 - `AWS_SECRET_ACCESS_KEY` -- The AWS secret access key
-- `SPARK_BUCKET` -- The AWS S3 bucket where Spark related files are stored,
-  e.g. `telemetry-spark-emr-2`
-- `AIRFLOW_BUCKET` -- The AWS S3 bucket where airflow specific files are stored,
-  e.g. `telemetry-airflow`
-- `PUBLIC_OUTPUT_BUCKET` -- The AWS S3 bucket where public job results are
-  stored in, e.g. `telemetry-public-analysis-2`
-- `PRIVATE_OUTPUT_BUCKET` -- The AWS S3 bucket where private job results are
-  stored in, e.g. `telemetry-parquet`
 - `AIRFLOW_DATABASE_URL` -- The connection URI for the Airflow database, e.g.
   `mysql://username:password@hostname:port/database`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
@@ -207,8 +171,7 @@ variables:
   `master` or `tags`. You can specify the tag or travis build exactly as well, e.g.
   `master/42.1` or `tags/v2.2.1`. Not specifying the exact tag or build will
   use the latest from that branch, or the latest tag.
-- `ARTIFACTS_BUCKET` -- The s3 bucket where the build artifacts can be found, e.g.
-  `net-mozaws-data-us-west-2-ops-ci-artifacts`
+
 
 Also, please set
 
