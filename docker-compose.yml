@@ -16,12 +16,12 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     restart: "no"
     volumes:
       - $PWD:/app
       # mount a dummy file to google application credentials, if not provided
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-./.add_credentials.md}:/app/.credentials
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-./.add_credentials.md}:/tmp/.credentials
     command: "true"
     # Environment variables, exports, and substitution:
     #   https://docs.docker.com/compose/environment-variables/
@@ -32,7 +32,25 @@ services:
     environment:
       - AWS_SECRET_ACCESS_KEY
       - AWS_ACCESS_KEY_ID
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/.credentials
+      - PORT=8000
+      - DEPLOY_ENVIRONMENT=dev
+      - DEVELOPMENT=1
+      - AIRFLOW_HOME=/app
+      - AIRFLOW_AUTHENTICATE=False
+      - AIRFLOW_AUTH_BACKEND=airflow.contrib.auth.backends.password_auth
+      - AIRFLOW_BROKER_URL=redis://redis:6379/0
+      - AIRFLOW_RESULT_URL=redis://redis:6379/0
+      - AIRFLOW_FLOWER_PORT=5555
+      - AIRFLOW_DATABASE_URL=mysql://root:secret@db:3306/airflow
+      - AIRFLOW__CORE__FERNET_KEY=0000000000000000000000000000000000000000000=
+      - AIRFLOW_SECRET_KEY=000000000000000000000000000000000000000000=
+      - AIRFLOW_SMTP_FROM=telemetry-alerts@airflow.dev.mozaws.net
+      - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
+      - AIRFLOW_EMAIL_BACKEND=airflow.macros.log_email_backend.log_email_backend
+      - AIRFLOW__KUBERNETES__IN_CLUSTER=False
+      - URL=http://localhost:8000
+      - WEBSERVER_USE_RBAC=False
 
   web:
     extends:
