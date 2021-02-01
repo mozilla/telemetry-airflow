@@ -130,7 +130,7 @@ trim_database = gke_command(
         "-m",
         "mozaggregator.trim_db",
         "--retention-period",
-        f"{365*2}",
+        f"{365*2}", # 2 year retention
         "--postgres-db",
         "telemetry",
         "--postgres-user",
