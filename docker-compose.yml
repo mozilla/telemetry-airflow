@@ -32,7 +32,6 @@ services:
     environment:
       - AWS_SECRET_ACCESS_KEY
       - AWS_ACCESS_KEY_ID
-      - DB_TOKEN
       - GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials
 
   web:
@@ -52,7 +51,7 @@ services:
     extends:
       service: app
     restart: always
-    mem_limit: 4294967296
+    mem_limit: "4294967296"
     ports:
       - "8793:8793"
     links:
@@ -61,7 +60,7 @@ services:
     command: worker
 
   scheduler:
-    mem_limit: 4294967296
+    mem_limit: "4294967296"
     extends:
       service: app
     restart: always
