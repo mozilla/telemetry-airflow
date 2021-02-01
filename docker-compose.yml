@@ -21,7 +21,7 @@ services:
     volumes:
       - $PWD:/app
       # mount a dummy file to google application credentials, if not provided
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-./.add_credentials.md}:/app/.credentials
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-./.add_credentials.md}:/tmp/.credentials
     command: "true"
     # Environment variables, exports, and substitution:
     #   https://docs.docker.com/compose/environment-variables/
@@ -32,7 +32,7 @@ services:
     environment:
       - AWS_SECRET_ACCESS_KEY
       - AWS_ACCESS_KEY_ID
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/.credentials
       - PORT=8000
       - DEPLOY_ENVIRONMENT=dev
       - DEVELOPMENT=1
