@@ -2,17 +2,13 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import get_default_executor
-from airflow.operators.moz_databricks import MozDatabricksSubmitRunOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.operators.sensors import ExternalTaskSensor
-from operators.email_schema_change_operator import EmailSchemaChangeOperator
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     moz_dataproc_jar_runner,
     get_dataproc_parameters,
 )
-from utils.mozetl import mozetl_envvar
-from utils.tbv import tbv_envvar
 from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
