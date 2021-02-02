@@ -173,6 +173,7 @@ def bigquery_etl_query(
     date_partition_parameter="submission_date",
     multipart=False,
     allow_field_addition_on_date=None,
+    is_delete_operator_pod=False,
     **kwargs
 ):
     """ Generate.
@@ -235,6 +236,7 @@ def bigquery_etl_query(
         )
         + list(arguments)
         + [sql_file_path],
+        is_delete_operator_pod=is_delete_operator_pod,
         **kwargs
     )
 
@@ -395,6 +397,7 @@ def gke_command(
     gke_namespace="default",
     xcom_push=False,
     env_vars={},
+    is_delete_operator_pod=False,
     **kwargs
 ):
     """ Run a docker command on GKE
@@ -435,5 +438,6 @@ def gke_command(
         arguments=command,
         do_xcom_push=xcom_push,
         env_vars=context_env_vars,
+        is_delete_operator_pod=is_delete_operator_pod,
         **kwargs
     )
