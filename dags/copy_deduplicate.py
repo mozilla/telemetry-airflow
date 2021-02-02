@@ -11,6 +11,24 @@ from utils.gcp import (bigquery_etl_copy_deduplicate,
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from operators.gcp_container_operator import GKEPodOperator
 
+DOCS = """\
+# Copy-Deduplicate
+
+This DAG is the root of most derived tables. For each live ping table that the
+data pipeline populates, we run a "copy_deduplicate" query once per day to
+populate the corresponding stable table.
+
+A few immediate downstream tables are also included in this DAG.
+
+## Workflows
+
+Note that we have recently seen two incidents of manual reruns of
+`copy_deduplicate_main_ping` lead to missing data as captured in
+[bug 1686519](https://bugzilla.mozilla.org/show_bug.cgi?id=1686519).
+If you kick off a manual rerun of a `copy_deduplicate` job, take care
+to validate that the partition is properly populated.
+"""
+
 default_args = {
     "owner": "jklukas@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
@@ -28,6 +46,7 @@ dag_name = "copy_deduplicate"
 with models.DAG(
         dag_name,
         schedule_interval="0 1 * * *",
+        doc_md=DOCS,
         default_args=default_args) as dag:
 
     # This single task is responsible for sequentially running copy queries
