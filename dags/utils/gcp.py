@@ -198,7 +198,9 @@ def bigquery_etl_query(
                                                    GKEPodOperator
     :param Optional[str] allow_field_addition_on_date: Optional {{ds}} value that
                                                    should be run with ALLOW_FIELD_ADDITION
-
+    :param is_delete_operator_pod                  Optional, What to do when the pod reaches its final
+                                                   state, or the execution is interrupted.
+                                                   If False (default): do nothing, If True: delete the pod
     :return: GKEPodOperator
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
