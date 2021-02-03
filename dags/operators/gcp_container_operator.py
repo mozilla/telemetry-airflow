@@ -58,11 +58,16 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         if do_xcom_push:
             reattach_on_restart = False
 
+        # GKE node pool autoscaling is failing to scale down when completed pods exist on the node
+        # in Completed states, due to the pod not being replicated. E.g. behind an rc or deployment.
+        annotations = {'cluster-autoscaler.kubernetes.io/safe-to-evict': 'true'}
+
         super(GKEPodOperator, self).__init__(
             image_pull_policy=image_pull_policy,
             in_cluster=in_cluster,
             do_xcom_push=do_xcom_push,
             reattach_on_restart=reattach_on_restart,
+            annotations=annotations,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             location=location,
