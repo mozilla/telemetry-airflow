@@ -168,7 +168,7 @@ taar_collaborative_recommender = SubDagOperator(
         main_class="com.mozilla.telemetry.ml.AddonRecommender",
         jar_urls=[
             "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
-            "/mozilla/telemetry-batch-view/master/telemetry-batch-view.jar",
+            "/mozilla/telemetry-batch-view/main/telemetry-batch-view.jar",
         ],
         jar_args=[
           "train",

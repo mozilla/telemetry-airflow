@@ -38,7 +38,7 @@ def retrieve_jar():
     # Historical version only had the query string [1],
     # so we need to handle that case separately.
     #
-    # [0] https://github.com/mozilla/telemetry-batch-view/blob/master/.circleci/deploy.sh#L37
+    # [0] https://github.com/mozilla/telemetry-batch-view/blob/main/.circleci/deploy.sh#L37
     # [1] https://github.com/mozilla/telemetry-batch-view/blob/14741db20dd3873b94944b8238dfc48a003c744d/deploy.sh#L50
 
     txt_url = jar_url.replace(".jar", ".txt")
