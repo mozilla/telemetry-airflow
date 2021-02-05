@@ -11,6 +11,24 @@ from utils.gcp import (bigquery_etl_copy_deduplicate,
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from operators.gcp_container_operator import GKEPodOperator
 
+DOCS = """\
+# Copy-Deduplicate
+
+This DAG is the root of most derived tables. For each live ping table that the
+data pipeline populates, we run a "copy_deduplicate" query once per day to
+populate the corresponding stable table.
+
+A few immediate downstream tables are also included in this DAG.
+
+## Workflows
+
+Note that we have recently seen two incidents of manual reruns of
+`copy_deduplicate_main_ping` lead to missing data as captured in
+[bug 1686519](https://bugzilla.mozilla.org/show_bug.cgi?id=1686519).
+If you kick off a manual rerun of a `copy_deduplicate` job, take care
+to validate that the partition is properly populated.
+"""
+
 default_args = {
     "owner": "jklukas@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
@@ -28,6 +46,7 @@ dag_name = "copy_deduplicate"
 with models.DAG(
         dag_name,
         schedule_interval="0 1 * * *",
+        doc_md=DOCS,
         default_args=default_args) as dag:
 
     # This single task is responsible for sequentially running copy queries
@@ -53,7 +72,7 @@ with models.DAG(
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=["telemetry_live.main_v4"],
         parallelism=24,
-        slices=150,
+        slices=100,
         owner="jklukas@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
         priority_weight=100,
@@ -88,50 +107,6 @@ with models.DAG(
     )
 
     copy_deduplicate_main_ping >> bq_main_events
-
-    # todo: remove
-
-    # Experiment search aggregates chain (depends on main)
-
-    experiment_search_aggregates = bigquery_etl_query(
-        task_id="experiment_search_aggregates",
-        project_id="moz-fx-data-shared-prod",
-        destination_table="experiment_search_aggregates_v1",
-        dataset_id="telemetry_derived",
-        owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
-
-    experiment_search_query_task_id = "experiment_search_aggregates_live_generate_query"
-
-    # setting xcom_push to True outputs this query to an xcom
-    experiment_search_aggregates_live_generate_view = gke_command(
-        task_id=experiment_search_query_task_id,
-        command=[
-            "python",
-            "sql/moz-fx-data-shared-prod/telemetry_derived/experiment_search_aggregates_live_v1/view.sql.py",
-            "--submission-date",
-            "{{ ds }}",
-            "--json-output",
-            "--wait-seconds",
-            "15",
-        ],
-        docker_image="mozilla/bigquery-etl:latest",
-        xcom_push=True,
-        owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
-
-    experiment_search_aggregates_live_deploy_view = bigquery_xcom_query(
-        task_id="experiment_search_aggregates_live_deploy_view",
-        destination_table=None,
-        dataset_id="telemetry_derived",
-        xcom_task_id=experiment_search_query_task_id,
-        owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
-
-    (copy_deduplicate_main_ping >>
-     experiment_search_aggregates >>
-     experiment_search_aggregates_live_generate_view >>
-     experiment_search_aggregates_live_deploy_view)
 
     # Daily and last seen views on top of every Glean application.
 
