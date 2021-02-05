@@ -31,7 +31,8 @@ default_args_weekly = {
         "anatal@mozilla.com",
         "mlopatka@mozilla.com",
         "hwoo@mozilla.com",
-        "epavlov@mozilla.com"
+        "epavlov@mozilla.com",
+        "telemetry-alerts@mozilla.com"
     ],
     "depends_on_past": False,
     "start_date": datetime(2020, 4, 4),
