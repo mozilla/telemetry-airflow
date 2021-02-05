@@ -24,12 +24,11 @@ import json
 import numpy as np
 import os
 import sys
-import tempfile
 import contextlib
 import shutil
 import bz2
 
-from google.cloud import storage, bigquery
+from google.cloud import storage
 from datetime import date, timedelta
 from importlib import reload
 from pyspark.ml.classification import LogisticRegression
@@ -40,7 +39,6 @@ from pyspark.sql.functions import udf, size, rand
 from pyspark.sql.types import ArrayType
 from pyspark.sql.types import StringType
 from pyspark import SparkConf
-from taar.context import default_context
 
 
 # Define the set of feature names to be used in the donor computations.
@@ -162,79 +160,17 @@ def row_to_json(row):
     return jdata
 
 
-def reload_configuration():
-    """
-    Configuration needs to be reloaded on a per worker node basis.
-    This is an unfortunate a side effect of re-using the TAAR library which
-    expects to be using python-decouple to load the configuration
-    from enviroment variables.
-    """
-    from taar.recommenders import s3config
-    # TODO: change to GCS
-    # Locale Recommender Overrides
-    # This *Must* be called just prior to instantiating the individual recommenders in the
-    # ETL enviroment.
-    s3config.TAAR_LOCALE_BUCKET = os.environ[
-        "TAAR_LOCALE_BUCKET"
-    ] = "telemetry-parquet"
-    s3config.TAAR_LOCALE_KEY = os.environ[
-        "TAAR_LOCALE_KEY"
-    ] = "taar/locale/top10_dict.json"
-
-    # Similarity Recommender configuration overrides
-    s3config.TAAR_SIMILARITY_BUCKET = os.environ[
-        "TAAR_SIMILARITY_BUCKET"
-    ] = "telemetry-parquet"
-    s3config.TAAR_SIMILARITY_DONOR_KEY = os.environ[
-        "TAAR_SIMILARITY_DONOR_KEY"
-    ] = "taar/similarity/donors.json"
-    s3config.TAAR_SIMILARITY_LRCURVES_KEY = os.environ[
-        "TAAR_SIMILARITY_LRCURVES_KEY"
-    ] = "taar/similarity/lr_curves.json"
-
-    # Collaborative Recommender Overrides
-    s3config.TAAR_ITEM_MATRIX_BUCKET = os.environ[
-        "TAAR_ITEM_MATRIX_BUCKET"
-    ] = "telemetry-public-analysis-2"
-    s3config.TAAR_ITEM_MATRIX_KEY = os.environ[
-        "TAAR_ITEM_MATRIX_KEY"
-    ] = "telemetry-ml/addon_recommender/item_matrix.json"
-    s3config.TAAR_ADDON_MAPPING_BUCKET = os.environ[
-        "TAAR_ADDON_MAPPING_BUCKET"
-    ] = "telemetry-public-analysis-2"
-    s3config.TAAR_ADDON_MAPPING_KEY = os.environ[
-        "TAAR_ADDON_MAPPING_KEY"
-    ] = "telemetry-ml/addon_recommender/addon_mapping.json"
-
-    from taar.recommenders import LocaleRecommender
-    from taar.recommenders import SimilarityRecommender
-    from taar.recommenders import CollaborativeRecommender
-
-    reload(sys.modules["taar.recommenders"])
-
-    # Force reload of recommender modules
-    [
-        reload(sys.modules[rec_cls.__module__])
-        for rec_cls in [
-            LocaleRecommender,
-            SimilarityRecommender,
-            CollaborativeRecommender,
-        ]
-    ]
-
-
 COLLABORATIVE, SIMILARITY, LOCALE = "collaborative", "similarity", "locale"
 PREDICTOR_ORDER = [COLLABORATIVE, SIMILARITY, LOCALE]
 
 
-def load_recommenders(ctx):
+def load_recommenders():
     from taar.recommenders import LocaleRecommender
     from taar.recommenders import SimilarityRecommender
     from taar.recommenders import CollaborativeRecommender
+    from taar.context import package_context
 
-    ctx = default_context()
-
-    reload_configuration()
+    ctx = package_context()
 
     lr = LocaleRecommender(ctx)
     sr = SimilarityRecommender(ctx)
@@ -248,48 +184,43 @@ def to_stacked_row(recommender_list, client_row):
     # 1 or 0 for a match within at least one recommender.
     # Weight is set to 1.0 as the features will use a cllr result
     # indicating 'matchiness' with the known truth.
-    try:
-        training_client_info = row_to_json(client_row)
+    training_client_info = row_to_json(client_row)
 
-        # Pop off a single addon as the expected set.
-        # I've tried a couple variations on this (pop 1 item, pop 2 items)
-        # but there isn't much effect.
+    # Pop off a single addon as the expected set.
+    # I've tried a couple variations on this (pop 1 item, pop 2 items)
+    # but there isn't much effect.
 
-        expected = [training_client_info["installed_addons"].pop()]
+    expected = [training_client_info["installed_addons"].pop()]
 
-        stacked_row = []
+    stacked_row = []
 
-        cLLR = CostLLR()
+    cLLR = CostLLR()
 
-        for recommend in recommender_list:
-            guid_weight_list = recommend(training_client_info, limit=4)
-            cllr_val = cLLR.evalcllr(guid_weight_list, expected)
-            stacked_row.append(cllr_val)
+    for recommend in recommender_list:
+        guid_weight_list = recommend(training_client_info, limit=4)
+        cllr_val = cLLR.evalcllr(guid_weight_list, expected)
+        stacked_row.append(cllr_val)
 
-        return Row(
-            label=int(cLLR.total > 0.0),
-            weight=1.0,
-            features=Vectors.dense(*stacked_row),
-        )
-    except Exception:
-        # This shouldn't happen. Log relevant data so that we can
-        # Patch this up on the next run
-        return None
+    return Row(
+        label=int(cLLR.total > 0.0),
+        weight=1.0,
+        features=Vectors.dense(*stacked_row),
+    )
+
 
 
 # Stack the prediction results for each recommender into a stacked_row for each
 # client_info blob in the training set.
 
 
-def build_stacked_datasets(ctx, dataset, folds):
+def build_stacked_datasets(dataset, folds):
     # For each of k_folds, we apply the stacking
     # function to the training fold.
     # Where k_folds = 3, this will yield a list consisting
     # of 3 RDDs.   Each RDD is defined by the output of the
     # `stacking` function.
-
     def stacked_row_closure():
-        rec_map = load_recommenders(ctx)
+        rec_map = load_recommenders()
 
         recommender_list = [
             rec_map[COLLABORATIVE].recommend,  # Collaborative
@@ -493,12 +424,12 @@ def compute_regression(spark, rdd_list, regParam, elasticNetParam):
     return blorModel
 
 
-def transform(ctx, spark, taar_training, regParam, elasticNetParam):
+def transform(spark, taar_training, regParam, elasticNetParam):
     k_folds = 4
     df_folds = cross_validation_split(taar_training, k_folds)
 
     stacked_datasets_rdd_list = build_stacked_datasets(
-        ctx, taar_training, df_folds
+        taar_training, df_folds
     )
 
     # Merge a list of RDD lists into a single RDD and then cast it into a DataFrame
@@ -580,8 +511,6 @@ def main(
 ):
     print("Sampling clients since {}".format(client_sample_date_from))
 
-    ctx = default_context()
-
     APP_NAME = "TaarEnsemble"
     conf = SparkConf().setAppName(APP_NAME)
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
@@ -589,7 +518,7 @@ def main(
     taar_training = extract(
         spark, client_sample_date_from, min_installed_addons, sample_rate
     )
-    coefs = transform(ctx, spark, taar_training, reg_param, elastic_net_param)
+    coefs = transform(spark, taar_training, reg_param, elastic_net_param)
 
     store_json_to_gcs(
         gcs_model_bucket, prefix, "ensemble_weight.json", coefs, date,

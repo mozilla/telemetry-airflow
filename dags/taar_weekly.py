@@ -2,7 +2,6 @@
 This configures a weekly DAG to run the TAAR Ensemble job off.
 """
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
 from datetime import datetime, timedelta
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.models import Variable
@@ -10,10 +9,7 @@ from airflow.models import Variable
 from operators.gcp_container_operator import GKEPodOperator  # noqa
 from utils.dataproc import moz_dataproc_pyspark_runner
 
-taar_aws_conn_id = "airflow_taar_rw_s3"
-taar_aws_access_key, taar_aws_secret_key, session = AwsHook(
-    taar_aws_conn_id
-).get_credentials()
+
 taar_ensemble_cluster_name = "dataproc-taar-ensemble"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 
@@ -144,6 +140,8 @@ taar_ensemble = SubDagOperator(
         default_args=default_args_weekly,
         cluster_name=taar_ensemble_cluster_name,
         job_name="TAAR_ensemble",
+        # GCS bucket for testing is located in `cfr-personalization-experiment` project
+        # python_driver_code="gs://taar_models/tmp/jobs/taar_ensemble.py",
         python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_ensemble.py",
         additional_properties={
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
@@ -157,8 +155,8 @@ taar_ensemble = SubDagOperator(
             "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/pip-install.sh"
         ],
         additional_metadata={
-            # TODO: update taar package version after migration to GCS
-            "PIP_PACKAGES": "mozilla-taar3==0.4.12 mozilla-srgutil==0.2.1 python-decouple==3.1 click==7.0 boto3==1.7.71 dockerflow==2018.4.0"
+            "PIP_PACKAGES": "mozilla-taar3==1.0.7 python-decouple==3.1 click==7.0 "
+                            "google-cloud-storage==1.19.1"
         },
         optional_components=["ANACONDA", "JUPYTER"],
         py_args=[
