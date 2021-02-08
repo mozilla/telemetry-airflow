@@ -162,9 +162,33 @@ mozaggregator2bq_extract = gke_command(
     dag=dag,
 )
 
+mozaggregator2bq_load_build = gke_command(
+    task_id="mozaggregator2bq_extract",
+    name="mozaggregator2bq_extract",
+    command=["bin/load_bq", "build_id"],
+    env_vars=dict(
+        REPLACE="true",
+    ),
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
+    dag=dag,
+)
+
+mozaggregator2bq_load_submission = gke_command(
+    task_id="mozaggregator2bq_extract",
+    name="mozaggregator2bq_extract",
+    command=["bin/load_bq", "submission"],
+    env_vars=dict(
+        REPLACE="true",
+    ),
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
+    dag=dag,
+)
+
 
 prerelease_telemetry_aggregate_view_dataproc >> trim_database
 prerelease_telemetry_aggregate_view_dataproc >> mozaggregator2bq_extract
+mozaggregator2bq_extract >> mozaggregator2bq_load_build
+mozaggregator2bq_extract >> mozaggregator2bq_load_submission
 
 # export to avro, if necessary
 if EXPORT_TO_AVRO:
