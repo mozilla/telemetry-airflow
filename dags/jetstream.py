@@ -42,6 +42,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         execution_delta=timedelta(hours=2),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 
@@ -52,6 +53,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         execution_delta=timedelta(hours=2),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 
@@ -62,6 +64,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         execution_delta=timedelta(hours=1),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 
@@ -72,6 +75,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         execution_delta=timedelta(hours=3),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 
@@ -82,6 +86,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         execution_delta=timedelta(hours=3),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 

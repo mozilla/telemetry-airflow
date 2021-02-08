@@ -42,6 +42,7 @@ with models.DAG(
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         execution_delta=timedelta(hours=1),
         dag=dag,
     )
@@ -65,6 +66,7 @@ with models.DAG(
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         execution_delta=timedelta(hours=2),
         dag=dag,
     )
@@ -87,6 +89,7 @@ with models.DAG(
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         execution_delta=timedelta(hours=2, minutes=30),
         dag=dag,
     )
