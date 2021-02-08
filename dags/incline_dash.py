@@ -29,6 +29,7 @@ with DAG('incline_dashboard',
         execution_delta=timedelta(hours=3),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
     )
 
     wait_for_core_clients_last_seen = ExternalTaskSensor(
@@ -38,6 +39,7 @@ with DAG('incline_dashboard',
         execution_delta=timedelta(hours=2),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
     )
 
     project = "moz-fx-data-shared-prod"

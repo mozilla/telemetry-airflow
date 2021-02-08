@@ -151,6 +151,7 @@ wait_for_clients_daily = ExternalTaskSensor(
     execution_delta=timedelta(hours=1),
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag)
 
 wait_for_main_summary = ExternalTaskSensor(
@@ -160,6 +161,7 @@ wait_for_main_summary = ExternalTaskSensor(
     execution_delta=timedelta(hours=1),
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag)
 
 main_summary_export.set_upstream(wait_for_main_summary)

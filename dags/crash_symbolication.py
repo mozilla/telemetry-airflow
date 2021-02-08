@@ -51,6 +51,7 @@ with DAG(
         execution_delta=datetime.timedelta(hours=5),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 

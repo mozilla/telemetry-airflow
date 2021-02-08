@@ -51,6 +51,7 @@ with models.DAG(
         execution_delta=datetime.timedelta(hours=2),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag)
 
 
@@ -61,6 +62,7 @@ with models.DAG(
         execution_delta=datetime.timedelta(hours=1),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag)
 
 
