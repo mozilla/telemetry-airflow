@@ -158,7 +158,7 @@ mozaggregator2bq_extract = gke_command(
         START_DS="{{ ds }}",
         END_DS="{{ next_ds }}",
     ),
-    image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
     dag=dag,
 )
 
