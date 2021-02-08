@@ -100,6 +100,7 @@ else:
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
     wait_for_search_clients_last_seen >> ltv_daily

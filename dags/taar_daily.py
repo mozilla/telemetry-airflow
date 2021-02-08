@@ -84,6 +84,7 @@ wait_for_clients_daily_export = ExternalTaskSensor(
     execution_delta=timedelta(hours=1),
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag)
 
 taar_locale = SubDagOperator(
