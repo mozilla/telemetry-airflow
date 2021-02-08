@@ -37,16 +37,19 @@ from google.cloud import bigquery
 
 
 def read_from_gcs(fname, prefix, bucket):
-    with io.BytesIO() as tmpfile:
-        client = storage.Client()
-        bucket = client.get_bucket(bucket)
-        simple_fname = f"{prefix}/{fname}.bz2"
-        blob = bucket.blob(simple_fname)
-        blob.download_to_file(tmpfile)
-        tmpfile.seek(0)
-        payload = tmpfile.read()
-        payload = bz2.decompress(payload)
-        return json.loads(payload.decode("utf8"))
+    simple_fname = f"{prefix}/{fname}.bz2"
+    try:
+        with io.BytesIO() as tmpfile:
+            client = storage.Client()
+            bucket = client.get_bucket(bucket)
+            blob = bucket.blob(simple_fname)
+            blob.download_to_file(tmpfile)
+            tmpfile.seek(0)
+            payload = tmpfile.read()
+            payload = bz2.decompress(payload)
+            return json.loads(payload.decode("utf8"))
+    except Exception:
+        logger.exception(f"Error reading from GCS gs://{bucket}/{simple_fname}")
 
 
 def load_amo_curated_whitelist(bucket):
@@ -110,6 +113,7 @@ def get_samples(spark, iso_today):
     BUG 1485152: PR include active_addons to clients_daily table:
     https://github.com/mozilla/telemetry-batch-view/pull/490
     """
+
     df = (
         spark.read.format("bigquery")
         .option(
@@ -458,6 +462,8 @@ class DecimalEncoder(json.JSONEncoder):
         return super().encode(obj)
 
 
+# TODO: json reading from GCS as well as writing is repeated several times across Spark jobs
+# TODO: we should move them to a library, may be taar one, since similar code is used there too
 def store_json_to_gcs(
     bucket, prefix, filename, json_obj, iso_date_str,
 ):
@@ -472,23 +478,27 @@ def store_json_to_gcs(
     :param json_data: A string with the JSON content to write.
     :param date: A date string in the "YYYYMMDD" format.
     """
-    byte_data = json.dumps(json_obj, cls=DecimalEncoder).encode("utf8")
 
-    byte_data = bz2.compress(byte_data)
-    logger.info(f"Compressed data is {len(byte_data)} bytes")
+    try:
+        byte_data = json.dumps(json_obj, cls=DecimalEncoder).encode("utf8")
 
-    client = storage.Client()
-    bucket = client.get_bucket(bucket)
-    simple_fname = f"{prefix}/{filename}.bz2"
-    blob = bucket.blob(simple_fname)
-    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
-    print(f"Wrote out {simple_fname}")
-    blob.upload_from_string(byte_data)
-    long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
-    blob = bucket.blob(long_fname)
-    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
-    print(f"Wrote out {long_fname}")
-    blob.upload_from_string(byte_data)
+        byte_data = bz2.compress(byte_data)
+        logger.info(f"Compressed data is {len(byte_data)} bytes")
+
+        client = storage.Client()
+        bucket = client.get_bucket(bucket)
+        simple_fname = f"{prefix}/{filename}.bz2"
+        blob = bucket.blob(simple_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {simple_fname}")
+        blob.upload_from_string(byte_data)
+        long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
+        blob = bucket.blob(long_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {long_fname}")
+        blob.upload_from_string(byte_data)
+    except Exception:
+        logger.exception(f"Error saving to GCS, Bucket: {bucket}, base object name: {prefix}/{filename}")
 
 
 @click.command()

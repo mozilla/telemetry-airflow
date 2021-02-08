@@ -37,6 +37,7 @@ def is_valid_addon(broadcast_amo_whitelist, guid, addon):
     """ Filter individual addons out to exclude, system addons,
     legacy addons, disabled addons, sideloaded addons.
     """
+
     return not (
         addon.is_system
         or addon.app_disabled
@@ -79,6 +80,7 @@ def get_addons_per_client(broadcast_amo_whitelist, users_df):
 
 def get_table(view):
     """Helper for determining what table underlies a user-facing view, since the Storage API can't read views."""
+
     bq = bigquery.Client()
     view = view.replace(":", ".")
     # partition filter is required, so try a couple options
@@ -89,7 +91,8 @@ def get_table(view):
                 bigquery.QueryJobConfig(dry_run=True),
             )
             break
-        except Exception:
+        except Exception as ex:
+            logger.warning(f'Partition column {partition_column} query has failed', exc_info=ex)
             continue
     else:
         raise ValueError("could not determine partition column")
@@ -116,12 +119,13 @@ def get_initial_sample(spark, thedate):
 
     # Could scale this up to grab more than what is in
     # longitudinal and see how long it takes to run.
-    s3_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
+    # TODO: switch to BigQuery
+    gcs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
         thedate.strftime("%Y%m%d")
     )
-    logging.info("Loading data from : {}".format(s3_url))
+    logging.info("Loading data from : {}".format(gcs_url))
     df = (
-        spark.read.parquet(s3_url)
+        spark.read.parquet(gcs_url)
         .where("active_addons IS NOT null")
         .where("size(active_addons) > 1")
         .where("channel = 'release'")
@@ -167,6 +171,7 @@ def get_initial_sample(spark, thedate):
 def extract_telemetry(spark, thedate, bucket):
     """ load some training data from telemetry given a sparkContext
     """
+
     sc = spark.sparkContext
 
     # Define the set of feature names to be used in the donor computations.
@@ -201,6 +206,7 @@ def key_all(a):
     all *other* addons that were seen co-installed with the key_addon. Excluding
     the key_addon from the second column to avoid inflated counts in later aggregation.
     """
+
     return [(i, [b for b in a if b is not i]) for i in a]
 
 
@@ -294,36 +300,43 @@ def store_json_to_gcs(
     :param json_data: A string with the JSON content to write.
     :param date: A date string in the "YYYYMMDD" format.
     """
-    byte_data = json.dumps(json_obj).encode("utf8")
 
-    byte_data = bz2.compress(byte_data)
-    logger.info(f"Compressed data is {len(byte_data)} bytes")
+    try:
+        byte_data = json.dumps(json_obj).encode("utf8")
 
-    client = storage.Client()
-    bucket = client.get_bucket(bucket)
-    simple_fname = f"{prefix}/{filename}.bz2"
-    blob = bucket.blob(simple_fname)
-    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
-    print(f"Wrote out {simple_fname}")
-    blob.upload_from_string(byte_data)
-    long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
-    blob = bucket.blob(long_fname)
-    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
-    print(f"Wrote out {long_fname}")
-    blob.upload_from_string(byte_data)
+        byte_data = bz2.compress(byte_data)
+        logger.info(f"Compressed data is {len(byte_data)} bytes")
+
+        client = storage.Client()
+        bucket = client.get_bucket(bucket)
+        simple_fname = f"{prefix}/{filename}.bz2"
+        blob = bucket.blob(simple_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {simple_fname}")
+        blob.upload_from_string(byte_data)
+        long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
+        blob = bucket.blob(long_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {long_fname}")
+        blob.upload_from_string(byte_data)
+    except Exception:
+        logger.exception(f"Error saving to GCS, Bucket: {bucket}, base object name: {prefix}/{filename}")
 
 
 def read_from_gcs(fname, prefix, bucket):
-    with io.BytesIO() as tmpfile:
-        client = storage.Client()
-        bucket = client.get_bucket(bucket)
-        simple_fname = f"{prefix}/{fname}.bz2"
-        blob = bucket.blob(simple_fname)
-        blob.download_to_file(tmpfile)
-        tmpfile.seek(0)
-        payload = tmpfile.read()
-        payload = bz2.decompress(payload)
-        return json.loads(payload.decode("utf8"))
+    simple_fname = f"{prefix}/{fname}.bz2"
+    try:
+        with io.BytesIO() as tmpfile:
+            client = storage.Client()
+            bucket = client.get_bucket(bucket)
+            blob = bucket.blob(simple_fname)
+            blob.download_to_file(tmpfile)
+            tmpfile.seek(0)
+            payload = tmpfile.read()
+            payload = bz2.decompress(payload)
+            return json.loads(payload.decode("utf8"))
+    except Exception:
+        logger.exception(f"Error reading from GCS gs://{bucket}/{simple_fname}")
 
 
 def load_amo_external_whitelist(bucket):
@@ -332,6 +345,7 @@ def load_amo_external_whitelist(bucket):
     :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
                           no valid add-ons.
     """
+
     final_whitelist = []
     amo_dump = read_from_gcs(
         AMO_WHITELIST_FNAME, AMO_WHITELIST_PREFIX, bucket

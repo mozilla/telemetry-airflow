@@ -155,6 +155,7 @@ taar_collaborative_recommender = SubDagOperator(
         jar_urls=[
             # GCS bucket for testing is located in `cfr-personalization-experiment` project
             # 'gs://taar_models/tmp/telemetry-batch-view-1.2.jar'
+            # we should move artifacts to GCS eventually
             "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
             "/mozilla/telemetry-batch-view/main/telemetry-batch-view.jar",
         ],

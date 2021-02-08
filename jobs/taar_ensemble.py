@@ -22,15 +22,12 @@ model to compute coefficients for each of the recommenders.
 import click
 import json
 import numpy as np
-import os
-import sys
 import contextlib
 import shutil
 import bz2
 
 from google.cloud import storage
 from datetime import date, timedelta
-from importlib import reload
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.linalg import Vectors
 from pyspark.sql import Row
@@ -53,6 +50,7 @@ CONTINUOUS_FEATURES = [
 
 
 def get_df(spark, date_from, sample_rate):
+    # TODO: switch to BigQuery, should be faster
     gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6"
     parquetFile = spark.read.parquet(gs_url)
     # Use the parquet files to create a temporary view and then used in SQL statements.
@@ -472,22 +470,27 @@ def store_json_to_gcs(
     :param json_data: A string with the JSON content to write.
     :param date: A date string in the "YYYYMMDD" format.
     """
-    byte_data = json.dumps(json_obj).encode("utf8")
 
-    byte_data = bz2.compress(byte_data)
+    try:
+        byte_data = json.dumps(json_obj).encode("utf8")
 
-    client = storage.Client()
-    bucket = client.get_bucket(bucket)
-    simple_fname = f"{prefix}/{filename}.bz2"
-    blob = bucket.blob(simple_fname)
-    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
-    print(f"Wrote out {simple_fname}")
-    blob.upload_from_string(byte_data)
-    long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
-    blob = bucket.blob(long_fname)
-    blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
-    print(f"Wrote out {long_fname}")
-    blob.upload_from_string(byte_data)
+        byte_data = bz2.compress(byte_data)
+
+        client = storage.Client()
+        bucket = client.get_bucket(bucket)
+        simple_fname = f"{prefix}/{filename}.bz2"
+        blob = bucket.blob(simple_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {simple_fname}")
+        blob.upload_from_string(byte_data)
+        long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
+        blob = bucket.blob(long_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {long_fname}")
+        blob.upload_from_string(byte_data)
+    except Exception as ex:
+        print(f"Error saving to GCS, Bucket: {bucket}, base object name: {prefix}/{filename}. "
+              f"{str(ex)}")
 
 
 @click.command()
