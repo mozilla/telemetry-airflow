@@ -163,8 +163,8 @@ mozaggregator2bq_extract = gke_command(
 )
 
 mozaggregator2bq_load_build = gke_command(
-    task_id="mozaggregator2bq_extract",
-    name="mozaggregator2bq_extract",
+    task_id="mozaggregator2bq_load_build",
+    name="mozaggregator2bq_load_build",
     command=["bin/load_bq", "build_id"],
     env_vars=dict(
         REPLACE="true",
@@ -174,8 +174,8 @@ mozaggregator2bq_load_build = gke_command(
 )
 
 mozaggregator2bq_load_submission = gke_command(
-    task_id="mozaggregator2bq_extract",
-    name="mozaggregator2bq_extract",
+    task_id="mozaggregator2bq_load_submission",
+    name="mozaggregator2bq_load_submission",
     command=["bin/load_bq", "submission"],
     env_vars=dict(
         REPLACE="true",
