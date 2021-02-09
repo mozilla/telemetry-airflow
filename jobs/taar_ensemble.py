@@ -20,17 +20,14 @@ model to compute coefficients for each of the recommenders.
 """
 
 import click
-import boto3
 import json
 import numpy as np
-import os
-import sys
-import tempfile
 import contextlib
 import shutil
+import bz2
 
+from google.cloud import storage
 from datetime import date, timedelta
-from importlib import reload
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.linalg import Vectors
 from pyspark.sql import Row
@@ -39,7 +36,6 @@ from pyspark.sql.functions import udf, size, rand
 from pyspark.sql.types import ArrayType
 from pyspark.sql.types import StringType
 from pyspark import SparkConf
-from taar.context import default_context
 
 
 # Define the set of feature names to be used in the donor computations.
@@ -54,6 +50,7 @@ CONTINUOUS_FEATURES = [
 
 
 def get_df(spark, date_from, sample_rate):
+    # TODO: switch to BigQuery, should be faster
     gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6"
     parquetFile = spark.read.parquet(gs_url)
     # Use the parquet files to create a temporary view and then used in SQL statements.
@@ -161,79 +158,17 @@ def row_to_json(row):
     return jdata
 
 
-def reload_configuration():
-    """
-    Configuration needs to be reloaded on a per worker node basis.
-    This is an unfortunate a side effect of re-using the TAAR library which
-    expects to be using python-decouple to load the configuration
-    from enviroment variables.
-    """
-    from taar.recommenders import s3config
-
-    # Locale Recommender Overrides
-    # This *Must* be called just prior to instantiating the individual recommenders in the
-    # ETL enviroment.
-    s3config.TAAR_LOCALE_BUCKET = os.environ[
-        "TAAR_LOCALE_BUCKET"
-    ] = "telemetry-parquet"
-    s3config.TAAR_LOCALE_KEY = os.environ[
-        "TAAR_LOCALE_KEY"
-    ] = "taar/locale/top10_dict.json"
-
-    # Similarity Recommender configuration overrides
-    s3config.TAAR_SIMILARITY_BUCKET = os.environ[
-        "TAAR_SIMILARITY_BUCKET"
-    ] = "telemetry-parquet"
-    s3config.TAAR_SIMILARITY_DONOR_KEY = os.environ[
-        "TAAR_SIMILARITY_DONOR_KEY"
-    ] = "taar/similarity/donors.json"
-    s3config.TAAR_SIMILARITY_LRCURVES_KEY = os.environ[
-        "TAAR_SIMILARITY_LRCURVES_KEY"
-    ] = "taar/similarity/lr_curves.json"
-
-    # Collaborative Recommender Overrides
-    s3config.TAAR_ITEM_MATRIX_BUCKET = os.environ[
-        "TAAR_ITEM_MATRIX_BUCKET"
-    ] = "telemetry-public-analysis-2"
-    s3config.TAAR_ITEM_MATRIX_KEY = os.environ[
-        "TAAR_ITEM_MATRIX_KEY"
-    ] = "telemetry-ml/addon_recommender/item_matrix.json"
-    s3config.TAAR_ADDON_MAPPING_BUCKET = os.environ[
-        "TAAR_ADDON_MAPPING_BUCKET"
-    ] = "telemetry-public-analysis-2"
-    s3config.TAAR_ADDON_MAPPING_KEY = os.environ[
-        "TAAR_ADDON_MAPPING_KEY"
-    ] = "telemetry-ml/addon_recommender/addon_mapping.json"
-
-    from taar.recommenders import LocaleRecommender
-    from taar.recommenders import SimilarityRecommender
-    from taar.recommenders import CollaborativeRecommender
-
-    reload(sys.modules["taar.recommenders"])
-
-    # Force reload of recommender modules
-    [
-        reload(sys.modules[rec_cls.__module__])
-        for rec_cls in [
-            LocaleRecommender,
-            SimilarityRecommender,
-            CollaborativeRecommender,
-        ]
-    ]
-
-
 COLLABORATIVE, SIMILARITY, LOCALE = "collaborative", "similarity", "locale"
 PREDICTOR_ORDER = [COLLABORATIVE, SIMILARITY, LOCALE]
 
 
-def load_recommenders(ctx):
+def load_recommenders():
     from taar.recommenders import LocaleRecommender
     from taar.recommenders import SimilarityRecommender
     from taar.recommenders import CollaborativeRecommender
+    from taar.context import package_context
 
-    ctx = default_context()
-
-    reload_configuration()
+    ctx = package_context()
 
     lr = LocaleRecommender(ctx)
     sr = SimilarityRecommender(ctx)
@@ -247,48 +182,43 @@ def to_stacked_row(recommender_list, client_row):
     # 1 or 0 for a match within at least one recommender.
     # Weight is set to 1.0 as the features will use a cllr result
     # indicating 'matchiness' with the known truth.
-    try:
-        training_client_info = row_to_json(client_row)
+    training_client_info = row_to_json(client_row)
 
-        # Pop off a single addon as the expected set.
-        # I've tried a couple variations on this (pop 1 item, pop 2 items)
-        # but there isn't much effect.
+    # Pop off a single addon as the expected set.
+    # I've tried a couple variations on this (pop 1 item, pop 2 items)
+    # but there isn't much effect.
 
-        expected = [training_client_info["installed_addons"].pop()]
+    expected = [training_client_info["installed_addons"].pop()]
 
-        stacked_row = []
+    stacked_row = []
 
-        cLLR = CostLLR()
+    cLLR = CostLLR()
 
-        for recommend in recommender_list:
-            guid_weight_list = recommend(training_client_info, limit=4)
-            cllr_val = cLLR.evalcllr(guid_weight_list, expected)
-            stacked_row.append(cllr_val)
+    for recommend in recommender_list:
+        guid_weight_list = recommend(training_client_info, limit=4)
+        cllr_val = cLLR.evalcllr(guid_weight_list, expected)
+        stacked_row.append(cllr_val)
 
-        return Row(
-            label=int(cLLR.total > 0.0),
-            weight=1.0,
-            features=Vectors.dense(*stacked_row),
-        )
-    except Exception:
-        # This shouldn't happen. Log relevant data so that we can
-        # Patch this up on the next run
-        return None
+    return Row(
+        label=int(cLLR.total > 0.0),
+        weight=1.0,
+        features=Vectors.dense(*stacked_row),
+    )
+
 
 
 # Stack the prediction results for each recommender into a stacked_row for each
 # client_info blob in the training set.
 
 
-def build_stacked_datasets(ctx, dataset, folds):
+def build_stacked_datasets(dataset, folds):
     # For each of k_folds, we apply the stacking
     # function to the training fold.
     # Where k_folds = 3, this will yield a list consisting
     # of 3 RDDs.   Each RDD is defined by the output of the
     # `stacking` function.
-
     def stacked_row_closure():
-        rec_map = load_recommenders(ctx)
+        rec_map = load_recommenders()
 
         recommender_list = [
             rec_map[COLLABORATIVE].recommend,  # Collaborative
@@ -492,12 +422,12 @@ def compute_regression(spark, rdd_list, regParam, elasticNetParam):
     return blorModel
 
 
-def transform(ctx, spark, taar_training, regParam, elasticNetParam):
+def transform(spark, taar_training, regParam, elasticNetParam):
     k_folds = 4
     df_folds = cross_validation_split(taar_training, k_folds)
 
     stacked_datasets_rdd_list = build_stacked_datasets(
-        ctx, taar_training, df_folds
+        taar_training, df_folds
     )
 
     # Merge a list of RDD lists into a single RDD and then cast it into a DataFrame
@@ -525,67 +455,48 @@ def selfdestructing_path(dirname):
     shutil.rmtree(dirname)
 
 
-def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
-    """Saves the JSON data to a local file and then uploads it to S3.
+def store_json_to_gcs(
+    bucket, prefix, filename, json_obj, iso_date_str
+):
+    """Saves the JSON data to a local file and then uploads it to GCS.
 
     Two copies of the file will get uploaded: one with as "<base_filename>.json"
     and the other as "<base_filename><YYYYMMDD>.json" for backup purposes.
 
+    :param bucket: The GCS bucket name.
+    :param prefix: The GCS prefix.
+    :param filename: A string with the base name of the file to use for saving
+        locally and uploading to GCS
     :param json_data: A string with the JSON content to write.
-    :param base_filename: A string with the base name of the file to use for saving
-        locally and uploading to S3.
     :param date: A date string in the "YYYYMMDD" format.
-    :param prefix: The S3 prefix.
-    :param bucket: The S3 bucket name.
     """
 
-    tempdir = tempfile.mkdtemp()
+    try:
+        byte_data = json.dumps(json_obj).encode("utf8")
 
-    with selfdestructing_path(tempdir):
-        JSON_FILENAME = "{}.json".format(base_filename)
-        FULL_FILENAME = os.path.join(tempdir, JSON_FILENAME)
-        with open(FULL_FILENAME, "w+") as json_file:
-            json_file.write(json_data)
+        byte_data = bz2.compress(byte_data)
 
-        archived_file_copy = "{}{}.json".format(base_filename, date)
-
-        # Store a copy of the current JSON with datestamp.
-        write_to_s3(FULL_FILENAME, archived_file_copy, prefix, bucket)
-        write_to_s3(FULL_FILENAME, JSON_FILENAME, prefix, bucket)
-
-
-def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
-    """Store the new json file containing current top addons per locale to S3.
-
-    :param source_file_name: The name of the local source file.
-    :param s3_dest_file_name: The name of the destination file on S3.
-    :param s3_prefix: The S3 prefix in the bucket.
-    :param bucket: The S3 bucket.
-    """
-    client = boto3.client("s3", "us-west-2")
-    transfer = boto3.s3.transfer.S3Transfer(client)
-
-    # Update the state in the analysis bucket.
-    key_path = s3_prefix + s3_dest_file_name
-    transfer.upload_file(source_file_name, bucket, key_path)
-
-
-def load(coefs, date, prefix, bucket):
-    store_json_to_s3(
-        json.dumps(coefs, indent=2),
-        "ensemble_weight",
-        date,
-        prefix,
-        bucket,
-    )
+        client = storage.Client()
+        bucket = client.get_bucket(bucket)
+        simple_fname = f"{prefix}/{filename}.bz2"
+        blob = bucket.blob(simple_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {simple_fname}")
+        blob.upload_from_string(byte_data)
+        long_fname = f"{prefix}/{filename}.{iso_date_str}.bz2"
+        blob = bucket.blob(long_fname)
+        blob.chunk_size = 5 * 1024 * 1024  # Set 5 MB blob size
+        print(f"Wrote out {long_fname}")
+        blob.upload_from_string(byte_data)
+    except Exception as ex:
+        print(f"Error saving to GCS, Bucket: {bucket}, base object name: {prefix}/{filename}. "
+              f"{str(ex)}")
 
 
 @click.command()
 @click.option("--date", required=True)
-@click.option("--aws_access_key_id", required=True)
-@click.option("--aws_secret_access_key", required=True)
-@click.option("--bucket", default="telemetry-parquet")
-@click.option("--prefix", default="taar/ensemble/")
+@click.option("--gcs_model_bucket", default="taar_models")
+@click.option("--prefix", default="taar/ensemble")
 @click.option("--elastic_net_param", default=0.01)
 @click.option("--reg_param", default=0.1)
 @click.option("--min_installed_addons", default=4)
@@ -593,9 +504,7 @@ def load(coefs, date, prefix, bucket):
 @click.option("--sample_rate", default=0.005)
 def main(
     date,
-    aws_access_key_id,
-    aws_secret_access_key,
-    bucket,
+    gcs_model_bucket,
     prefix,
     elastic_net_param,
     reg_param,
@@ -605,12 +514,6 @@ def main(
 ):
     print("Sampling clients since {}".format(client_sample_date_from))
 
-    # Clobber the AWS access credentials
-    os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key_id
-    os.environ["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
-
-    ctx = default_context()
-
     APP_NAME = "TaarEnsemble"
     conf = SparkConf().setAppName(APP_NAME)
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
@@ -618,8 +521,11 @@ def main(
     taar_training = extract(
         spark, client_sample_date_from, min_installed_addons, sample_rate
     )
-    coefs = transform(ctx, spark, taar_training, reg_param, elastic_net_param)
-    load(coefs, date, prefix, bucket)
+    coefs = transform(spark, taar_training, reg_param, elastic_net_param)
+
+    store_json_to_gcs(
+        gcs_model_bucket, prefix, "ensemble_weight.json", coefs, date,
+    )
 
 
 if __name__ == "__main__":
