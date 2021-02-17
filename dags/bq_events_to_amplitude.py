@@ -77,6 +77,7 @@ with models.DAG(
         execution_delta=datetime.timedelta(hours=1),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag)
     wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
@@ -85,6 +86,7 @@ with models.DAG(
         execution_delta=datetime.timedelta(hours=1),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 
@@ -176,6 +178,7 @@ with models.DAG(
         check_existence=True,
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         execution_delta=datetime.timedelta(minutes=30),
         dag=dag,
     )

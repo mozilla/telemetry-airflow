@@ -47,6 +47,7 @@ wait_for_main_ping = ExternalTaskSensor(
     check_existence=True,
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag,
 )
 
@@ -94,6 +95,7 @@ wait_for_clients_last_seen = ExternalTaskSensor(
     check_existence=True,
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag,
 )
 
