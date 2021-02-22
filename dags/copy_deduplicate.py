@@ -64,6 +64,7 @@ with models.DAG(
         # copy_deduplicate job in another DAG.
         except_tables=["telemetry_live.main_v4"],
         node_selectors={"nodepool" : "highmem"},
+        namespace='highmem',
         resources=resources)
 
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(

@@ -44,6 +44,7 @@ with DAG('probe_scraper',
         resources=resources,
         # This python job requires 13 GB of memory, thus the highmem node pool
         node_selectors={"nodepool" : "highmem"},
+        namespace='highmem',
         # Due to the nature of the container run, we set get_logs to False,
         # To avoid urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes read)' errors
         # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
