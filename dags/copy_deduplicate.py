@@ -22,11 +22,9 @@ A few immediate downstream tables are also included in this DAG.
 
 ## Workflows
 
-Note that we have recently seen two incidents of manual reruns of
-`copy_deduplicate_main_ping` lead to missing data as captured in
-[bug 1686519](https://bugzilla.mozilla.org/show_bug.cgi?id=1686519).
-If you kick off a manual rerun of a `copy_deduplicate` job, take care
-to validate that the partition is properly populated.
+In early 2021, manual reruns of `copy_deduplicate` were leading to empty
+partitions, but the root cause has been fixed. See
+[bug 1690363](https://bugzilla.mozilla.org/show_bug.cgi?id=1690363).
 """
 
 default_args = {
