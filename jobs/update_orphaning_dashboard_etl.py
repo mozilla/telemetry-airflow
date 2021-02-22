@@ -99,8 +99,8 @@ print("latest_ver_date_str : " + latest_ver_date_str)
 
 ##################################### BEGIN LONGITUDINAL SHIM ##########################################################
 GCS_TABLE_DUMP_PATH = f"gs://{args.gcs_bucket}/{args.gcs_prefix}/longitudinal-shim-dump/"
-AGGREGATION_TABLE_PROJECT = "moz-fx-data-shared-prod"
-AGGREGATION_TABLE_DATASET = "analysis"
+AGGREGATION_TABLE_PROJECT = "mozdata"
+AGGREGATION_TABLE_DATASET = "tmp"
 AGGREGATION_TABLE_NAME = "out_of_date_longitudinal_shim"
 
 def longitudinal_shim_aggregate(date_from, date_to, destination_project, destination_dataset, destination_table):
