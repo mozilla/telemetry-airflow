@@ -5,7 +5,7 @@ from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": ["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
+    "email": ["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),
     "email_on_failure": True,
@@ -19,17 +19,35 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
     # Built from repo https://github.com/mozilla/jetstream
     jetstream_image = "gcr.io/moz-fx-data-experiments/jetstream:latest"
 
-    jetstream = GKEPodOperator(
-        task_id="jetstream",
-        name="jetstream",
+    jetstream_run = GKEPodOperator(
+        task_id="jetstream_run",
+        name="jetstream_run",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "ssuh@mozilla.com", "tdsmith@mozilla.com",],
+        email=["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
         arguments=[
+            "--log_to_bigquery",
             "run-argo", 
             "--date={{ ds }}",
             # the Airflow cluster doesn't have Compute Engine API access so pass in IP 
             # and certificate in order for the pod to connect to the Kubernetes cluster
             # running Jetstream 
+            "--cluster-ip={{ var.value.jetstream_cluster_ip }}",
+            "--cluster-cert={{ var.value.jetstream_cluster_cert }}"],
+        dag=dag,
+    )
+
+    jetstream_config_changed = GKEPodOperator(
+        task_id="jetstream_run_config_changed",
+        name="jetstream_run_config_changed",
+        image=jetstream_image,
+        email=["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
+        arguments=[
+            "--log_to_bigquery",
+            "rerun-config-changed",
+            "--argo",
+            # the Airflow cluster doesn't have Compute Engine API access so pass in IP 
+            # and certificate in order for the pod to connect to the Kubernetes cluster
+            # running Jetstream
             "--cluster-ip={{ var.value.jetstream_cluster_ip }}",
             "--cluster-cert={{ var.value.jetstream_cluster_cert }}"],
         dag=dag,
@@ -90,7 +108,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         dag=dag,
     )
 
-    jetstream.set_upstream(
+    jetstream_run.set_upstream(
         [
             wait_for_clients_daily_export,
             wait_for_main_summary_export,
@@ -99,3 +117,4 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
             wait_for_copy_deduplicate_events,
         ]
     )
+    jetstream_config_changed.set_upstream(jetstream_run)
