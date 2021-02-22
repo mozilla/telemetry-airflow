@@ -15,6 +15,7 @@ from utils.gcp import bigquery_etl_query, gke_command
 
 project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
+tmp_project = "mozdata"  # for temporary tables in analysis dataset
 default_args = {
     "owner": "msamuel@mozilla.com",
     "depends_on_past": False,
@@ -114,6 +115,7 @@ scalar_percentiles = gke_command(
         "--submission-date", "{{ds}}",
         "--dst-table", "scalar_percentiles_v1",
         "--project", project_id,
+        "--tmp-project", tmp_project,
         "--dataset", dataset_id,
     ],
     docker_image="mozilla/bigquery-etl:latest",
@@ -201,6 +203,7 @@ client_scalar_probe_counts = gke_command(
         "--submission-date", "{{ds}}",
         "--dst-table", "clients_scalar_probe_counts_v1",
         "--project", project_id,
+        "--tmp-project", tmp_project,
         "--dataset", dataset_id,
     ],
     docker_image="mozilla/bigquery-etl:latest",

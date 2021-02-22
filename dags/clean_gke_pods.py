@@ -41,7 +41,7 @@ docker_args = [
     '--project', 'moz-fx-data-derived-datasets',
     '--gke-cluster', gke_cluster_name,
     '--region', gke_location,
-    '--retention-days', '2'
+    '--retention-days', '4'
 ]
 
 clean_gke_pods = GKEPodOperator(
