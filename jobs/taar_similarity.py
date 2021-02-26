@@ -522,7 +522,6 @@ def main(
 
     spark = (
         SparkSession.builder.appName("taar_similarity")
-        .enableHiveSupport()
         .getOrCreate()
     )
 
