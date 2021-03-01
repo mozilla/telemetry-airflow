@@ -60,7 +60,7 @@ with DAG('probe_scraper',
         dag=dag)
 
     schema_generator = GKEPodOperator(
-        email=['frank@mozilla.com'],
+        email=['frank@mozilla.com', 'dataops+alerts@mozilla.com'],
         task_id='mozilla_schema_generator',
         name='schema-generator-1',
         image='mozilla/mozilla-schema-generator:latest',
