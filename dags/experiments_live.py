@@ -52,28 +52,44 @@ with DAG('experiments_live',
 
 
     # list of datasets to execute query for and export
-    experiment_datasets = [
+    experiment_enrollment_datasets = [
         "moz-fx-data-shared-prod.telemetry_derived.experiment_enrollment_other_events_overall_v1",
         "moz-fx-data-shared-prod.telemetry_derived.experiment_enrollment_cumulative_population_estimate_v1",
         "moz-fx-data-shared-prod.telemetry_derived.experiment_enrollment_overall_v1",
         "moz-fx-data-shared-prod.telemetry_derived.experiment_unenrollment_overall_v1",
+    ]
+
+    experiment_enrollment_export = gke_command(
+        task_id="experiment_enrollment_export",
+        command=[
+            "python", "experiments_monitoring_data_export/export.py",
+            "--datasets",
+        ] + experiment_enrollment_datasets,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/experiments-monitoring-data-export:latest",
+        dag=dag,
+    )
+
+    # search data export
+    # todo: use materialized views
+
+    experiment_search_datasets = [
         "moz-fx-data-shared-prod.telemetry_derived.experiment_cumulative_ad_clicks_v1",
         "moz-fx-data-shared-prod.telemetry_derived.experiment_cumulative_search_count_v1",
         "moz-fx-data-shared-prod.telemetry_derived.experiment_cumulative_search_with_ads_count_v1"
     ]
 
-    export_monitoring_data = gke_command(
+    export_search_monitoring_data = gke_command(
         task_id="export_enrollments_monitoring_data",
         command=[
             "python",
             "script/experiments/export_experiment_monitoring_data.py",
             "--datasets"
-        ] + experiment_datasets,
+        ] + experiment_search_datasets,
         docker_image=docker_image,
         is_delete_operator_pod=True,
     )
 
-    for dataset in experiment_datasets:
+    for dataset in experiment_search_datasets:
         task_id = dataset.split(".")[-1]
 
         query_etl = bigquery_etl_query(
@@ -90,7 +106,7 @@ with DAG('experiments_live',
 
         query_etl.set_upstream(experiment_enrollment_aggregates_recents)
         query_etl.set_upstream(experiment_search_aggregates_recents)
-        export_monitoring_data.set_upstream(query_etl)
+        export_search_monitoring_data.set_upstream(query_etl)
 
     export_daily_active_population_monitoring_data = gke_command(
         task_id=f"export_experiment_enrollment_daily_active_population",
