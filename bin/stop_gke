@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# This is to be used by the Makefile for a stop gke target.
+
+set -eo pipefail
+
+USERNAME=$(gcloud config get-value account | awk -F"@" '{print $1}')
+CLUSTERNAME=$USERNAME-gke-sandbox
+
+if gcloud container clusters describe $CLUSTERNAME --region us-west1 --project moz-fx-data-gke-sandbox >/dev/null 2>&1; then
+    gcloud container clusters delete $CLUSTERNAME --region us-west1 --quiet --project moz-fx-data-gke-sandbox
+else
+    echo "cluster $CLUSTERNAME does not exist"
+fi

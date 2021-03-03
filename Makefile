@@ -10,7 +10,9 @@ help:
 	@echo "  run        Run a airflow command"
 	@echo "  secret     Create a secret to be used for a config variable"
 	@echo "  shell      Opens a Bash shell"
-	@echo "  up         Runs the whole stack, served under http://localhost:8000/\n"
+	@echo "  up         Runs the whole stack, served under http://localhost:8000/"
+	@echo "  gke        Create a sandbox gke cluster for testing"
+	@echo "  clean-gke  Delete the sandbox gke cluster"
 	@echo "  stop       Stops the docker containers"
 
 build:
@@ -39,6 +41,12 @@ stop:
 
 up:
 	docker-compose up
+
+gke:
+	bin/start_gke
+
+clean-gke:
+	bin/stop_gke
 
 test:
 	tox

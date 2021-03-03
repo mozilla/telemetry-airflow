@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# This is to be used by the Makefile for a start gke target.
+
+set -eo pipefail
+
+# Set Env var MY_LOCAL_IP or use icanhazip.com to fetch it
+# https://major.io/icanhazip-com-faq/#what-about-my-privacy
+MY_IP=${MY_LOCAL_IP:-$(curl icanhazip.com)}
+echo "local ip is $MY_IP"
+
+USERNAME=$(gcloud config get-value account | awk -F"@" '{print $1}')
+CLUSTERNAME=$USERNAME-gke-sandbox
+
+# Create GKE Cluster - No TTL available, will need a external monitor with cleanup
+if gcloud container clusters describe $CLUSTERNAME --project moz-fx-data-gke-sandbox --region us-west1 >/dev/null 2>&1; then
+    echo "cluster $CLUSTERNAME exists"
+else
+    echo "cluster $CLUSTERNAME doesn't exist. creating..."
+    gcloud container clusters create $CLUSTERNAME \
+           --enable-stackdriver-kubernetes \
+           -m n1-standard-4 \
+           --release-channel="stable" \
+           --enable-master-authorized-networks \
+           --master-authorized-networks="$MY_IP/32" \
+           --region us-west1 \
+           --num-nodes=1 \
+           --scopes="cloud-platform" \
+           --service-account="data-gke-sandbox-runner@moz-fx-data-gke-sandbox.iam.gserviceaccount.com" \
+           --project moz-fx-data-gke-sandbox
+
+fi
+
+echo "fetching secret..."
+JSON_CREDS=$(gcloud secrets versions access latest --secret="gke-sandbox-creds" --project moz-fx-data-gke-sandbox)
+
+# Upload secret to local wtmo
+GCP_CONN_ID="google_cloud_gke_sandbox"
+
+if ! docker ps | grep _web; then
+    echo "ERROR: Airflow container is likely not running (or docker). Run 'make up' to start airflow containers"
+fi
+
+CONTAINER_ID=$(docker ps | grep _web | cut -d' ' -f1)
+
+echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
+docker exec $CONTAINER_ID airflow connections -d --conn_id $GCP_CONN_ID
+
+docker exec $CONTAINER_ID airflow connections -a --conn_id $GCP_CONN_ID \
+       --conn_type google_cloud_platform \
+       --conn_extra "$JSON_CREDS"
+
+echo "visit https://go.corp.mozilla.com/wtmodev for more info"
