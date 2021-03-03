@@ -124,9 +124,8 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
 
 trim_database = gke_command(
     task_id="trim_database",
-    cmds=["bash"],
+    cmds=["python"],
     command=[
-        "python",
         "-m",
         "mozaggregator.trim_db",
         "--retention-period",
@@ -176,7 +175,7 @@ mozaggregator2bq_load_build = gke_command(
 mozaggregator2bq_load_submission = gke_command(
     task_id="mozaggregator2bq_load_submission",
     name="mozaggregator2bq_load_submission",
-    command=["bin/load_bq", "submission"],
+    command=["bin/load_bq", "submission_date"],
     env_vars=dict(
         REPLACE="true",
     ),
