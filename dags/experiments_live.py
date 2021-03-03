@@ -24,19 +24,6 @@ with DAG('experiments_live',
 
     docker_image = "mozilla/bigquery-etl:latest"
 
-    experiment_enrollment_aggregates_recents = bigquery_etl_query(
-        task_id="experiment_enrollment_aggregates_recents",
-        destination_table="experiment_enrollment_aggregates_recents_v1",
-        dataset_id="telemetry_derived",
-        project_id="moz-fx-data-shared-prod",
-        owner="ascholtz@mozilla.com",
-        email=["ascholtz@mozilla.com", "telemetry-alerts@mozilla.com"],
-        date_partition_parameter=None,
-        parameters=["submission_timestamp:TIMESTAMP:{{ts}}"],
-        dag=dag,
-        is_delete_operator_pod=True,
-    )
-
     experiment_search_aggregates_recents = bigquery_etl_query(
         task_id="experiment_search_aggregates_recents",
         destination_table="experiment_search_aggregates_recents_v1",
@@ -65,7 +52,7 @@ with DAG('experiments_live',
             "python", "experiments_monitoring_data_export/export.py",
             "--datasets",
         ] + experiment_enrollment_datasets,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/experiments-monitoring-data-export:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/experiments-monitoring-data-export_docker_etl:latest",
         dag=dag,
     )
 
@@ -104,7 +91,6 @@ with DAG('experiments_live',
             is_delete_operator_pod=True,
         )
 
-        query_etl.set_upstream(experiment_enrollment_aggregates_recents)
         query_etl.set_upstream(experiment_search_aggregates_recents)
         export_search_monitoring_data.set_upstream(query_etl)
 
