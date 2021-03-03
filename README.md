@@ -101,13 +101,14 @@ sed -i "s/10001/$(id -u)/g" Dockerfile.dev
 
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
-For now, follow the steps outlined here to create a service account: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
-
-Enable that service account in Airflow with the following:
+See https://go.corp.mozilla.com/wtmodev for more details.
 
 ```
 make build && make up
-./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS
+make gke
+
+When done:
+make clean-gke
 ```
 
 From there, [connect to Airflow](localhost:8000) and enable your job.
