@@ -5,6 +5,7 @@
 import base64
 import datetime
 import json
+import logging
 import uuid
 import time
 
@@ -524,9 +525,9 @@ def do_sleep(minutes):
 
     Writes out an update every minute to give some indication of aliveness.
     """
-    print(f"Configured to sleep for {minutes} minutes. Let's begin.")
+    logging.info(f"Configured to sleep for {minutes} minutes. Let's begin.")
     for i in range(minutes, 0, -1):
-        print(f"{i} minute(s) of sleeping left")
+        logging.info(f"{i} minute(s) of sleeping left")
         time.sleep(60)
 
 
@@ -535,6 +536,8 @@ def sleep_task(minutes, task_id):
 
     :param int    minutes: [Required] Number of minutes to sleep
     :param string task_id: [Required] ID for the task
+
+    :return: PythonOperator
     """
     return PythonOperator(
         task_id=task_id,
