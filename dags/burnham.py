@@ -5,7 +5,9 @@
 import base64
 import datetime
 import json
+import logging
 import uuid
+import time
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
@@ -518,6 +520,32 @@ def encode_test_scenarios(test_scenarios):
     return b64_encoded
 
 
+def do_sleep(minutes):
+    """Sleep for the given number of minutes.
+
+    Writes out an update every minute to give some indication of aliveness.
+    """
+    logging.info(f"Configured to sleep for {minutes} minutes. Let's begin.")
+    for i in range(minutes, 0, -1):
+        logging.info(f"{i} minute(s) of sleeping left")
+        time.sleep(60)
+
+
+def sleep_task(minutes, task_id):
+    """Return an operator that sleeps for a certain number of minutes.
+
+    :param int    minutes: [Required] Number of minutes to sleep
+    :param string task_id: [Required] ID for the task
+
+    :return: PythonOperator
+    """
+    return PythonOperator(
+        task_id=task_id,
+        depends_on_past=False,
+        python_callable=do_sleep,
+    )
+
+
 with DAG(
     "burnham",
     schedule_interval="@daily",
@@ -594,6 +622,11 @@ with DAG(
     )
     client4.set_upstream(generate_burnham_test_run_uuid)
 
+    # We expect up to 20 minute latency for pings to get loaded to live tables
+    # in BigQuery, so we have a task that explicitly sleeps for 20 minutes
+    # and make that a dependency for our tasks that need to read the BQ data.
+    sleep_20_minutes = sleep_task(minutes=20, task_id="sleep_20_minutes")
+
     # Tasks related to the discovery table
     wait_for_discovery_data = burnham_sensor(
         task_id="wait_for_discovery_data",
@@ -607,7 +640,7 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data.set_upstream([client1, client2, client3])
+    wait_for_discovery_data.set_upstream([client1, client2, client3, sleep_20_minutes])
 
     discovery_test_scenarios = [
         {
@@ -655,7 +688,7 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_starbase46_data.set_upstream([client1, client2, client3])
+    wait_for_starbase46_data.set_upstream([client1, client2, client3, sleep_20_minutes])
 
     starbase46_test_scenarios = [
         {
@@ -688,7 +721,9 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_space_ship_ready_data.set_upstream([client1, client2, client3])
+    wait_for_space_ship_ready_data.set_upstream(
+        [client1, client2, client3, sleep_20_minutes]
+    )
 
     space_ship_ready_test_scenarios = [
         {
@@ -720,7 +755,7 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data_disable_upload.set_upstream([client4])
+    wait_for_discovery_data_disable_upload.set_upstream([client4, sleep_20_minutes])
 
     discovery_test_scenarios_disable_upload = [
         {
@@ -761,7 +796,7 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_deletion_request_data.set_upstream([client4])
+    wait_for_deletion_request_data.set_upstream([client4, sleep_20_minutes])
 
     deletion_request_test_scenarios = [
         {
