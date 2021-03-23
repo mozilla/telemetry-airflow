@@ -543,6 +543,7 @@ def sleep_task(minutes, task_id):
         task_id=task_id,
         depends_on_past=False,
         python_callable=do_sleep,
+        op_kwargs=dict(minutes=minutes),
     )
 
 
