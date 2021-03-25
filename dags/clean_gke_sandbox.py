@@ -33,6 +33,7 @@ default_args = {
 dag = DAG("clean-gke-sandbox", default_args=default_args, schedule_interval="@daily", doc_md = docs)
 
 docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/gke-sandbox-clean:1.0'
+# TODO - change this to the new gke cluster and use workload identity?
 gke_cluster_name='bq-load-gke-1'
 gke_location='us-central1-a'
 
