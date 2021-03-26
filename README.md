@@ -2,17 +2,22 @@
 
 [![CircleCi](https://circleci.com/gh/mozilla/telemetry-airflow.svg?style=shield&circle-token=62f4c1be98e5c9f36bd667edb7545fa736eed3ae)](https://circleci.com/gh/mozilla/telemetry-airflow)
 
-Airflow is a platform to programmatically author, schedule and monitor workflows.
+[Apache Airflow](https://airflow.apache.org/) is a platform to programmatically
+author, schedule and monitor workflows.
 
-When workflows are defined as code, they become more maintainable, versionable,
-testable, and collaborative.
+This repository codifies the Airflow cluster that is deployed at
+[workflow.telemetry.mozilla.org](https://workflow.telemetry.mozilla.org)
+(behind SSO) and commonly referred to as "WTMO" or simply "Airflow".
 
-Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks.
-The Airflow scheduler executes your tasks on an array of workers while following
-the specified dependencies. Rich command line utilities make performing complex
-surgeries on DAGs a snap. The rich user interface makes it easy to visualize
-pipelines running in production, monitor progress, and troubleshoot issues when
-needed.
+Some links relevant to users and developers of WTMO:
+
+- The `dags` directory in this repository contains some custom DAG definitions
+- Many of the DAGs registered with WTMO don't live in this repository, but are
+  instead generated from ETL task definitions in
+  [bigquery-etl](https://github.com/mozilla/bigquery-etl)
+- The Data SRE team maintains a
+  [WTMO Developer Guide](https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide)
+  (behind SSO)
 
 ## Prerequisites
 
