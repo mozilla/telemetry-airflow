@@ -108,6 +108,20 @@ with models.DAG(
 
     # Daily and last seen views on top of every Glean application.
 
+    telemetry_derived__core_clients_first_seen__v1 = bigquery_etl_query(
+        task_id="telemetry_derived__core_clients_first_seen__v1",
+        destination_table="core_clients_first_seen_v1",
+        dataset_id="telemetry_derived",
+        project_id="moz-fx-data-shared-prod",
+        owner="amiyaguchi@mozilla.com",
+        email=["amiyaguchi@mozilla.com", "telemetry-alerts@mozilla.com"],
+        date_partition_parameter="submission_date",
+        depends_on_past=True,
+        dag=dag,
+    )
+
+    copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
+
     gcp_conn_id = "google_cloud_derived_datasets"
     baseline_etl_kwargs = dict(
         gcp_conn_id=gcp_conn_id,
