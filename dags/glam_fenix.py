@@ -20,6 +20,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
+PROJECT = "moz-fx-data-glam-prod-fca7"
+BUCKET = "moz-fx-data-glam-prod-fca7-etl-data"
+
 # Fenix as a product has a convoluted app_id history. The comments note the
 # start and end dates of the id in the app store.
 # https://docs.google.com/spreadsheets/d/18PzkzZxdpFl23__-CIO735NumYDqu7jHpqllo0sBbPA
@@ -53,6 +56,9 @@ wait_for_copy_deduplicate = ExternalTaskSensor(
     external_task_id="copy_deduplicate_all",
     execution_delta=timedelta(hours=1),
     check_existence=True,
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag,
 )
 
@@ -61,7 +67,7 @@ for product in PRODUCTS:
     query = generate_and_run_glean_query(
         task_id=f"daily_{product}",
         product=product,
-        destination_project_id="glam-fenix-dev",
+        destination_project_id=PROJECT,
         env_vars=dict(STAGE="daily"),
         dag=dag,
     )
@@ -76,7 +82,7 @@ for product in final_products:
     query = generate_and_run_glean_query(
         task_id=f"incremental_{product}",
         product=product,
-        destination_project_id="glam-fenix-dev",
+        destination_project_id=PROJECT,
         env_vars=dict(STAGE="incremental"),
         dag=dag,
     )
@@ -88,7 +94,12 @@ for product in final_products:
     export = gke_command(
         task_id=f"export_{product}",
         cmds=["bash"],
-        env_vars={"DATASET": "glam_etl", "PRODUCT": product},
+        env_vars={
+            "SRC_PROJECT": PROJECT,
+            "DATASET": "glam_etl",
+            "PRODUCT": product,
+            "BUCKET": BUCKET,
+        },
         command=["script/glam/export_csv"],
         docker_image="mozilla/bigquery-etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",

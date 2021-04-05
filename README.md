@@ -2,17 +2,22 @@
 
 [![CircleCi](https://circleci.com/gh/mozilla/telemetry-airflow.svg?style=shield&circle-token=62f4c1be98e5c9f36bd667edb7545fa736eed3ae)](https://circleci.com/gh/mozilla/telemetry-airflow)
 
-Airflow is a platform to programmatically author, schedule and monitor workflows.
+[Apache Airflow](https://airflow.apache.org/) is a platform to programmatically
+author, schedule and monitor workflows.
 
-When workflows are defined as code, they become more maintainable, versionable,
-testable, and collaborative.
+This repository codifies the Airflow cluster that is deployed at
+[workflow.telemetry.mozilla.org](https://workflow.telemetry.mozilla.org)
+(behind SSO) and commonly referred to as "WTMO" or simply "Airflow".
 
-Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks.
-The Airflow scheduler executes your tasks on an array of workers while following
-the specified dependencies. Rich command line utilities make performing complex
-surgeries on DAGs a snap. The rich user interface makes it easy to visualize
-pipelines running in production, monitor progress, and troubleshoot issues when
-needed.
+Some links relevant to users and developers of WTMO:
+
+- The `dags` directory in this repository contains some custom DAG definitions
+- Many of the DAGs registered with WTMO don't live in this repository, but are
+  instead generated from ETL task definitions in
+  [bigquery-etl](https://github.com/mozilla/bigquery-etl)
+- The Data SRE team maintains a
+  [WTMO Developer Guide](https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide)
+  (behind SSO)
 
 ## Prerequisites
 
@@ -37,16 +42,6 @@ An Airflow container can be built with
 
 ```bash
 make build
-```
-
-### Export Credentials
-
-For now, DAGs that use the Databricks operator won't parse until the following environment variables are set (see issue #501):
-
-```
-AWS_SECRET_ACCESS_KEY
-AWS_ACCESS_KEY_ID
-DB_TOKEN
 ```
 
 ### Migrate Database
@@ -109,33 +104,16 @@ sed -i "s/10001/$(id -u)/g" Dockerfile.dev
 
 ```
 
-### Testing Databricks Jobs
-
-To run a job running on Databricks, run `make up` in the background. Follow
-[this guide on generating a
-token](https://docs.databricks.com/api/latest/authentication.html#generate-a-token)
-and save this to a secure location. Export the token to a an environment
-variable:
-
-```bash
-export DB_TOKEN=<TOKEN>
-```
-
-Finally, run the testing command using docker-compose directly:
-
-```bash
-docker-compose exec web airflow test example spark 20180101
-```
-
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
-For now, follow the steps outlined here to create a service account: https://bugzilla.mozilla.org/show_bug.cgi?id=1553559#c1.
-
-Enable that service account in Airflow with the following:
+See https://go.corp.mozilla.com/wtmodev for more details.
 
 ```
 make build && make up
-./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS
+make gke
+
+When done:
+make clean-gke
 ```
 
 From there, [connect to Airflow](localhost:8000) and enable your job.
@@ -173,14 +151,6 @@ variables:
 
 - `AWS_ACCESS_KEY_ID` -- The AWS access key ID to spin up the Spark clusters
 - `AWS_SECRET_ACCESS_KEY` -- The AWS secret access key
-- `SPARK_BUCKET` -- The AWS S3 bucket where Spark related files are stored,
-  e.g. `telemetry-spark-emr-2`
-- `AIRFLOW_BUCKET` -- The AWS S3 bucket where airflow specific files are stored,
-  e.g. `telemetry-airflow`
-- `PUBLIC_OUTPUT_BUCKET` -- The AWS S3 bucket where public job results are
-  stored in, e.g. `telemetry-public-analysis-2`
-- `PRIVATE_OUTPUT_BUCKET` -- The AWS S3 bucket where private job results are
-  stored in, e.g. `telemetry-parquet`
 - `AIRFLOW_DATABASE_URL` -- The connection URI for the Airflow database, e.g.
   `mysql://username:password@hostname:port/database`
 - `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
@@ -207,8 +177,7 @@ variables:
   `master` or `tags`. You can specify the tag or travis build exactly as well, e.g.
   `master/42.1` or `tags/v2.2.1`. Not specifying the exact tag or build will
   use the latest from that branch, or the latest tag.
-- `ARTIFACTS_BUCKET` -- The s3 bucket where the build artifacts can be found, e.g.
-  `net-mozaws-data-us-west-2-ops-ci-artifacts`
+
 
 Also, please set
 

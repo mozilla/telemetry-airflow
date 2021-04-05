@@ -3,13 +3,31 @@ import datetime
 from airflow import models
 from airflow.operators.sensors import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
-from utils.gcp import (bigquery_etl_copy_deduplicate,
-                       bigquery_etl_query,
-                       gke_command,
-                       bigquery_xcom_query)
+from utils.gcp import (
+    bigquery_etl_copy_deduplicate,
+    bigquery_etl_query,
+    gke_command,
+    bigquery_xcom_query,
+)
 
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from operators.gcp_container_operator import GKEPodOperator
+
+DOCS = """\
+# Copy-Deduplicate
+
+This DAG is the root of most derived tables. For each live ping table that the
+data pipeline populates, we run a "copy_deduplicate" query once per day to
+populate the corresponding stable table.
+
+A few immediate downstream tables are also included in this DAG.
+
+## Workflows
+
+In early 2021, manual reruns of `copy_deduplicate` were leading to empty
+partitions, but the root cause has been fixed. See
+[bug 1690363](https://bugzilla.mozilla.org/show_bug.cgi?id=1690363).
+"""
 
 default_args = {
     "owner": "jklukas@mozilla.com",
@@ -26,32 +44,48 @@ default_args = {
 dag_name = "copy_deduplicate"
 
 with models.DAG(
-        dag_name,
-        schedule_interval="0 1 * * *",
-        default_args=default_args) as dag:
+    dag_name, schedule_interval="0 1 * * *", doc_md=DOCS, default_args=default_args
+) as dag:
 
     # This single task is responsible for sequentially running copy queries
     # over all the tables in _live datasets into _stable datasets except those
     # that are specifically used in another DAG.
+    resources = {
+        "request_memory": "10240Mi",
+        "request_cpu": None,
+        "limit_memory": "20480Mi",
+        "limit_cpu": None,
+        "limit_gpu": None,
+    }
+
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all",
         target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
         priority_weight=100,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job in another DAG.
-        except_tables=["telemetry_live.main_v4"])
+        except_tables=["telemetry_live.main_v4"],
+        node_selectors={"nodepool": "highmem"},
+        resources=resources,
+    )
 
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
         target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
         only_tables=["telemetry_live.main_v4"],
         parallelism=24,
         slices=100,
         owner="jklukas@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "relud@mozilla.com", "jklukas@mozilla.com"],
+        email=[
+            "telemetry-alerts@mozilla.com",
+            "relud@mozilla.com",
+            "jklukas@mozilla.com",
+        ],
         priority_weight=100,
-        dag=dag)
-
+        dag=dag,
+    )
 
     # Events.
 
@@ -60,9 +94,10 @@ with models.DAG(
         project_id="moz-fx-data-shared-prod",
         destination_table="event_events_v1",
         dataset_id="telemetry_derived",
+        priority_weight=90,
         owner="ssuh@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
-        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
+        arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
     copy_deduplicate_all >> event_events
@@ -72,100 +107,36 @@ with models.DAG(
         project_id="moz-fx-data-shared-prod",
         destination_table="main_events_v1",
         dataset_id="telemetry_derived",
+        priority_weight=90,
         owner="ssuh@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
         dag=dag,
-        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
+        arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
     copy_deduplicate_main_ping >> bq_main_events
 
-    # Experiment enrollment aggregates chain (depends on events)
-
-    experiment_enrollment_aggregates = bigquery_etl_query(
-        task_id="experiment_enrollment_aggregates",
-        project_id="moz-fx-data-shared-prod",
-        destination_table="experiment_enrollment_aggregates_v1",
-        dataset_id="telemetry_derived",
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
-
-    gen_query_task_id = "experiment_enrollment_aggregates_live_generate_query"
-
-    # setting xcom_push to True outputs this query to an xcom
-    experiment_enrollment_aggregates_live_generate_query = gke_command(
-        task_id=gen_query_task_id,
-        command=[
-            "python",
-            "sql/moz-fx-data-shared-prod/telemetry_derived/experiment_enrollment_aggregates_live/view.sql.py",
-            "--submission-date",
-            "{{ ds }}",
-            "--json-output",
-            "--wait-seconds",
-            "15",
-        ],
-        docker_image="mozilla/bigquery-etl:latest",
-        xcom_push=True,
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
-
-    experiment_enrollment_aggregates_live_run_query = bigquery_xcom_query(
-        task_id="experiment_enrollment_aggregates_live_run_query",
-        destination_table=None,
-        dataset_id="telemetry_derived",
-        xcom_task_id=gen_query_task_id,
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"])
-
-    bq_main_events >> experiment_enrollment_aggregates
-    (event_events >>
-     experiment_enrollment_aggregates >>
-     experiment_enrollment_aggregates_live_generate_query >>
-     experiment_enrollment_aggregates_live_run_query)
-
-    # Experiment search aggregates chain (depends on main)
-
-    experiment_search_aggregates = bigquery_etl_query(
-        task_id="experiment_search_aggregates",
-        project_id="moz-fx-data-shared-prod",
-        destination_table="experiment_search_aggregates_v1",
-        dataset_id="telemetry_derived",
-        owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
-
-    experiment_search_query_task_id = "experiment_search_aggregates_live_generate_query"
-
-    # setting xcom_push to True outputs this query to an xcom
-    experiment_search_aggregates_live_generate_view = gke_command(
-        task_id=experiment_search_query_task_id,
-        command=[
-            "python",
-            "sql/moz-fx-data-shared-prod/telemetry_derived/experiment_search_aggregates_live_v1/view.sql.py",
-            "--submission-date",
-            "{{ ds }}",
-            "--json-output",
-            "--wait-seconds",
-            "15",
-        ],
-        docker_image="mozilla/bigquery-etl:latest",
-        xcom_push=True,
-        owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
-
-    experiment_search_aggregates_live_deploy_view = bigquery_xcom_query(
-        task_id="experiment_search_aggregates_live_deploy_view",
-        destination_table=None,
-        dataset_id="telemetry_derived",
-        xcom_task_id=experiment_search_query_task_id,
-        owner="ascholtz@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com"])
-
-    (copy_deduplicate_main_ping >>
-     experiment_search_aggregates >>
-     experiment_search_aggregates_live_generate_view >>
-     experiment_search_aggregates_live_deploy_view)
-
     # Daily and last seen views on top of every Glean application.
+
+    # The core clients first seen dataset is a dependency to glean usage
+    # queries. Ideally, it would belong inside of a generated bigquery-etl DAG
+    # (e.g. bqetl_core), but this would require splitting this DAG into three
+    # separate parts threaded by sensors. Since the first_seen_table will end up
+    # being part of the clients daily table in this DAG, it will be easier to
+    # reason about dependencies in this single DAG while it is being developed.
+    telemetry_derived__core_clients_first_seen__v1 = bigquery_etl_query(
+        task_id="telemetry_derived__core_clients_first_seen__v1",
+        destination_table="core_clients_first_seen_v1",
+        dataset_id="telemetry_derived",
+        project_id="moz-fx-data-shared-prod",
+        owner="amiyaguchi@mozilla.com",
+        email=["amiyaguchi@mozilla.com", "telemetry-alerts@mozilla.com"],
+        date_partition_parameter="submission_date",
+        depends_on_past=True,
+        dag=dag,
+    )
+
+    copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
 
     gcp_conn_id = "google_cloud_derived_datasets"
     baseline_etl_kwargs = dict(
@@ -179,22 +150,27 @@ with models.DAG(
     baseline_args = [
         "--project-id=moz-fx-data-shared-prod",
         "--date={{ ds }}",
-        "--only=*_stable.baseline_v1"
+        "--only=*_stable.baseline_v1",
     ]
+    baseline_clients_first_seen = GKEPodOperator(
+        task_id="baseline_clients_first_seen",
+        name="baseline-clients-first-seen",
+        arguments=["script/run_glean_baseline_clients_first_seen"] + baseline_args,
+        **baseline_etl_kwargs
+    )
     baseline_clients_daily = GKEPodOperator(
-        task_id='baseline_clients_daily',
-        name='baseline-clients-daily',
+        task_id="baseline_clients_daily",
+        name="baseline-clients-daily",
         arguments=["script/run_glean_baseline_clients_daily"] + baseline_args,
         **baseline_etl_kwargs
     )
     baseline_clients_last_seen = GKEPodOperator(
-        task_id='baseline_clients_last_seen',
-        name='baseline-clients-last-seen',
+        task_id="baseline_clients_last_seen",
+        name="baseline-clients-last-seen",
         arguments=["script/run_glean_baseline_clients_last_seen"] + baseline_args,
         depends_on_past=True,
         **baseline_etl_kwargs
     )
 
-    (copy_deduplicate_all >>
-     baseline_clients_daily >>
-     baseline_clients_last_seen)
+    telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
+    copy_deduplicate_all >> baseline_clients_daily >> baseline_clients_last_seen

@@ -30,13 +30,21 @@ class GKEPodOperator(UpstreamGKEPodOperator):
 
     - Override init to default image_pull_policy=Always, in_cluster=False, do_xcom_push=False and GKE params
 
-    - set reattach_on_restart=False when do_xcom_push=True to address an error (details below)
+    - Defaults reattach_on_restart=False to address a 1.10.12 regression where GkePodOperators
+        reruns will simply attach to an existing pod and not perform any new work.
+
+    - Hard sets reattach_on_restart=False when do_xcom_push=True to address an error
+        Retrying a failed task with do_xcom_push=True causes airflow to reattach to the pod
+        eventually causing a 'Handshake status 500 Internal Server Error'. Logs will indicate
+        'found a running pod with ... different try_number. Will attach to this pod and monitor
+        instead of starting new one'
 
     """
     def __init__(self,
                  image_pull_policy='Always',
                  in_cluster=False,
                  do_xcom_push=False,
+                 reattach_on_restart=False,
                  # Defined in Airflow's UI -> Admin -> Connections
                  gcp_conn_id='google_cloud_derived_datasets',
                  project_id='moz-fx-data-derived-datasets',
@@ -46,19 +54,20 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                  *args,
                  **kwargs):
 
-        """
-        Retrying a failed task with do_xcom_push=True causes airflow to reattach to the pod
-        eventually causing a 'Handshake status 500 Internal Server Error'. Logs will indicate
-        'found a running pod with ... different try_number. Will attach to this pod and monitor
-        instead of starting new one'
-        """
-        reattach_on_restart = False if do_xcom_push else True
+        # Hard set reattach_on_restart = False when do_xcom_push is enabled.
+        if do_xcom_push:
+            reattach_on_restart = False
+
+        # GKE node pool autoscaling is failing to scale down when completed pods exist on the node
+        # in Completed states, due to the pod not being replicated. E.g. behind an rc or deployment.
+        annotations = {'cluster-autoscaler.kubernetes.io/safe-to-evict': 'true'}
 
         super(GKEPodOperator, self).__init__(
             image_pull_policy=image_pull_policy,
             in_cluster=in_cluster,
             do_xcom_push=do_xcom_push,
             reattach_on_restart=reattach_on_restart,
+            annotations=annotations,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             location=location,

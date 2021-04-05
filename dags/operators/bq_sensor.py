@@ -60,7 +60,9 @@ class BigQuerySQLSensorOperator(BaseSensorOperator):
         self.sql = sql
         self.bigquery_conn_id = bigquery_conn_id
         self.use_legacy_sql = use_legacy_sql
-        self.mode = 'poke'
+        self.poke_interval = 120
+        self.mode = 'reschedule'
+        self.pool = 'DATA_ENG_EXTERNALTASKSENSOR'
 
     def poke(self, context):
         self.log.info('Running query: %s', self.sql)

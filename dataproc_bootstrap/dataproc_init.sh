@@ -25,5 +25,5 @@ gsutil cp $TSPA_GS_PATH $TSPA_JAR
 # Install python packages
 PIP_REQUIREMENTS_FILE=/tmp/requirements.txt
 gsutil cp $ARTIFACTS_BUCKET/bootstrap/python-requirements.txt $PIP_REQUIREMENTS_FILE
-/opt/conda/default/bin/pip install --upgrade pip
+/opt/conda/default/bin/pip install --upgrade 'pip<20.3.0'
 /opt/conda/default/bin/pip install -r $PIP_REQUIREMENTS_FILE

@@ -15,6 +15,7 @@ from utils.gcp import bigquery_etl_query, gke_command
 
 project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
+tmp_project = "mozdata"  # for temporary tables in analysis dataset
 default_args = {
     "owner": "msamuel@mozilla.com",
     "depends_on_past": False,
@@ -47,6 +48,9 @@ wait_for_main_ping = ExternalTaskSensor(
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=1),
     check_existence=True,
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag,
 )
 
@@ -104,15 +108,17 @@ clients_scalar_aggregates = bigquery_etl_query(
     dag=dag,
 )
 
-scalar_percentiles = bigquery_etl_query(
+scalar_percentiles = gke_command(
     task_id="scalar_percentiles",
-    destination_table="scalar_percentiles_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
+    command=[
+        "python3", "script/glam/run_scalar_agg_clustered_query.py",
+        "--submission-date", "{{ds}}",
+        "--dst-table", "scalar_percentiles_v1",
+        "--project", project_id,
+        "--tmp-project", tmp_project,
+        "--dataset", dataset_id,
+    ],
+    docker_image="mozilla/bigquery-etl:latest",
     dag=dag,
 )
 
@@ -174,7 +180,7 @@ histogram_percentiles = bigquery_etl_query(
     project_id=project_id,
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
-    arguments=("--replace",),
+    arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
 )
 
@@ -190,15 +196,17 @@ glam_user_counts = bigquery_etl_query(
     dag=dag,
 )
 
-client_scalar_probe_counts = bigquery_etl_query(
+client_scalar_probe_counts = gke_command(
     task_id="client_scalar_probe_counts",
-    destination_table="clients_scalar_probe_counts_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="msamuel@mozilla.com",
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
+    command=[
+        "python3", "script/glam/run_scalar_agg_clustered_query.py",
+        "--submission-date", "{{ds}}",
+        "--dst-table", "clients_scalar_probe_counts_v1",
+        "--project", project_id,
+        "--tmp-project", tmp_project,
+        "--dataset", dataset_id,
+    ],
+    docker_image="mozilla/bigquery-etl:latest",
     dag=dag,
 )
 
@@ -226,7 +234,7 @@ clients_histogram_probe_counts = bigquery_etl_query(
     project_id=project_id,
     owner="msamuel@mozilla.com",
     date_partition_parameter=None,
-    arguments=("--replace",),
+    arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
 )
 

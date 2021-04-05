@@ -54,7 +54,7 @@ crash_report_parquet = SubDagOperator(
         additional_properties={"spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3"},
         py_args=[
             "--run-date", DS_WEEKLY,
-            "--gcs-bucket", "moz-fx-data-derived-datasets-analysis",
+            "--gcs-bucket", "mozdata-analysis",
             "--gcs-prefix", "update-orphaning-airflow",
             "--s3-output-bucket", "telemetry-public-analysis-2",
             "--s3-output-path", "app-update/data/out-of-date/",

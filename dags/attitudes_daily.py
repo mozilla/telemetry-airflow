@@ -49,6 +49,9 @@ with models.DAG(
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         execution_delta=datetime.timedelta(hours=2),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag)
 
 
@@ -57,6 +60,9 @@ with models.DAG(
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__clients_daily__v6",
         execution_delta=datetime.timedelta(hours=1),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag)
 
 

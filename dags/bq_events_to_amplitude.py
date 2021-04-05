@@ -52,22 +52,6 @@ with models.DAG(
         dag=dag,
     )
 
-    fennec_ios_task_id = 'fennec_ios_amplitude_export'
-    fennec_ios_args = default_args.copy()
-    fennec_ios_args["start_date"] = datetime.datetime(2019, 12, 2)
-    SubDagOperator(
-        subdag=export_to_amplitude(
-            dag_name=fennec_ios_task_id,
-            parent_dag_name=dag_name,
-            default_args=fennec_ios_args,
-            project='moz-fx-data-shared-prod',
-            dataset='telemetry',
-            table_or_view='fennec_ios_events_v1',
-            s3_prefix='fennec_ios',
-        ),
-        task_id=fennec_ios_task_id
-    )
-
     rocket_android_task_id = 'rocket_android_amplitude_export'
     rocket_args = default_args.copy()
     rocket_args["start_date"] = datetime.datetime(2019, 12, 2)
@@ -91,12 +75,18 @@ with models.DAG(
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         execution_delta=datetime.timedelta(hours=1),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag)
     wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
         execution_delta=datetime.timedelta(hours=1),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         dag=dag,
     )
 
@@ -187,6 +177,8 @@ with models.DAG(
         external_task_id="firefox_accounts_derived__fxa_delete_events__v1",
         check_existence=True,
         mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
         execution_delta=datetime.timedelta(minutes=30),
         dag=dag,
     )

@@ -12,7 +12,6 @@ from airflow.contrib.operators.gcp_transfer_operator import (
 from datetime import datetime, timedelta
 
 from operators.gcp_container_operator import GKEPodOperator
-from utils.gcp import load_to_bigquery
 from utils.dataproc import moz_dataproc_pyspark_runner
 
 """

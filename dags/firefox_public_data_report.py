@@ -45,6 +45,9 @@ wait_for_main_ping = ExternalTaskSensor(
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(days=-6),
     check_existence=True,
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag,
 )
 
@@ -90,6 +93,9 @@ wait_for_clients_last_seen = ExternalTaskSensor(
     external_task_id="telemetry_derived__clients_last_seen__v1",
     execution_delta=timedelta(days=-6, hours=-1),
     check_existence=True,
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
     dag=dag,
 )
 
