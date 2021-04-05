@@ -152,6 +152,12 @@ with models.DAG(
         "--date={{ ds }}",
         "--only=*_stable.baseline_v1",
     ]
+    baseline_clients_first_seen = GKEPodOperator(
+        task_id="baseline_clients_first_seen",
+        name="baseline-clients-first-seen",
+        arguments=["script/run_glean_baseline_clients_first_seen"] + baseline_args,
+        **baseline_etl_kwargs
+    )
     baseline_clients_daily = GKEPodOperator(
         task_id="baseline_clients_daily",
         name="baseline-clients-daily",
@@ -166,4 +172,5 @@ with models.DAG(
         **baseline_etl_kwargs
     )
 
-    (copy_deduplicate_all >> baseline_clients_daily >> baseline_clients_last_seen)
+    telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
+    copy_deduplicate_all >> baseline_clients_daily >> baseline_clients_last_seen
