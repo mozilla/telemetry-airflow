@@ -118,6 +118,12 @@ with models.DAG(
 
     # Daily and last seen views on top of every Glean application.
 
+    # The core clients first seen dataset is a dependency to glean usage
+    # queries. Ideally, it would belong inside of a generated bigquery-etl DAG
+    # (e.g. bqetl_core), but this would require splitting this DAG into three
+    # separate parts threaded by sensors. Since the first_seen_table will end up
+    # being part of the clients daily table in this DAG, it will be easier to
+    # reason about dependencies in this single DAG while it is being developed.
     telemetry_derived__core_clients_first_seen__v1 = bigquery_etl_query(
         task_id="telemetry_derived__core_clients_first_seen__v1",
         destination_table="core_clients_first_seen_v1",
