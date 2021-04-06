@@ -67,7 +67,7 @@ with DAG('probe_scraper',
         env_vars={
             "MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}",
             "MPS_REPO_URL": "git@github.com:mozilla-services/mozilla-pipeline-schemas.git",
-            "MPS_BRANCH_SOURCE": "master",
+            "MPS_BRANCH_SOURCE": "main",
             "MPS_BRANCH_PUBLISH": "generated-schemas",
         },
         dag=dag)

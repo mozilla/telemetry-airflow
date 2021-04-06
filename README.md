@@ -173,10 +173,6 @@ variables:
   `https://workflow.telemetry.mozilla.org`
 - `DEPLOY_ENVIRONMENT` -- The environment currently running, e.g.
   `stage` or `prod`
-- `DEPLOY_TAG` -- The tag or branch to retrieve the JAR from, e.g.
-  `master` or `tags`. You can specify the tag or travis build exactly as well, e.g.
-  `master/42.1` or `tags/v2.2.1`. Not specifying the exact tag or build will
-  use the latest from that branch, or the latest tag.
 
 
 Also, please set
@@ -260,4 +256,4 @@ docker-compose exec web airflow list_dags
 ### CircleCI
 
 - Commits to forked repo PRs will trigger CircleCI builds that build the docker container and test python dag compilation. This should pass prior to merging.
-- Every commit to master or tag will trigger a CircleCI build that will build and push the container to dockerhub
+- Every commit to main or tag will trigger a CircleCI build that will build and push the container to dockerhub
