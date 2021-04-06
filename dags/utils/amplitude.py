@@ -89,9 +89,11 @@ def export_to_amplitude(
             recreate_view >> wait_for_data
 
         # Create the table with yesterday's data
-        project_id = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id
         temp_table_name = table_or_view + '_{{ ds_nodash }}'
-        fully_qualified_table_name = '{}.{}.{}'.format(project_id, dataset, temp_table_name)
+        fully_qualified_table_name = '{}.{}.{}'.format(
+            'moz-fx-data-shared-prod',
+            'tmp',
+            temp_table_name)
 
         sql = (
             'SELECT * EXCEPT (submission_timestamp) '
