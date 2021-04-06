@@ -35,7 +35,7 @@ def export_to_parquet(
 
     """ Export a BigQuery table to Parquet.
 
-    https://github.com/mozilla/bigquery-etl/blob/master/script/pyspark/export_to_parquet.py
+    https://github.com/mozilla/bigquery-etl/blob/main/script/pyspark/export_to_parquet.py
 
     :param str table:                             [Required] BigQuery table name
     :param Optional[str] destination_table:       Output table name, defaults to table,
@@ -109,7 +109,7 @@ def export_to_parquet(
             dataproc_pyspark_properties={
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
-            main="https://raw.githubusercontent.com/mozilla/bigquery-etl/master"
+            main="https://raw.githubusercontent.com/mozilla/bigquery-etl/main"
             "/script/pyspark/export_to_parquet.py",
             arguments=[table]
             + [

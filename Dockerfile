@@ -44,8 +44,7 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000
     # AWS_ACCESS_KEY_ID= \
     # AWS_SECRET_ACCESS_KEY= \
-    # DEPLOY_ENVIRONMENT = \
-    # DEPLOY_TAG =
+    # DEPLOY_ENVIRONMENT =
 
 ENV AIRFLOW_HOME=/app \
     AIRFLOW_EMAIL_BACKEND="airflow.utils.email.send_email_smtp"
