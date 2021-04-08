@@ -33,7 +33,9 @@ partitions, but the root cause has been fixed. See
 In April 2021, `copy_deduplicate_main_ping` was moved from a 100-slice
 configuration to a single-query configuration, which will change the
 performance profile and is intended to be more efficient and slightly
-faster. See [telemetry-airflow#1279](
+faster. We also increased the number of parallel queries in
+`copy_deduplicate_all` to help it finish more quickly.
+See [telemetry-airflow#1279](
 https://github.com/mozilla/telemetry-airflow/pull/1279/files)
 """
 
@@ -71,8 +73,9 @@ with models.DAG(
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         priority_weight=100,
+        parallelism=10,
         # Any table listed here under except_tables _must_ have a corresponding
-        # copy_deduplicate job in another DAG.
+        # copy_deduplicate job elsewhere.
         except_tables=["telemetry_live.main_v4"],
         node_selectors={"nodepool": "highmem"},
         resources=resources,
@@ -90,7 +93,6 @@ with models.DAG(
             "jklukas@mozilla.com",
         ],
         priority_weight=100,
-        dag=dag,
     )
 
     # Events.
