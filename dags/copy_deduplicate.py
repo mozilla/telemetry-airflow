@@ -88,7 +88,8 @@ with models.DAG(
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=["telemetry_live.main_v4"],
         priority_weight=100,
-        parallelism=1,
+        parallelism=5,
+        slices=20,
         owner="jklukas@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
