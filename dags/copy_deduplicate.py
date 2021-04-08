@@ -27,6 +27,14 @@ A few immediate downstream tables are also included in this DAG.
 In early 2021, manual reruns of `copy_deduplicate` were leading to empty
 partitions, but the root cause has been fixed. See
 [bug 1690363](https://bugzilla.mozilla.org/show_bug.cgi?id=1690363).
+
+## Changelog
+
+In April 2021, `copy_deduplicate_main_ping` was moved from a 100-slice
+configuration to a single-query configuration, which will change the
+performance profile and is intended to be more efficient and slightly
+faster. See [telemetry-airflow#1279](
+https://github.com/mozilla/telemetry-airflow/pull/1279/files)
 """
 
 default_args = {
