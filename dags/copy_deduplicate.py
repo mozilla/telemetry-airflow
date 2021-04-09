@@ -27,6 +27,17 @@ A few immediate downstream tables are also included in this DAG.
 In early 2021, manual reruns of `copy_deduplicate` were leading to empty
 partitions, but the root cause has been fixed. See
 [bug 1690363](https://bugzilla.mozilla.org/show_bug.cgi?id=1690363).
+
+## Changelog
+
+In April 2021, `copy_deduplicate_main_ping` was moved from a 100-slice
+configuration to a single-query configuration, which will change the
+performance profile and is intended to be more efficient and slightly
+faster. We also increased the number of parallel queries in
+`copy_deduplicate_all` to help it finish more quickly and split out
+`copy_deduplicate_event_ping` to its own task.
+See [telemetry-airflow#1279](
+https://github.com/mozilla/telemetry-airflow/pull/1279/files)
 """
 
 default_args = {
@@ -63,9 +74,10 @@ with models.DAG(
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         priority_weight=100,
+        parallelism=10,
         # Any table listed here under except_tables _must_ have a corresponding
-        # copy_deduplicate job in another DAG.
-        except_tables=["telemetry_live.main_v4"],
+        # copy_deduplicate job elsewhere.
+        except_tables=["telemetry_live.main_v4", "telemetry_live.event_v4"],
         node_selectors={"nodepool": "highmem"},
         resources=resources,
     )
@@ -75,16 +87,25 @@ with models.DAG(
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=["telemetry_live.main_v4"],
-        parallelism=24,
-        slices=100,
+        priority_weight=100,
+        parallelism=5,
+        slices=20,
         owner="jklukas@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
             "relud@mozilla.com",
             "jklukas@mozilla.com",
         ],
+    )
+
+    copy_deduplicate_event_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_event_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=["telemetry_live.event_v4"],
         priority_weight=100,
-        dag=dag,
+        parallelism=1,
+        owner="jklukas@mozilla.com",
     )
 
     # Events.
@@ -100,7 +121,7 @@ with models.DAG(
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
-    copy_deduplicate_all >> event_events
+    copy_deduplicate_event_ping >> event_events
 
     bq_main_events = bigquery_etl_query(
         task_id="bq_main_events",
