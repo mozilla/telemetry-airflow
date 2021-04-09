@@ -1,5 +1,5 @@
 """
-This configures a monthly DAG to delete TAAR opt-out profile.
+This configures a monthly DAG to delete TAAR opt-out profiles.
 """
 from airflow import DAG
 from datetime import datetime, timedelta
