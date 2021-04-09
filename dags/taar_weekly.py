@@ -21,8 +21,9 @@ TAAR_DATAFLOW_SUBNETWORK = Variable.get("taar_dataflow_subnetwork")
 
 # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
 TAAR_ETL_CONTAINER_IMAGE = (
-    "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.1"
+    "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.2"
 )
+DELETE_DAYS = 29
 
 
 default_args_weekly = {
@@ -112,6 +113,15 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
     dag=taar_weekly,
 )
 
+delete_optout = GKEPodOperator(
+    task_id="delete_opt_out_users_from_bigtable",
+    name="delete_opt_out_users_from_bigtable",
+    image=TAAR_ETL_CONTAINER_IMAGE,
+    arguments=taar_profile_common_args() + ["--bigtable-delete-opt-out",
+                                            "--delete-opt-out-days=%s" % DELETE_DAYS],
+    dag=taar_weekly
+)
+
 wipe_gcs_bucket_cleanup = GKEPodOperator(
     task_id="wipe_gcs_bucket_cleanup",
     name="wipe_taar_gcs_bucket",
@@ -180,9 +190,12 @@ taar_ensemble = SubDagOperator(
 )
 
 
-wipe_gcs_bucket >> dump_bq_to_tmp_table
-dump_bq_to_tmp_table >> extract_bq_tmp_to_gcs_avro
-extract_bq_tmp_to_gcs_avro >> dataflow_import_avro_to_bigtable
-dataflow_import_avro_to_bigtable >> wipe_gcs_bucket_cleanup
-wipe_gcs_bucket_cleanup >> wipe_bigquery_tmp_table
-wipe_bigquery_tmp_table >> taar_ensemble
+wipe_gcs_bucket >> \
+dump_bq_to_tmp_table >> \
+extract_bq_tmp_to_gcs_avro >> \
+dataflow_import_avro_to_bigtable >> \
+delete_optout >> \
+wipe_gcs_bucket_cleanup >> \
+wipe_gcs_bucket_cleanup >>\
+wipe_bigquery_tmp_table >> \
+taar_ensemble
