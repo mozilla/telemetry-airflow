@@ -196,6 +196,5 @@ extract_bq_tmp_to_gcs_avro >> \
 dataflow_import_avro_to_bigtable >> \
 delete_optout >> \
 wipe_gcs_bucket_cleanup >> \
-wipe_gcs_bucket_cleanup >>\
 wipe_bigquery_tmp_table >> \
 taar_ensemble
