@@ -194,4 +194,5 @@ with models.DAG(
     )
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
+    baseline_clients_first_seen >> baseline_clients_daily
     copy_deduplicate_all >> baseline_clients_daily >> baseline_clients_last_seen
