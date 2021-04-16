@@ -13,8 +13,6 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-project_id = "moz-fx-data-marketing-prod"
-
 with DAG("mad_server", default_args=default_args, schedule_interval="@daily") as dag:
 
     mad_server_pull = gke_command(
@@ -23,7 +21,7 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@daily") as
             "bin/airflow_pull",
         ],
         docker_image="gcr.io/malicious-addons-detection/mad-server:latest",
-        gcp_conn_id="google_cloud_derived_datasets",
+        gcp_conn_id="google_cloud_airflow_gke",
         aws_conn_id="aws_dev_mad_resources_training",
         env_vars=dict(
             S3_BUCKET="mad-resources-training",
