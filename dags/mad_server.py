@@ -6,7 +6,7 @@ from utils.gcp import gke_command
 default_args = {
     "owner": "jklukas@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2021, 4, 16),
+    "start_date": datetime(2021, 4, 15),
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
