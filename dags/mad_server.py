@@ -29,8 +29,8 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@daily") as
             S3_BUCKET="mad-resources-training",
             S3_ROOT_TRAINING="datasets",
             CUSTOMS_TRAINING_ALLOW_OVERWRITE="True",
-            AMO_CRED_ISSUER="",
-            AMO_CRED_SECRET="",
+            AMO_CRED_ISSUER="{{ var.value.AMO_CRED_ISSUER }}",
+            AMO_CRED_SECRET="{{ var.value.AMO_CRED_SECRET }}",
         ),
         email=[
             "jklukas@mozilla.com",
