@@ -78,6 +78,7 @@ init_connections() {
 
     gcp_conn=(
       "google_cloud_airflow_dataproc"
+      "google_cloud_airflow_gke"
       "google_cloud_derived_datasets"
       "google_cloud_prio_a"
       "google_cloud_prio_admin"
