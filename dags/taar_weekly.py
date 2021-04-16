@@ -18,6 +18,7 @@ TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
 TAAR_ETL_MODEL_STORAGE_BUCKET = Variable.get("taar_etl_model_storage_bucket")
 TAAR_PROFILE_PROJECT_ID = Variable.get("taar_gcp_project_id")
 TAAR_DATAFLOW_SUBNETWORK = Variable.get("taar_dataflow_subnetwork")
+TAAR_DATAFLOW_SERVICE_ACCOUNT = Variable.get("taar_dataflow_service_account_email")
 
 # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
 TAAR_ETL_CONTAINER_IMAGE = (
@@ -71,6 +72,7 @@ def taar_profile_common_args():
         "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
         "--sample-rate=1.0",
         "--subnetwork=%s" % TAAR_DATAFLOW_SUBNETWORK,
+        "--dataflow-service-account=%s" % TAAR_DATAFLOW_SERVICE_ACCOUNT
     ]
 
 
