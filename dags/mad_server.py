@@ -23,6 +23,7 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@daily") as
         docker_image="gcr.io/malicious-addons-detection/mad-server:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         gke_cluster_name="workloads-prod-v1",
+        gke_location="us-west1",
         aws_conn_id="aws_dev_mad_resources_training",
         env_vars=dict(
             S3_BUCKET="mad-resources-training",
