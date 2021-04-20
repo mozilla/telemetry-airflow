@@ -78,6 +78,7 @@ init_connections() {
 
     gcp_conn=(
       "google_cloud_airflow_dataproc"
+      "google_cloud_airflow_gke"
       "google_cloud_derived_datasets"
       "google_cloud_prio_a"
       "google_cloud_prio_admin"
@@ -96,6 +97,7 @@ init_connections() {
       "airflow_taar_rw_s3"
       "amplitude_s3_conn"
       "aws_dev_iam_s3"
+      "aws_dev_mad_resources_training"
       "aws_data_iam_s3"
       "aws_data_iam_ses"
       "aws_dev_socorro_telemetry_parquet_s3"
