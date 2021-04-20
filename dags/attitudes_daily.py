@@ -7,9 +7,9 @@ from utils.gcp import bigquery_etl_query, gke_command
 
 
 default_args = {
-    "owner": "ssuh@mozilla.com",
+    "owner": "jklukas@mozilla.com",
     "start_date": datetime.datetime(2019, 12, 16),
-    "email": ["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
