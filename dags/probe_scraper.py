@@ -97,14 +97,16 @@ with DAG('probe_scraper',
         dag=dag,
         python_callable=lambda: time.sleep(60 * 1))
 
+    gcp_gke_conn_id = "google_cloud_airflow_gke"
     lookml_generator = GKEPodOperator(
-        email=['frank@mozilla.com', 'dataops+alerts@mozilla.com'],
-        task_id='lookml_generator',
-        name='lookml-generator-1',
-        image='gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest',
-        gcp_conn_id="google_cloud_airflow_gke",
-        gke_cluster_name="workloads-prod-v1",
-        gke_location="us-west1",
+        email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
+        task_id="lookml_generator",
+        name="lookml-generator-1",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        gcp_conn_id=gcp_gke_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
+        cluster_name="workloads-prod-v1",
+        location="us-west1",
         dag=dag,
         env_vars={
             "GIT_SSH_KEY_BASE64": "{{ var.values.looker_repos_secret_git_ssh_key_b64 }}",
