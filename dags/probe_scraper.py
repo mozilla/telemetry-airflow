@@ -111,10 +111,9 @@ with DAG('probe_scraper',
             "HUB_BRANCH_PUBLISH": "main-stage",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
             "SPOKE_BRANCH_PUBLISH": "main-stage",
-            "GCLOUD_SERVICE_KEY": "{{ var.values.looker_read_gcloud_service_key }}",
             "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": "{{ var.values.looker_api_client_id }}",
-            "LOOKER_API_CLIENT_SECRET": "{{ var.values.looker_api_client_secret }}",
+            "LOOKER_API_CLIENT_ID": "{{ var.values.looker_api_client_id_staging }}",
+            "LOOKER_API_CLIENT_SECRET": "{{ var.values.looker_api_client_secret_staging }}",
         }
     )
 
