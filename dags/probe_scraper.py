@@ -91,3 +91,31 @@ with DAG('probe_scraper',
         dag=dag)
 
     probe_expiry_alerts.set_upstream(probe_scraper)
+
+    delay_python_task = PythonOperator(
+        task_id="wait_for_30_minutes",
+        dag=dag,
+        python_callable=lambda: time.sleep(60 * 30))
+
+    lookml_generator = GKEPodOperator(
+        email=['frank@mozilla.com', 'dataops+alerts@mozilla.com'],
+        task_id='lookml_generator',
+        name='lookml-generator-1',
+        image='mozilla/lookml-generator:latest',
+        gcp_conn_id="google_cloud_derived_datasets",
+        dag=dag,
+        env_vars={
+            "GIT_SSH_KEY_BASE64": "{{ var.values.looker_repos_secret_git_ssh_key_b64 }}",
+            "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
+            "HUB_BRANCH_SOURCE": "base",
+            "HUB_BRANCH_PUBLISH": "main-stage",
+            "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
+            "SPOKE_BRANCH_PUBLISH": "main-stage",
+            "GCLOUD_SERVICE_KEY": "{{ var.values.looker_read_gcloud_service_key }}",
+            "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
+            "LOOKER_API_CLIENT_ID": "{{ var.values.looker_api_client_id }}",
+            "LOOKER_API_CLIENT_SECRET": "{{ var.values.looker_api_client_secret }}",
+        }
+    )
+
+    schema_generator >> delay_python_task >> lookml_generator
