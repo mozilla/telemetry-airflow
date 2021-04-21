@@ -139,6 +139,10 @@ init_variables() {
     airflow variables -s "taar_gcp_project_id" "taar_gcp_project_id"
     airflow variables -s "taar_dataflow_subnetwork" "taar_dataflow_subnetwork"
     airflow variables -s "taar_dataflow_service_account_email" "taar_dataflow_service_account_email"
+
+    airflow variable -s "looker_repos_secret_git_ssh_key_b64" "looker_api_client_id_staging"
+    airflow variable -s "looker_api_client_id_staging" "looker_api_client_id_staging"
+    airflow variable -s "looker_api_client_secret_staging" "looker_api_client_secret_staging"
 }
 
 [ $# -lt 1 ] && usage
