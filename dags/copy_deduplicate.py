@@ -116,8 +116,7 @@ with models.DAG(
         destination_table="event_events_v1",
         dataset_id="telemetry_derived",
         priority_weight=90,
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+        owner="jklukas@mozilla.com",
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
@@ -129,8 +128,7 @@ with models.DAG(
         destination_table="main_events_v1",
         dataset_id="telemetry_derived",
         priority_weight=90,
-        owner="ssuh@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "ssuh@mozilla.com"],
+        owner="jklukas@mozilla.com",
         dag=dag,
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )

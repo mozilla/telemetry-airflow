@@ -93,7 +93,7 @@ with models.DAG(
     devtools_task_id = 'devtools_amplitude_export'
     devtools_args = default_args.copy()
     devtools_args["start_date"] = datetime.datetime(2019, 12, 2)
-    devtools_args["email"] = ['ssuh@mozilla.com', 'telemetry-alerts@mozilla.com', 'akomar@mozilla.com']
+    devtools_args["email"] = ['telemetry-alerts@mozilla.com', 'akomar@mozilla.com']
     devtools_export = SubDagOperator(
         subdag=export_to_amplitude(
             dag_name=devtools_task_id,

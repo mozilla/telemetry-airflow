@@ -138,6 +138,7 @@ init_variables() {
     airflow variables -s "taar_etl_model_storage_bucket" "taar_etl_model_storage_bucket"
     airflow variables -s "taar_gcp_project_id" "taar_gcp_project_id"
     airflow variables -s "taar_dataflow_subnetwork" "taar_dataflow_subnetwork"
+    airflow variables -s "taar_dataflow_service_account_email" "taar_dataflow_service_account_email"
 }
 
 [ $# -lt 1 ] && usage
