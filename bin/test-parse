@@ -28,6 +28,7 @@ EOF
 
 
 function get_errors_in_listing {
+    set -x
     # spawn in the background
     docker-compose up --detach
 
