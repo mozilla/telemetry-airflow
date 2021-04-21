@@ -1,4 +1,5 @@
 from airflow import DAG
+from airflow.models import Variable
 from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 from airflow.operators.python_operator import PythonOperator
@@ -95,7 +96,7 @@ with DAG('probe_scraper',
     delay_python_task = PythonOperator(
         task_id="wait_for_30_minutes",
         dag=dag,
-        python_callable=lambda: time.sleep(60 * 1))
+        python_callable=lambda: time.sleep(60 * 30))
 
     gcp_gke_conn_id = "google_cloud_airflow_gke"
     lookml_generator = GKEPodOperator(
@@ -109,15 +110,15 @@ with DAG('probe_scraper',
         location="us-west1",
         dag=dag,
         env_vars={
-            "GIT_SSH_KEY_BASE64": "{{ var.values.looker_repos_secret_git_ssh_key_b64 }}",
+            "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
             "HUB_BRANCH_SOURCE": "base",
             "HUB_BRANCH_PUBLISH": "main-stage",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
             "SPOKE_BRANCH_PUBLISH": "main-stage",
             "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": "{{ var.values.looker_api_client_id_staging }}",
-            "LOOKER_API_CLIENT_SECRET": "{{ var.values.looker_api_client_secret_staging }}",
+            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
+            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
         }
     )
 
