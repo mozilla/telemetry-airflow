@@ -1,7 +1,7 @@
 from airflow import DAG
 from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
-
+from airflow.operators.python_operator import PythonOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
@@ -95,7 +95,7 @@ with DAG('probe_scraper',
     delay_python_task = PythonOperator(
         task_id="wait_for_30_minutes",
         dag=dag,
-        python_callable=lambda: time.sleep(60 * 30))
+        python_callable=lambda: time.sleep(60 * 1))
 
     lookml_generator = GKEPodOperator(
         email=['frank@mozilla.com', 'dataops+alerts@mozilla.com'],
@@ -119,4 +119,4 @@ with DAG('probe_scraper',
         }
     )
 
-    schema_generator >> delay_python_task >> lookml_generator
+    delay_python_task >> lookml_generator
