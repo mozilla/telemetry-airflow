@@ -101,7 +101,7 @@ with DAG('probe_scraper',
         email=['frank@mozilla.com', 'dataops+alerts@mozilla.com'],
         task_id='lookml_generator',
         name='lookml-generator-1',
-        image='mozilla/lookml-generator:latest',
+        image='gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest',
         gcp_conn_id="google_cloud_derived_datasets",
         dag=dag,
         env_vars={
