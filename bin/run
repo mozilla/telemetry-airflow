@@ -143,6 +143,8 @@ init_variables() {
     airflow variables -s "looker_repos_secret_git_ssh_key_b64" "looker_repos_secret_git_ssh_key_b64"
     airflow variables -s "looker_api_client_id_staging" "looker_api_client_id_staging"
     airflow variables -s "looker_api_client_secret_staging" "looker_api_client_secret_staging"
+    airflow variables -s "looker_api_client_id_prod" "looker_api_client_id_prod"
+    airflow variables -s "looker_api_client_secret_prod" "looker_api_client_secret_prod"
 }
 
 [ $# -lt 1 ] && usage
