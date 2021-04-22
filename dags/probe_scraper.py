@@ -1,10 +1,12 @@
+import time
+from datetime import datetime, timedelta
+
 from airflow import DAG
-from airflow.models import Variable
-from datetime import timedelta, datetime
-from operators.gcp_container_operator import GKEPodOperator
-from airflow.operators.python_operator import PythonOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.models import Variable
+from airflow.operators.python_operator import PythonOperator
+from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
     'owner': 'frank@mozilla.com',
@@ -113,12 +115,12 @@ with DAG('probe_scraper',
             "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
             "HUB_BRANCH_SOURCE": "base",
-            "HUB_BRANCH_PUBLISH": "main-stage",
+            "HUB_BRANCH_PUBLISH": "main",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
-            "SPOKE_BRANCH_PUBLISH": "main-stage",
-            "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
-            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
+            "SPOKE_BRANCH_PUBLISH": "main",
+            "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
+            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_prod"),
+            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
         }
     )
 
