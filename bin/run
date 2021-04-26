@@ -145,7 +145,7 @@ init_variables() {
     airflow variables -s "looker_api_client_secret_staging" "looker_api_client_secret_staging"
     airflow variables -s "looker_api_client_id_prod" "looker_api_client_id_prod"
     airflow variables -s "looker_api_client_secret_prod" "looker_api_client_secret_prod"
-    airflow variables -s "github_access_token" "github_access_token"
+    airflow variables -s "dataops_looker_github_secret_access_token" "dataops_looker_github_secret_access_token"
 }
 
 [ $# -lt 1 ] && usage
