@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.models import Variable
+from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
 from operators.gcp_container_operator import GKEPodOperator
 
@@ -126,3 +127,19 @@ with DAG('probe_scraper',
     )
 
     delay_python_task >> lookml_generator
+
+    # This emits a POST request to a netlify webhook URL that triggers a new
+    # build of the glean dictionary. We do this after the schema generator has
+    # finished running as the dictionary uses the new schema files as part of
+    # said build.
+    glean_dictionary_netlify_build = SimpleHttpOperator(
+        http_conn_id="http_netlify_build_webhook",
+        endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
+        method="POST",
+        data={},
+        email=["bimsland@mozilla.com", "dataops+alerts@mozilla.com"],
+        task_id="glean_dictionary_build",
+        dag=dag,
+    )
+
+    glean_dictionary_netlify_build.set_upstream(schema_generator)

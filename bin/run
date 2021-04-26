@@ -113,6 +113,12 @@ init_connections() {
         --conn_type s3 \
         --conn_extra "$(aws_default_extras)"
     done
+
+    airflow connections --delete --conn_id "http_netlify_build_webhook"
+    airflow connections --add \
+      --conn_id "http_netlify_build_webhook" \
+      --conn_type http \
+      --conn_host "https://httpbin.org/"
 }
 
 init_variables() {
@@ -146,6 +152,8 @@ init_variables() {
     airflow variables -s "looker_api_client_id_prod" "looker_api_client_id_prod"
     airflow variables -s "looker_api_client_secret_prod" "looker_api_client_secret_prod"
     airflow variables -s "dataops_looker_github_secret_access_token" "dataops_looker_github_secret_access_token"
+
+    airflow variables -s "glean_dictionary_netlify_build_webhook_id" "status/200"
 }
 
 [ $# -lt 1 ] && usage
