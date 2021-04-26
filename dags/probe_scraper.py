@@ -121,6 +121,7 @@ with DAG('probe_scraper',
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
             "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_prod"),
             "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
+            "GITHUB_ACCESS_TOKEN": Variable.get("github_access_token"),
         }
     )
 
