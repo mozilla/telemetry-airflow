@@ -102,11 +102,11 @@ with DAG('probe_scraper',
         python_callable=lambda: time.sleep(60 * 30))
 
     gcp_gke_conn_id = "google_cloud_airflow_gke"
-    lookml_generator = GKEPodOperator(
+    lookml_generator_prod = GKEPodOperator(
         email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="lookml_generator",
         name="lookml-generator-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:release",
         gcp_conn_id=gcp_gke_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
         cluster_name="workloads-prod-v1",
@@ -126,7 +126,33 @@ with DAG('probe_scraper',
         }
     )
 
-    delay_python_task >> lookml_generator
+    delay_python_task >> lookml_generator_prod
+
+    lookml_generator_staging = GKEPodOperator(
+        email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
+        task_id="lookml_generator_staging",
+        name="lookml-generator-staging-1",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        gcp_conn_id=gcp_gke_conn_id,
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
+        cluster_name="workloads-prod-v1",
+        location="us-west1",
+        dag=dag,
+        env_vars={
+            "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
+            "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
+            "HUB_BRANCH_SOURCE": "base",
+            "HUB_BRANCH_PUBLISH": "main-stage",
+            "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
+            "SPOKE_BRANCH_PUBLISH": "main-stage",
+            "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
+            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
+            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
+            "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+        }
+    )
+
+    delay_python_task >> lookml_generator_staging
 
     # This emits a POST request to a netlify webhook URL that triggers a new
     # build of the glean dictionary. We do this after the schema generator has
@@ -143,3 +169,4 @@ with DAG('probe_scraper',
     )
 
     probe_scraper >> glean_dictionary_netlify_build
+
