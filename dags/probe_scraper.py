@@ -142,4 +142,4 @@ with DAG('probe_scraper',
         dag=dag,
     )
 
-    glean_dictionary_netlify_build.set_upstream(schema_generator)
+    probe_scraper >> glean_dictionary_netlify_build
