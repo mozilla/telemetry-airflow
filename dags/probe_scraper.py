@@ -100,13 +100,15 @@ with DAG('probe_scraper',
         task_id="wait_for_30_minutes",
         dag=dag,
         python_callable=lambda: time.sleep(60 * 30))
+    
+    probe_scraper >> delay_python_task
 
     gcp_gke_conn_id = "google_cloud_airflow_gke"
     lookml_generator_prod = GKEPodOperator(
         email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="lookml_generator",
         name="lookml-generator-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:v1.1",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:v1.0.1",
         gcp_conn_id=gcp_gke_conn_id,
         project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
         cluster_name="workloads-prod-v1",
