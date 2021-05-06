@@ -68,9 +68,10 @@ with models.DAG(
         name="fission_aggregation_for_dashboard",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/fission-monitoring:latest",
         env_vars=dict(
-            BQ_BILLING_PROJECT_ID="moz-fx-data-shared-prod",
-            BQ_INPUT_MAIN_TABLE="moz-fx-data-shared-prod.telemetry_derived.fission_monitoring_main_v1",
-            BQ_INPUT_CRASH_TABLE="moz-fx-data-shared-prod.telemetry_derived.fission_monitoring_crash_v1",
+            BQ_BILLING_PROJECT_ID="mozdata",
+            BQ_INPUT_MAIN_TABLE="mozdata.telemetry.main_nightly",
+            BQ_INPUT_CRASH_TABLE="mozdata.telemetry.crash",
+            BQ_TMP_CRASH_TABLE="mozdata.tmp.fission_nightly_exp_crash",
             BQ_OUTPUT_TABLE="mozdata.analysis.fission_monitoring_analyzed_v1",
             GCS_BUCKET="fission-experiment-monitoring-dashboard",
         ),
