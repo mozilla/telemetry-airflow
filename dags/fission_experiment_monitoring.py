@@ -25,23 +25,15 @@ with models.DAG(
         schedule_interval="0 2 * * *",
         default_args=default_args) as dag:
 
-    wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
-        task_id="wait_for_copy_deduplicate_main_ping",
-        external_dag_id="copy_deduplicate",
-        external_task_id="copy_deduplicate_main_ping",
-        execution_delta=datetime.timedelta(hours=1),
+    wait_for_main_nightly = ExternalTaskSensor(
+        task_id="wait_for_main_nightly",
+        external_dag_id="bqetl_main_summary",
+        external_task_id="telemetry_derived__main_nightly__v1",
+        execution_delta=datetime.timedelta(hours=2),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
-    )
-
-    fission_monitoring_main_v1 = bigquery_etl_query(
-        task_id="fission_monitoring_main_v1",
-        project_id="moz-fx-data-shared-prod",
-        destination_table="fission_monitoring_main_v1",
-        dataset_id="telemetry_derived",
-        arguments=('--schema_update_option=ALLOW_FIELD_ADDITION',),
     )
 
     wait_for_copy_deduplicate_crash_ping = ExternalTaskSensor(
@@ -53,13 +45,6 @@ with models.DAG(
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
-    )
-
-    fission_monitoring_crash_v1 = bigquery_etl_query(
-        task_id="fission_monitoring_crash_v1",
-        project_id="moz-fx-data-shared-prod",
-        destination_table="fission_monitoring_crash_v1",
-        dataset_id="telemetry_derived",
     )
 
     # Built from https://github.com/mozilla/fission_monitoring_nightly
@@ -79,6 +64,4 @@ with models.DAG(
         dag=dag,
     )
 
-    wait_for_copy_deduplicate_main_ping >> fission_monitoring_main_v1
-    [wait_for_copy_deduplicate_main_ping, wait_for_copy_deduplicate_crash_ping] >> fission_monitoring_crash_v1
-    [fission_monitoring_main_v1, fission_monitoring_crash_v1] >> fission_aggregation_for_dashboard
+    [wait_for_main_nightly, wait_for_copy_deduplicate_crash_ping] >> fission_aggregation_for_dashboard
