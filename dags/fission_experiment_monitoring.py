@@ -22,7 +22,7 @@ dag_name = "fission_experiment_monitoring"
 
 with models.DAG(
         dag_name,
-        schedule_interval="0 2 * * *",
+        schedule_interval="0 3 * * *",
         default_args=default_args) as dag:
 
     wait_for_main_nightly = ExternalTaskSensor(
