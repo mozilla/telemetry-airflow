@@ -49,8 +49,7 @@ with models.DAG(
         project_id='moz-fx-data-shared-prod',
         destination_table='fxa_amplitude_export_v1',
         dataset_id='firefox_accounts_derived',
-        depends_on_past=True,
-        allow_field_addition_on_date="2020-09-09"
+        depends_on_past=True
     )
 
     task_id = 'fxa_amplitude_export_task'
