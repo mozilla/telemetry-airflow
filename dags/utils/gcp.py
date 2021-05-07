@@ -172,7 +172,6 @@ def bigquery_etl_query(
     docker_image="mozilla/bigquery-etl:latest",
     date_partition_parameter="submission_date",
     multipart=False,
-    allow_field_addition_on_date=None,
     is_delete_operator_pod=False,
     **kwargs
 ):
@@ -196,8 +195,6 @@ def bigquery_etl_query(
                                                    rather than partition
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
-    :param Optional[str] allow_field_addition_on_date: Optional {{ds}} value that
-                                                   should be run with ALLOW_FIELD_ADDITION
     :param is_delete_operator_pod                  Optional, What to do when the pod reaches its final
                                                    state, or the execution is interrupted.
                                                    If False (default): do nothing, If True: delete the pod
@@ -223,19 +220,6 @@ def bigquery_etl_query(
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
         + ["--parameter=" + parameter for parameter in parameters]
-        + (
-            # Date comparisons for field additions need to happen within the parameter.
-            # Template substitution occurs only within the operator with `arguments` being
-            # one of the options of GKEPodOperator that allows templated arguments.
-            # See also: https://github.com/mozilla/telemetry-airflow/pull/1174#discussion_r517505678
-            [
-                "--schema_update_option="
-                + "{{ 'ALLOW_FIELD_ADDITION' if ds == %r else '' }}"
-                % allow_field_addition_on_date
-            ]
-            if allow_field_addition_on_date
-            else []
-        )
         + list(arguments)
         + [sql_file_path],
         is_delete_operator_pod=is_delete_operator_pod,
