@@ -154,6 +154,7 @@ init_variables() {
     airflow variables -s "dataops_looker_github_secret_access_token" "dataops_looker_github_secret_access_token"
 
     airflow variables -s "glean_dictionary_netlify_build_webhook_id" "status/200"
+    airflow variables -s "lookml_generator_release_str" "v0.0.0"
 }
 
 [ $# -lt 1 ] && usage
