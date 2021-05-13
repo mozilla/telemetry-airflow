@@ -168,25 +168,41 @@ with models.DAG(
     )
     baseline_args = [
         "--project-id=moz-fx-data-shared-prod",
-        "--date={{ ds }}",
         "--only=*_stable.baseline_v1",
+        "--start_date={{ ds }}",
+        "--end_date={{ ds }}"
     ]
     baseline_clients_first_seen = GKEPodOperator(
         task_id="baseline_clients_first_seen",
         name="baseline-clients-first-seen",
-        arguments=["script/run_glean_baseline_clients_first_seen"] + baseline_args,
+        command=[
+            "bqetl",
+            "query",
+            "backfill",
+            "*.baseline_clients_first_seen_v1",
+        ] + baseline_args,
         **baseline_etl_kwargs
     )
     baseline_clients_daily = GKEPodOperator(
         task_id="baseline_clients_daily",
         name="baseline-clients-daily",
-        arguments=["script/run_glean_baseline_clients_daily"] + baseline_args,
+         command=[
+            "bqetl",
+            "query",
+            "backfill",
+            "*.baseline_clients_daily_v1",
+        ] + baseline_args,
         **baseline_etl_kwargs
     )
     baseline_clients_last_seen = GKEPodOperator(
         task_id="baseline_clients_last_seen",
         name="baseline-clients-last-seen",
-        arguments=["script/run_glean_baseline_clients_last_seen"] + baseline_args,
+        command=[
+            "bqetl",
+            "query",
+            "backfill",
+            "*.baseline_clients_last_seen_v1",
+        ] + baseline_args,
         depends_on_past=True,
         **baseline_etl_kwargs
     )
