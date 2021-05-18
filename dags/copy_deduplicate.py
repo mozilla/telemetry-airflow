@@ -157,40 +157,43 @@ with models.DAG(
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
 
-    baseline_args = [
-        "--project-id=moz-fx-data-shared-prod",
-        "--only=*_stable.baseline_v1",
-        "--start_date={{ ds }}",
-        "--end_date={{ ds }}"
-    ]
     baseline_clients_first_seen = gke_command(
         task_id="baseline_clients_first_seen",
-        command=[
-            "bqetl",
-            "query",
-            "backfill",
-            "*.baseline_clients_first_seen_v1",
-        ] + baseline_args,
+        command = [
+            "/bin/bash",
+            "-c",
+            "./script/generate_sql " + 
+            "--target-project moz-fx-data-shared-prod " + 
+            "&& bqetl query backfill *.baseline_clients_first_seen_v1 " +
+            "--project-id=moz-fx-data-shared-prod " + 
+            "--start_date={{ ds }} --end_date={{ ds }}"
+        ],
         docker_image="mozilla/bigquery-etl:latest",
     )
     baseline_clients_daily = gke_command(
         task_id="baseline_clients_daily",
-        command=[
-            "bqetl",
-            "query",
-            "backfill",
-            "*.baseline_clients_daily_v1",
-        ] + baseline_args,
+        command = [
+            "/bin/bash",
+            "-c",
+            "./script/generate_sql " + 
+            "--target-project moz-fx-data-shared-prod " + 
+            "&& bqetl query backfill *.baseline_clients_daily_v1 " +
+            "--project-id=moz-fx-data-shared-prod " + 
+            "--start_date={{ ds }} --end_date={{ ds }}"
+        ],
         docker_image="mozilla/bigquery-etl:latest",
     )
     baseline_clients_last_seen = gke_command(
         task_id="baseline_clients_last_seen",
-        command=[
-            "bqetl",
-            "query",
-            "backfill",
-            "*.baseline_clients_last_seen_v1",
-        ] + baseline_args,
+        command = [
+            "/bin/bash",
+            "-c",
+            "./script/generate_sql " + 
+            "--target-project moz-fx-data-shared-prod " + 
+            "&& bqetl query backfill *.baseline_clients_last_seen_v1 " +
+            "--project-id=moz-fx-data-shared-prod " + 
+            "--start_date={{ ds }} --end_date={{ ds }}"
+        ],
         depends_on_past=True,
         docker_image="mozilla/bigquery-etl:latest",
     )
