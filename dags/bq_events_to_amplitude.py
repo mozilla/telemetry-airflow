@@ -23,20 +23,6 @@ with models.DAG(
         default_args=default_args,
         schedule_interval='0 2 * * *') as dag:
 
-    fenix_task_id = 'fenix_amplitude_export'
-    SubDagOperator(
-        subdag=export_to_amplitude(
-            dag_name=fenix_task_id,
-            parent_dag_name=dag_name,
-            default_args=default_args,
-            project='moz-fx-data-shared-prod',
-            dataset='telemetry',
-            table_or_view='fenix_events_v1',
-            s3_prefix='fenix',
-        ),
-        task_id=fenix_task_id
-    )
-
     shredder_fenix = gke_command(
         task_id="shredder_amplitude_fenix",
         name="shredder-amplitude-fenix",
@@ -50,22 +36,6 @@ with models.DAG(
         ],
         docker_image="mozilla/bigquery-etl:latest",
         dag=dag,
-    )
-
-    rocket_android_task_id = 'rocket_android_amplitude_export'
-    rocket_args = default_args.copy()
-    rocket_args["start_date"] = datetime.datetime(2019, 12, 2)
-    SubDagOperator(
-        subdag=export_to_amplitude(
-            dag_name=rocket_android_task_id,
-            parent_dag_name=dag_name,
-            default_args=rocket_args,
-            project='moz-fx-data-shared-prod',
-            dataset='telemetry',
-            table_or_view='rocket_android_events_v1',
-            s3_prefix='rocket_android',
-        ),
-        task_id=rocket_android_task_id
     )
 
     # DevTools view merges events from `telemetry.main` and `telemetry.event`.
