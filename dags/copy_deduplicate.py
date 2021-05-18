@@ -11,7 +11,7 @@ from utils.gcp import (
 )
 
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from operators.gcp_container_operator import GKEPodOperator
+from utils.gcp import gke_command
 
 DOCS = """\
 # Copy-Deduplicate
@@ -157,46 +157,34 @@ with models.DAG(
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
 
-    gcp_conn_id = "google_cloud_derived_datasets"
-    baseline_etl_kwargs = dict(
-        gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
-        location="us-central1-a",
-        cluster_name="bq-load-gke-1",
-        namespace="default",
-        image="mozilla/bigquery-etl:latest",
-    )
     baseline_args = [
         "--project-id=moz-fx-data-shared-prod",
         "--only=*_stable.baseline_v1",
         "--start_date={{ ds }}",
         "--end_date={{ ds }}"
     ]
-    baseline_clients_first_seen = GKEPodOperator(
+    baseline_clients_first_seen = gke_command(
         task_id="baseline_clients_first_seen",
-        name="baseline-clients-first-seen",
         command=[
             "bqetl",
             "query",
             "backfill",
             "*.baseline_clients_first_seen_v1",
         ] + baseline_args,
-        **baseline_etl_kwargs
+        docker_image="mozilla/bigquery-etl:latest",
     )
-    baseline_clients_daily = GKEPodOperator(
+    baseline_clients_daily = gke_command(
         task_id="baseline_clients_daily",
-        name="baseline-clients-daily",
-         command=[
+        command=[
             "bqetl",
             "query",
             "backfill",
             "*.baseline_clients_daily_v1",
         ] + baseline_args,
-        **baseline_etl_kwargs
+        docker_image="mozilla/bigquery-etl:latest",
     )
-    baseline_clients_last_seen = GKEPodOperator(
+    baseline_clients_last_seen = gke_command(
         task_id="baseline_clients_last_seen",
-        name="baseline-clients-last-seen",
         command=[
             "bqetl",
             "query",
@@ -204,7 +192,7 @@ with models.DAG(
             "*.baseline_clients_last_seen_v1",
         ] + baseline_args,
         depends_on_past=True,
-        **baseline_etl_kwargs
+        docker_image="mozilla/bigquery-etl:latest",
     )
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
