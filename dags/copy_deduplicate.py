@@ -159,7 +159,6 @@ with models.DAG(
 
     baseline_args = [
         "--project-id=moz-fx-data-shared-prod",
-        "--only=*_stable.baseline_v1",
         "--start_date={{ ds }}",
         "--end_date={{ ds }}"
     ]
