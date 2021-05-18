@@ -17,8 +17,13 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@daily") as
 
     mad_server_pull = gke_command(
         task_id="mad_server_pull",
+        # Controls the entrypoint of the container, which for mad-server
+        # defaults to bin/run rather than a shell.
+        cmds=[
+            "/bin/bash",
+        ],
         command=[
-            "bin/airflow_pull",
+            "bin/airflow-pull",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mad-server:latest",
         gcp_conn_id="google_cloud_airflow_gke",
