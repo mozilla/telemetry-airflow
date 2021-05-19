@@ -11,7 +11,7 @@ from utils.gcp import (
 )
 
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from operators.gcp_container_operator import GKEPodOperator
+from utils.gcp import gke_command
 
 DOCS = """\
 # Copy-Deduplicate
@@ -157,38 +157,45 @@ with models.DAG(
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
 
-    gcp_conn_id = "google_cloud_derived_datasets"
-    baseline_etl_kwargs = dict(
-        gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
-        location="us-central1-a",
-        cluster_name="bq-load-gke-1",
-        namespace="default",
-        image="mozilla/bigquery-etl:latest",
-    )
-    baseline_args = [
-        "--project-id=moz-fx-data-shared-prod",
-        "--date={{ ds }}",
-        "--only=*_stable.baseline_v1",
-    ]
-    baseline_clients_first_seen = GKEPodOperator(
+    baseline_clients_first_seen = gke_command(
         task_id="baseline_clients_first_seen",
-        name="baseline-clients-first-seen",
-        arguments=["script/run_glean_baseline_clients_first_seen"] + baseline_args,
-        **baseline_etl_kwargs
+        command = [
+            "/bin/bash",
+            "-c",
+            "./script/generate_sql " + 
+            "--target-project moz-fx-data-shared-prod " + 
+            "&& bqetl query backfill *.baseline_clients_first_seen_v1 " +
+            "--project-id=moz-fx-data-shared-prod " + 
+            "--start_date={{ ds }} --end_date={{ ds }}"
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
     )
-    baseline_clients_daily = GKEPodOperator(
+    baseline_clients_daily = gke_command(
         task_id="baseline_clients_daily",
-        name="baseline-clients-daily",
-        arguments=["script/run_glean_baseline_clients_daily"] + baseline_args,
-        **baseline_etl_kwargs
+        command = [
+            "/bin/bash",
+            "-c",
+            "./script/generate_sql " + 
+            "--target-project moz-fx-data-shared-prod " + 
+            "&& bqetl query backfill *.baseline_clients_daily_v1 " +
+            "--project-id=moz-fx-data-shared-prod " + 
+            "--start_date={{ ds }} --end_date={{ ds }}"
+        ],
+        docker_image="mozilla/bigquery-etl:latest",
     )
-    baseline_clients_last_seen = GKEPodOperator(
+    baseline_clients_last_seen = gke_command(
         task_id="baseline_clients_last_seen",
-        name="baseline-clients-last-seen",
-        arguments=["script/run_glean_baseline_clients_last_seen"] + baseline_args,
+        command = [
+            "/bin/bash",
+            "-c",
+            "./script/generate_sql " + 
+            "--target-project moz-fx-data-shared-prod " + 
+            "&& bqetl query backfill *.baseline_clients_last_seen_v1 " +
+            "--project-id=moz-fx-data-shared-prod " + 
+            "--start_date={{ ds }} --end_date={{ ds }}"
+        ],
         depends_on_past=True,
-        **baseline_etl_kwargs
+        docker_image="mozilla/bigquery-etl:latest",
     )
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
