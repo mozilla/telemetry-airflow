@@ -166,7 +166,7 @@ with models.DAG(
             "--target-project moz-fx-data-shared-prod " + 
             "&& bqetl query backfill *.baseline_clients_first_seen_v1 " +
             "--project-id=moz-fx-data-shared-prod " + 
-            "--start_date={{ ds }} --end_date={{ ds }}"
+            "--start_date={{ ds }} --end_date={{ ds }} --no-partition"
         ],
         docker_image="mozilla/bigquery-etl:latest",
     )
