@@ -16,7 +16,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("mad_server", default_args=default_args, schedule_interval="@daily") as dag:
+with DAG("mad_server", default_args=default_args, schedule_interval="@weekly") as dag:
 
     aws_conn_id="aws_dev_mad_resources_training"
 
