@@ -2,6 +2,32 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from utils.gcp import gke_command
 
+docs = """
+### shredder
+
+#### Description
+
+These jobs normally need to be restarted many times, because each query is only
+attempted once per run. `main_v4` and `main_summary_v4` in particular have partitions
+that fail often due to a combination of size, schema, and clustering. In most cases
+failed jobs may simply be restarted.
+
+Logs from failed runs are not available in airflow, because Kubernetes Pods are deleted
+on exit. Instead, logs can be found in Google Cloud Logging:
+- [shredder-flat-rate-main-summary](https://cloudlogging.app.goo.gl/Tv68VKpCR9fzbJNGA)
+- [shredder-flat-rate](https://cloudlogging.app.goo.gl/Uu6VRn34VY4AryGJ9)
+- [on-demand](https://cloudlogging.app.goo.gl/GX1GM9hwZMENNnnq8)
+
+Kubernetes Pods are deleted on exit to prevent multiple running instances. Multiple
+running instances will submit redundant queries, because state is only read at the start
+of each run. This may cause queries to timeout because only a few may be run in parallel
+while the rest are queued.
+
+#### Owner
+
+dthorn@mozilla.com
+"""
+
 default_args = {
     "owner": "dthorn@mozilla.com",
     "depends_on_past": True,
@@ -16,7 +42,12 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-dag = DAG("shredder", default_args=default_args, schedule_interval=timedelta(days=28))
+dag = DAG(
+    "shredder",
+    default_args=default_args,
+    schedule_interval=timedelta(days=28),
+    doc_md=docs,
+)
 docker_image = "mozilla/bigquery-etl:latest"
 base_command = [
     "script/shredder_delete",
@@ -35,7 +66,8 @@ base_command = [
 on_demand = gke_command(
     task_id="on_demand",
     name="shredder-on-demand",
-    command=base_command + [
+    command=base_command
+    + [
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v4",
@@ -51,7 +83,8 @@ on_demand = gke_command(
 flat_rate_main_summary = gke_command(
     task_id="flat_rate_main_summary",
     name="shredder-flat-rate-main-summary",
-    command=base_command + [
+    command=base_command
+    + [
         "--parallelism=2",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--only=telemetry_derived.main_summary_v4",
@@ -65,7 +98,8 @@ flat_rate_main_summary = gke_command(
 flat_rate = gke_command(
     task_id="flat_rate",
     name="shredder-flat-rate",
-    command=base_command + [
+    command=base_command
+    + [
         "--parallelism=4",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--except",
