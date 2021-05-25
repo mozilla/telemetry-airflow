@@ -172,6 +172,7 @@ with models.DAG(
             "*.baseline_clients_first_seen_v1",
             "--no-partition",
         ] + baseline_args,
+        depends_on_past=True,
         docker_image="mozilla/bigquery-etl:latest",
     )
     baseline_clients_daily = gke_command(
