@@ -170,6 +170,7 @@ with models.DAG(
             "query",
             "backfill",
             "*.baseline_clients_first_seen_v1",
+            "--no-partition",
         ] + baseline_args,
         docker_image="mozilla/bigquery-etl:latest",
     )
