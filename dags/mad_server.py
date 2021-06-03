@@ -40,6 +40,7 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly") a
             "bin/airflow-pull",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mad-server:latest",
+        startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
         gke_cluster_name="workloads-prod-v1",
         gke_location="us-west1",
