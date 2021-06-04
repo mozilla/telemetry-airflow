@@ -149,6 +149,18 @@ clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
     dag=dag,
 )
 
+clients_daily_histogram_aggregates_gpu = generate_and_run_desktop_query(
+    task_id="clients_daily_histogram_aggregates_gpu",
+    project_id=project_id,
+    source_dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    overwrite=False,
+    probe_type="histogram",
+    process="gpu",
+    get_logs=False,
+    dag=dag,
+)
+
 clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
     task_id="clients_daily_keyed_histogram_aggregates",
     project_id=project_id,
@@ -280,8 +292,10 @@ scalar_percentiles >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates_parent
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
+clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_gpu
 clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
 clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
+clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
