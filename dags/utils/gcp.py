@@ -169,7 +169,7 @@ def bigquery_etl_query(
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
-    docker_image="mozilla/bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
     multipart=False,
     is_delete_operator_pod=False,
@@ -241,7 +241,7 @@ def bigquery_etl_copy_deduplicate(
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
-    docker_image="mozilla/bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     **kwargs
 ):
     """ Copy a day's data from live ping tables to stable ping tables,
@@ -307,7 +307,7 @@ def bigquery_xcom_query(
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
-    docker_image="mozilla/bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
     **kwargs
 ):
