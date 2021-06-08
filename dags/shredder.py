@@ -48,7 +48,7 @@ dag = DAG(
     schedule_interval=timedelta(days=28),
     doc_md=docs,
 )
-docker_image = "mozilla/bigquery-etl:latest"
+docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 base_command = [
     "script/shredder_delete",
     "--state-table=moz-fx-data-shredder.shredder_state.shredder_state",

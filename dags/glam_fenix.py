@@ -101,7 +101,7 @@ for product in final_products:
             "BUCKET": BUCKET,
         },
         command=["script/glam/export_csv"],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",
         dag=dag,
     )

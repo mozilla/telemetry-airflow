@@ -44,7 +44,7 @@ with DAG(
             "run",
             "--submission-date={{ ds }}",
         ],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         dag=dag,
     )
 

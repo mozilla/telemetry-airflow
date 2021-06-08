@@ -9,7 +9,7 @@ def generate_and_run_desktop_query(task_id,
                                    probe_type,
                                    destination_dataset_id=None,
                                    process=None,
-                                   docker_image="mozilla/bigquery-etl:latest",
+                                   docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
                                    gcp_conn_id="google_cloud_derived_datasets",
                                    **kwargs):
     """
@@ -60,7 +60,7 @@ def generate_and_run_glean_query(task_id,
                                  destination_project_id,
                                  destination_dataset_id="glam_etl",
                                  source_project_id="moz-fx-data-shared-prod",
-                                 docker_image="mozilla/bigquery-etl:latest",
+                                 docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
                                  gcp_conn_id="google_cloud_derived_datasets",
                                  env_vars={},
                                  **kwargs):
