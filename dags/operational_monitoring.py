@@ -39,7 +39,7 @@ with DAG(
     operational_monitoring = gke_command(
         task_id="run_operational_monitoring",
         command=[
-            "bqetl",
+            "./script/bqetl",
             "opmon",
             "run",
             "--submission-date={{ ds }}",
