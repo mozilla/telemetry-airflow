@@ -34,7 +34,7 @@ with models.DAG(
             "--table-id=moz-fx-data-shared-prod.org_mozilla_fenix_stable.deletion_request_v1",
             "--device-id-field=client_info.client_id",
         ],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         dag=dag,
     )
 
@@ -88,7 +88,7 @@ with models.DAG(
             "--table-id=moz-fx-data-shared-prod.telemetry_stable.deletion_request_v4",
             "--user-id-field=client_id",
         ],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         dag=dag,
     )
 
@@ -138,7 +138,7 @@ with models.DAG(
             '--table-id=moz-fx-data-shared-prod.firefox_accounts_derived.fxa_delete_events_v1',
             '--user-id-field=hmac_user_id',
         ],
-        docker_image='mozilla/bigquery-etl:latest',
+        docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest',
     )
 
     wait_for_fxa_delete_events = ExternalTaskSensor(

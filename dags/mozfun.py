@@ -14,7 +14,7 @@ default_args = {
 }
 
 with DAG("mozfun", default_args=default_args, schedule_interval="@daily") as dag:
-    docker_image = "mozilla/bigquery-etl:latest"
+    docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
     publish_public_udfs = gke_command(
         task_id="publish_public_udfs",
