@@ -162,9 +162,9 @@ class Backfill(get_baseview()):
         # Prepare the command and execute in background
         background_cmd = "screen -dmS {} ".format(screen_id)
         if clear == 'true':
-            background_cmd = background_cmd + 'airflow clear -c '
+            background_cmd = background_cmd + 'airflow tasks clear -c '
         elif clear == 'false':
-            background_cmd = background_cmd + 'airflow backfill '
+            background_cmd = background_cmd + 'airflow dags backfill '
 
         if use_task_regex == 'true':
             background_cmd = background_cmd + "-t {} ".format(task_regex)
