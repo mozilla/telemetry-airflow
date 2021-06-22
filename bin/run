@@ -156,11 +156,11 @@ init_variables() {
 
 case $1 in
   flower)
-    exec airflow flower
+    exec airflow celery flower
     ;;
   web)
-    airflow initdb
-    airflow upgradedb
+    airflow db init
+    airflow db upgrade
 
     # Only init connections in dev
     [ ! -z ${DEVELOPMENT+check} ] && init_connections && init_variables
@@ -169,7 +169,7 @@ case $1 in
     exec airflow webserver -p ${PORT} --workers 4
     ;;
   worker)
-    exec airflow worker
+    exec airflow celery worker
     ;;
   scheduler)
     exec airflow scheduler

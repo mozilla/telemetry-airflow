@@ -44,7 +44,7 @@ function get_errors_in_listing {
     # Parse the logs for ERROR messages, these typically correspond to python
     # exceptions in the DAG. In general, there should NOT be any errors when
     # runnning the local environment.
-    docker-compose exec web airflow list_dags | grep "ERROR"
+    docker-compose exec web airflow dags list | grep "ERROR"
 }
 
 
