@@ -1,6 +1,8 @@
 import datetime
 import os
 
+from sqlalchemy import func
+
 from airflow.exceptions import AirflowException
 from airflow.models import DagBag, DagModel, DagRun, TaskInstance
 from airflow.operators.sensors import ExternalTaskSensor
@@ -17,10 +19,19 @@ Based on https://github.com/apache/airflow/blob/v1-10-stable/airflow/sensors/ext
 """
 
 class ExternalTaskCompletedSensor(ExternalTaskSensor):
+    """
+    We override __init__ and poke methods to support:
+    - Checking external upstream tasks for failed states (e.g. State.FAILED, State.UPSTREAM_FAILED, ...)
+        to stop the ExternalTaskSensor from being rescheduled indefinitely.
+    - A new parameter `failed_states` has been added to define the states which indicate that the
+        external task has failed.
+
+    """
+
     @apply_defaults
-    def __init__(self, failed_states, *args, **kwargs):
+    def __init__(self, failed_states = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.failed_states = failed_states or [State.FAILED]
+        self.failed_states = failed_states or [State.FAILED, State.UPSTREAM_FAILED, State.SKIPPED]
 
     @provide_session
     def poke(self, context, session=None):
@@ -29,7 +40,8 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
         if self.execution_delta:
             dttm = context['execution_date'] - self.execution_delta
         elif self.execution_date_fn:
-            dttm = self._handle_execution_date_fn(context=context)
+            # Moz specific - _handle_execution_date_fn may not be defined in this context
+            raise AirflowException("execution_date_fn is not supported by this sensor.")
         else:
             dttm = context['execution_date']
 
@@ -67,6 +79,7 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
         
         # custom implementation to check for failed tasks
         if self.external_task_id:
+            # Moz specific - rename count to count_allowed
             # .count() is inefficient
             count_allowed = session.query(func.count()).filter(
                 TI.dag_id == self.external_dag_id,
@@ -75,6 +88,7 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
                 TI.execution_date.in_(dttm_filter),
             ).scalar()
 
+            # Moz specific - counting failed upstream states
             count_failed = session.query(func.count()).filter(
                 TI.dag_id == self.external_dag_id,
                 TI.task_id == self.external_task_id,
@@ -82,6 +96,7 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
                 TI.execution_date.in_(dttm_filter),
             ).scalar()
         else:
+            # Moz specific - rename count to count_allowed
             # .count() is inefficient
             count_allowed = session.query(func.count()).filter(
                 DR.dag_id == self.external_dag_id,
@@ -89,13 +104,14 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
                 DR.execution_date.in_(dttm_filter),
             ).scalar()
 
+            # Moz specific - counting failed upstream states
             count_failed = session.query(func.count()).filter(
-                TI.dag_id == self.external_dag_id,
-                TI.task_id == self.external_task_id,
-                TI.state.in_(self.failed_states),
-                TI.execution_date.in_(dttm_filter),
+                DR.dag_id == self.external_dag_id,
+                DR.state.in_(self.failed_states),
+                DR.execution_date.in_(dttm_filter),
             ).scalar()
 
+        # Moz specific - set sensor to failed state if external task has faileds
         if count_failed == len(dttm_filter):
             if self.external_task_id:
                 raise AirflowException(
