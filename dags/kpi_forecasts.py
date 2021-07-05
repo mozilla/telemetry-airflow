@@ -3,7 +3,7 @@ import datetime
 from airflow import models
 from datetime import timedelta
 from utils.gcp import bigquery_etl_query
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from utils.forecasting import simpleprophet_forecast
 
 default_args = {
@@ -35,7 +35,7 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     )
 
-    wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskSensor(
+    wait_for_firefox_nondesktop_exact_mau28 = ExternalTaskCompletedSensor(
         task_id="wait_for_firefox_nondesktop_exact_mau28",
         external_dag_id="bqetl_nondesktop",
         external_task_id="telemetry_derived__firefox_nondesktop_exact_mau28__v1",
@@ -59,7 +59,7 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
         dag=dag)
 
-    wait_for_exact_mau_by_dimensions = ExternalTaskSensor(
+    wait_for_exact_mau_by_dimensions = ExternalTaskCompletedSensor(
         task_id="wait_for_exact_mau_by_dimensions",
         external_dag_id="bqetl_main_summary",
         external_task_id="firefox_desktop_exact_mau28_by_dimensions",
@@ -82,7 +82,7 @@ with models.DAG(
         email=["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
     )
 
-    wait_for_firefox_accounts_exact_mau = ExternalTaskSensor(
+    wait_for_firefox_accounts_exact_mau = ExternalTaskCompletedSensor(
         task_id="wait_for_firefox_accounts_exact_mau",
         external_dag_id="bqetl_fxa_events",
         external_task_id="firefox_accounts_derived__exact_mau28__v1",

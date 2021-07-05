@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import generate_and_run_glean_query
 from utils.gcp import gke_command
 
@@ -50,7 +50,7 @@ LOGICAL_MAPPING = {
 
 dag = DAG("glam_fenix", default_args=default_args, schedule_interval="0 2 * * *")
 
-wait_for_copy_deduplicate = ExternalTaskSensor(
+wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
     task_id="wait_for_copy_deduplicate",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_all",

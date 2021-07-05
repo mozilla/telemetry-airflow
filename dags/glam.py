@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.executors import get_default_executor
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
@@ -41,7 +41,7 @@ dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 2 * * *")
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskSensor(
+wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
     project_id=project_id,
     external_dag_id="copy_deduplicate",

@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 
@@ -53,7 +53,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         dag=dag,
     )
 
-    wait_for_clients_daily_export = ExternalTaskSensor(
+    wait_for_clients_daily_export = ExternalTaskCompletedSensor(
         task_id="wait_for_clients_daily",
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__clients_daily__v6",
@@ -64,7 +64,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         dag=dag,
     )
 
-    wait_for_main_summary_export = ExternalTaskSensor(
+    wait_for_main_summary_export = ExternalTaskCompletedSensor(
         task_id="wait_for_main_summary",
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__main_summary__v4",
@@ -75,7 +75,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         dag=dag,
     )
 
-    wait_for_search_clients_daily = ExternalTaskSensor(
+    wait_for_search_clients_daily = ExternalTaskCompletedSensor(
         task_id="wait_for_search_clients_daily",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_daily__v8",
@@ -86,7 +86,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         dag=dag,
     )
 
-    wait_for_bq_events = ExternalTaskSensor(
+    wait_for_bq_events = ExternalTaskCompletedSensor(
         task_id="wait_for_bq_events",
         external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
@@ -97,7 +97,7 @@ with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") 
         dag=dag,
     )
 
-    wait_for_copy_deduplicate_events = ExternalTaskSensor(
+    wait_for_copy_deduplicate_events = ExternalTaskCompletedSensor(
         task_id="wait_for_copy_deduplicate_events",
         external_dag_id="copy_deduplicate",
         external_task_id="event_events",
