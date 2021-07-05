@@ -2,7 +2,7 @@ import datetime
 
 from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
@@ -43,7 +43,7 @@ with DAG(
     ses_aws_conn_id = "aws_data_iam_ses"
     ses_access_key, ses_secret_key, _ = AwsHook(ses_aws_conn_id).get_credentials()
 
-    wait_for_socorro_import = ExternalTaskSensor(
+    wait_for_socorro_import = ExternalTaskCompletedSensor(
         task_id="wait_for_socorro_import",
         external_dag_id="socorro_import",
         external_task_id="bigquery_load",

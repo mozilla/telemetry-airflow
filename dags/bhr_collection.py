@@ -2,7 +2,7 @@ import datetime
 
 from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
@@ -31,7 +31,7 @@ with DAG(
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'
     aws_access_key, aws_secret_key, _ = AwsHook(write_aws_conn_id).get_credentials()
 
-    wait_for_bhr_ping = ExternalTaskSensor(
+    wait_for_bhr_ping = ExternalTaskCompletedSensor(
         task_id="wait_for_bhr_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",

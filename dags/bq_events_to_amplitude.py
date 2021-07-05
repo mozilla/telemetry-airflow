@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import models
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.amplitude import export_to_amplitude
 from utils.gcp import gke_command
@@ -40,7 +40,7 @@ with models.DAG(
 
     # DevTools view merges events from `telemetry.main` and `telemetry.event`.
     # We need to make sure both tables are ready and deduplicated before proceeding.
-    wait_for_copy_deduplicate_all = ExternalTaskSensor(
+    wait_for_copy_deduplicate_all = ExternalTaskCompletedSensor(
         task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
@@ -49,7 +49,7 @@ with models.DAG(
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag)
-    wait_for_copy_deduplicate_main_ping = ExternalTaskSensor(
+    wait_for_copy_deduplicate_main_ping = ExternalTaskCompletedSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
@@ -141,7 +141,7 @@ with models.DAG(
         docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest',
     )
 
-    wait_for_fxa_delete_events = ExternalTaskSensor(
+    wait_for_fxa_delete_events = ExternalTaskCompletedSensor(
         task_id="wait_for_fxa_delete_events",
         external_dag_id="bqetl_fxa_events",
         external_task_id="firefox_accounts_derived__fxa_delete_events__v1",

@@ -2,7 +2,7 @@ from airflow import DAG
 from datetime import timedelta, datetime
 from utils.gcp import gke_command
 
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 
 
 default_args = {
@@ -25,7 +25,7 @@ with DAG(
     default_args=default_args,
     schedule_interval="0 3 * * *",
 ) as dag:
-    wait_for_main_nightly = ExternalTaskSensor(
+    wait_for_main_nightly = ExternalTaskCompletedSensor(
         task_id="wait_for_main_nightly",
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__main_nightly__v1",

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.executors import get_default_executor
 from airflow.operators.subdag_operator import SubDagOperator
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     moz_dataproc_jar_runner,
@@ -144,7 +144,7 @@ clients_daily_export = SubDagOperator(
     executor=get_default_executor(),
     dag=dag)
 
-wait_for_clients_daily = ExternalTaskSensor(
+wait_for_clients_daily = ExternalTaskCompletedSensor(
     task_id="wait_for_clients_daily",
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__clients_daily__v6",
@@ -154,7 +154,7 @@ wait_for_clients_daily = ExternalTaskSensor(
     email_on_retry=False,
     dag=dag)
 
-wait_for_main_summary = ExternalTaskSensor(
+wait_for_main_summary = ExternalTaskCompletedSensor(
     task_id="wait_for_main_summary",
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__main_summary__v4",

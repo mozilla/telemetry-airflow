@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from utils.gcp import bigquery_etl_query
 
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from operators.gcp_container_operator import GKEPodOperator
 
@@ -22,7 +22,7 @@ with DAG('incline_dashboard',
          default_args=default_args,
          schedule_interval="0 4 * * *") as dag:
 
-    wait_for_baseline_clients_last_seen = ExternalTaskSensor(
+    wait_for_baseline_clients_last_seen = ExternalTaskCompletedSensor(
         task_id="wait_for_baseline_clients_last_seen",
         external_dag_id="copy_deduplicate",
         external_task_id="baseline_clients_last_seen",
@@ -32,7 +32,7 @@ with DAG('incline_dashboard',
         email_on_retry=False,
     )
 
-    wait_for_core_clients_last_seen = ExternalTaskSensor(
+    wait_for_core_clients_last_seen = ExternalTaskCompletedSensor(
         task_id="wait_for_core_clients_last_seen",
         external_dag_id="bqetl_core",
         external_task_id="telemetry_derived__core_clients_last_seen__v1",

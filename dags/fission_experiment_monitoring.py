@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import models
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import  bigquery_etl_query
 
@@ -25,7 +25,7 @@ with models.DAG(
         schedule_interval="0 3 * * *",
         default_args=default_args) as dag:
 
-    wait_for_main_nightly = ExternalTaskSensor(
+    wait_for_main_nightly = ExternalTaskCompletedSensor(
         task_id="wait_for_main_nightly",
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__main_nightly__v1",
@@ -36,7 +36,7 @@ with models.DAG(
         dag=dag,
     )
 
-    wait_for_copy_deduplicate_crash_ping = ExternalTaskSensor(
+    wait_for_copy_deduplicate_crash_ping = ExternalTaskCompletedSensor(
         task_id="wait_for_copy_deduplicate_crash_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
