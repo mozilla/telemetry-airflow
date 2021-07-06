@@ -138,8 +138,7 @@ trim_database = gke_command(
         "{{ var.value.mozaggregator_postgres_pass }}",
         "--postgres-host",
         "{{ var.value.mozaggregator_postgres_host }}",
-        # TODO: uncomment this after a successful run
-        # "--no-dry-run",
+        "--no-dry-run",
     ],
     docker_image="mozilla/python_mozaggregator:latest",
     dag=dag,
