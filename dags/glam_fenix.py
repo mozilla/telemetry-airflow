@@ -18,7 +18,6 @@ default_args = {
     "email_on_retry": True,
     "retries": 1,
     "retry_delay": timedelta(minutes=30),
-    "max_active_runs": 1
 }
 
 PROJECT = "moz-fx-data-glam-prod-fca7"
@@ -49,7 +48,12 @@ LOGICAL_MAPPING = {
     "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
 }
 
-dag = DAG("glam_fenix", default_args=default_args, schedule_interval="0 2 * * *")
+dag = DAG(
+    "glam_fenix",
+    default_args=default_args,
+    max_active_runs=1,
+    schedule_interval="0 2 * * *",
+)
 
 wait_for_copy_deduplicate = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate",
