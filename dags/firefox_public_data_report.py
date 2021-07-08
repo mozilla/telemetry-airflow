@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 from operators.gcp_container_operator import GKEPodOperator
@@ -39,7 +39,7 @@ aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credent
 
 # hardware_report's execution date will be {now}-7days. It will read last week's main pings,
 # therefore we need to wait for yesterday's Main Ping deduplication task to finish
-wait_for_main_ping = ExternalTaskSensor(
+wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
@@ -87,7 +87,7 @@ hardware_report = SubDagOperator(
     )
 )
 
-wait_for_clients_last_seen = ExternalTaskSensor(
+wait_for_clients_last_seen = ExternalTaskCompletedSensor(
     task_id="wait_for_clients_last_seen",
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__clients_last_seen__v1",

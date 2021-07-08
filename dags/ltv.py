@@ -2,7 +2,7 @@ import json
 import os
 
 from airflow import DAG
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 from operators.backport.bigquery_operator_1_10_2 import BigQueryOperator
@@ -91,7 +91,7 @@ if params.is_dev:
     )
     copy_to_dev >> ltv_daily
 else:
-    wait_for_search_clients_last_seen = ExternalTaskSensor(
+    wait_for_search_clients_last_seen = ExternalTaskCompletedSensor(
         task_id="wait_for_search_clients_last_seen",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_last_seen__v1",

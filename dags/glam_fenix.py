@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import generate_and_run_glean_query
 from utils.gcp import gke_command
 
@@ -55,7 +55,7 @@ dag = DAG(
     schedule_interval="0 2 * * *",
 )
 
-wait_for_copy_deduplicate = ExternalTaskSensor(
+wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
     task_id="wait_for_copy_deduplicate",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_all",
@@ -106,7 +106,7 @@ for product in final_products:
             "BUCKET": BUCKET,
         },
         command=["script/glam/export_csv"],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",
         dag=dag,
     )

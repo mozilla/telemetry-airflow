@@ -95,7 +95,6 @@ init_connections() {
 
     aws_conn=(
       "airflow_taar_rw_s3"
-      "amplitude_s3_conn"
       "aws_dev_iam_s3"
       "aws_dev_mad_resources_training"
       "aws_data_iam_s3"
@@ -125,14 +124,6 @@ init_variables() {
     airflow variables -s "bugzilla_probe_expiry_bot_api_key" "bugzilla-api-key"
     airflow variables -s "app_store_connect_username" "username"
     airflow variables -s "app_store_connect_password" "password"
-    airflow variables -s "LEANPLUM_FIREFOX_ANDROID_BETA_APP_ID" "firefox-nightly-app-id"
-    airflow variables -s "LEANPLUM_FIREFOX_ANDROID_BETA_CLIENT_KEY" "firefox-nightly-client-key"
-    airflow variables -s "LEANPLUM_FIREFOX_ANDROID_NIGHTLY_APP_ID" "firefox-beta-app-id"
-    airflow variables -s "LEANPLUM_FIREFOX_ANDROID_NIGHTLY_CLIENT_KEY" "firefox-beta-client-key"
-    airflow variables -s "LEANPLUM_FIREFOX_ANDROID_RELEASE_APP_ID" "firefox-release-app-id"
-    airflow variables -s "LEANPLUM_FIREFOX_ANDROID_RELEASE_CLIENT_KEY" "firefox-release-client-key"
-    airflow variables -s "LEANPLUM_FIREFOX_IOS_RELEASE_APP_ID" "firefox-ios-app-id"
-    airflow variables -s "LEANPLUM_FIREFOX_IOS_RELEASE_CLIENT_KEY" "firefox-ios-client-key"
     airflow variables -s "surveygizmo_daily_attitudes_survey_id" "12345"
     airflow variables -s "surveygizmo_api_token" "tokentokentoken"
     airflow variables -s "surveygizmo_api_secret" "tapsekret"

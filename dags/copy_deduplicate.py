@@ -170,8 +170,10 @@ with models.DAG(
             "query",
             "backfill",
             "*.baseline_clients_first_seen_v1",
+            "--no-partition",
         ] + baseline_args,
-        docker_image="mozilla/bigquery-etl:latest",
+        depends_on_past=True,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     baseline_clients_daily = gke_command(
         task_id="baseline_clients_daily",
@@ -181,7 +183,7 @@ with models.DAG(
             "backfill",
             "*.baseline_clients_daily_v1",
         ] + baseline_args,
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     baseline_clients_last_seen = gke_command(
         task_id="baseline_clients_last_seen",
@@ -192,7 +194,7 @@ with models.DAG(
             "*.baseline_clients_last_seen_v1",
         ] + baseline_args,
         depends_on_past=True,
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen

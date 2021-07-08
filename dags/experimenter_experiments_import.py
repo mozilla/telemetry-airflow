@@ -20,7 +20,7 @@ with DAG("experimenter_experiments_import", default_args=default_args, schedule_
             "python",
             "sql/moz-fx-data-experiments/monitoring/experimenter_experiments_v1/query.py",
         ],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="ascholtz@mozilla.com",
         email=["telemetry-alerts@mozilla.com", "ascholtz@mozilla.com", "tdsmith@mozilla.com"],
     )

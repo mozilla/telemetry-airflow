@@ -25,5 +25,5 @@ with DAG("stripe", default_args=default_args, schedule_interval="@daily") as dag
             "--resource=Event",
             "--table=moz-fx-data-shared-prod.stripe_external.events_v1",
         ],
-        docker_image="mozilla/bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )

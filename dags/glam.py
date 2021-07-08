@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.executors import get_default_executor
-from airflow.operators.sensors import ExternalTaskSensor
+from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
@@ -41,7 +41,7 @@ dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 2 * * *")
 gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskSensor(
+wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
     project_id=project_id,
     external_dag_id="copy_deduplicate",
@@ -118,7 +118,7 @@ scalar_percentiles = gke_command(
         "--tmp-project", tmp_project,
         "--dataset", dataset_id,
     ],
-    docker_image="mozilla/bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     dag=dag,
 )
 
@@ -145,6 +145,18 @@ clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
     overwrite=False,
     probe_type="histogram",
     process="content",
+    get_logs=False,
+    dag=dag,
+)
+
+clients_daily_histogram_aggregates_gpu = generate_and_run_desktop_query(
+    task_id="clients_daily_histogram_aggregates_gpu",
+    project_id=project_id,
+    source_dataset_id=dataset_id,
+    sample_size=PERCENT_RELEASE_WINDOWS_SAMPLING,
+    overwrite=False,
+    probe_type="histogram",
+    process="gpu",
     get_logs=False,
     dag=dag,
 )
@@ -206,7 +218,7 @@ client_scalar_probe_counts = gke_command(
         "--tmp-project", tmp_project,
         "--dataset", dataset_id,
     ],
-    docker_image="mozilla/bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     dag=dag,
 )
 
@@ -280,8 +292,10 @@ scalar_percentiles >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates_parent
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
+clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_gpu
 clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
 clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
+clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
