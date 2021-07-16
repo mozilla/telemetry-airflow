@@ -232,7 +232,7 @@ clients_histogram_bucket_counts = SubDagOperator(
         dag.schedule_interval,
         dataset_id,
         ("submission_date:DATE:{{ds}}",),
-        10,
+        20,
         None,
     ),
     task_id="clients_histogram_bucket_counts",
