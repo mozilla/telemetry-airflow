@@ -1,5 +1,5 @@
 FROM python:3.7-slim
-MAINTAINER Jannis Leidel <jezdez@mozilla.com>
+MAINTAINER Harold Woo <hwoo@mozilla.com>
 
 # Due to AIRFLOW-6854, Python 3.7 is chosen as the base python version.
 
