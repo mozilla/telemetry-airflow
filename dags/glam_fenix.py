@@ -2,7 +2,10 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.task_sensor import ExternalTaskCompletedSensor
-from glam_subdags.generate_query import generate_and_run_glean_query
+from glam_subdags.generate_query import (
+    generate_and_run_glean_queries,
+    generate_and_run_glean_task,
+)
 from utils.gcp import gke_command
 
 default_args = {
@@ -69,7 +72,7 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
 
 mapping = {}
 for product in PRODUCTS:
-    query = generate_and_run_glean_query(
+    query = generate_and_run_glean_queries(
         task_id=f"daily_{product}",
         product=product,
         destination_project_id=PROJECT,
@@ -84,7 +87,7 @@ final_products = set(LOGICAL_MAPPING.keys()) | set(PRODUCTS) - set(
     sum(LOGICAL_MAPPING.values(), [])
 )
 for product in final_products:
-    query = generate_and_run_glean_query(
+    query = generate_and_run_glean_queries(
         task_id=f"incremental_{product}",
         product=product,
         destination_project_id=PROJECT,
