@@ -7,6 +7,7 @@ from glam_subdags.generate_query import (
     generate_and_run_glean_task,
 )
 from utils.gcp import gke_command
+from functools import partial
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
@@ -87,17 +88,62 @@ final_products = set(LOGICAL_MAPPING.keys()) | set(PRODUCTS) - set(
     sum(LOGICAL_MAPPING.values(), [])
 )
 for product in final_products:
-    query = generate_and_run_glean_queries(
-        task_id=f"incremental_{product}",
+    func = partial(
+        generate_and_run_glean_task,
         product=product,
         destination_project_id=PROJECT,
-        env_vars=dict(STAGE="incremental"),
         dag=dag,
     )
+    view, init, query = [
+        partial(func, task_type=task_type) for task_type in ["view", "init", "query"]
+    ]
+
+    # stage 1 - incremental
+
+    cdha = view(task_name=f"{product}__view_clients_daily_histogram_aggregates_v1")
+    cdsa = view(task_name=f"{product}__view_clients_daily_scalar_aggregates_v1")
+    lv = view(task_name=f"{product}__latest_versions_v1")
+    # only the scalar aggregates are downstream of latest versions
+    cdsa >> lv
+
     # get the dependencies for the logical mapping, or just pass through the
     # daily query unmodified
     for dependency in LOGICAL_MAPPING.get(product, [product]):
-        mapping[dependency] >> query
+        mapping[dependency] >> cdsa
+        mapping[dependency] >> cdha
+
+    csa_init = init(task_name=f"{product}__clients_scalar_aggregates_v1")
+    csa = query(task_name=f"{product}__clients_scalar_aggregates_v1")
+
+    cdsa >> csa_init
+    lv >> csa_init
+    csa_init >> csa
+
+    cha_init = init(task_name=f"{product}__clients_histogram_aggregates_v1")
+    cha = query(task_name=f"{product}__clients_histogram_aggregates_v1")
+
+    cdha >> cha_init
+    lv >> cha_init
+    cha_init >> cha
+
+    # stage 2 - downstream for export
+    sbc = query(task_name=f"{product}__scalar_bucket_counts_v1")
+    spc = query(task_name=f"{product}__scalar_probe_counts_v1")
+    sp = query(task_name=f"{product}__scalar_percentiles_v1")
+    hbc = query(task_name=f"{product}__histogram_bucket_counts_v1")
+    hpc = query(task_name=f"{product}__histogram_probe_counts_v1")
+    hp = query(task_name=f"{product}__histogram_percentiles_v1")
+    pc = view(task_name=f"{product}__view_probe_counts_v1")
+    epc = query(task_name=f"{product}__extract_probe_counts_v1")
+
+    sbc >> spc >> sp >> pc
+    hbc >> hpc >> hp >> pc
+    pc >> epc
+
+    uc = view(task_name=f"{product}__view_user_counts_v1")
+    euc = query(task_name=f"{product}__extract_user_counts_v1")
+
+    csa >> uc >> euc
 
     export = gke_command(
         task_id=f"export_{product}",
@@ -114,4 +160,5 @@ for product in final_products:
         dag=dag,
     )
 
-    query >> export
+    epc >> export
+    euc >> export

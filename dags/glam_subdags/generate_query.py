@@ -12,7 +12,7 @@ def generate_and_run_desktop_query(
     process=None,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     gcp_conn_id="google_cloud_derived_datasets",
-    **kwargs
+    **kwargs,
 ):
     """
     :param task_id:                     Airflow task id
@@ -53,7 +53,7 @@ def generate_and_run_desktop_query(
         command=command,
         docker_image=docker_image,
         gcp_conn_id=gcp_conn_id,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -66,7 +66,7 @@ def generate_and_run_glean_queries(
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     gcp_conn_id="google_cloud_derived_datasets",
     env_vars={},
-    **kwargs
+    **kwargs,
 ):
     """
     :param task_id:                     Airflow task id
@@ -94,24 +94,25 @@ def generate_and_run_glean_queries(
         command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
         docker_image=docker_image,
         gcp_conn_id=gcp_conn_id,
-        **kwargs
+        **kwargs,
     )
 
 
 def generate_and_run_glean_task(
     task_type,
-    task_name,    
+    task_name,
+    product,
     destination_project_id,
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     gcp_conn_id="google_cloud_derived_datasets",
     env_vars={},
-    **kwargs
+    **kwargs,
 ):
     """
     See https://github.com/mozilla/bigquery-etl/blob/main/script/glam/run_glam_sql
-    
+
     :param task_type:                   Either view, init, or query
     :param task_name:                   Name of the query
     :param product:                     Product name of glean app
@@ -128,13 +129,14 @@ def generate_and_run_glean_task(
         "PROJECT": destination_project_id,
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",
-        "IMPORT": "true" ** env_vars,
+        "IMPORT": "true",
+        **env_vars,
     }
     if task_type not in ["view", "init", "query"]:
         raise ValueError("task_type must be either a view, init, or query")
 
     return gke_command(
-        task_id=query_name,
+        task_id=f"{task_type}_{task_name}",
         cmds=["bash", "-c"],
         env_vars=env_vars,
         command=[
@@ -144,5 +146,5 @@ def generate_and_run_glean_task(
         ],
         docker_image=docker_image,
         gcp_conn_id=gcp_conn_id,
-        **kwargs
+        **kwargs,
     )
