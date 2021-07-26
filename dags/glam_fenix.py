@@ -92,7 +92,7 @@ for product in final_products:
         generate_and_run_glean_task,
         product=product,
         destination_project_id=PROJECT,
-        dict(STAGE="incremental"),
+        env_vars=dict(STAGE="incremental"),
         dag=dag,
     )
     view, init, query = [
