@@ -136,8 +136,8 @@ for product in final_products:
     pc = view(task_name=f"{product}__view_probe_counts_v1")
     epc = query(task_name=f"{product}__extract_probe_counts_v1")
 
-    sbc >> spc >> sp >> pc
-    hbc >> hpc >> hp >> pc
+    csa >> sbc >> spc >> sp >> pc
+    cha >> hbc >> hpc >> hp >> pc
     pc >> epc
 
     uc = view(task_name=f"{product}__view_user_counts_v1")
