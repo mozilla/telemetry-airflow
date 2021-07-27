@@ -1,17 +1,19 @@
 from utils.gcp import gke_command
 
 
-def generate_and_run_desktop_query(task_id,
-                                   project_id,
-                                   source_dataset_id,
-                                   sample_size,
-                                   overwrite,
-                                   probe_type,
-                                   destination_dataset_id=None,
-                                   process=None,
-                                   docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-                                   gcp_conn_id="google_cloud_derived_datasets",
-                                   **kwargs):
+def generate_and_run_desktop_query(
+    task_id,
+    project_id,
+    source_dataset_id,
+    sample_size,
+    overwrite,
+    probe_type,
+    destination_dataset_id=None,
+    process=None,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
+    **kwargs,
+):
     """
     :param task_id:                     Airflow task id
     :param project_id:                  GCP project to write to
@@ -51,19 +53,21 @@ def generate_and_run_desktop_query(task_id,
         command=command,
         docker_image=docker_image,
         gcp_conn_id=gcp_conn_id,
-        **kwargs
+        **kwargs,
     )
 
 
-def generate_and_run_glean_query(task_id,
-                                 product,
-                                 destination_project_id,
-                                 destination_dataset_id="glam_etl",
-                                 source_project_id="moz-fx-data-shared-prod",
-                                 docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-                                 gcp_conn_id="google_cloud_derived_datasets",
-                                 env_vars={},
-                                 **kwargs):
+def generate_and_run_glean_queries(
+    task_id,
+    product,
+    destination_project_id,
+    destination_dataset_id="glam_etl",
+    source_project_id="moz-fx-data-shared-prod",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
+    env_vars={},
+    **kwargs,
+):
     """
     :param task_id:                     Airflow task id
     :param product:                     Product name of glean app
@@ -80,7 +84,7 @@ def generate_and_run_glean_query(task_id,
         "PROJECT": destination_project_id,
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",
-        **env_vars
+        **env_vars,
     }
 
     return gke_command(
@@ -90,5 +94,57 @@ def generate_and_run_glean_query(task_id,
         command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
         docker_image=docker_image,
         gcp_conn_id=gcp_conn_id,
-        **kwargs
+        **kwargs,
+    )
+
+
+def generate_and_run_glean_task(
+    task_type,
+    task_name,
+    product,
+    destination_project_id,
+    destination_dataset_id="glam_etl",
+    source_project_id="moz-fx-data-shared-prod",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    gcp_conn_id="google_cloud_derived_datasets",
+    env_vars={},
+    **kwargs,
+):
+    """
+    See https://github.com/mozilla/bigquery-etl/blob/main/script/glam/run_glam_sql
+
+    :param task_type:                   Either view, init, or query
+    :param task_name:                   Name of the query
+    :param product:                     Product name of glean app
+    :param destination_project_id:      Project to store derived tables
+    :param destination_dataset_id:      Name of the dataset to store derived tables
+    :param source_project_id:           Project containing the source datasets
+    :param docker_image:                Docker image
+    :param gcp_conn_id:                 Airflow GCP connection
+    :param env_vars:                    Additional environment variables to pass
+    """
+    env_vars = {
+        "PRODUCT": product,
+        "SRC_PROJECT": source_project_id,
+        "PROJECT": destination_project_id,
+        "DATASET": destination_dataset_id,
+        "SUBMISSION_DATE": "{{ ds }}",
+        "IMPORT": "true",
+        **env_vars,
+    }
+    if task_type not in ["view", "init", "query"]:
+        raise ValueError("task_type must be either a view, init, or query")
+
+    return gke_command(
+        task_id=f"{task_type}_{task_name}",
+        cmds=["bash", "-c"],
+        env_vars=env_vars,
+        command=[
+            "script/glam/generate_glean_sql && "
+            "source script/glam/run_glam_sql && "
+            f"run_{task_type} {task_name}"
+        ],
+        docker_image=docker_image,
+        gcp_conn_id=gcp_conn_id,
+        **kwargs,
     )

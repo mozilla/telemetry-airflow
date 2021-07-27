@@ -2,8 +2,12 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.task_sensor import ExternalTaskCompletedSensor
-from glam_subdags.generate_query import generate_and_run_glean_query
+from glam_subdags.generate_query import (
+    generate_and_run_glean_queries,
+    generate_and_run_glean_task,
+)
 from utils.gcp import gke_command
+from functools import partial
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
@@ -69,7 +73,7 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
 
 mapping = {}
 for product in PRODUCTS:
-    query = generate_and_run_glean_query(
+    query = generate_and_run_glean_queries(
         task_id=f"daily_{product}",
         product=product,
         destination_project_id=PROJECT,
@@ -84,17 +88,54 @@ final_products = set(LOGICAL_MAPPING.keys()) | set(PRODUCTS) - set(
     sum(LOGICAL_MAPPING.values(), [])
 )
 for product in final_products:
-    query = generate_and_run_glean_query(
-        task_id=f"incremental_{product}",
+    func = partial(
+        generate_and_run_glean_task,
         product=product,
         destination_project_id=PROJECT,
         env_vars=dict(STAGE="incremental"),
         dag=dag,
     )
-    # get the dependencies for the logical mapping, or just pass through the
-    # daily query unmodified
-    for dependency in LOGICAL_MAPPING.get(product, [product]):
-        mapping[dependency] >> query
+    view, init, query = [
+        partial(func, task_type=task_type) for task_type in ["view", "init", "query"]
+    ]
+
+    # stage 1 - incremental
+    clients_daily_histogram_aggregates = view(
+        task_name=f"{product}__view_clients_daily_histogram_aggregates_v1"
+    )
+    clients_daily_scalar_aggregates = view(
+        task_name=f"{product}__view_clients_daily_scalar_aggregates_v1"
+    )
+    latest_versions = view(task_name=f"{product}__latest_versions_v1")
+
+    clients_scalar_aggregate_init = init(
+        task_name=f"{product}__clients_scalar_aggregates_v1"
+    )
+    clients_scalar_aggregate = query(
+        task_name=f"{product}__clients_scalar_aggregates_v1"
+    )
+
+    clients_histogram_aggregate_init = init(
+        task_name=f"{product}__clients_histogram_aggregates_v1"
+    )
+    clients_histogram_aggregate = query(
+        task_name=f"{product}__clients_histogram_aggregates_v1"
+    )
+
+    # stage 2 - downstream for export
+    scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
+    scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
+    scalar_percentile = query(task_name=f"{product}__scalar_percentiles_v1")
+
+    histogram_bucket_counts = query(task_name=f"{product}__histogram_bucket_counts_v1")
+    histogram_probe_counts = query(task_name=f"{product}__histogram_probe_counts_v1")
+    histogram_percentiles = query(task_name=f"{product}__histogram_percentiles_v1")
+
+    probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
+    extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
+
+    user_counts = view(task_name=f"{product}__view_user_counts_v1")
+    extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
 
     export = gke_command(
         task_id=f"export_{product}",
@@ -111,4 +152,43 @@ for product in final_products:
         dag=dag,
     )
 
-    query >> export
+    # set all of the dependencies for all of the tasks
+
+    # get the dependencies for the logical mapping, or just pass through the
+    # daily query unmodified
+    for dependency in LOGICAL_MAPPING.get(product, [product]):
+        mapping[dependency] >> clients_daily_scalar_aggregates
+        mapping[dependency] >> clients_daily_histogram_aggregates
+
+    # only the scalar aggregates are upstream of latest versions
+    clients_daily_scalar_aggregates >> latest_versions
+    latest_versions >> clients_scalar_aggregate_init
+    latest_versions >> clients_histogram_aggregate_init
+
+    (
+        clients_daily_scalar_aggregates
+        >> clients_scalar_aggregate_init
+        >> clients_scalar_aggregate
+    )
+    (
+        clients_daily_histogram_aggregates
+        >> clients_histogram_aggregate_init
+        >> clients_histogram_aggregate
+    )
+
+    (
+        clients_scalar_aggregate
+        >> scalar_bucket_counts
+        >> scalar_probe_counts
+        >> scalar_percentile
+        >> probe_counts
+    )
+    (
+        clients_histogram_aggregate
+        >> histogram_bucket_counts
+        >> histogram_probe_counts
+        >> histogram_percentiles
+        >> probe_counts
+    )
+    probe_counts >> extract_probe_counts >> export
+    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
