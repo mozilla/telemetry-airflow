@@ -106,7 +106,7 @@ for product in final_products:
     clients_daily_scalar_aggregates = view(
         task_name=f"{product}__view_clients_daily_scalar_aggregates_v1"
     )
-    latest_versions = view(task_name=f"{product}__latest_versions_v1")
+    latest_versions = query(task_name=f"{product}__latest_versions_v1")
 
     clients_scalar_aggregate_init = init(
         task_name=f"{product}__clients_scalar_aggregates_v1"
