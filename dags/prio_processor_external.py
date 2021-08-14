@@ -51,6 +51,10 @@ processor_b = prio_processor_subdag(
     SERVICE_ACCOUNT_B,
     "b",
     {
+        # used for the minio instance
+        "MINIO_ROOT_USER": "test",
+        "MINIO_ROOT_PASSWORD": "test",
+        # configuration for the server
         "APP_NAME": APP_NAME,
         "SUBMISSION_DATE": "{{ ds }}",
         "DATA_CONFIG": "/app/config/content.json",
@@ -59,9 +63,18 @@ processor_b = prio_processor_subdag(
         "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_external }}",
         "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
         "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
-        "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_B,
-        "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
-        "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
+        # configuration to minio gateway
+        "BUCKET_INTERNAL_ACCESS_KEY": "test",
+        "BUCKET_INTERNAL_SECRET_KEY": "test",
+        "BUCKET_INTERNAL_ENDPOINT": "http://processor_minio_b:9000",
+        "BUCKET_EXTERNAL_ACCESS_KEY": "test",
+        "BUCKET_EXTERNAL_SECRET_KEY": "test",
+        "BUCKET_EXTERNAL_ENDPOINT": "http://processor_minio_b:9000",
+        # other bucket information
+        "BUCKET_INTERNAL_INGEST": BUCKET_PRIVATE_B,
+        "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_B,
+        "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_B,
+        "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_A,
         "BUCKET_PREFIX": BUCKET_PREFIX,
         # 15 minutes of time-out
         "RETRY_LIMIT": "180",

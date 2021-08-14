@@ -22,7 +22,7 @@ def container_subdag(
     env_vars={},
     arguments=[],
     machine_type="n1-standard-1",
-    image="mozilla/prio-processor:v3.0.1",
+    image="mozilla/prio-processor:latest",
     location="us-west1-a",
     owner_label="amiyaguchi",
     team_label="dataeng",
@@ -94,16 +94,7 @@ def container_subdag(
         # noticed intermittently on 2019-09-09.
         sleep = BashOperator(task_id="sleep", bash_command="sleep 60", dag=dag)
 
-        run_prio = GKEPodOperator(
-            task_id=f"processor_{server_id}",
-            name=f"processor_{server_id}",
-            cluster_name=cluster_name,
-            namespace="default",
-            image=image,
-            arguments=arguments,
-            env_vars=env_vars,
-            dag=dag,
-            # choose the autoscaling node-pool for any jobs
+        kube_options = dict(
             node_selectors={"node-label": "burstable"},
             labels={"pod-label": "burstable-pod"},
             affinity={
@@ -133,6 +124,40 @@ def container_subdag(
                     "effect": "NoSchedule",
                 }
             ],
+        )
+
+        run_minio_gateway = GKEPodOperator(
+            task_id=f"processor_minio_{server_id}",
+            name=f"processor_minio_{server_id}",
+            cluster_name=cluster_name,
+            namespace="default",
+            image="minio/minio:RELEASE.2021-06-17T00-10-46Z",
+            arguments="gateway gcs".split(),
+            env_vars=env_vars,
+            dag=dag,
+            # Reuse the burstable pod for the minio-gateway. Note that it may be
+            # prudent to create a new pod-label just for minio and start up the
+            # service only if it's not alive.
+            **kube_options,
+            # A new VM instance may take more than 120 seconds to boot
+            startup_timeout_seconds=240,
+            # the pod continues to stay alive
+            is_delete_operator_pod=False,
+            **shared_config,
+            **kwargs,
+        )
+
+        run_prio = GKEPodOperator(
+            task_id=f"processor_{server_id}",
+            name=f"processor_{server_id}",
+            cluster_name=cluster_name,
+            namespace="default",
+            image=image,
+            arguments=arguments,
+            env_vars=env_vars,
+            dag=dag,
+            # choose the autoscaling node-pool for any jobs
+            **kube_options,
             # A new VM instance may take more than 120 seconds to boot
             startup_timeout_seconds=240,
             # delete the pod after running
@@ -150,4 +175,5 @@ def container_subdag(
         )
 
         create_gke_cluster >> sleep >> run_prio >> delete_gke_cluster
+        sleep >> run_minio_gateway >> run_prio
         return dag
