@@ -44,6 +44,9 @@ dag = DAG(
     schedule_interval="30 0 * * *",
 )
 
+username = "testtest"
+password = "testtesttest"
+
 processor_b = prio_processor_subdag(
     dag,
     DEFAULT_ARGS,
@@ -52,8 +55,8 @@ processor_b = prio_processor_subdag(
     "b",
     {
         # used for the minio instance
-        "MINIO_ROOT_USER": "test",
-        "MINIO_ROOT_PASSWORD": "test",
+        "MINIO_ROOT_USER": username,
+        "MINIO_ROOT_PASSWORD": password,
         # configuration for the server
         "APP_NAME": APP_NAME,
         "SUBMISSION_DATE": "{{ ds }}",
@@ -64,11 +67,11 @@ processor_b = prio_processor_subdag(
         "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_external }}",
         "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
         # configuration to minio gateway
-        "BUCKET_INTERNAL_ACCESS_KEY": "test",
-        "BUCKET_INTERNAL_SECRET_KEY": "test",
+        "BUCKET_INTERNAL_ACCESS_KEY": username,
+        "BUCKET_INTERNAL_SECRET_KEY": password,
         "BUCKET_INTERNAL_ENDPOINT": "http://processor_minio_b:9000",
-        "BUCKET_EXTERNAL_ACCESS_KEY": "test",
-        "BUCKET_EXTERNAL_SECRET_KEY": "test",
+        "BUCKET_EXTERNAL_ACCESS_KEY": username,
+        "BUCKET_EXTERNAL_SECRET_KEY": password,
         "BUCKET_EXTERNAL_ENDPOINT": "http://processor_minio_b:9000",
         # other bucket information
         "BUCKET_INTERNAL_INGEST": BUCKET_PRIVATE_B,

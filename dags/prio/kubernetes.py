@@ -132,7 +132,9 @@ def container_subdag(
             cluster_name=cluster_name,
             namespace="default",
             image="minio/minio:RELEASE.2021-06-17T00-10-46Z",
-            arguments="gateway gcs".split(),
+            # run gcs gateway in the background
+            cmds=["bash"],
+            arguments=f"/usr/bin/docker-entrypoint.sh gateway gcs {connection.project_id} &".split(),
             env_vars=env_vars,
             dag=dag,
             # Reuse the burstable pod for the minio-gateway. Note that it may be
