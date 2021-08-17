@@ -132,9 +132,7 @@ def container_subdag(
             cluster_name=cluster_name,
             namespace="default",
             image="minio/minio:RELEASE.2021-06-17T00-10-46Z",
-            # run gcs gateway in the background
-            cmds=["bash"],
-            arguments=f"/usr/bin/docker-entrypoint.sh gateway gcs {connection.project_id} &".split(),
+            arguments=f"gateway gcs {connection.project_id}".split(),
             env_vars=env_vars,
             dag=dag,
             # Reuse the burstable pod for the minio-gateway. Note that it may be
@@ -144,9 +142,32 @@ def container_subdag(
             # A new VM instance may take more than 120 seconds to boot
             startup_timeout_seconds=240,
             # the pod continues to stay alive
-            is_delete_operator_pod=False,
+            get_logs=False,
+            is_delete_operator_pod=True,
             **shared_config,
             **kwargs,
+        )
+
+        test_minio_reachable = GKEPodOperator(
+            task_id=f"processor_check_minio_reachable_{server_id}",
+            name=f"processor_check_minio_reachable_{server_id}",
+            cluster_name=cluster_name,
+            namespace="default",
+            image=image,
+            arguments=["bash", "-c", "source bin/configure-mc && mc ls internal"],
+            env_vars=env_vars,
+            dag=dag,
+            # choose the autoscaling node-pool for any jobs
+            **kube_options,
+            # A new VM instance may take more than 120 seconds to boot
+            startup_timeout_seconds=240,
+            # delete the pod after running
+            is_delete_operator_pod=True,
+            **shared_config,
+            **kwargs,
+            # retry 6 times
+            retry_delay=timedelta(seconds=10),
+            retries=6,
         )
 
         run_prio = GKEPodOperator(
@@ -176,6 +197,14 @@ def container_subdag(
             **shared_config,
         )
 
-        create_gke_cluster >> sleep >> run_prio >> delete_gke_cluster
-        sleep >> run_minio_gateway >> run_prio
+        # the minio
+        sleep >> run_minio_gateway
+        (
+            create_gke_cluster
+            >> sleep
+            >> test_minio_reachable
+            >> run_prio
+            >> delete_gke_cluster
+        )
+
         return dag
