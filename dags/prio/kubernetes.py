@@ -10,6 +10,7 @@ from airflow.contrib.operators.gcp_container_operator import (
 from airflow.operators.bash_operator import BashOperator
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gke import create_gke_config
+from airflow.contrib.kubernetes.pod import Port
 
 
 def container_subdag(
@@ -92,29 +93,29 @@ def container_subdag(
         #
         # Sleeping by a small amount solves this problem. This issue was first
         # noticed intermittently on 2019-09-09.
-        sleep = BashOperator(task_id="sleep", bash_command="sleep 60", dag=dag)
+        sleep = BashOperator(task_id="sleep", bash_command="sleep 30", dag=dag)
 
         kube_options = dict(
             node_selectors={"node-label": "burstable"},
             labels={"pod-label": "burstable-pod"},
-            affinity={
-                "podAntiAffinity": {
-                    "requiredDuringSchedulingIgnoredDuringExecution": [
-                        {
-                            "labelSelector": {
-                                "matchExpressions": [
-                                    {
-                                        "key": "pod-label",
-                                        "operator": "In",
-                                        "values": ["burstable-pod"],
-                                    }
-                                ]
-                            },
-                            "topologyKey": "kubernetes.io/hostname",
-                        }
-                    ]
-                }
-            },
+            # affinity={
+            #     "podAntiAffinity": {
+            #         "requiredDuringSchedulingIgnoredDuringExecution": [
+            #             {
+            #                 "labelSelector": {
+            #                     "matchExpressions": [
+            #                         {
+            #                             "key": "pod-label",
+            #                             "operator": "In",
+            #                             "values": ["burstable-pod"],
+            #                         }
+            #                     ]
+            #                 },
+            #                 "topologyKey": "kubernetes.io/hostname",
+            #             }
+            #         ]
+            #     }
+            # },
             # tolerate the tainted node
             tolerations=[
                 {
@@ -138,6 +139,7 @@ def container_subdag(
             # Reuse the burstable pod for the minio-gateway. Note that it may be
             # prudent to create a new pod-label just for minio and start up the
             # service only if it's not alive.
+            ports=[Port("http", 9000)],
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
             startup_timeout_seconds=240,
@@ -166,8 +168,8 @@ def container_subdag(
             **shared_config,
             **kwargs,
             # retry 6 times
-            retry_delay=timedelta(seconds=10),
-            retries=6,
+            retry_delay=timedelta(seconds=60),
+            retries=5,
         )
 
         run_prio = GKEPodOperator(

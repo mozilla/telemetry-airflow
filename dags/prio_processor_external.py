@@ -69,10 +69,10 @@ processor_b = prio_processor_subdag(
         # configuration to minio gateway
         "BUCKET_INTERNAL_ACCESS_KEY": username,
         "BUCKET_INTERNAL_SECRET_KEY": password,
-        "BUCKET_INTERNAL_ENDPOINT": "http://processor_minio_b:9000",
+        "BUCKET_INTERNAL_ENDPOINT": "http://localhost:9000",
         "BUCKET_EXTERNAL_ACCESS_KEY": username,
         "BUCKET_EXTERNAL_SECRET_KEY": password,
-        "BUCKET_EXTERNAL_ENDPOINT": "http://processor_minio_b:9000",
+        "BUCKET_EXTERNAL_ENDPOINT": "http://localhost:9000",
         # other bucket information
         "BUCKET_INTERNAL_INGEST": BUCKET_PRIVATE_B,
         "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_B,

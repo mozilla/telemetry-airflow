@@ -3,7 +3,7 @@ def create_gke_config(
     service_account,
     owner_label,
     team_label,
-    machine_type="n1-standard-1",
+    machine_type="n1-standard-2",
     disk_size_gb=100,
     preemptible=True,
     disk_type="pd-standard",
@@ -92,7 +92,7 @@ def create_gke_config(
                 "autoscaling": {
                     "enabled": True,
                     "min_node_count": 0,
-                    "max_node_count": 5,
+                    "max_node_count": 1,
                 },
             },
         ],
