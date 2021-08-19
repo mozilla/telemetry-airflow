@@ -5,6 +5,21 @@ from utils.gcp import gke_command
 from operators.task_sensor import ExternalTaskCompletedSensor
 
 
+docs = """
+### operational_monitoring
+
+This DAG is currently under development. Failures can be ignored during Airflow triage.
+
+#### Description
+
+This DAG schedules queries for populating datasets used for operational monitoring.
+The queries are generated via [`operational_monitoring` in bigquery-etl](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/operational_monitoring). 
+
+#### Owner
+
+msamuel@mozilla.com
+"""
+
 default_args = {
     "owner": "msamuel@mozilla.com",
     "email": [
@@ -24,6 +39,7 @@ with DAG(
     DAG_NAME,
     default_args=default_args,
     schedule_interval="0 3 * * *",
+    doc_md=docs,
 ) as dag:
     wait_for_main_nightly = ExternalTaskCompletedSensor(
         task_id="wait_for_main_nightly",
