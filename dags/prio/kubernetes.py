@@ -96,6 +96,8 @@ def container_subdag(
         sleep = BashOperator(task_id="sleep", bash_command="sleep 30", dag=dag)
 
         kube_options = dict(
+            hostnetwork=True,
+            is_delete_operator_pod=True,
             node_selectors={"node-label": "burstable"},
             labels={"pod-label": "burstable-pod"},
             # affinity={
@@ -117,14 +119,14 @@ def container_subdag(
             #     }
             # },
             # tolerate the tainted node
-            tolerations=[
-                {
-                    "key": "reserved-pool",
-                    "operator": "Equal",
-                    "value": "true",
-                    "effect": "NoSchedule",
-                }
-            ],
+            # tolerations=[
+            #     {
+            #         "key": "reserved-pool",
+            #         "operator": "Equal",
+            #         "value": "true",
+            #         "effect": "NoSchedule",
+            #     }
+            # ],
         )
 
         run_minio_gateway = GKEPodOperator(
@@ -145,10 +147,11 @@ def container_subdag(
             startup_timeout_seconds=240,
             # the pod continues to stay alive
             get_logs=False,
-            is_delete_operator_pod=True,
             **shared_config,
             **kwargs,
         )
+
+        sleep_minio_start = BashOperator(task_id="sleep_minio_start", bash_command="sleep 30", dag=dag)
 
         test_minio_reachable = GKEPodOperator(
             task_id=f"processor_check_minio_reachable_{server_id}",
@@ -156,19 +159,17 @@ def container_subdag(
             cluster_name=cluster_name,
             namespace="default",
             image=image,
-            arguments=["bash", "-c", "source bin/configure-mc && mc ls internal"],
+            # arguments=["bash", "-c", "bin/configure-mc && mc stat internal/${BUCKET_INTERNAL_INGEST}"],
+            arguments="ping localhost:9000".split(),
             env_vars=env_vars,
             dag=dag,
             # choose the autoscaling node-pool for any jobs
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
             startup_timeout_seconds=240,
-            # delete the pod after running
-            is_delete_operator_pod=True,
             **shared_config,
             **kwargs,
-            # retry 6 times
-            retry_delay=timedelta(seconds=60),
+            retry_delay=timedelta(seconds=30),
             retries=5,
         )
 
@@ -185,8 +186,6 @@ def container_subdag(
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
             startup_timeout_seconds=240,
-            # delete the pod after running
-            is_delete_operator_pod=True,
             **shared_config,
             **kwargs,
         )
@@ -204,6 +203,7 @@ def container_subdag(
         (
             create_gke_cluster
             >> sleep
+            >> sleep_minio_start
             >> test_minio_reachable
             >> run_prio
             >> delete_gke_cluster

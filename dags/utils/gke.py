@@ -78,15 +78,15 @@ def create_gke_config(
                     "disk_type": disk_type,
                     # prevent non-burstable workloads from running here so we
                     # can autoscale down to 0
-                    "taints": [
-                        {
-                            "key": "reserved-pool",
-                            "value": "true",
-                            # https://googleapis.dev/python/container/latest/_modules/google/cloud/container_v1/types/cluster_service.html#NodeTaint.Effect
-                            # NodeTaint.Effect.NO_SCHEDULE
-                            "effect": 1,
-                        }
-                    ],
+                    # "taints": [
+                    #     {
+                    #         "key": "reserved-pool",
+                    #         "value": "true",
+                    #         # https://googleapis.dev/python/container/latest/_modules/google/cloud/container_v1/types/cluster_service.html#NodeTaint.Effect
+                    #         # NodeTaint.Effect.NO_SCHEDULE
+                    #         "effect": 1,
+                    #     }
+                    # ],
                 },
                 "initial_node_count": 0,
                 "autoscaling": {
