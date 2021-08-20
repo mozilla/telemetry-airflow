@@ -1,5 +1,9 @@
 from datetime import timedelta
 from os import environ
+import os
+import json
+import tempfile
+import yaml
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
@@ -128,57 +132,37 @@ def container_subdag(
             ],
         )
 
-        run_minio_gateway = GKEPodOperator(
-            task_id=f"processor_minio_{server_id}",
-            name=f"processor_{server_id}",
-            cluster_name=cluster_name,
-            namespace="default",
-            image="minio/minio:RELEASE.2021-06-17T00-10-46Z",
-            arguments=f"gateway gcs {connection.project_id}".split(),
-            env_vars=env_vars,
-            # Reuse the burstable pod for the minio-gateway. Note that it may be
-            # prudent to create a new pod-label just for minio and start up the
-            # service only if it's not alive.
-            ports=[Port("http", 9000)],
-            **kube_options,
-            # A new VM instance may take more than 120 seconds to boot
-            startup_timeout_seconds=240,
-            # the pod continues to stay alive
-            get_logs=False,
-            **shared_config,
-            **kwargs,
-        )
+        # We create a pod template so we can actually run multiple containers
+        # together.
+        # https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/
+        pod_template = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prio-processor
+spec:
+  restartPolicy: Never
+  containers:
+  - name: minio-container
+    image: minio/minio:RELEASE.2021-06-17T00-10-46Z"
+    args: ["gateway", "gcs", "{connection.project_id}"]
+  - name: prio-processor-container
+    image: {image}
+    args: {json.dumps(arguments)}
+"""
 
-        sleep_minio_start = BashOperator(task_id="sleep_minio_start", bash_command="sleep 30")
-
-        test_minio_reachable = GKEPodOperator(
-            task_id=f"processor_check_minio_reachable_{server_id}",
-            name=f"processor_{server_id}",
-            cluster_name=cluster_name,
-            namespace="default",
-            image=image,
-            # arguments=["bash", "-c", "bin/configure-mc && mc stat internal/${BUCKET_INTERNAL_INGEST}"],
-            arguments="ping http://localhost:9000".split(),
-            env_vars=env_vars,
-            # choose the autoscaling node-pool for any jobs
-            **kube_options,
-            # A new VM instance may take more than 120 seconds to boot
-            startup_timeout_seconds=240,
-            **shared_config,
-            **kwargs,
-            retry_delay=timedelta(seconds=30),
-            retries=5,
-        )
+        # create a temp location for the configuration file
+        _, filename = tempfile.mkstemp()
+        with open(filename, "w") as fp:
+            fp.write(yaml.dump(pod_template))
 
         run_prio = GKEPodOperator(
             task_id=f"processor_{server_id}",
             name=f"processor_{server_id}",
             cluster_name=cluster_name,
             namespace="default",
-            image=image,
-            arguments=arguments,
-            env_vars=env_vars,
-            dag=dag,
+            # env_vars=env_vars,
+            pod_template_file=filename,
             # choose the autoscaling node-pool for any jobs
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
@@ -194,15 +178,11 @@ def container_subdag(
             **shared_config,
         )
 
-        # the minio
-        sleep >> run_minio_gateway
         (
             create_gke_cluster
             >> sleep
-            >> sleep_minio_start
-            >> test_minio_reachable
             >> run_prio
-            >> delete_gke_cluster
+            # >> delete_gke_cluster
         )
 
         return dag
