@@ -32,3 +32,4 @@ shelljob==0.5.6
 # Fix no inspection available issue
 # https://github.com/apache/airflow/issues/8211
 SQLAlchemy==1.3.15
+pyyaml
