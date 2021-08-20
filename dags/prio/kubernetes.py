@@ -81,7 +81,6 @@ def container_subdag(
                 subnetwork="default" if server_id == "admin" else "gke-subnet",
                 is_dev=environ.get("DEPLOY_ENVIRONMENT") == "dev",
             ),
-            dag=dag,
             **shared_config,
         )
 
@@ -93,31 +92,31 @@ def container_subdag(
         #
         # Sleeping by a small amount solves this problem. This issue was first
         # noticed intermittently on 2019-09-09.
-        sleep = BashOperator(task_id="sleep", bash_command="sleep 30", dag=dag)
+        sleep = BashOperator(task_id="sleep", bash_command="sleep 30")
 
         kube_options = dict(
             hostnetwork=True,
             is_delete_operator_pod=True,
             node_selectors={"node-label": "burstable"},
             labels={"pod-label": "burstable-pod"},
-            # affinity={
-            #     "podAntiAffinity": {
-            #         "requiredDuringSchedulingIgnoredDuringExecution": [
-            #             {
-            #                 "labelSelector": {
-            #                     "matchExpressions": [
-            #                         {
-            #                             "key": "pod-label",
-            #                             "operator": "In",
-            #                             "values": ["burstable-pod"],
-            #                         }
-            #                     ]
-            #                 },
-            #                 "topologyKey": "kubernetes.io/hostname",
-            #             }
-            #         ]
-            #     }
-            # },
+            affinity={
+                "podAffinity": {
+                    "requiredDuringSchedulingIgnoredDuringExecution": [
+                        {
+                            "labelSelector": {
+                                "matchExpressions": [
+                                    {
+                                        "key": "pod-label",
+                                        "operator": "In",
+                                        "values": ["burstable-pod"],
+                                    }
+                                ]
+                            },
+                            "topologyKey": "kubernetes.io/hostname",
+                        }
+                    ]
+                }
+            },
             # tolerate the tainted node
             # tolerations=[
             #     {
@@ -131,13 +130,12 @@ def container_subdag(
 
         run_minio_gateway = GKEPodOperator(
             task_id=f"processor_minio_{server_id}",
-            name=f"processor_minio_{server_id}",
+            name=f"processor_{server_id}",
             cluster_name=cluster_name,
             namespace="default",
             image="minio/minio:RELEASE.2021-06-17T00-10-46Z",
             arguments=f"gateway gcs {connection.project_id}".split(),
             env_vars=env_vars,
-            dag=dag,
             # Reuse the burstable pod for the minio-gateway. Note that it may be
             # prudent to create a new pod-label just for minio and start up the
             # service only if it's not alive.
@@ -151,18 +149,17 @@ def container_subdag(
             **kwargs,
         )
 
-        sleep_minio_start = BashOperator(task_id="sleep_minio_start", bash_command="sleep 30", dag=dag)
+        sleep_minio_start = BashOperator(task_id="sleep_minio_start", bash_command="sleep 30")
 
         test_minio_reachable = GKEPodOperator(
             task_id=f"processor_check_minio_reachable_{server_id}",
-            name=f"processor_check_minio_reachable_{server_id}",
+            name=f"processor_{server_id}",
             cluster_name=cluster_name,
             namespace="default",
             image=image,
             # arguments=["bash", "-c", "bin/configure-mc && mc stat internal/${BUCKET_INTERNAL_INGEST}"],
-            arguments="ping localhost:9000".split(),
+            arguments="ping http://localhost:9000".split(),
             env_vars=env_vars,
-            dag=dag,
             # choose the autoscaling node-pool for any jobs
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
@@ -194,7 +191,6 @@ def container_subdag(
             task_id="delete_gke_cluster",
             name=cluster_name,
             trigger_rule="all_done",
-            dag=dag,
             **shared_config,
         )
 
