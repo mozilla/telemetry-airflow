@@ -118,14 +118,14 @@ def container_subdag(
                 }
             },
             # tolerate the tainted node
-            # tolerations=[
-            #     {
-            #         "key": "reserved-pool",
-            #         "operator": "Equal",
-            #         "value": "true",
-            #         "effect": "NoSchedule",
-            #     }
-            # ],
+            tolerations=[
+                {
+                    "key": "reserved-pool",
+                    "operator": "Equal",
+                    "value": "true",
+                    "effect": "NoSchedule",
+                }
+            ],
         )
 
         run_minio_gateway = GKEPodOperator(
