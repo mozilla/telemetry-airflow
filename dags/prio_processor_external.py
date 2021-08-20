@@ -54,6 +54,8 @@ processor_b = prio_processor_subdag(
     SERVICE_ACCOUNT_B,
     "b",
     {
+        # required for minio in the pod_mutation_hook
+        "PROJECT_ID": PROJECT_B,
         # used for the minio instance
         "MINIO_ROOT_USER": username,
         "MINIO_ROOT_PASSWORD": password,

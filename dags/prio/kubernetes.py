@@ -101,8 +101,9 @@ def container_subdag(
         kube_options = dict(
             hostnetwork=True,
             is_delete_operator_pod=True,
+            get_logs=True,
             node_selectors={"node-label": "burstable"},
-            labels={"pod-label": "burstable-pod"},
+            labels={"pod-label": "burstable-pod", "job-kind": "prio-processor"},
             affinity={
                 "podAffinity": {
                     "requiredDuringSchedulingIgnoredDuringExecution": [
@@ -132,37 +133,13 @@ def container_subdag(
             ],
         )
 
-        # We create a pod template so we can actually run multiple containers
-        # together.
-        # https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/
-        pod_template = f"""
-apiVersion: v1
-kind: Pod
-metadata:
-  name: prio-processor
-spec:
-  restartPolicy: Never
-  containers:
-  - name: minio-container
-    image: minio/minio:RELEASE.2021-06-17T00-10-46Z"
-    args: ["gateway", "gcs", "{connection.project_id}"]
-  - name: prio-processor-container
-    image: {image}
-    args: {json.dumps(arguments)}
-"""
-
-        # create a temp location for the configuration file
-        _, filename = tempfile.mkstemp()
-        with open(filename, "w") as fp:
-            fp.write(yaml.dump(pod_template))
-
         run_prio = GKEPodOperator(
             task_id=f"processor_{server_id}",
             name=f"processor_{server_id}",
             cluster_name=cluster_name,
-            namespace="default",
-            # env_vars=env_vars,
-            pod_template_file=filename,
+            image=image,
+            arguments=arguments,
+            env_vars=env_vars,
             # choose the autoscaling node-pool for any jobs
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
