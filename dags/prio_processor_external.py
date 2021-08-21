@@ -81,7 +81,7 @@ processor_b = prio_processor_subdag(
         "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_B,
         "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_A,
         "BUCKET_PREFIX": BUCKET_PREFIX,
-        # 15 minutes of time-out
+        # 30 minutes of time-out
         "RETRY_LIMIT": "180",
         "RETRY_DELAY": "10",
         "RETRY_BACKOFF_EXPONENT": "1",

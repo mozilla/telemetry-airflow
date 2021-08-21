@@ -23,8 +23,8 @@ ephemeral -- there are situations where clusters can become orphaned such as an
 unclean shutdown of Airflow. These are usually resolved by rerunning the
 individual SubDag, which should clean-up properly.
 
-Note that the container subdag requires running multiple tasks in parallel. This
-must achieved by getting the default executor as per:
+Note that the container subdag may require running multiple tasks in parallel.
+This can be achieved by getting the default executor as per:
 https://stackoverflow.com/a/56069569
 
 The following Airflow variables should be set:
@@ -44,7 +44,6 @@ from airflow import DAG
 from airflow.contrib.operators.gcs_to_gcs import (
     GoogleCloudStorageToGoogleCloudStorageOperator,
 )
-from airflow.executors import get_default_executor
 from airflow.operators import DummyOperator, PythonOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from prio import dataproc, kubernetes
@@ -137,6 +136,8 @@ def ingestion_subdag(
                 f"source bin/dataproc; bootstrap gs://{bucket_bootstrap_admin}",
             ],
             env_var=dict(SUBMODULE="origin"),
+            # prevent minio from spawnining
+            job_kind="bootstrap"
         ),
         task_id="bootstrap",
         dag=dag,
@@ -231,7 +232,6 @@ def prio_processor_subdag(
             arguments=["bin/process"],
             env_vars=env_vars,
         ),
-        executor=get_default_executor(),
         task_id=f"processor_{server_id}",
         dag=dag,
     )

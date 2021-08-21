@@ -54,6 +54,10 @@ dag = DAG(
     schedule_interval="@daily",
 )
 
+# for minio
+username = "testtest"
+password = "testtesttest"
+
 ingest = ingestion_subdag(
     dag,
     DEFAULT_ARGS,
@@ -76,6 +80,12 @@ processor_a = prio_processor_subdag(
     SERVICE_ACCOUNT_A,
     "a",
     {
+        # required for minio in the pod_mutation_hook
+        "PROJECT_ID": PROJECT_A,
+        # used for the minio instance
+        "MINIO_ROOT_USER": username,
+        "MINIO_ROOT_PASSWORD": password,
+        # configuration for the server
         "APP_NAME": APP_NAME,
         "SUBMISSION_DATE": "{{ ds }}",
         "DATA_CONFIG": "/app/config/content.json",
@@ -84,12 +94,21 @@ processor_a = prio_processor_subdag(
         "PRIVATE_KEY_HEX": "{{ var.value.prio_private_key_hex_internal }}",
         "PUBLIC_KEY_HEX_INTERNAL": "{{ var.value.prio_public_key_hex_internal }}",
         "PUBLIC_KEY_HEX_EXTERNAL": "{{ var.value.prio_public_key_hex_external }}",
-        "BUCKET_INTERNAL_PRIVATE": "gs://" + BUCKET_PRIVATE_A,
-        "BUCKET_INTERNAL_SHARED": "gs://" + BUCKET_SHARED_A,
-        "BUCKET_EXTERNAL_SHARED": "gs://" + BUCKET_SHARED_B,
+        # configuration to minio gateway
+        "BUCKET_INTERNAL_ACCESS_KEY": username,
+        "BUCKET_INTERNAL_SECRET_KEY": password,
+        "BUCKET_INTERNAL_ENDPOINT": "http://localhost:9000",
+        "BUCKET_EXTERNAL_ACCESS_KEY": username,
+        "BUCKET_EXTERNAL_SECRET_KEY": password,
+        "BUCKET_EXTERNAL_ENDPOINT": "http://localhost:9000",
+        # other bucket information
+        "BUCKET_INTERNAL_INGEST": BUCKET_PRIVATE_A,
+        "BUCKET_INTERNAL_PRIVATE": BUCKET_PRIVATE_A,
+        "BUCKET_INTERNAL_SHARED": BUCKET_SHARED_A,
+        "BUCKET_EXTERNAL_SHARED": BUCKET_SHARED_B,
         "BUCKET_PREFIX": BUCKET_PREFIX,
         # 15 minutes of timeout
-        "RETRY_LIMIT": "90",
+        "RETRY_LIMIT": "90∂",
         "RETRY_DELAY": "10",
         "RETRY_BACKOFF_EXPONENT": "1",
     },

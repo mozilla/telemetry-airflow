@@ -1,9 +1,6 @@
 from datetime import timedelta
 from os import environ
 import os
-import json
-import tempfile
-import yaml
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
@@ -31,6 +28,7 @@ def container_subdag(
     location="us-west1-a",
     owner_label="amiyaguchi",
     team_label="dataeng",
+    job_kind="prio-processor",
     **kwargs,
 ):
     """Run a command on an ephemeral container running the
@@ -103,7 +101,7 @@ def container_subdag(
             is_delete_operator_pod=True,
             get_logs=True,
             node_selectors={"node-label": "burstable"},
-            labels={"pod-label": "burstable-pod", "job-kind": "prio-processor"},
+            labels={"pod-label": "burstable-pod", "job-kind": job_kind},
             affinity={
                 "podAffinity": {
                     "requiredDuringSchedulingIgnoredDuringExecution": [
@@ -155,11 +153,6 @@ def container_subdag(
             **shared_config,
         )
 
-        (
-            create_gke_cluster
-            >> sleep
-            >> run_prio
-            # >> delete_gke_cluster
-        )
+        create_gke_cluster >> sleep >> run_prio >> delete_gke_cluster
 
         return dag
