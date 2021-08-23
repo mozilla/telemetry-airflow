@@ -137,7 +137,7 @@ def ingestion_subdag(
             ],
             env_var=dict(SUBMODULE="origin"),
             # prevent minio from spawnning by changing the job kind from prio-processor
-            job_kind="bootstrap"
+            job_kind="bootstrap",
         ),
         task_id="bootstrap",
         dag=dag,
