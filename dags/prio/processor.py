@@ -136,7 +136,7 @@ def ingestion_subdag(
                 f"source bin/dataproc; bootstrap gs://{bucket_bootstrap_admin}",
             ],
             env_var=dict(SUBMODULE="origin"),
-            # prevent minio from spawnining
+            # prevent minio from spawnning by changing the job kind from prio-processor
             job_kind="bootstrap"
         ),
         task_id="bootstrap",
