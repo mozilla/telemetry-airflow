@@ -4,15 +4,16 @@ from utils.gcp import bigquery_etl_query, gke_command
 from airflow import DAG
 
 default_args = {
-    "owner": "bewu@mozilla.com",
+    "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 6, 23),
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 1,
+    "retries": 2,
     "retry_delay": timedelta(minutes=30),
     "email": [
-        "bewu@mozilla.com",
+        "telemetry-alerts@mozilla.com",
+        "amiyaguchi@mozilla.com",
     ],
 }
 

@@ -87,7 +87,7 @@ with DAG('probe_scraper',
             "--date", "{{ ds }}",
             "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}"
         ],
-        email=["bewu@mozilla.com"],
+        email=["bewu@mozilla.com", "telemetry-alerts@mozilla.com"],  # TODO
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key

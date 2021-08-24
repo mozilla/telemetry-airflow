@@ -8,12 +8,12 @@ from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 
 default_args = {
-    "owner": "bewu@mozilla.com",
+    "owner": "bewu@mozilla.com",  # TODO
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "bewu@mozilla.com",
+        "bewu@mozilla.com",  # TODO
         "mcastelluccio@mozilla.com",
     ],
     "email_on_failure": True,

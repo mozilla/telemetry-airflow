@@ -4,13 +4,14 @@ from utils.gcp import gke_command
 
 
 default_args = {
-    "owner": "bewu@mozilla.com",
+    "owner": "amiyaguchi@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 6, 23),
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
     "retry_delay": timedelta(minutes=30),
+    "email": ["telemetry-alerts@mozilla.com", "amiyaguchi@mozilla.com"]
 }
 
 project_id = "moz-fx-data-marketing-prod"
@@ -31,7 +32,4 @@ with DAG("play_store_export",
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/play-store-export:latest",
         gcp_conn_id="google_cloud_derived_datasets",
         dag=dag,
-        email=[
-            "bewu@mozilla.com",
-        ],
     )
