@@ -231,7 +231,7 @@ def prio_processor_subdag(
             server_id=server_id,
             # bin/process
             # kill everything...
-            arguments=["exec", "-a" "minio-done", "bash", "-c", "sleep 10; trap \"exit 0\" INT; while true; do echo reap; sleep 1; done;"],
+            arguments=["bash", "-c", "bin/process; exec -a minio-done sleep 10"],
             env_vars=env_vars,
         ),
         task_id=f"processor_{server_id}",

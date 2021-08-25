@@ -31,12 +31,16 @@ def pod_mutation_hook(pod: V1Pod):
         minio_container.name = "minio"
         pod.spec.containers.append(minio_container)
 
+        # Search for a new process named `minio-done` and kill the minio
+        # container above. This can be done using `exec -a minio-done sleep 10`
+        # which will will create a process available in the shared namespace for
+        # 10 seconds.
         pkill_container = deepcopy(pod.spec.containers[0])
         pkill_container.image = "ubuntu:focal"
         pkill_container.args = [
             "bash",
             "-c",
-            "while !pidof minio-done; do sleep 1; done; pkill -SIGINT -f minio; pkill -SIGINT -f minio-done",
+            "until pidof minio-done; do sleep 1; done; pkill -SIGINT -f minio",
         ]
         pkill_container.name = "reaper"
         pod.spec.containers.append(pkill_container)

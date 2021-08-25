@@ -137,7 +137,7 @@ def container_subdag(
             cluster_name=cluster_name,
             image=image,
             arguments=arguments,
-            env_vars=env_vars,
+            env_vars=dict(**env_vars, PYTHONUNBUFFERED="0"),
             # choose the autoscaling node-pool for any jobs
             **kube_options,
             # A new VM instance may take more than 120 seconds to boot
