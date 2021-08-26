@@ -1,4 +1,8 @@
-FROM python:3.7-slim
+# Use buster image because the default bullseye image has updated coreutils that require a newer
+# linux kernel than provided by CircleCI, per
+# https://forums.docker.com/t/multiple-projects-stopped-building-on-docker-hub-operation-not-permitted/92570/6
+# and https://forums.docker.com/t/multiple-projects-stopped-building-on-docker-hub-operation-not-permitted/92570/11
+FROM python:3.7-slim-buster
 MAINTAINER Jannis Leidel <jezdez@mozilla.com>
 
 # Due to AIRFLOW-6854, Python 3.7 is chosen as the base python version.
