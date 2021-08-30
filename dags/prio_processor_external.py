@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 from os import environ
 
@@ -44,8 +45,10 @@ dag = DAG(
     schedule_interval="30 0 * * *",
 )
 
-username = "testtest"
-password = "testtesttest"
+# credentials for minio; this is only accessible to the kubernetes pod and is
+# not exposed to the outside internet.
+username = f"minio-username:{secrets.token_hex(32)}"
+password = f"minio-password:{secrets.token_hex(32)}"
 
 processor_b = prio_processor_subdag(
     dag,

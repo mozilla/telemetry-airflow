@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 from os import environ
 
@@ -54,9 +55,10 @@ dag = DAG(
     schedule_interval="@daily",
 )
 
-# for minio
-username = "testtest"
-password = "testtesttest"
+# credentials for minio; this is only accessible to the kubernetes pod and is
+# not exposed to the outside internet.
+username = f"minio-username:{secrets.token_hex(32)}"
+password = f"minio-password:{secrets.token_hex(32)}"
 
 # Assume that we always have access to our internal buckets directly via GCP,
 # and that we need to access the external endpoint via minio.
