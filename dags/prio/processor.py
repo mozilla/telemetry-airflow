@@ -117,6 +117,11 @@ def ingestion_subdag(
     bucket_private_external,
     public_key_hex_internal,
     public_key_hex_external,
+    # the environment variables are primarily used by a container that is using
+    # mc to copy data between buckets
+    env_vars={},
+    # is the external party running minio (i.e. should we transfer data using mc)
+    is_transfer_external_minio=False,
 ):
     # Copy the dependencies necessary for running the `prio-processor staging` job
     # into the relevant GCS locations. This includes the runner and the egg
@@ -196,17 +201,56 @@ def ingestion_subdag(
         dag=dag,
     )
 
-    transfer_b = SubDagOperator(
-        subdag=transfer_data_subdag_partial(
-            child_dag_name="transfer_b",
-            destination_bucket=bucket_private_external,
-            server_id="b",
-            public_key_hex_external=public_key_hex_internal,
-        ),
-        task_id="transfer_b",
-        default_args=default_args,
-        dag=dag,
-    )
+    # The ingestion service needs to send data to the external party. See the
+    # generate script for some usage of mc.
+    # https://github.com/mozilla/prio-processor/blob/v4.1.2/bin/generate
+    if is_transfer_external_minio:
+        src_path = f"internal/{bucket_data_admin}/staging/submission_date={'{{ ds }}'}/server_id=b"
+        dst_path = f"external/{bucket_private_external}/{bucket_prefix}/{public_key_hex_internal}/{app_name}/{'{{ ds }}'}/raw/shares"
+        transfer_b = SubDagOperator(
+            subdag=kubernetes.container_subdag(
+                parent_dag_name=dag.dag_id,
+                child_dag_name="transfer_b",
+                default_args=default_args,
+                server_id="admin",
+                gcp_conn_id=gcp_conn_id,
+                service_account=service_account,
+                arguments=[
+                    "bash",
+                    "-c",
+                    # wait for the minio container to come online, 10 seconds is
+                    # sometimes not enough
+                    "sleep 30; "
+                    # mitigate the -e setting inside of configure-mc, so we will
+                    # always run the last statement in this job. In general,
+                    # handling error codes will be messy with the way that the
+                    # sidecar containers are implemented, so manually killing
+                    # the pod may be required if there is an intermediate
+                    # failure.
+                    "source bin/configure-mc || exec -a minio-done sleep 10; set +e; "
+                    f"mc mirror --remove --overwrite {src_path} {dst_path}; "
+                    f"touch _SUCCESS; mc cp _SUCCESS {dst_path}; "
+                    "exec -a minio-done bash -c 'sleep 10 && exit 0'",
+                ],
+                env_vars=env_vars,
+            ),
+            task_id="transfer_b",
+            dag=dag,
+        )
+    else:
+        # using the transfer subdag is much easier to debug since we don't need
+        # to spin up an entirely new kubernetes cluster
+        transfer_b = SubDagOperator(
+            subdag=transfer_data_subdag_partial(
+                child_dag_name="transfer_b",
+                destination_bucket=bucket_private_external,
+                server_id="b",
+                public_key_hex_external=public_key_hex_internal,
+            ),
+            task_id="transfer_b",
+            default_args=default_args,
+            dag=dag,
+        )
 
     transfer_complete = DummyOperator(task_id="transfer_complete", dag=dag)
 
@@ -229,8 +273,6 @@ def prio_processor_subdag(
             gcp_conn_id=gcp_conn_id,
             service_account=service_account,
             server_id=server_id,
-            # bin/process
-            # kill everything...
             arguments=["bash", "-c", "bin/process; exec -a minio-done sleep 10"],
             env_vars=env_vars,
         ),

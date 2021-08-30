@@ -58,6 +58,8 @@ dag = DAG(
 username = "testtest"
 password = "testtesttest"
 
+# Assume that we always have access to our internal buckets directly via GCP,
+# and that we need to access the external endpoint via minio.
 ingest = ingestion_subdag(
     dag,
     DEFAULT_ARGS,
@@ -71,6 +73,21 @@ ingest = ingestion_subdag(
     BUCKET_PRIVATE_B,
     "{{ var.value.prio_public_key_hex_internal }}",
     "{{ var.value.prio_public_key_hex_external }}",
+    env_vars={
+        # required for minio in the pod_mutation_hook
+        "PROJECT_ID": PROJECT_ADMIN,
+        "MINIO_ROOT_USER": username,
+        "MINIO_ROOT_PASSWORD": password,
+        # credentials for the internal server (gcs gateway)
+        "BUCKET_INTERNAL_ACCESS_KEY": username,
+        "BUCKET_INTERNAL_SECRET_KEY": password,
+        "BUCKET_INTERNAL_ENDPOINT": "http://localhost:9000",
+        # credentials for the external server
+        "BUCKET_EXTERNAL_ACCESS_KEY": username,
+        "BUCKET_EXTERNAL_SECRET_KEY": password,
+        "BUCKET_EXTERNAL_ENDPOINT": "http://localhost:9000",
+    },
+    is_transfer_external_minio=True,
 )
 
 processor_a = prio_processor_subdag(
@@ -82,7 +99,6 @@ processor_a = prio_processor_subdag(
     {
         # required for minio in the pod_mutation_hook
         "PROJECT_ID": PROJECT_A,
-        # used for the minio instance
         "MINIO_ROOT_USER": username,
         "MINIO_ROOT_PASSWORD": password,
         # configuration for the server
