@@ -1,6 +1,7 @@
-from kubernetes.client.models import V1Pod, V1Container
-from kubernetes.client import models as k8s
 from copy import deepcopy
+
+from kubernetes.client import models as k8s
+from kubernetes.client.models import V1Container, V1Pod
 
 STATE_COLORS = {
     "queued": "gray",

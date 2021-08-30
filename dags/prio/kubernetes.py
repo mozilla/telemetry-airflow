@@ -1,9 +1,10 @@
+import os
 from datetime import timedelta
 from os import environ
-import os
 
 from airflow import DAG
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.contrib.kubernetes.pod import Port
 from airflow.contrib.operators.gcp_container_operator import (
     GKEClusterCreateOperator,
     GKEClusterDeleteOperator,
@@ -11,7 +12,6 @@ from airflow.contrib.operators.gcp_container_operator import (
 from airflow.operators.bash_operator import BashOperator
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gke import create_gke_config
-from airflow.contrib.kubernetes.pod import Port
 
 
 def container_subdag(
