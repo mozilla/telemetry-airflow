@@ -7,6 +7,8 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 docs = """
 ### Clean GKE Pods
 
+Failures can be ignored during Airflow Triage. This job is idempotent.
+
 Built from cloudops-infra repo, projects/airflow/pod-clean
 
 #### Purpose
