@@ -10,7 +10,7 @@ from airflow.operators.python_operator import PythonOperator
 from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
-    'owner': 'frank@mozilla.com',
+    'owner': 'ascholtz@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2019, 10, 28),
     'email_on_failure': True,
@@ -56,7 +56,7 @@ with DAG('probe_scraper',
         startup_timeout_seconds=360,
         image=probe_scraper_image,
         arguments=probe_scraper_args,
-        email=['telemetry-client-dev@mozilla.com', 'aplacitelli@mozilla.com', 'frank@mozilla.com', 'hwoo@mozilla.com'],
+        email=['telemetry-client-dev@mozilla.com', 'aplacitelli@mozilla.com', 'hwoo@mozilla.com'],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key
@@ -64,7 +64,7 @@ with DAG('probe_scraper',
         dag=dag)
 
     schema_generator = GKEPodOperator(
-        email=['frank@mozilla.com', 'dataops+alerts@mozilla.com'],
+        email=['amiyaguchi@mozilla.com', 'dataops+alerts@mozilla.com'],
         task_id='mozilla_schema_generator',
         name='schema-generator-1',
         image='mozilla/mozilla-schema-generator:latest',
@@ -132,7 +132,7 @@ with DAG('probe_scraper',
     delay_python_task >> lookml_generator_prod
 
     lookml_generator_staging = GKEPodOperator(
-        email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
+        email=["ascholtz@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="lookml_generator_staging",
         name="lookml-generator-staging-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
@@ -166,7 +166,7 @@ with DAG('probe_scraper',
         endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
         data={},
-        email=["bimsland@mozilla.com", "dataops+alerts@mozilla.com"],
+        email=["wlach@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="glean_dictionary_build",
         dag=dag,
     )
