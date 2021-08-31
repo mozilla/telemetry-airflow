@@ -17,15 +17,27 @@ STATE_COLORS = {
 
 
 def pod_mutation_hook(pod: V1Pod):
-    """https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Pod.md"""
+    """Modify all Kubernetes pod definitions when run with the pod operator.
 
-    # check that we're running a prio-processor job, and spin up a side-car
-    # container for proxying gcs buckets.
+    Changes to this function will require a cluster restart to pick up.
+    Functionality here can be moved closer to the pod definition in Airflow 2.x.
+
+    https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Pod.md
+    """
+
+    # Check that we're running a prio-processor job, and spin up a side-car
+    # container for proxying gcs buckets. All other jobs will be unaffected.
+    # This whole mutation would be unnecessary if there were a long-lived minio
+    # service available to the pod's network.
     if pod.metadata.labels["job-kind"] == "prio-processor":
         pod.spec.share_process_namespace = True
         # there is only one container within the pod, so lets append a few more
 
-        # for proxying gcs resource consistently across platforms
+        # Add a new container to the spec to run minio. We will run a gcs
+        # gateway and proxy all traffic through it. This allows the container to
+        # use the mc tool and s3a spark adapter and makes it cloud-provider
+        # agnostic. See https://github.com/mozilla/prio-processor/pull/119 for
+        # the reason behind the pinned image.
         minio_container = deepcopy(pod.spec.containers[0])
         minio_container.image = "minio/minio:RELEASE.2021-06-17T00-10-46Z"
         minio_container.args = ["gateway", "gcs", "$(PROJECT_ID)"]
@@ -35,7 +47,7 @@ def pod_mutation_hook(pod: V1Pod):
         # Search for a new process named `minio-done` and kill the minio
         # container above. This can be done using `exec -a minio-done sleep 10`
         # which will will create a process available in the shared namespace for
-        # 10 seconds.
+        # 10 seconds. We use a ubuntu image so we can utilize pidof and pkill.
         pkill_container = deepcopy(pod.spec.containers[0])
         pkill_container.image = "ubuntu:focal"
         pkill_container.args = [
