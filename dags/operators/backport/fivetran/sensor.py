@@ -3,7 +3,7 @@
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 
-from fivetran_hook import FivetranHook
+from operators.backport.fivetran.hook import FivetranHook
 from typing import Any
 
 

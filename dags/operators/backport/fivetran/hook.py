@@ -310,3 +310,4 @@ def _retryable_error(exception) -> bool:
         )
         or exception.response is not None
         and exception.response.status_code >= 500
+    )
