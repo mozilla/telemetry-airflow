@@ -3,7 +3,7 @@
 from airflow.models import BaseOperator, BaseOperatorLink
 from airflow.utils.decorators import apply_defaults
 
-from fivetran_hook import FivetranHook
+from operators.backport.fivetran.hook import FivetranHook
 from typing import Optional
 
 
