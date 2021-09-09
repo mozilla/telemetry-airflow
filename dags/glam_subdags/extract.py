@@ -108,19 +108,18 @@ def extract_user_counts(
     child_dag_name,
     default_args,
     schedule_interval,
-    dataset_id,
-    task_prefix,
-    file_prefix
+    dataset_id
 ):
-    bq_extract_table="glam_{}_extract_v1".format(task_prefix)
+
     dag = DAG(
         dag_id="{}.{}".format(parent_dag_name, child_dag_name),
         default_args=default_args,
         schedule_interval=schedule_interval,
     )
-    
+
+    bq_extract_table = "glam_user_counts_extract_v1"
     etl_query = bigquery_etl_query(
-        task_id="glam_{}_extract".format(task_prefix),
+        task_id="glam_user_counts_extract",
         destination_table=bq_extract_table,
         dataset_id=dataset_id,
         project_id=project_id,
@@ -136,18 +135,18 @@ def extract_user_counts(
     )
 
     gcs_delete = GoogleCloudStorageDeleteOperator(
-        task_id="glam_gcs_delete_{}_extracts".format(task_prefix),
+        task_id="glam_gcs_delete_count_extracts",
         bucket_name=glam_bucket,
-        prefix="glam-extract-firefox-{}".format(file_prefix),
+        prefix="glam-extract-firefox-counts",
         google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
         dag=dag,
     )
 
-    gcs_destination = "gs://{}/glam-extract-firefox-{}.csv".format(
-        glam_bucket, file_prefix
+    gcs_destination = "gs://{}/glam-extract-firefox-counts.csv".format(
+        glam_bucket
     )
     bq2gcs = BigQueryToCloudStorageOperator(
-        task_id="glam_extract_{}_to_csv".format(task_prefix),
+        task_id="glam_extract_user_counts_to_csv",
         source_project_dataset_table="{}.{}.{}".format(
             project_id, dataset_id, bq_extract_table
         ),

@@ -208,18 +208,6 @@ glam_user_counts = bigquery_etl_query(
     dag=dag,
 )
 
-glam_sample_counts = bigquery_etl_query(
-    task_id="glam_sample_counts",
-    destination_table="glam_sample_counts_v1",
-    dataset_id=dataset_id,
-    project_id=project_id,
-    owner="akommasani@mozilla.com",
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
-    dag=dag,
-
-)
 client_scalar_probe_counts = gke_command(
     task_id="client_scalar_probe_counts",
     command=[
@@ -268,29 +256,13 @@ extract_counts = SubDagOperator(
         "extract_user_counts",
         default_args,
         dag.schedule_interval,
-        dataset_id,
-        "user_counts",
-        "counts"
+        dataset_id
     ),
     task_id="extract_user_counts",
     executor=get_default_executor(),
     dag=dag
 )
 
-extract_sample_counts = SubDagOperator(
-    subdag=extract_user_counts(
-        GLAM_DAG,
-        "extract_sample_counts",
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-        "sample_counts",
-        "sample-counts"
-    ),
-    task_id="extract_sample_counts",
-    executor=get_default_executor(),
-    dag=dag
-)
 
 extracts_per_channel = SubDagOperator(
     subdag=extracts_subdag(
@@ -328,8 +300,6 @@ clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
-clients_histogram_aggregates >> glam_sample_counts
-
 
 clients_histogram_bucket_counts >> clients_histogram_probe_counts
 clients_histogram_probe_counts >> histogram_percentiles
@@ -337,10 +307,8 @@ clients_histogram_probe_counts >> histogram_percentiles
 clients_scalar_aggregates >> glam_user_counts
 
 glam_user_counts >> extract_counts
-glam_sample_counts >> extract_sample_counts
 
 extract_counts >> extracts_per_channel
-extract_sample_counts >> extracts_per_channel
 client_scalar_probe_counts >> extracts_per_channel
 scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
