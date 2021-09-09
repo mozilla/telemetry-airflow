@@ -160,3 +160,63 @@ def extract_user_counts(
     etl_query >> gcs_delete >> bq2gcs
 
     return dag
+
+def extract_sample_counts(
+    parent_dag_name,
+    child_dag_name,
+    default_args,
+    schedule_interval,
+    dataset_id
+):
+
+    dag = DAG(
+        dag_id="{}.{}".format(parent_dag_name, child_dag_name),
+        default_args=default_args,
+        schedule_interval=schedule_interval,
+    )
+
+    bq_extract_table = "glam_sample_counts_extract_v1"
+    etl_query = bigquery_etl_query(
+        task_id="glam_sample_counts_extract",
+        destination_table=bq_extract_table,
+        dataset_id=dataset_id,
+        project_id=project_id,
+        owner="akommasani@mozilla.com",
+        email=[
+            "telemetry-alerts@mozilla.com",
+            "msamuel@mozilla.com",
+            "robhudson@mozilla.com",
+            "akommasani@mozilla.com"
+        ],
+        date_partition_parameter=None,
+        arguments=("--replace",),
+        dag=dag,
+    )
+
+    gcs_delete = GoogleCloudStorageDeleteOperator(
+        task_id="glam_gcs_delete_sample_count_extracts",
+        bucket_name=glam_bucket,
+        prefix="glam-extract-firefox-sample-counts",
+        google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
+        dag=dag,
+    )
+
+    gcs_destination = "gs://{}/glam-extract-firefox-sample-counts.csv".format(
+        glam_bucket
+    )
+    bq2gcs = BigQueryToCloudStorageOperator(
+        task_id="glam_extract_sample_counts_to_csv",
+        source_project_dataset_table="{}.{}.{}".format(
+            project_id, dataset_id, bq_extract_table
+        ),
+        destination_cloud_storage_uris=gcs_destination,
+        bigquery_conn_id=gcp_conn.gcp_conn_id,
+        export_format="CSV",
+        print_header=False,
+        dag=dag,
+    )
+
+    etl_query >> gcs_delete >> bq2gcs
+
+    return dag
+
