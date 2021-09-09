@@ -147,7 +147,7 @@ def extract_user_counts(
         glam_bucket, file_prefix
     )
     bq2gcs = BigQueryToCloudStorageOperator(
-        task_id="glam_extract_user_{}_to_csv".format(task_prefix),
+        task_id="glam_extract_{}_to_csv".format(task_prefix),
         source_project_dataset_table="{}.{}.{}".format(
             project_id, dataset_id, bq_extract_table
         ),
