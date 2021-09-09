@@ -6,7 +6,7 @@ from airflow.executors import get_default_executor
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
-from glam_subdags.extract import extracts_subdag, extract_user_counts, extract_sample_counts
+from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
@@ -268,7 +268,9 @@ extract_counts = SubDagOperator(
         "extract_user_counts",
         default_args,
         dag.schedule_interval,
-        dataset_id
+        dataset_id,
+        "user_counts",
+        "counts"
     ),
     task_id="extract_user_counts",
     executor=get_default_executor(),
@@ -276,12 +278,14 @@ extract_counts = SubDagOperator(
 )
 
 extract_sample_counts = SubDagOperator(
-    subdag=extract_sample_counts(
+    subdag=extract_user_counts(
         GLAM_DAG,
         "extract_sample_counts",
         default_args,
         dag.schedule_interval,
-        dataset_id
+        dataset_id,
+        "sample_counts",
+        "sample-counts"
     ),
     task_id="extract_sample_counts",
     executor=get_default_executor(),
