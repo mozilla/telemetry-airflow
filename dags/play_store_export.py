@@ -4,7 +4,7 @@ from utils.gcp import gke_command
 
 
 default_args = {
-    "owner": "bewu@mozilla.com",
+    "owner": "akomar@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 6, 23),
     "email_on_failure": True,
@@ -32,6 +32,6 @@ with DAG("play_store_export",
         gcp_conn_id="google_cloud_derived_datasets",
         dag=dag,
         email=[
-            "bewu@mozilla.com",
+            "akomar@mozilla.com",
         ],
     )
