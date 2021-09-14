@@ -20,6 +20,7 @@ services:
     restart: "no"
     volumes:
       - $PWD:/app
+      - $PWD/dev_webserver_config.py:/app/webserver_config.py
       # mount a dummy file to google application credentials, if not provided
       - ${GOOGLE_APPLICATION_CREDENTIALS:-./.add_credentials.md}:/tmp/.credentials
     command: "true"
