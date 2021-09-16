@@ -143,7 +143,12 @@ def extract_user_counts(
         dag=dag,
     )
 
-    gcs_destination = "gs://{}/glam-extract-firefox-{}.csv".format(
+    if file_prefix=="sample-counts":
+        gcs_destination = "gs://{}/glam-extract-firefox-{}-*.csv".format(
+        glam_bucket, file_prefix
+    )
+    else: 
+        gcs_destination = "gs://{}/glam-extract-firefox-{}.csv".format(
         glam_bucket, file_prefix
     )
     bq2gcs = BigQueryToCloudStorageOperator(
