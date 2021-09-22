@@ -126,6 +126,7 @@ with DAG('probe_scraper',
             "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_prod"),
             "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
             "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+            "UPDATE_SPOKE_BRANCHES": True,
         }
     )
 
@@ -152,6 +153,7 @@ with DAG('probe_scraper',
             "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
             "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
             "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+            "UPDATE_SPOKE_BRANCHES": True,
         }
     )
 
