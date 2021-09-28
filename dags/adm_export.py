@@ -63,7 +63,7 @@ with models.DAG(
         task_id="wait_for_adm_weekly_aggregates",
         external_dag_id="bqetl_search_terms_daily",
         external_task_id="search_terms_derived__adm_weekly_aggregates__v1",
-        execution_delta=timedelta(hours=2),
+        execution_delta=datetime.timedelta(hours=2),
         mode="reschedule",
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
