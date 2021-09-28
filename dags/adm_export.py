@@ -1,9 +1,11 @@
 import datetime
 
 from airflow import models
+from airflow.hooks.base_hook import BaseHook
 
 from operators.gcp_container_operator import GKEPodOperator
-from airflow.hooks.base_hook import BaseHook
+from operators.task_sensor import ExternalTaskCompletedSensor
+
 
 DOCS = """\
 Weekly data exports of contextual services data aggregates to adMarketplace.
