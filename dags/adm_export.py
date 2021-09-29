@@ -41,7 +41,7 @@ with DAG(
         name="adm_weekly_aggregates_to_sftp",
         # See https://github.com/mozilla/docker-etl/pull/28
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bq2sftp_docker_etl:latest",
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
+        project_id="moz-fx-data-airflow-gke-prod",
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",
         location="us-west1",
