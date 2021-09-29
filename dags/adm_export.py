@@ -35,14 +35,15 @@ with DAG(
 ) as dag:
 
     conn = BaseHook.get_connection('adm_sftp')
+    gcp_conn_id = "google_cloud_airflow_gke"
 
     adm_weekly_aggregates_to_sftp = GKEPodOperator(
         task_id="adm_weekly_aggregates_to_sftp",
         name="adm_weekly_aggregates_to_sftp",
         # See https://github.com/mozilla/docker-etl/pull/28
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bq2sftp_docker_etl:latest",
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
-        gcp_conn_id="google_cloud_airflow_gke",
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        gcp_conn_id=gcp_conn_id,
         cluster_name="workloads-prod-v1",
         location="us-west1",
         env_vars=dict(
