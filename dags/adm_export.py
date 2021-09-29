@@ -1,7 +1,8 @@
 import datetime
 
-from airflow import models
+from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
 from operators.gcp_container_operator import GKEPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
@@ -29,7 +30,7 @@ default_args = {
 
 dag_name = "adm_export"
 
-with models.DAG(
+with DAG(
     dag_name, schedule_interval="0 5 * * *", doc_md=DOCS, default_args=default_args
 ) as dag:
 
@@ -40,7 +41,7 @@ with models.DAG(
         name="adm_weekly_aggregates_to_sftp",
         # See https://github.com/mozilla/docker-etl/pull/28
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bq2sftp_docker_etl:latest",
-        project_id='moz-fx-data-shared-prod',
+        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",
         location="us-west1",
