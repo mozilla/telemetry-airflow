@@ -34,7 +34,7 @@ with DAG(
     dag_name, schedule_interval="0 5 * * *", doc_md=DOCS, default_args=default_args
 ) as dag:
 
-    conn = BaseHook.get_connection('adm_sftp')
+    conn = BaseHook.get_connection("adm_sftp")
 
     adm_weekly_aggregates_to_sftp = GKEPodOperator(
         task_id="adm_weekly_aggregates_to_sftp",
@@ -51,7 +51,7 @@ with DAG(
             SFTP_HOST=conn.host,
             SFTP_PORT=str(conn.port),
             KNOWN_HOSTS=conn.extra_dejson["known_hosts"],
-            SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.aggregated_search_terms_v1",
+            SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_weekly_aggregates_v1",
             DST_PATH="files/firefox-suggest-queries-{{ ds_nodash }}.csv.gz",
             SUBMISSION_DATE="{{ ds }}",
         ),
