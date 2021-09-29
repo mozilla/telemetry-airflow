@@ -52,6 +52,9 @@ services:
       - AIRFLOW__KUBERNETES__IN_CLUSTER=False
       - URL=http://localhost:8000
       - WEBSERVER_USE_RBAC=False
+      # URL-encoded dummy connections; note that we define some other connections
+      # in the bin/run script
+      - AIRFLOW_CONN_ADM_SFTP=ftp://myname:mypassword@myhost.com:8000?known_hosts=myhost.com+AAAABBBBB
 
   web:
     extends:
