@@ -137,6 +137,9 @@ for product in final_products:
     user_counts = view(task_name=f"{product}__view_user_counts_v1")
     extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
 
+    sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
+    extract_sample_counts = query(task_name=f"{product}__extract_sample_counts_v1")
+
     export = gke_command(
         task_id=f"export_{product}",
         cmds=["bash"],
@@ -192,3 +195,4 @@ for product in final_products:
     )
     probe_counts >> extract_probe_counts >> export
     clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
+    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export
