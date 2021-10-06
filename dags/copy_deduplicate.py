@@ -214,6 +214,7 @@ with models.DAG(
             "backfill",
             "*.metrics_clients_last_seen_v1",
         ] + baseline_args,
+        depends_on_past=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     clients_last_seen_joined = gke_command(
