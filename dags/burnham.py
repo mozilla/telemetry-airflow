@@ -9,6 +9,8 @@ import logging
 import uuid
 import time
 
+from dataclasses import dataclass
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
@@ -27,7 +29,7 @@ See https://github.com/mozilla/burnham
 """
 
 DAG_OWNER = "rpierzina@mozilla.com"
-DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com"]
+DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com", "bforehand@mozilla.com"]
 
 PROJECT_ID = "moz-fx-data-shared-prod"
 
@@ -98,8 +100,8 @@ LIMIT
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
-    {"key": "spore_drive", "value_sum": 13},
-    {"key": "warp_drive", "value_sum": 18},
+    {"key": "spore_drive", "value_sum": 25},
+    {"key": "warp_drive", "value_sum": 36},
 ]
 
 
@@ -119,7 +121,7 @@ LIMIT
   20
 """
 
-WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
+WANT_TEST_CLIENT_IDS = [{"count_client_ids": 6}]
 
 
 # Test scenario test_experiments: Verify that the Glean SDK correctly reports
@@ -178,9 +180,9 @@ ORDER BY
 """
 
 WANT_TEST_EXPERIMENTS = [
-    {"experiment": "no_experiments", "document_count": 2},
-    {"experiment": "spore_drive:tardigrade", "document_count": 2},
-    {"experiment": "spore_drive:tardigrade-dna", "document_count": 6},
+    {"experiment": "no_experiments", "document_count": 4},
+    {"experiment": "spore_drive:tardigrade", "document_count": 4},
+    {"experiment": "spore_drive:tardigrade-dna", "document_count": 12},
 ]
 
 
@@ -206,7 +208,7 @@ LIMIT
 WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
     {
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
-        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 2}],
     }
 ]
 
@@ -222,7 +224,7 @@ WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
 
-WANT_TEST_STARBASE46_PING = [{"count_documents": 1}]
+WANT_TEST_STARBASE46_PING = [{"count_documents": 2}]
 
 
 # Test scenario test_space_ship_ready_ping: Verify that the Glean SDK and the
@@ -236,7 +238,7 @@ WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
 
-WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
+WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 6}]
 
 
 # Test scenario test_no_ping_after_upload_disabled: Verify that the Glean SDK
@@ -259,9 +261,9 @@ LIMIT
 """
 
 WANT_TEST_NO_PING_AFTER_UPLOAD_DISABLED = [
-    {"mission_identifier": "MISSION B: TWO WARPS", "count_documents": 1},
-    {"mission_identifier": "MISSION C: ONE JUMP", "count_documents": 1},
-    {"mission_identifier": "MISSION F: TWO WARPS, ONE JUMP", "count_documents": 1},
+    {"mission_identifier": "MISSION B: TWO WARPS", "count_documents": 2},
+    {"mission_identifier": "MISSION C: ONE JUMP", "count_documents": 2},
+    {"mission_identifier": "MISSION F: TWO WARPS, ONE JUMP", "count_documents": 2},
 ]
 
 
@@ -281,7 +283,7 @@ LIMIT
   20
 """
 
-WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 2}]
+WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 4}]
 
 
 # Test scenario test_deletion_request_ping: Verify that the Glean SDK submitted
@@ -295,7 +297,7 @@ WHERE
   metrics.string.test_name = "test_disable_upload"
 """
 
-WANT_TEST_DELETION_REQUEST_PING = [{"count_documents": 1}]
+WANT_TEST_DELETION_REQUEST_PING = [{"count_documents": 2}]
 
 # Test scenario test_deletion_request_ping_client_id: Verify that the Glean SDK
 # submitted a deletion-request ping with the expected client ID by joining
@@ -356,6 +358,13 @@ WHERE
 """
 
 
+@dataclass(frozen=True)
+class BurnhamDistribution:
+    burnham_version: str
+    glean_sdk_version: str
+    glean_parser_version: str
+
+
 # GCP and GKE default values
 DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
 DEFAULT_GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
@@ -364,6 +373,14 @@ DEFAULT_GKE_CLUSTER_NAME = "bq-load-gke-1"
 DEFAULT_GKE_NAMESPACE = "default"
 
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
+
+BURNHAM_DISTRIBUTIONS = {
+    "21.0.0": BurnhamDistribution(
+        burnham_version="21.0.0",
+        glean_sdk_version="41.1.1",
+        glean_parser_version="4.0.0",
+    )
+}
 
 DEFAULT_ARGS = {
     "owner": DAG_OWNER,
@@ -381,6 +398,7 @@ def burnham_run(
     burnham_test_run,
     burnham_test_name,
     burnham_missions,
+    burnham_distribution=None,
     burnham_spore_drive=None,
     gcp_conn_id=DEFAULT_GCP_CONN_ID,
     gke_location=DEFAULT_GKE_LOCATION,
@@ -417,6 +435,11 @@ def burnham_run(
     if burnham_spore_drive is not None:
         env_vars["BURNHAM_SPORE_DRIVE"] = burnham_spore_drive
 
+    if burnham_distribution is not None:
+        image_version = burnham_distribution.burnham_version
+    else:
+        image_version = "latest"
+
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
@@ -424,7 +447,7 @@ def burnham_run(
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/burnham:latest",
+        image=f"gcr.io/moz-fx-data-airflow-prod-88e0/burnham:{image_version}",
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
@@ -623,6 +646,72 @@ with DAG(
     )
     client4.set_upstream(generate_burnham_test_run_uuid)
 
+    client5 = burnham_run(
+        task_id="client5",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name=DEFAULT_TEST_NAME,
+        burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS"],
+        burnham_spore_drive="tardigrade",
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client5.set_upstream(generate_burnham_test_run_uuid)
+
+    client6 = burnham_run(
+        task_id="client6",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name=DEFAULT_TEST_NAME,
+        burnham_missions=[
+            "MISSION A: ONE WARP",
+            "MISSION B: TWO WARPS",
+            "MISSION D: TWO JUMPS",
+            "MISSION E: ONE JUMP, ONE METRIC ERROR",
+            "MISSION F: TWO WARPS, ONE JUMP",
+            "MISSION G: FIVE WARPS, FOUR JUMPS",
+        ],
+        burnham_spore_drive="tardigrade-dna",
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client6.set_upstream(generate_burnham_test_run_uuid)
+
+    client7 = burnham_run(
+        task_id="client7",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name=DEFAULT_TEST_NAME,
+        burnham_missions=["MISSION A: ONE WARP", "MISSION B: TWO WARPS"],
+        burnham_spore_drive=None,
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client7.set_upstream(generate_burnham_test_run_uuid)
+
+    client8 = burnham_run(
+        task_id="client8",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name="test_disable_upload",
+        burnham_missions=[
+            "MISSION B: TWO WARPS",
+            "MISSION C: ONE JUMP",
+            "MISSION H: DISABLE GLEAN UPLOAD",
+            "MISSION D: TWO JUMPS",
+            "MISSION I: ENABLE GLEAN UPLOAD",
+            "MISSION F: TWO WARPS, ONE JUMP",
+        ],
+        burnham_spore_drive="tardigrade",
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client8.set_upstream(generate_burnham_test_run_uuid)
+
     # We expect up to 20 minute latency for pings to get loaded to live tables
     # in BigQuery, so we have a task that explicitly sleeps for 20 minutes
     # and make that a dependency for our tasks that need to read the BQ data.
@@ -641,7 +730,17 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data.set_upstream([client1, client2, client3, sleep_20_minutes])
+    wait_for_discovery_data.set_upstream(
+        [
+            client1,
+            client2,
+            client3,
+            client5,
+            client6,
+            client7,
+            sleep_20_minutes,
+        ]
+    )
 
     discovery_test_scenarios = [
         {
@@ -689,7 +788,17 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_starbase46_data.set_upstream([client1, client2, client3, sleep_20_minutes])
+    wait_for_starbase46_data.set_upstream(
+        [
+            client1,
+            client2,
+            client3,
+            client5,
+            client6,
+            client7,
+            sleep_20_minutes,
+        ]
+    )
 
     starbase46_test_scenarios = [
         {
@@ -723,7 +832,15 @@ with DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_space_ship_ready_data.set_upstream(
-        [client1, client2, client3, sleep_20_minutes]
+        [
+            client1,
+            client2,
+            client3,
+            client5,
+            client6,
+            client7,
+            sleep_20_minutes,
+        ]
     )
 
     space_ship_ready_test_scenarios = [
@@ -756,7 +873,9 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data_disable_upload.set_upstream([client4, sleep_20_minutes])
+    wait_for_discovery_data_disable_upload.set_upstream(
+        [client4, client8, sleep_20_minutes]
+    )
 
     discovery_test_scenarios_disable_upload = [
         {
@@ -797,7 +916,7 @@ with DAG(
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_deletion_request_data.set_upstream([client4, sleep_20_minutes])
+    wait_for_deletion_request_data.set_upstream([client4, client8, sleep_20_minutes])
 
     deletion_request_test_scenarios = [
         {
