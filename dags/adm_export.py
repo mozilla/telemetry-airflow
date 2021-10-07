@@ -52,7 +52,7 @@ with DAG(
             SFTP_PORT=str(conn.port),
             KNOWN_HOSTS=conn.extra_dejson["known_hosts"],
             SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_weekly_aggregates_v1",
-            DST_PATH="files/firefox-suggest-queries-{{ ds_nodash }}.csv.gz",
+            DST_PATH='files/Aggregated-Query-Data-{{ macros.ds_format(macros.ds_add(ds, -6), "%Y-%m-%d", "%m%d%Y") }}-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
             SUBMISSION_DATE="{{ ds }}",
         ),
         email=[
