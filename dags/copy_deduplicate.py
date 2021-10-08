@@ -196,7 +196,41 @@ with models.DAG(
         depends_on_past=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
+    metrics_clients_daily = gke_command(
+        task_id="metrics_clients_daily",
+        command=[
+            "bqetl",
+            "query",
+            "backfill",
+            "*.metrics_clients_daily_v1",
+        ] + baseline_args,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    )
+    metrics_clients_last_seen = gke_command(
+        task_id="metrics_clients_last_seen",
+        command=[
+            "bqetl",
+            "query",
+            "backfill",
+            "*.metrics_clients_last_seen_v1",
+        ] + baseline_args,
+        depends_on_past=True,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    )
+    clients_last_seen_joined = gke_command(
+        task_id="clients_last_seen_joined",
+        command=[
+            "bqetl",
+            "query",
+            "backfill",
+            "*.clients_last_seen_joined_v1",
+        ] + baseline_args,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    )
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
     baseline_clients_first_seen >> baseline_clients_daily
     copy_deduplicate_all >> baseline_clients_daily >> baseline_clients_last_seen
+    copy_deduplicate_all >> metrics_clients_daily >> metrics_clients_last_seen
+    metrics_clients_last_seen >> clients_last_seen_joined
+    baseline_clients_last_seen >> clients_last_seen_joined
