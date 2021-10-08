@@ -31,7 +31,7 @@ default_args = {
 dag_name = "adm_export"
 
 with DAG(
-    dag_name, schedule_interval="0 5 * * *", doc_md=DOCS, default_args=default_args
+    dag_name, schedule_interval="0 5 * * MON", doc_md=DOCS, default_args=default_args
 ) as dag:
 
     conn = BaseHook.get_connection("adm_sftp")
