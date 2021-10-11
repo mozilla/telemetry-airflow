@@ -57,7 +57,7 @@ with DAG(
             # Aggregated-Query-Data-10042021-10102021.csv.gz
             # for ds=2021-10-04 which actually runs on 2021-10-11.
             DST_PATH='files/Aggregated-Query-Data--{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}-{{ macros.ds_format(macros.ds_add(ds, 6), "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
-            SUBMISSION_DATE="{{ ds }}",
+            SUBMISSION_DATE="{{ macros.ds_add(ds, 6) }}",
         ),
         email=[
             "jklukas@mozilla.com",
