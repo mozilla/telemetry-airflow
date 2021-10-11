@@ -1,20 +1,25 @@
 from airflow import models
-from airflow.utils import trigger_rule
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.subdag_operator import SubDagOperator
 
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.dataproc_operator import DataprocClusterCreateOperator, DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator # noqa
 from operators.gcp_container_operator import GKEPodOperator
-from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator  # noqa:E501
-from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
-from airflow.contrib.operators.gcp_transfer_operator import S3ToGoogleCloudStorageTransferOperator  # noqa:E501
-from airflow.contrib.operators.gcs_delete_operator import GoogleCloudStorageDeleteOperator
+
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+
+from airflow.providers.google.cloud.operators.dataproc import (
+    DataprocCreateClusterOperator,
+    DataprocDeleteClusterOperator,
+    DataprocSubmitPySparkJobOperator,
+)
+
+from airflow.providers.google.cloud.transfers.bigquery_to_gcs import BigQueryToGCSOperator
+
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 
 import json
 import re
 
+GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
 
 def export_to_parquet(
     table,
@@ -67,7 +72,7 @@ def export_to_parquet(
     cluster_name += "-export-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
-    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+    project_id = GCP_PROJECT_ID
 
     if destination_table is None:
         destination_table = unqualified_table
@@ -82,11 +87,12 @@ def export_to_parquet(
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
-        create_dataproc_cluster = DataprocClusterCreateOperator(
+        create_dataproc_cluster = DataprocCreateClusterOperator(
             task_id="create_dataproc_cluster",
             cluster_name=cluster_name,
             gcp_conn_id=gcp_conn_id,
-            project_id=connection.project_id,
+            region="us-west1",
+            project_id=project_id,
             num_workers=num_workers,
             image_version="1.4",
             storage_bucket=dataproc_storage_bucket,
@@ -100,13 +106,13 @@ def export_to_parquet(
             metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
         )
 
-        run_dataproc_pyspark = DataProcPySparkOperator(
+        run_dataproc_pyspark = DataprocSubmitPySparkJobOperator(
             task_id="run_dataproc_pyspark",
             cluster_name=cluster_name,
-            dataproc_pyspark_jars=[
+            dataproc_jars=[
                 "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
             ],
-            dataproc_pyspark_properties={
+            dataproc_properties={
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/main"
@@ -125,31 +131,33 @@ def export_to_parquet(
             + [static_partitions]
             + arguments,
             gcp_conn_id=gcp_conn_id,
+            project_id=project_id,
         )
 
-        delete_dataproc_cluster = DataprocClusterDeleteOperator(
+        delete_dataproc_cluster = DataprocDeleteClusterOperator(
             task_id="delete_dataproc_cluster",
             cluster_name=cluster_name,
             gcp_conn_id=gcp_conn_id,
-            project_id=connection.project_id,
-            trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
+            project_id=project_id,
+            trigger_rule="all_done",
+            region="us-west1",
         )
 
         if not use_storage_api:
-            avro_export = BigQueryToCloudStorageOperator(
+            avro_export = BigQueryToGCSOperator(
                 task_id="avro_export",
                 source_project_dataset_table=table,
                 destination_cloud_storage_uris=avro_path,
                 compression=None,
                 export_format="AVRO",
-                bigquery_conn_id=gcp_conn_id,
+                gcp_conn_id=gcp_conn_id,
             )
-            avro_delete = GoogleCloudStorageDeleteOperator(
+            avro_delete = GCSDeleteObjectsOperator(
                 task_id="avro_delete",
                 bucket_name=gcs_output_bucket,
                 prefix=avro_prefix,
-                google_cloud_storage_conn_id=gcp_conn_id,
-                trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
+                gcp_conn_id=gcp_conn_id,
+                trigger_rule="all_done",
             )
             avro_export >> run_dataproc_pyspark >> avro_delete
 
@@ -210,7 +218,7 @@ def bigquery_etl_query(
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -278,7 +286,7 @@ def bigquery_etl_copy_deduplicate(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=GCP_PROJECT_ID,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -341,7 +349,7 @@ def bigquery_xcom_query(
     query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=GCP_PROJECT_ID,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -407,7 +415,7 @@ def gke_command(
         key: value
         for key, value in zip(
             ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
-            AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
+            AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials() if aws_conn_id else (),
         )
         if value is not None}
     context_env_vars["XCOM_PUSH"] = json.dumps(xcom_push)
@@ -416,7 +424,7 @@ def gke_command(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=GCP_PROJECT_ID,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,

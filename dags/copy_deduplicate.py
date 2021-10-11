@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import models
-from airflow.operators.sensors import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
@@ -10,7 +10,6 @@ from utils.gcp import (
     bigquery_xcom_query,
 )
 
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from utils.gcp import gke_command
 
 DOCS = """\

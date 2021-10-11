@@ -3,10 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.contrib.operators.gcs_delete_operator import (
-    GoogleCloudStorageDeleteOperator,
-)
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
 from utils.gcp import gke_command
@@ -39,13 +36,13 @@ subdag_args = default_args.copy()
 subdag_args["retries"] = 0
 
 task_id = "prerelease_telemetry_aggregate_view_dataproc"
-gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
-keyfile = json.loads(gcp_conn.extras["extra__google_cloud_platform__keyfile_dict"])
-project_id = keyfile["project_id"]
+gcp_conn_id = "google_cloud_airflow_dataproc"
+project_id = "airflow-dataproc"
+dev_test_service_account = "replace_me"
 
 is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
 client_email = (
-    keyfile["client_email"]
+    dev_test_service_account
     if is_dev
     else "dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com"
 )
@@ -114,7 +111,7 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
                 "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/prerelease/moz-fx-data-shared-prod",
             ]
         ),
-        gcp_conn_id=gcp_conn.gcp_conn_id,
+        gcp_conn_id=gcp_conn_id,
         service_account=client_email,
         artifact_bucket=artifact_bucket,
         storage_bucket=storage_bucket,
@@ -207,11 +204,11 @@ if EXPORT_TO_AVRO:
     ).set_downstream(prerelease_telemetry_aggregate_view_dataproc)
 
     # Delete the GCS data
-    GoogleCloudStorageDeleteOperator(
+    GCSDeleteObjectsOperator(
         task_id="delete_main_avro",
         bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
         prefix="avro/mozaggregator/prerelease/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v4",
-        google_cloud_storage_conn_id=gcp_conn.gcp_conn_id,
+        gcp_conn_id=gcp_conn_id,
         dag=dag,
     ).set_upstream(prerelease_telemetry_aggregate_view_dataproc)
 

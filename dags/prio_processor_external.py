@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from os import environ
 
 from airflow import DAG
-from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
 from prio.processor import prio_processor_subdag
 
 DEFAULT_ARGS = {
@@ -25,7 +24,7 @@ DEFAULT_ARGS = {
 IS_DEV = environ.get("DEPLOY_ENVIRONMENT") != "prod"
 ENVIRONMENT = "dev" if IS_DEV else "prod"
 PRIO_B_CONN = "google_cloud_prio_b"
-PROJECT_B = GoogleCloudStorageHook(PRIO_B_CONN).project_id
+PROJECT_B = "moz-fx-prio-b-prod-a67n"
 SERVICE_ACCOUNT_B = f"prio-runner-{ENVIRONMENT}-b@{PROJECT_B}.iam.gserviceaccount.com"
 BUCKET_PRIVATE_B = f"moz-fx-prio-{ENVIRONMENT}-b-private"
 BUCKET_SHARED_A = f"moz-fx-prio-{ENVIRONMENT}-a-shared"
@@ -48,6 +47,7 @@ processor_b = prio_processor_subdag(
     dag,
     DEFAULT_ARGS,
     PRIO_B_CONN,
+    PROJECT_B,
     SERVICE_ACCOUNT_B,
     "b",
     {

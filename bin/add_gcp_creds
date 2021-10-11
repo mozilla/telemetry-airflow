@@ -33,13 +33,12 @@ function update_gcp() {
     container_id=$(docker ps | grep telemetry-airflow_web | cut -d' ' -f1)
 
     docker exec $container_id \
-        airflow connections -d --conn_id $conn_id
+        airflow connections delete $conn_id
 
     docker exec $container_id \
-        airflow connections -a \
-            --conn_id $conn_id \
-            --conn_type google_cloud_platform \
-            --conn_extra "$(format_gcp $keyfile)"
+        airflow connections add $conn_id \
+            --conn-type google_cloud_platform \
+            --conn-extra "$(format_gcp $keyfile)"
 }
 
 update_gcp $connection $keyfile_path

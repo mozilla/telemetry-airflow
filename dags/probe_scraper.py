@@ -2,12 +2,13 @@ import time
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
 from operators.gcp_container_operator import GKEPodOperator
+
+DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION = "v1.17.0"
 
 default_args = {
     'owner': 'ascholtz@mozilla.com',
@@ -24,7 +25,7 @@ with DAG('probe_scraper',
          schedule_interval='0 0 * * 1-5') as dag:
 
     aws_conn_id='aws_prod_probe_scraper'
-    aws_access_key, aws_secret_key, session = AwsHook(aws_conn_id).get_credentials()
+    aws_access_key, aws_secret_key, session = AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials()
 
     # Built from repo https://github.com/mozilla/probe-scraper
     probe_scraper_image='gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest'
@@ -104,28 +105,33 @@ with DAG('probe_scraper',
     probe_scraper >> delay_python_task
 
     gcp_gke_conn_id = "google_cloud_airflow_gke"
+    project_id = "moz-fx-data-airflow-gke-prod"
+    image_tag = Variable(key="lookml_generator_release_str").get("lookml_generator_release_str")
+    if image_tag is None:
+        image_tag = DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION
+
     lookml_generator_prod = GKEPodOperator(
         email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="lookml_generator",
         name="lookml-generator-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + Variable.get("lookml_generator_release_str"),
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + image_tag,
         startup_timeout_seconds=500,
         gcp_conn_id=gcp_gke_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
+        project_id=project_id,
         cluster_name="workloads-prod-v1",
         location="us-west1",
         dag=dag,
         env_vars={
-            "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
+            "GIT_SSH_KEY_BASE64": Variable(key="looker_repos_secret_git_ssh_key_b64").get("looker_repos_secret_git_ssh_key_b64"),
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
             "HUB_BRANCH_SOURCE": "base",
             "HUB_BRANCH_PUBLISH": "main",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
             "SPOKE_BRANCH_PUBLISH": "main",
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_prod"),
-            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
-            "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+            "LOOKER_API_CLIENT_ID": Variable(key="looker_api_client_id_prod").get("looker_api_client_id_prod"),
+            "LOOKER_API_CLIENT_SECRET": Variable(key="looker_api_client_secret_prod").get("looker_api_client_secret_prod"),
+            "GITHUB_ACCESS_TOKEN": Variable(key="dataops_looker_github_secret_access_token").get("dataops_looker_github_secret_access_token"),
             "UPDATE_SPOKE_BRANCHES": "true",
         }
     )
@@ -138,21 +144,21 @@ with DAG('probe_scraper',
         name="lookml-generator-staging-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
         gcp_conn_id=gcp_gke_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_gke_conn_id).project_id,
+        project_id=project_id,
         cluster_name="workloads-prod-v1",
         location="us-west1",
         dag=dag,
         env_vars={
-            "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
+            "GIT_SSH_KEY_BASE64": Variable(key="looker_repos_secret_git_ssh_key_b64").get("looker_repos_secret_git_ssh_key_b64"),
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
             "HUB_BRANCH_SOURCE": "base",
             "HUB_BRANCH_PUBLISH": "main-stage",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
             "SPOKE_BRANCH_PUBLISH": "main-stage",
             "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
-            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
-            "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+            "LOOKER_API_CLIENT_ID": Variable(key="looker_api_client_id_staging").get("looker_api_client_id_staging"),
+            "LOOKER_API_CLIENT_SECRET": Variable(key="looker_api_client_secret_staging").get("looker_api_client_secret_staging"),
+            "GITHUB_ACCESS_TOKEN": Variable(key="dataops_looker_github_secret_access_token").get("dataops_looker_github_secret_access_token"),
             "UPDATE_SPOKE_BRANCHES": "true",
         }
     )
@@ -165,7 +171,7 @@ with DAG('probe_scraper',
     # said build.
     glean_dictionary_netlify_build = SimpleHttpOperator(
         http_conn_id="http_netlify_build_webhook",
-        endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
+        endpoint=Variable(key="glean_dictionary_netlify_build_webhook_id").get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
         data={},
         email=["wlach@mozilla.com", "dataops+alerts@mozilla.com"],

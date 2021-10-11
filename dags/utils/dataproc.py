@@ -3,21 +3,21 @@ import os
 from collections import namedtuple
 
 from airflow import models
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.operators.bash_operator import BashOperator
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.dataproc_operator import DataprocClusterDeleteOperator, DataProcSparkOperator, DataProcPySparkOperator
 from airflow.exceptions import AirflowException
-from airflow.utils.trigger_rule import TriggerRule
+from airflow.operators.bash_operator import BashOperator
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
-# Our own dataproc operator used to install component gateway
-from operators.moz_dataproc_operator import DataprocClusterCreateOperator
-
-"""
-Note: We are currently on 1.10.7 and when we upgrade, the spark operators will move.
-This module is deprecated. Please use `airflow.providers.google.cloud.operators.dataproc
-"""
-
+# When google deprecates dataproc_v1beta2 in DataprocHook/Operator classes
+# We can import these from our patched code, rather than upgrading/deploying
+# apache-airflow-providers-google > 6.0.0, and google-cloud-dataproc > 2.5.0
+# from utils.patched.dataproc_operator import (
+from airflow.providers.google.cloud.operators.dataproc import (
+    ClusterGenerator,
+    DataprocCreateClusterOperator,
+    DataprocDeleteClusterOperator,
+    DataprocSubmitPySparkJobOperator,
+    DataprocSubmitSparkJobOperator,
+)
 
 class DataProcHelper:
     """
@@ -32,8 +32,8 @@ class DataProcHelper:
                  region='us-west1',
                  subnetwork_uri=None,
                  internal_ip_only=None,
-                 idle_delete_ttl='14400',
-                 auto_delete_ttl='28800',
+                 idle_delete_ttl=14400,
+                 auto_delete_ttl=28800,
                  master_machine_type='n1-standard-8',
                  worker_machine_type='n1-standard-4',
                  num_preemptible_workers=0,
@@ -45,6 +45,7 @@ class DataProcHelper:
                  install_component_gateway=True,
                  aws_conn_id=None,
                  gcp_conn_id='google_cloud_airflow_dataproc',
+                 project_id='airflow-dataproc',
                  artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                  storage_bucket='moz-fx-data-prod-dataproc-scratch',
                  master_disk_type='pd-standard',
@@ -99,12 +100,11 @@ class DataProcHelper:
         self.install_component_gateway = install_component_gateway
         self.aws_conn_id = aws_conn_id
         self.gcp_conn_id = gcp_conn_id
-
-        self.connection = GoogleCloudBaseHook(gcp_conn_id=self.gcp_conn_id)
+        self.project_id = project_id
 
     def create_cluster(self):
         """
-        Returns a DataprocClusterCreateOperator
+        Returns a DataprocCreateClusterOperator
         """
         properties = {}
 
@@ -115,7 +115,7 @@ class DataProcHelper:
         if self.aws_conn_id:
             for key, value in zip(
                 ("access.key", "secret.key", "session.token"),
-                AwsHook(self.aws_conn_id).get_credentials(),
+                AwsBaseHook(aws_conn_id=self.aws_conn_id, client_type='s3').get_credentials(),
             ):
                 if value is not None:
                     properties["core:fs.s3a." + key] = value
@@ -133,48 +133,71 @@ class DataProcHelper:
             }
         metadata.update(self.additional_metadata)
 
-        return DataprocClusterCreateOperator(
-            task_id='create_dataproc_cluster',
-            cluster_name=self.cluster_name,
-            job_name=self.job_name,
-            gcp_conn_id=self.gcp_conn_id,
-            service_account=self.service_account,
-            project_id=self.connection.project_id,
+        cluster_generator = ClusterGenerator(
+            project_id = self.project_id,
+            num_workers = self.num_workers,
+            subnetwork_uri = self.subnetwork_uri,
+            internal_ip_only = self.internal_ip_only,
             storage_bucket=self.storage_bucket,
-            num_workers=self.num_workers,
-            image_version=self.image_version,
-            properties=properties,
-            region=self.region,
-            subnetwork_uri=self.subnetwork_uri,
-            internal_ip_only=self.internal_ip_only,
-            idle_delete_ttl=self.idle_delete_ttl,
-            auto_delete_ttl=self.auto_delete_ttl,
-            master_machine_type=self.master_machine_type,
-            worker_machine_type=self.worker_machine_type,
-            num_preemptible_workers=self.num_preemptible_workers,
-            optional_components = self.optional_components,
-            install_component_gateway = self.install_component_gateway,
             init_actions_uris=self.init_actions_uris,
+            metadata = metadata,
+            image_version=self.image_version,
+            properties = properties,
+            optional_components = self.optional_components,
+            master_machine_type=self.master_machine_type,
             master_disk_type=self.master_disk_type,
             master_disk_size=self.master_disk_size,
+            worker_machine_type=self.worker_machine_type,
             worker_disk_type=self.worker_disk_type,
             worker_disk_size=self.worker_disk_size,
-            master_num_local_ssds=self.master_num_local_ssds,
-            worker_num_local_ssds=self.worker_num_local_ssds,
-            metadata=metadata,
+            num_preemptible_workers=self.num_preemptible_workers,
+            service_account=self.service_account,
+            idle_delete_ttl=self.idle_delete_ttl,
+            auto_delete_ttl=self.auto_delete_ttl
+        )
+
+        cluster_config = cluster_generator.make()
+
+        # The DataprocCreateClusterOperator and ClusterGenerator dont support component gateway or local ssds
+        # ClusterConfig format is
+        # https://cloud.google.com/dataproc/docs/reference/rpc/google.cloud.dataproc.v1#google.cloud.dataproc.v1.ClusterConfig
+        if self.install_component_gateway:
+            cluster_config.update({'endpoint_config' : {'enable_http_port_access' : True}})
+
+        if self.master_num_local_ssds > 0:
+            master_instance_group_config = cluster_config['master_config']
+            master_instance_group_config['disk_config']['num_local_ssds'] = self.master_num_local_ssds
+            cluster_config.update({'master_config' : master_instance_group_config})
+
+        if self.worker_num_local_ssds > 0:
+            worker_instance_group_config = cluster_config['worker_config']
+            worker_instance_group_config['disk_config']['num_local_ssds'] =self.worker_num_local_ssds
+            cluster_config.update({'worker_config' : worker_instance_group_config})
+
+        return DataprocCreateClusterOperator(
+            task_id='create_dataproc_cluster',
+            cluster_name=self.cluster_name,
+            project_id = self.project_id,
+            use_if_exists=True,
+            delete_on_error=True,
+            labels={ 'env': os.getenv('DEPLOY_ENVIRONMENT', 'env_not_set'),
+                     'owner': os.getenv('AIRFLOW_CTX_DAG_OWNER', 'owner_not_set'),
+                     'jobname': self.job_name.lower().replace('_', '-') },
+            gcp_conn_id=self.gcp_conn_id,
+            region=self.region,
+            cluster_config = cluster_config
         )
 
     def delete_cluster(self):
         """
-        Returns a DataprocClusterDeleteOperator
+        Returns a DataprocDeleteClusterOperator
         """
-        return DataprocClusterDeleteOperator(
+        return DataprocDeleteClusterOperator(
             task_id='delete_dataproc_cluster',
-            trigger_rule=TriggerRule.ALL_DONE,
             cluster_name=self.cluster_name,
             region=self.region,
             gcp_conn_id=self.gcp_conn_id,
-            project_id=self.connection.project_id)
+            project_id=self.project_id)
 # End DataProcHelper
 
 
@@ -187,8 +210,8 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 region='us-west1',
                                 subnetwork_uri=None,
                                 internal_ip_only=None,
-                                idle_delete_ttl='10800',
-                                auto_delete_ttl='21600',
+                                idle_delete_ttl=10800,
+                                auto_delete_ttl=21600,
                                 master_machine_type='n1-standard-8',
                                 worker_machine_type='n1-standard-4',
                                 num_preemptible_workers=0,
@@ -203,6 +226,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                 job_name=None,
                                 aws_conn_id=None,
                                 gcp_conn_id='google_cloud_airflow_dataproc',
+                                project_id='airflow-dataproc',
                                 artifact_bucket='moz-fx-data-prod-airflow-dataproc-artifacts',
                                 storage_bucket='moz-fx-data-prod-dataproc-scratch',
                                 master_disk_type='pd-standard',
@@ -215,7 +239,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
-    Then we call DataProcPySparkOperator to execute the pyspark script defined by the argument
+    Then we call DataprocSubmitPySparkJobOperator to execute the pyspark script defined by the argument
     python_driver_code. Once that succeeds, we teardown the cluster.
 
     **Example**: ::
@@ -281,6 +305,9 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
 
     :param str aws_conn_id:               Airflow connection id for S3 access (if needed).
     :param str gcp_conn_id:               The connection ID to use connecting to GCP.
+    :param str project_id:                The project ID corresponding to the gcp_conn_id. We
+                                          add this because the dev environment doesn't parse it out
+                                          correctly from the dummy connections.
     :param str artifact_bucket:           Path to resources for bootstrapping the dataproc cluster
     :param str storage_bucket:            Path to scratch bucket for intermediate cluster results
     :param list optional_components:      List of optional components to install on cluster
@@ -338,6 +365,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id,
+                                     project_id=project_id,
                                      artifact_bucket=artifact_bucket,
                                      storage_bucket=storage_bucket,
                                      master_disk_type=master_disk_type,
@@ -353,7 +381,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        run_pyspark_on_dataproc = DataProcPySparkOperator(
+        run_pyspark_on_dataproc = DataprocSubmitPySparkJobOperator(
             task_id='run_dataproc_pyspark',
             job_name=job_name,
             cluster_name=cluster_name,
@@ -361,6 +389,7 @@ def moz_dataproc_pyspark_runner(parent_dag_name=None,
             main=python_driver_code,
             arguments=py_args,
             gcp_conn_id=gcp_conn_id,
+            project_id=project_id
         )
 
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
@@ -379,8 +408,8 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             region='us-west1',
                             subnetwork_uri=None,
                             internal_ip_only=None,
-                            idle_delete_ttl='14400',
-                            auto_delete_ttl='28800',
+                            idle_delete_ttl=14400,
+                            auto_delete_ttl=28800,
                             master_machine_type='n1-standard-8',
                             worker_machine_type='n1-standard-4',
                             num_preemptible_workers=0,
@@ -394,6 +423,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                             job_name=None,
                             aws_conn_id=None,
                             gcp_conn_id='google_cloud_airflow_dataproc',
+                            project_id='airflow-dataproc',
                             master_disk_type='pd-standard',
                             worker_disk_type='pd-standard',
                             master_disk_size=1024,
@@ -404,7 +434,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
 
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
-    Then we call DataProcSparkOperator to execute the jar defined by the arguments
+    Then we call DataprocSubmitSparkJobOperator to execute the jar defined by the arguments
     jar_urls and main_class. Once that succeeds, we teardown the cluster.
 
     **Example**: ::
@@ -468,6 +498,7 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id,
+                                     project_id=project_id,
                                      master_disk_type=master_disk_type,
                                      master_disk_size=master_disk_size,
                                      worker_disk_type=worker_disk_type,
@@ -481,15 +512,17 @@ def moz_dataproc_jar_runner(parent_dag_name=None,
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        run_jar_on_dataproc = DataProcSparkOperator(
+        run_jar_on_dataproc = DataprocSubmitSparkJobOperator(
             cluster_name=cluster_name,
             region=region,
             task_id='run_jar_on_dataproc',
             job_name=job_name,
-            dataproc_spark_jars=jar_urls,
+            dataproc_jars=jar_urls,
             main_class=main_class,
             arguments=jar_args,
-            gcp_conn_id=gcp_conn_id)
+            gcp_conn_id=gcp_conn_id,
+            project_id=project_id
+        )
 
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
@@ -512,8 +545,8 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               region='us-west1',
                               subnetwork_uri=None,
                               internal_ip_only=None,
-                              idle_delete_ttl='14400',
-                              auto_delete_ttl='28800',
+                              idle_delete_ttl=14400,
+                              auto_delete_ttl=28800,
                               master_machine_type='n1-standard-8',
                               worker_machine_type='n1-standard-4',
                               num_preemptible_workers=0,
@@ -527,6 +560,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                               job_name=None,
                               aws_conn_id=None,
                               gcp_conn_id='google_cloud_airflow_dataproc',
+                              project_id='airflow-dataproc',
                               master_disk_type='pd-standard',
                               worker_disk_type='pd-standard',
                               master_disk_size=1024,
@@ -538,7 +572,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
     """
     This will initially create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
     Then we execute a script uri (either https or gcs) similar to how we use our custom AWS
-    EmrSparkOperator. This will call DataProcSparkOperator using EMR's script-runner.jar, which
+    EmrSparkOperator. This will call DataprocSubmitSparkJobOperator using EMR's script-runner.jar, which
     then executes the airflow_gcp.sh entrypoint script. The entrypoint script expects another
     script uri, along with it's arguments, as parameters. Once that succeeds, we teardown the
     cluster.
@@ -609,6 +643,7 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
                                      install_component_gateway=install_component_gateway,
                                      aws_conn_id=aws_conn_id,
                                      gcp_conn_id=gcp_conn_id,
+                                     project_id=project_id,
                                      master_disk_type=master_disk_type,
                                      master_disk_size=master_disk_size,
                                      worker_disk_type=worker_disk_type,
@@ -636,17 +671,19 @@ def moz_dataproc_scriptrunner(parent_dag_name=None,
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        # Run DataprocSparkOperator with script-runner.jar pointing to airflow_gcp.sh.
+        # Run DataprocSubmitSparkJobOperator with script-runner.jar pointing to airflow_gcp.sh.
 
-        run_script_on_dataproc = DataProcSparkOperator(
+        run_script_on_dataproc = DataprocSubmitSparkJobOperator(
             cluster_name=cluster_name,
             region=region,
             task_id='run_script_on_dataproc',
             job_name=job_name,
-            dataproc_spark_jars=[jar_url],
+            dataproc_jars=[jar_url],
             main_class='com.amazon.elasticmapreduce.scriptrunner.ScriptRunner',
             arguments=args,
-            gcp_conn_id=gcp_conn_id)
+            gcp_conn_id=gcp_conn_id,
+            project_id=project_id
+        )
 
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
@@ -715,13 +752,13 @@ def get_dataproc_parameters(conn_id="google_cloud_airflow_dataproc"):
     and should either be the production default ("dataproc-runner-prod"), or a
     service key associated with a sandbox account.
     """
-    gcp_conn = GoogleCloudBaseHook(conn_id)
-    keyfile = json.loads(gcp_conn.extras["extra__google_cloud_platform__keyfile_dict"])
-
-    project_id = keyfile["project_id"]
+    dev_project_id = "replace_me"
+    dev_client_email = "replace_me"
+    
     is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
+    project_id = "airflow-dataproc" if is_dev else dev_project_id
     client_email = (
-        keyfile["client_email"]
+        dev_client_email
         if is_dev
         else "dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com"
     )

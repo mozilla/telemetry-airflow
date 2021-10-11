@@ -2,8 +2,6 @@ from airflow import DAG
 from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-
 docs = """
 ### Clean GKE Pods
 

@@ -68,13 +68,12 @@ init_connections() {
     export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-dummy_access_key_id}
     export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-dummy_secret_access_key}
 
-    airflow connections --delete --conn_id databricks_default
+    airflow connections delete databricks_default
 
-    airflow connections --add \
-        --conn_id databricks_default \
-        --conn_type databricks \
-        --conn_host https://dbc-caf9527b-e073.cloud.databricks.com \
-        --conn_extra "{\"token\":\"${DB_TOKEN}\", \"host\": \"\"}"
+    airflow connections add databricks_default \
+        --conn-type databricks \
+        --conn-host https://dbc-caf9527b-e073.cloud.databricks.com \
+        --conn-extra "{\"token\":\"${DB_TOKEN}\", \"host\": \"\"}"
 
     gcp_conn=(
       "google_cloud_airflow_dataproc"
@@ -86,11 +85,11 @@ init_connections() {
       "google_cloud_glam_fenix_dev"
     )
     for conn_id in "${gcp_conn[@]}"; do
-        airflow connections --delete --conn_id "${conn_id}"
-        airflow connections --add \
-        --conn_id "${conn_id}" \
-        --conn_type google_cloud_platform \
-        --conn_extra "$(gcp_default_extras)"
+        airflow connections delete "${conn_id}"
+
+        airflow connections add "${conn_id}" \
+        --conn-type google_cloud_platform \
+        --conn-extra "$(gcp_default_extras)"
     done
 
     aws_conn=(
@@ -106,46 +105,46 @@ init_connections() {
       "aws_socorro_readonly_s3"
     )
     for conn_id in "${aws_conn[@]}"; do
-        airflow connections --delete --conn_id "${conn_id}"
-        airflow connections --add \
-        --conn_id "${conn_id}" \
-        --conn_type s3 \
-        --conn_extra "$(aws_default_extras)"
+        airflow connections delete "${conn_id}"
+
+        airflow connections add "${conn_id}" \
+        --conn-type s3 \
+        --conn-extra "$(aws_default_extras)"
     done
 
-    airflow connections --delete --conn_id "http_netlify_build_webhook"
-    airflow connections --add \
-      --conn_id "http_netlify_build_webhook" \
-      --conn_type http \
-      --conn_host "https://httpbin.org/"
+    airflow connections delete "http_netlify_build_webhook"
+
+    airflow connections add "http_netlify_build_webhook" \
+      --conn-type http \
+      --conn-host "https://httpbin.org/"
 }
 
 init_variables() {
-    airflow variables -s "bugzilla_probe_expiry_bot_api_key" "bugzilla-api-key"
-    airflow variables -s "app_store_connect_username" "username"
-    airflow variables -s "app_store_connect_password" "password"
-    airflow variables -s "surveygizmo_daily_attitudes_survey_id" "12345"
-    airflow variables -s "surveygizmo_api_token" "tokentokentoken"
-    airflow variables -s "surveygizmo_api_secret" "tapsekret"
-    airflow variables -s "jetstream_cluster_ip" "127.0.0.1"
-    airflow variables -s "jetstream_cluster_cert" "cert"
+    airflow variables set "bugzilla_probe_expiry_bot_api_key" "bugzilla-api-key"
+    airflow variables set "app_store_connect_username" "username"
+    airflow variables set "app_store_connect_password" "password"
+    airflow variables set "surveygizmo_daily_attitudes_survey_id" "12345"
+    airflow variables set "surveygizmo_api_token" "tokentokentoken"
+    airflow variables set "surveygizmo_api_secret" "tapsekret"
+    airflow variables set "jetstream_cluster_ip" "127.0.0.1"
+    airflow variables set "jetstream_cluster_cert" "cert"
 
-    airflow variables -s "taar_bigtable_instance_id" "taar_bigtable_instance_id"
-    airflow variables -s "taar_etl_storage_bucket" "taar_etl_storage_bucket"
-    airflow variables -s "taar_etl_model_storage_bucket" "taar_etl_model_storage_bucket"
-    airflow variables -s "taar_gcp_project_id" "taar_gcp_project_id"
-    airflow variables -s "taar_dataflow_subnetwork" "taar_dataflow_subnetwork"
-    airflow variables -s "taar_dataflow_service_account_email" "taar_dataflow_service_account_email"
+    airflow variables set "taar_bigtable_instance_id" "taar_bigtable_instance_id"
+    airflow variables set "taar_etl_storage_bucket" "taar_etl_storage_bucket"
+    airflow variables set "taar_etl_model_storage_bucket" "taar_etl_model_storage_bucket"
+    airflow variables set "taar_gcp_project_id" "taar_gcp_project_id"
+    airflow variables set "taar_dataflow_subnetwork" "taar_dataflow_subnetwork"
+    airflow variables set "taar_dataflow_service_account_email" "taar_dataflow_service_account_email"
 
-    airflow variables -s "looker_repos_secret_git_ssh_key_b64" "looker_repos_secret_git_ssh_key_b64"
-    airflow variables -s "looker_api_client_id_staging" "looker_api_client_id_staging"
-    airflow variables -s "looker_api_client_secret_staging" "looker_api_client_secret_staging"
-    airflow variables -s "looker_api_client_id_prod" "looker_api_client_id_prod"
-    airflow variables -s "looker_api_client_secret_prod" "looker_api_client_secret_prod"
-    airflow variables -s "dataops_looker_github_secret_access_token" "dataops_looker_github_secret_access_token"
+    airflow variables set "looker_repos_secret_git_ssh_key_b64" "looker_repos_secret_git_ssh_key_b64"
+    airflow variables set "looker_api_client_id_staging" "looker_api_client_id_staging"
+    airflow variables set "looker_api_client_secret_staging" "looker_api_client_secret_staging"
+    airflow variables set "looker_api_client_id_prod" "looker_api_client_id_prod"
+    airflow variables set "looker_api_client_secret_prod" "looker_api_client_secret_prod"
+    airflow variables set "dataops_looker_github_secret_access_token" "dataops_looker_github_secret_access_token"
 
-    airflow variables -s "glean_dictionary_netlify_build_webhook_id" "status/200"
-    airflow variables -s "lookml_generator_release_str" "v0.0.0"
+    airflow variables set "glean_dictionary_netlify_build_webhook_id" "status/200"
+    airflow variables set "lookml_generator_release_str" "v0.0.0"
 }
 
 [ $# -lt 1 ] && usage
