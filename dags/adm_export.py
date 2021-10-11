@@ -52,7 +52,11 @@ with DAG(
             SFTP_PORT=str(conn.port),
             KNOWN_HOSTS=conn.extra_dejson["known_hosts"],
             SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_weekly_aggregates_v1",
-            DST_PATH='files/Aggregated-Query-Data-{{ macros.ds_format(macros.ds_add(ds, -6), "%Y-%m-%d", "%m%d%Y") }}-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
+            # The execution_date (ds) is always the beginning of the one-week period, so
+            # 7 days earlier than the start time of the job. The following path will be
+            # Aggregated-Query-Data-10042021-10102021.csv.gz
+            # for ds=2021-10-04 which actually runs on 2021-10-11.
+            DST_PATH='files/Aggregated-Query-Data--{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}-{{ macros.ds_format(macros.ds_add(ds, 6), "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
             SUBMISSION_DATE="{{ ds }}",
         ),
         email=[
