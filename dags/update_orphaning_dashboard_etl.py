@@ -1,6 +1,5 @@
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 
@@ -33,11 +32,11 @@ cluster_name = 'app-update-out-of-date-dataproc-cluster'
 
 # Defined in Airflow's UI -> Admin -> Connections
 gcp_conn_id = 'google_cloud_airflow_dataproc'
-connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
 
 # Required to write json output back to s3://telemetry-public-analysis-2/app-update/data/out-of-date/
 write_aws_conn_id='aws_dev_telemetry_public_analysis_2_rw'
-aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credentials()
+aws_access_key, aws_secret_key, session = AwsBaseHook(
+    aws_conn_id=write_aws_conn_id, client_type='s3').get_credentials()
 
 crash_report_parquet = SubDagOperator(
     task_id="update_orphaning_dashboard_etl",

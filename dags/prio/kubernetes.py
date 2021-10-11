@@ -2,10 +2,9 @@ from datetime import timedelta
 from os import environ
 
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.gcp_container_operator import (
-    GKEClusterCreateOperator,
-    GKEClusterDeleteOperator,
+from airflow.providers.google.cloud.operators.kubernetes_engine import (
+    GKECreateClusterOperator,
+    GKEDeleteClusterOperator,
 )
 from airflow.operators.bash_operator import BashOperator
 from operators.gcp_container_operator import GKEPodOperator
@@ -17,6 +16,7 @@ def container_subdag(
     child_dag_name,
     default_args,
     gcp_conn_id,
+    project_id,
     service_account,
     server_id,
     env_vars={},
@@ -35,6 +35,7 @@ def container_subdag(
     :param str child_dag_name:          Name of the child DAG.
     :param Dict[str, Any] default_args: Default arguments for the child DAG.
     :param str gcp_conn_id:             Name of the connection string.
+    :param str project_id:              GCP project id associated with the gcp_conn_id.
     :param str service_account:         The address of the service account.
     :param str server_id:               The identifier for the Prio processor
     :param Dict[str, str] env_vars:     Environment variables for configuring
@@ -50,12 +51,10 @@ def container_subdag(
     """
     assert server_id in ["a", "b", "admin"]
 
-    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
-
     cluster_name = f"gke-prio-{server_id}"
 
     shared_config = {
-        "project_id": connection.project_id,
+        "project_id": project_id,
         "gcp_conn_id": gcp_conn_id,
         "location": location,
     }
@@ -67,7 +66,7 @@ def container_subdag(
         # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
         # https://cloud.google.com/composer/docs/how-to/using/using-kubernetes-pod-operator
         # https://airflow.apache.org/docs/stable/_api/airflow/contrib/operators/kubernetes_pod_operator/index.html
-        create_gke_cluster = GKEClusterCreateOperator(
+        create_gke_cluster = GKECreateClusterOperator(
             task_id="create_gke_cluster",
             body=create_gke_config(
                 name=cluster_name,
@@ -141,7 +140,7 @@ def container_subdag(
             **kwargs,
         )
 
-        delete_gke_cluster = GKEClusterDeleteOperator(
+        delete_gke_cluster = GKEDeleteClusterOperator(
             task_id="delete_gke_cluster",
             name=cluster_name,
             trigger_rule="all_done",

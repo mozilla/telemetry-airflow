@@ -126,5 +126,3 @@ AUTH_ROLE_PUBLIC = 'Admin'
 # APP_THEME = "superhero.css"
 # APP_THEME = "united.css"
 # APP_THEME = "yeti.css"
-
-

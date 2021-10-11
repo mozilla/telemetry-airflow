@@ -44,10 +44,10 @@ fi
 CONTAINER_ID=$(docker ps | grep _web | cut -d' ' -f1)
 
 echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
-docker exec $CONTAINER_ID airflow connections -d --conn_id $GCP_CONN_ID
+docker exec $CONTAINER_ID airflow connections delete $GCP_CONN_ID
 
-docker exec $CONTAINER_ID airflow connections -a --conn_id $GCP_CONN_ID \
-       --conn_type google_cloud_platform \
-       --conn_extra "$JSON_CREDS"
+docker exec $CONTAINER_ID airflow connections add $GCP_CONN_ID \
+       --conn-type google_cloud_platform \
+       --conn-extra "$JSON_CREDS"
 
 echo "visit https://go.corp.mozilla.com/wtmodev for more info"

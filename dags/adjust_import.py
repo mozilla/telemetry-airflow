@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.sensors import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,

@@ -37,10 +37,9 @@ the environment.
 from functools import partial
 
 from airflow import DAG
-from airflow.contrib.operators.gcs_to_gcs import (
-    GoogleCloudStorageToGoogleCloudStorageOperator,
-)
-from airflow.operators import DummyOperator, PythonOperator
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+from airflow.operators.python import PythonOperator
+from airflow.operators.dummy import DummyOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from prio import dataproc, kubernetes
 
@@ -56,7 +55,7 @@ def transfer_data_subdag(
     submission_date,
     server_id,
     public_key_hex_external,
-    google_cloud_storage_conn_id,
+    gcp_conn_id,
 ):
     """Copy the partitioned data from the staging bucket into the corresponding
     receiving buckets in each processor. The job then submits a `_SUCCESS` file
@@ -78,22 +77,22 @@ def transfer_data_subdag(
                 "raw/shares",
             ]
         )
-        transfer_dataset = GoogleCloudStorageToGoogleCloudStorageOperator(
+        transfer_dataset = GCSToGCSOperator(
             task_id="transfer_dataset",
             source_bucket=source_bucket,
             source_object=f"staging/submission_date={submission_date}/server_id={server_id}/*",
             destination_bucket=destination_bucket,
             destination_object=f"{prefix}/",
-            google_cloud_storage_conn_id=google_cloud_storage_conn_id,
+            gcp_conn_id=gcp_conn_id,
             dag=dag,
         )
-        mark_dataset_success = GoogleCloudStorageToGoogleCloudStorageOperator(
+        mark_dataset_success = GCSToGCSOperator(
             task_id="mark_dataset_success",
             source_bucket=source_bucket,
             source_object="staging/_SUCCESS",
             destination_bucket=destination_bucket,
             destination_object=f"{prefix}/_SUCCESS",
-            google_cloud_storage_conn_id=google_cloud_storage_conn_id,
+            gcp_conn_id=gcp_conn_id,
             dag=dag,
         )
         transfer_dataset >> mark_dataset_success
@@ -104,6 +103,7 @@ def ingestion_subdag(
     dag,
     default_args,
     gcp_conn_id,
+    project_id,
     service_account,
     bucket_bootstrap_admin,
     bucket_data_admin,
@@ -125,13 +125,14 @@ def ingestion_subdag(
             default_args=default_args,
             server_id="admin",
             gcp_conn_id=gcp_conn_id,
+            project_id=project_id,
             service_account=service_account,
             arguments=[
                 "bash",
                 "-xc",
                 f"source bin/dataproc; bootstrap gs://{bucket_bootstrap_admin}",
             ],
-            env_var=dict(SUBMODULE="origin"),
+            env_vars=dict(SUBMODULE="origin"),
         ),
         task_id="bootstrap",
         dag=dag,
@@ -144,6 +145,7 @@ def ingestion_subdag(
             child_dag_name="staging",
             default_args=default_args,
             gcp_conn_id=gcp_conn_id,
+            project_id=project_id,
             service_account=service_account,
             main=f"gs://{bucket_bootstrap_admin}/processor-origin.py",
             pyfiles=[f"gs://{bucket_bootstrap_admin}/prio_processor.egg"],
@@ -175,7 +177,7 @@ def ingestion_subdag(
         destination_bucket_prefix=bucket_prefix,
         app_name=app_name,
         submission_date="{{ ds }}",
-        google_cloud_storage_conn_id=gcp_conn_id,
+        gcp_conn_id=gcp_conn_id,
     )
 
     transfer_a = SubDagOperator(
@@ -213,7 +215,7 @@ def ingestion_subdag(
 
 
 def prio_processor_subdag(
-    dag, default_args, gcp_conn_id, service_account, server_id, env_vars
+    dag, default_args, gcp_conn_id, project_id, service_account, server_id, env_vars
 ):
     return SubDagOperator(
         subdag=kubernetes.container_subdag(
@@ -221,6 +223,7 @@ def prio_processor_subdag(
             child_dag_name=f"processor_{server_id}",
             default_args=default_args,
             gcp_conn_id=gcp_conn_id,
+            project_id=project_id,
             service_account=service_account,
             server_id=server_id,
             arguments=["bin/process"],
@@ -231,7 +234,7 @@ def prio_processor_subdag(
     )
 
 
-def load_bigquery_subdag(dag, default_args, gcp_conn_id, service_account, env_vars):
+def load_bigquery_subdag(dag, default_args, gcp_conn_id, project_id, service_account, env_vars):
     # Take the resulting aggregates and insert them into a BigQuery table. This
     # table is effectively append-only, so rerunning the dag will cause duplicate
     # results. In practice, rerunning the DAG is problematic when operation is
@@ -243,6 +246,7 @@ def load_bigquery_subdag(dag, default_args, gcp_conn_id, service_account, env_va
             default_args=default_args,
             server_id="admin",
             gcp_conn_id=gcp_conn_id,
+            project_id=project_id,
             service_account=service_account,
             arguments=["bash", "-c", "bin/insert"],
             env_vars=env_vars,

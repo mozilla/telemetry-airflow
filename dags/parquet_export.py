@@ -1,14 +1,8 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.executors import get_default_executor
 from airflow.operators.subdag_operator import SubDagOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
-from utils.dataproc import (
-    moz_dataproc_pyspark_runner,
-    moz_dataproc_jar_runner,
-    get_dataproc_parameters,
-)
+
 from utils.gcp import (
     bigquery_etl_query,
     bigquery_etl_copy_deduplicate,
@@ -91,7 +85,6 @@ main_summary_export = SubDagOperator(
         default_args=default_args,
         num_workers=40),
     task_id="main_summary_export",
-    executor=get_default_executor(),
     dag=dag)
 
 clients_daily_export = SubDagOperator(
@@ -141,7 +134,6 @@ clients_daily_export = SubDagOperator(
         default_args=default_args,
         num_preemptible_workers=10),
     task_id="clients_daily_export",
-    executor=get_default_executor(),
     dag=dag)
 
 wait_for_clients_daily = ExternalTaskCompletedSensor(

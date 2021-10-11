@@ -1,4 +1,4 @@
-{% extends 'airflow/master.html' %}
+{% extends base_template %}
 
 {% block title %}Airflow - Backfill Plugin{% endblock %}
 
@@ -320,13 +320,12 @@
 </style>
 {% endblock %}
 {% block body %}
-{% if  rbac_authentication_enabled %}
+
 {% block navbar %}
 <header class="top" role="header">
 	{% include 'appbuilder/navbar.html' %}
 </header>
 {% endblock %}
-{%endif%}
 
 <div class="container">
 	<h1>Backfill (Alpha)</h1>

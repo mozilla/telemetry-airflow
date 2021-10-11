@@ -5,6 +5,7 @@ services:
     image: mysql:5.7
     ports:
       - '3306:3306'
+    # command: ['--explicit_defaults_for_timestamp=1', '--character-set-server=utf8mb4']
     command: ['--explicit_defaults_for_timestamp=1']
     environment:
        MYSQL_ROOT_PASSWORD: secret
@@ -51,10 +52,11 @@ services:
       - AIRFLOW_EMAIL_BACKEND=airflow.macros.log_email_backend.log_email_backend
       - AIRFLOW__KUBERNETES__IN_CLUSTER=False
       - URL=http://localhost:8000
-      - WEBSERVER_USE_RBAC=False
       # URL-encoded dummy connections; note that we define some other connections
       # in the bin/run script
       - AIRFLOW_CONN_ADM_SFTP=ftp://myname:mypassword@myhost.com:8000?known_hosts=myhost.com+AAAABBBBB
+      # TODO(hwoo) - improve developer workflow by not loading all dags
+      # - AIRFLOW__CORE__DAGS_FOLDER=$AIRFLOW_HOME/devdags
 
   web:
     extends:

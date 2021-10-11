@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
@@ -35,7 +35,7 @@ dag = DAG("firefox_public_data_report", default_args=default_args, schedule_inte
 
 # Required to write json output to s3://telemetry-public-analysis-2/public-data-report/hardware/
 write_aws_conn_id='aws_dev_telemetry_public_analysis_2_rw'
-aws_access_key, aws_secret_key, session = AwsHook(write_aws_conn_id).get_credentials()
+aws_access_key, aws_secret_key, session = AwsBaseHook(aws_conn_id=write_aws_conn_id, client_type='s3').get_credentials()
 
 # hardware_report's execution date will be {now}-7days. It will read last week's main pings,
 # therefore we need to wait for yesterday's Main Ping deduplication task to finish

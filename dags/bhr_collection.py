@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
@@ -29,7 +29,7 @@ with DAG(
 ) as dag:
     # Jobs read from/write to s3://telemetry-public-analysis-2/bhr/data/hang_aggregates/
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'
-    aws_access_key, aws_secret_key, _ = AwsHook(write_aws_conn_id).get_credentials()
+    aws_access_key, aws_secret_key, _ = AwsBaseHook(aws_conn_id=write_aws_conn_id, client_type='s3').get_credentials()
 
     wait_for_bhr_ping = ExternalTaskCompletedSensor(
         task_id="wait_for_bhr_ping",
