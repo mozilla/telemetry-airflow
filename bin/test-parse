@@ -16,7 +16,7 @@ function inject_failing_dags() {
     tee << EOF > ${test_0}
 from airflow import DAG
 from airflow.models import Variable
-Variable.get('non_existent_variable')
+Variable(key='non_existent_variable').get('non_existent_variable')
 EOF
 
     function cleanup_with_tests() {
