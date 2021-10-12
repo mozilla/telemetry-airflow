@@ -12,6 +12,7 @@ from utils.dataproc import (
     copy_artifacts_dev,
     get_dataproc_parameters,
 )
+from utils.gcp import bigquery_etl_query
 
 
 default_args = {
@@ -142,4 +143,14 @@ ltv_normalized_view=BigQueryOperator(
     schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
 
-ltv_daily >> ltv_revenue_join >> ltv_normalized_view
+client_ltv_normalized_v1 = bigquery_etl_query(
+    task_id="client_ltv_normalized_v1",
+    destination_table="client_ltv_normalized_v1",
+    project_id="moz-fx-data-shared-prod",
+    dataset_id="revenue_derived",
+    date_partition_parameter=None,
+    arguments=("--replace",),
+    dag=dag,
+)
+
+ltv_daily >> ltv_revenue_join >> [ltv_normalized_view, client_ltv_normalized_v1]
