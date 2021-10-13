@@ -1,12 +1,11 @@
 from airflow import DAG
 from airflow.operators.subdag_operator import SubDagOperator
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.bigquery_table_delete_operator import (
-    BigQueryTableDeleteOperator,
+from airflow.providers.google.cloud.operators.bigquery import (
+    BigQueryDeleteTableOperator,
 )
-from airflow.contrib.operators.gcp_transfer_operator import (
-    S3ToGoogleCloudStorageTransferOperator,
+
+from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
+     CloudDataTransferServiceS3ToGCSOperator
 )
 
 from datetime import datetime, timedelta
@@ -53,7 +52,7 @@ cluster_name = "socorro-import-dataproc-cluster"
 
 # Defined in Airflow's UI -> Admin -> Connections
 gcp_conn_id = "google_cloud_airflow_dataproc"
-connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
+project_id = "airflow-dataproc"
 
 # Required to copy socorro json data from aws prod s3 to gcs
 read_aws_conn_id = "aws_socorro_readonly_s3"
@@ -73,14 +72,14 @@ objects_prefix = "{}/{}/{}={}".format(
 )
 
 # copy json crashstats from s3 to gcs
-s3_to_gcs = S3ToGoogleCloudStorageTransferOperator(
+s3_to_gcs = CloudDataTransferServiceS3ToGCSOperator(
     task_id="s3_to_gcs",
     s3_bucket="crashstats-telemetry-crashes-prod-us-west-2",
+    project_id=project_id,
     gcs_bucket=gcs_data_bucket,
     description="socorro crash report copy from s3 to gcs",
     aws_conn_id=read_aws_conn_id,
     gcp_conn_id=gcp_conn_id,
-    project_id=connection.project_id,
     object_conditions={"includePrefixes": "v1/crash_report/{{ ds_nodash }}"},
     transfer_options={"deleteObjectsUniqueInSink": True},
     timeout=3600,
@@ -116,7 +115,7 @@ crash_report_parquet = SubDagOperator(
 
 
 bq_gcp_conn_id = "google_cloud_derived_datasets"
-bq_connection = GoogleCloudBaseHook(gcp_conn_id=bq_gcp_conn_id)
+bq_project_id = "moz-fx-data-derived-datasets"
 
 dest_s3_key = "s3://telemetry-parquet"
 
@@ -142,9 +141,9 @@ gke_args = [
 ]
 
 # We remove the current date partition for idempotency.
-remove_bq_table_partition = BigQueryTableDeleteOperator(
+remove_bq_table_partition = BigQueryDeleteTableOperator(
     task_id="remove_bq_table_partition",
-    bigquery_conn_id=bq_gcp_conn_id,
+    gcp_conn_id=bq_gcp_conn_id,
     deletion_dataset_table="{}.{}${{{{ds_nodash}}}}".format(bq_dataset, bq_table_name),
     ignore_if_missing=True,
     dag=dag,
@@ -153,7 +152,7 @@ remove_bq_table_partition = BigQueryTableDeleteOperator(
 bq_load = GKEPodOperator(
     task_id="bigquery_load",
     gcp_conn_id=bq_gcp_conn_id,
-    project_id=bq_connection.project_id,
+    project_id=bq_project_id,
     name="load-socorro-crash-parquet-to-bq",
     image=docker_image,
     arguments=gke_args,

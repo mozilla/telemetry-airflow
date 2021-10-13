@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
-from airflow.operators.sensors import ExternalTaskSensor
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.models import Variable
 from itertools import chain
@@ -21,14 +21,16 @@ TAAR_ETL_CONTAINER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.
 
 
 # Dataproc connection to GCP
-gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
+taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
+taar_gcpdataproc_project_id = "airflow-dataproc"
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
-taar_aws_access_key, taar_aws_secret_key, session = AwsHook(taar_aws_conn_id).get_credentials()
+taar_aws_access_key, taar_aws_secret_key, session = AwsBaseHook(
+    aws_conn_id=taar_aws_conn_id, client_type='s3').get_credentials()
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
 taar_similarity_cluster_name = "dataproc-taar-similarity"
-taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
+
 
 default_args = {
     "owner": "epavlov@mozilla.com",
@@ -107,7 +109,8 @@ taar_locale = SubDagOperator(
             "--prefix",
             "taar/locale",
         ],
-        gcp_conn_id=taar_gcpdataproc_conn_id
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id
     ),
     dag=dag
 )
@@ -136,6 +139,7 @@ taar_similarity = SubDagOperator(
             "--prefix", "taar/similarity"
         ],
         gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
         master_disk_type="pd-ssd",
         worker_disk_type="pd-ssd",
         master_disk_size=1024,
@@ -176,6 +180,7 @@ taar_collaborative_recommender = SubDagOperator(
         init_actions_uris=[],
         aws_conn_id=taar_aws_conn_id,
         gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
         default_args=default_args
     ),
     dag=dag,
@@ -204,9 +209,11 @@ taar_lite = SubDagOperator(
             "--prefix", "taar/lite"
         ],
         gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
     ),
     dag=dag,
 )
+
 
 
 taar_lite_guidranking = GKEPodOperator(
@@ -230,3 +237,4 @@ wait_for_clients_daily_export >> taar_locale
 wait_for_clients_daily_export >> taar_collaborative_recommender
 wait_for_clients_daily_export >> taar_lite
 wait_for_clients_daily_export >> taar_lite_guidranking
+

@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 
 from utils.gcp import bigquery_etl_query, gke_command
 
-from airflow.operators.sensors import ExternalTaskSensor
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
 from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
@@ -18,6 +17,8 @@ default_args = {
 # We rely on max_active_runs=1 at the DAG level to manage the dependency on past runs.
 with DAG('experiments_live',
          default_args=default_args,
+         # Will be renamed to max_active_tasks sometime later as main upstream branch states
+         # max_active_tasks=4,
          concurrency=4,
          max_active_runs=1,
          schedule_interval="*/5 * * * *") as dag:

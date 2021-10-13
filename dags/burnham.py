@@ -10,13 +10,12 @@ import uuid
 import time
 
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.operators import PythonOperator
+from airflow.operators.python import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
 
 DOCS = """\
-# burnham 👩‍🚀📈🤖
+# burnham
 
 The burnham project is an end-to-end test suite that aims to automatically
 verify that Glean-based products correctly measure, collect, and submit
@@ -359,6 +358,7 @@ WHERE
 
 # GCP and GKE default values
 DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
+DEFAULT_GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
 DEFAULT_GKE_LOCATION = "us-central1-a"
 DEFAULT_GKE_CLUSTER_NAME = "bq-load-gke-1"
 DEFAULT_GKE_NAMESPACE = "default"
@@ -420,7 +420,7 @@ def burnham_run(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=DEFAULT_GCP_PROJECT_ID,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -446,7 +446,7 @@ def burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
     return BigQuerySQLSensorOperator(
         task_id=task_id,
         sql=sql,
-        bigquery_conn_id=gcp_conn_id,
+        gcp_conn_id=gcp_conn_id,
         use_legacy_sql=False,
         **kwargs,
     )
@@ -483,7 +483,7 @@ def burnham_bigquery_run(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=DEFAULT_GCP_PROJECT_ID,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,

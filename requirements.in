@@ -1,16 +1,11 @@
 boto3==1.15.18
 botocore<1.19.0,>=1.18.0
 kombu==4.6.10 # CeleryExecutor issues with 1.10.2 supposedly fixed in 1.10.5 airflow, but still observed issues on 1.10.7
-importlib-metadata==2.1.0
+importlib-metadata>=1.7
 argcomplete==1.12.2
 pandas-gbq==0.14.1
 # removed hdfs
-apache-airflow[celery,postgres,hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,s3,mysql,google_auth,gcp_api,kubernetes]==1.10.15
-apache-airflow-upgrade-check
-# Airflow 2.0 backported providers
-apache-airflow-backport-providers-google
-apache-airflow-backport-providers-amazon
-apache-airflow-backport-providers-http
+apache-airflow[amazon,celery,postgres,apache.hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,mysql,google_auth,cncf.kubernetes]==2.1.1
 cryptography>=3.2
 mozlogging
 retrying
@@ -19,11 +14,14 @@ redis
 hiredis
 requests
 jsonschema
+flask-admin
 Flask-OAuthlib
+Authlib~=0.15.3
+Flask-AppBuilder>=3.3.0
 pytz
-werkzeug==0.16.0
+werkzeug>=1.0.1,~=1.0
 # The next requirements are for kubernetes-client/python
-urllib3>=1.24.2 # MIT
+urllib3>=1.24.2  # MIT
 ipaddress>=1.0.17;python_version=="2.7"  # PSF
 websocket-client>=0.32.0,!=0.40.0,!=0.41.*,!=0.42.* # LGPLv2+
 # Pin to older version, newer version has issues
@@ -31,4 +29,13 @@ JPype1==0.7.1
 shelljob==0.5.6
 # Fix no inspection available issue
 # https://github.com/apache/airflow/issues/8211
-SQLAlchemy==1.3.15
+SQLAlchemy>=1.3.18
+# Airflow 2 no longer installs http provider by default, until chardet becomes an optional dependency of requests
+apache-airflow-providers-http
+airflow-provider-fivetran
+# Upgrade google dataproc provider to fix beta client clusterConfig and mismatch issues
+apache-airflow-providers-google==5.0.0
+# 2.4.0 is broken for dataproc cluster create/delete
+# 2.6.0 and 3.0.0 are newer but not compatible with apache-airflow-providers-google
+# yet until maybe v7.0.0 bc 'google.cloud.dataproc_v1beta2' is deprecated
+google-cloud-dataproc==2.5.0

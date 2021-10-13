@@ -5,9 +5,8 @@ from sqlalchemy import func
 
 from airflow.exceptions import AirflowException
 from airflow.models import DagBag, DagModel, DagRun, TaskInstance
-from airflow.operators.sensors import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.db import provide_session
-from airflow.utils.decorators import apply_defaults
 from airflow.utils.state import State
 
 
@@ -28,7 +27,6 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
 
     """
 
-    @apply_defaults
     def __init__(self, failed_states = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.failed_states = failed_states or [State.FAILED, State.UPSTREAM_FAILED, State.SKIPPED]
@@ -41,7 +39,7 @@ class ExternalTaskCompletedSensor(ExternalTaskSensor):
             dttm = context['execution_date'] - self.execution_delta
         elif self.execution_date_fn:
             # Moz specific - _handle_execution_date_fn may not be defined in this context
-            raise AirflowException("execution_date_fn is not supported by this sensor.")
+            raise AirflowException("execution_date_fn is not supported by this custom mozilla sensor.")
         else:
             dttm = context['execution_date']
 

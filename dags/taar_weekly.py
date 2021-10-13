@@ -12,6 +12,7 @@ from utils.dataproc import moz_dataproc_pyspark_runner
 
 taar_ensemble_cluster_name = "dataproc-taar-ensemble"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
+taar_gcpdataproc_project_id = "airflow-dataproc"
 
 TAAR_BIGTABLE_INSTANCE_ID = Variable.get("taar_bigtable_instance_id")
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
@@ -181,6 +182,7 @@ taar_ensemble = SubDagOperator(
             "0.005",
         ],
         gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
         master_disk_type="pd-ssd",
         worker_disk_type="pd-ssd",
         master_disk_size=1024,

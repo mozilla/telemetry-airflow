@@ -4,156 +4,184 @@
 #
 #    pip-compile
 #
+airflow-provider-fivetran==1.0.1  # via -r requirements.in
 alembic==1.6.5            # via apache-airflow
 amqp==2.6.1               # via kombu
-apache-airflow-backport-providers-amazon==2021.3.3  # via -r requirements.in
-apache-airflow-backport-providers-google==2021.3.3  # via -r requirements.in
-apache-airflow-backport-providers-http==2021.4.10  # via -r requirements.in
-apache-airflow-upgrade-check==1.4.0  # via -r requirements.in
-apache-airflow[async,celery,crypto,datadog,gcp_api,github_enterprise,google_auth,hive,jdbc,kubernetes,mysql,password,postgres,s3,statsd]==1.10.15  # via -r requirements.in, apache-airflow-backport-providers-amazon, apache-airflow-backport-providers-google, apache-airflow-upgrade-check
-apispec[yaml]==1.3.3      # via flask-appbuilder
-argcomplete==1.12.2       # via -r requirements.in, apache-airflow
+anyio==3.3.0              # via httpcore
+apache-airflow-providers-amazon==2.1.0  # via apache-airflow
+apache-airflow-providers-apache-hive==2.0.1  # via apache-airflow
+apache-airflow-providers-celery==2.0.0  # via apache-airflow
+apache-airflow-providers-cncf-kubernetes==2.0.2  # via apache-airflow
+apache-airflow-providers-datadog==2.0.0  # via apache-airflow
+apache-airflow-providers-ftp==2.0.0  # via apache-airflow
+apache-airflow-providers-google==5.0.0  # via -r requirements.in
+apache-airflow-providers-http==2.0.0  # via -r requirements.in
+apache-airflow-providers-imap==2.0.0  # via apache-airflow
+apache-airflow-providers-jdbc==2.0.0  # via apache-airflow
+apache-airflow-providers-mysql==2.1.0  # via apache-airflow
+apache-airflow-providers-postgres==2.0.0  # via apache-airflow
+apache-airflow-providers-sqlite==2.0.0  # via apache-airflow
+apache-airflow[amazon,apache.hive,async,celery,cncf.kubernetes,crypto,datadog,github_enterprise,google_auth,jdbc,mysql,password,postgres,statsd]==2.1.1  # via -r requirements.in, airflow-provider-fivetran, apache-airflow-providers-amazon, apache-airflow-providers-apache-hive, apache-airflow-providers-celery, apache-airflow-providers-cncf-kubernetes, apache-airflow-providers-datadog, apache-airflow-providers-google, apache-airflow-providers-http, apache-airflow-providers-jdbc, apache-airflow-providers-mysql, apache-airflow-providers-postgres
+apispec[yaml]==3.3.2      # via flask-appbuilder
+argcomplete==1.12.2       # via -r requirements.in, apache-airflow, nox
 attrs==20.3.0             # via apache-airflow, cattrs, jsonschema
+authlib==0.15.4           # via -r requirements.in
 babel==2.9.1              # via flask-babel
+backports.entry-points-selectable==1.1.0  # via virtualenv
 bcrypt==3.2.0             # via apache-airflow, flask-bcrypt
 billiard==3.6.4.0         # via celery
-boto3==1.15.18            # via -r requirements.in, apache-airflow, apache-airflow-backport-providers-amazon, watchtower
-botocore==1.18.18         # via -r requirements.in, apache-airflow-backport-providers-amazon, boto3, s3transfer
+blinker==1.4              # via apache-airflow
+boto3==1.15.18            # via -r requirements.in, apache-airflow-providers-amazon, watchtower
+botocore==1.18.18         # via -r requirements.in, boto3, s3transfer
 cached-property==1.5.2    # via apache-airflow
 cachetools==4.2.2         # via google-auth
-cattrs==1.7.1             # via apache-airflow
-celery==4.4.7             # via apache-airflow, flower
-certifi==2021.5.30        # via kubernetes, requests
+cattrs==1.5.0             # via apache-airflow
+celery==4.4.7             # via apache-airflow-providers-celery, flower
+certifi==2021.5.30        # via httpx, kubernetes, requests
 cffi==1.14.6              # via bcrypt, cryptography, google-crc32c
 chardet==3.0.4            # via requests
-click==7.1.2              # via flask, flask-appbuilder, hmsclient
-colorama==0.4.4           # via flask-appbuilder
-colorlog==4.0.2           # via apache-airflow
-configparser==3.5.3       # via apache-airflow
+charset-normalizer==2.0.4  # via httpx
+click==7.1.2              # via clickclick, flask, flask-appbuilder, hmsclient
+clickclick==20.10.2       # via apache-airflow
+colorama==0.4.4           # via flask-appbuilder, rich
+colorlog==4.0.2           # via apache-airflow, nox
+commonmark==0.9.1         # via rich
 croniter==0.3.37          # via apache-airflow
-cryptography==3.4.7       # via -r requirements.in, apache-airflow, pyopenssl
-datadog==0.42.0           # via apache-airflow
+cryptography==3.4.7       # via -r requirements.in, apache-airflow, apache-airflow-providers-cncf-kubernetes, authlib, pyopenssl
+datadog==0.42.0           # via apache-airflow-providers-datadog
 defusedxml==0.7.1         # via python3-openid
 dill==0.3.4               # via apache-airflow
+distlib==0.3.2            # via virtualenv
 dnspython==1.16.0         # via email-validator, eventlet
-docutils==0.17.1          # via python-daemon
-email-validator==1.1.3    # via apache-airflow, flask-appbuilder
+docutils==0.16            # via apache-airflow, python-daemon
+email-validator==1.1.3    # via flask-appbuilder
 eventlet==0.31.1          # via apache-airflow
-flask-admin==1.5.4        # via apache-airflow
-flask-appbuilder==2.3.4   # via apache-airflow
+filelock==3.0.12          # via virtualenv
+flask-admin==1.5.8        # via -r requirements.in
+flask-appbuilder==3.3.2   # via -r requirements.in, apache-airflow
 flask-babel==1.0.0        # via flask-appbuilder
 flask-bcrypt==0.7.1       # via apache-airflow
-flask-caching==1.3.3      # via apache-airflow
+flask-caching==1.10.1     # via apache-airflow
 flask-jwt-extended==3.25.1  # via flask-appbuilder
 flask-login==0.4.1        # via apache-airflow, flask-appbuilder
 flask-oauthlib==0.9.5     # via -r requirements.in, apache-airflow
 flask-openid==1.2.5       # via flask-appbuilder
 flask-sqlalchemy==2.5.1   # via flask-appbuilder
-flask-swagger==0.2.14     # via apache-airflow
 flask-wtf==0.14.3         # via apache-airflow, flask-appbuilder
-flask==1.1.4              # via apache-airflow, flask-admin, flask-appbuilder, flask-babel, flask-bcrypt, flask-caching, flask-jwt-extended, flask-login, flask-oauthlib, flask-openid, flask-sqlalchemy, flask-swagger, flask-wtf
-flower==0.9.7             # via apache-airflow
-funcsigs==1.0.2           # via apache-airflow
-future==0.18.2            # via apache-airflow, pyhive
+flask==1.1.4              # via apache-airflow, flask-admin, flask-appbuilder, flask-babel, flask-bcrypt, flask-caching, flask-jwt-extended, flask-login, flask-oauthlib, flask-openid, flask-sqlalchemy, flask-wtf
+flower==0.9.7             # via apache-airflow-providers-celery
+future==0.18.2            # via pyhive
 gevent==21.1.2            # via apache-airflow
-google-ads==7.0.0         # via apache-airflow-backport-providers-google
-google-api-core[grpc,grpcgcp]==1.31.0  # via apache-airflow-backport-providers-google, google-ads, google-api-python-client, google-cloud-appengine-logging, google-cloud-automl, google-cloud-bigquery, google-cloud-bigquery-datatransfer, google-cloud-bigquery-storage, google-cloud-bigtable, google-cloud-container, google-cloud-core, google-cloud-datacatalog, google-cloud-dataproc, google-cloud-dlp, google-cloud-kms, google-cloud-language, google-cloud-logging, google-cloud-memcache, google-cloud-monitoring, google-cloud-os-login, google-cloud-pubsub, google-cloud-redis, google-cloud-secret-manager, google-cloud-spanner, google-cloud-speech, google-cloud-tasks, google-cloud-texttospeech, google-cloud-translate, google-cloud-videointelligence, google-cloud-vision, google-cloud-workflows
-google-api-python-client==1.12.8  # via apache-airflow, apache-airflow-backport-providers-google
-google-auth-httplib2==0.1.0  # via apache-airflow, apache-airflow-backport-providers-google, google-api-python-client
+google-ads==13.0.0        # via apache-airflow-providers-google
+google-api-core[grpc,grpcgcp]==1.31.0  # via apache-airflow-providers-google, google-ads, google-api-python-client, google-cloud-appengine-logging, google-cloud-automl, google-cloud-bigquery, google-cloud-bigquery-datatransfer, google-cloud-bigquery-storage, google-cloud-bigtable, google-cloud-container, google-cloud-core, google-cloud-datacatalog, google-cloud-dataproc, google-cloud-dlp, google-cloud-kms, google-cloud-language, google-cloud-logging, google-cloud-memcache, google-cloud-monitoring, google-cloud-os-login, google-cloud-pubsub, google-cloud-redis, google-cloud-secret-manager, google-cloud-spanner, google-cloud-speech, google-cloud-tasks, google-cloud-texttospeech, google-cloud-translate, google-cloud-videointelligence, google-cloud-vision, google-cloud-workflows
+google-api-python-client==1.12.8  # via apache-airflow-providers-google
+google-auth-httplib2==0.1.0  # via apache-airflow-providers-google, google-api-python-client
 google-auth-oauthlib==0.4.4  # via google-ads, pandas-gbq, pydata-google-auth
-google-auth==1.32.1       # via apache-airflow, apache-airflow-backport-providers-google, google-api-core, google-api-python-client, google-auth-httplib2, google-auth-oauthlib, google-cloud-core, google-cloud-storage, kubernetes, pandas-gbq, pydata-google-auth
+google-auth==1.32.1       # via apache-airflow-providers-google, google-api-core, google-api-python-client, google-auth-httplib2, google-auth-oauthlib, google-cloud-core, google-cloud-storage, kubernetes, pandas-gbq, pydata-google-auth
 google-cloud-appengine-logging==0.1.1  # via google-cloud-logging
 google-cloud-audit-log==0.1.0  # via google-cloud-logging
-google-cloud-automl==2.4.0  # via apache-airflow-backport-providers-google
-google-cloud-bigquery-datatransfer==3.3.0  # via apache-airflow-backport-providers-google
+google-cloud-automl==2.4.0  # via apache-airflow-providers-google
+google-cloud-bigquery-datatransfer==3.3.0  # via apache-airflow-providers-google
 google-cloud-bigquery-storage==2.6.0  # via google-cloud-bigquery
 google-cloud-bigquery[bqstorage,pandas]==2.20.0  # via pandas-gbq
-google-cloud-bigtable==1.7.0  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-container==1.0.1  # via apache-airflow, apache-airflow-backport-providers-google
+google-cloud-bigtable==1.7.0  # via apache-airflow-providers-google
+google-cloud-container==1.0.1  # via apache-airflow-providers-google
 google-cloud-core==1.7.1  # via google-cloud-bigquery, google-cloud-bigtable, google-cloud-logging, google-cloud-spanner, google-cloud-storage, google-cloud-translate
-google-cloud-datacatalog==3.3.0  # via apache-airflow-backport-providers-google
-google-cloud-dataproc==2.4.0  # via apache-airflow-backport-providers-google
-google-cloud-dlp==1.0.0   # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-kms==2.4.0   # via apache-airflow-backport-providers-google
-google-cloud-language==1.3.0  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-logging==2.5.0  # via apache-airflow-backport-providers-google
-google-cloud-memcache==1.1.0  # via apache-airflow-backport-providers-google
-google-cloud-monitoring==2.4.0  # via apache-airflow-backport-providers-google
-google-cloud-os-login==2.2.1  # via apache-airflow-backport-providers-google
-google-cloud-pubsub==2.6.1  # via apache-airflow-backport-providers-google
-google-cloud-redis==2.2.0  # via apache-airflow-backport-providers-google
-google-cloud-secret-manager==1.0.0  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-spanner==1.19.1  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-speech==1.3.2  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-storage==1.40.0  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-tasks==2.4.0  # via apache-airflow-backport-providers-google
-google-cloud-texttospeech==1.0.1  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-translate==1.7.0  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-videointelligence==1.16.1  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-vision==1.0.0  # via apache-airflow, apache-airflow-backport-providers-google
-google-cloud-workflows==1.1.0  # via apache-airflow-backport-providers-google
+google-cloud-datacatalog==3.3.0  # via apache-airflow-providers-google
+google-cloud-dataproc==2.5.0  # via -r requirements.in, apache-airflow-providers-google
+google-cloud-dlp==1.0.0   # via apache-airflow-providers-google
+google-cloud-kms==2.4.0   # via apache-airflow-providers-google
+google-cloud-language==1.3.0  # via apache-airflow-providers-google
+google-cloud-logging==2.5.0  # via apache-airflow-providers-google
+google-cloud-memcache==1.0.0  # via apache-airflow-providers-google
+google-cloud-monitoring==2.4.0  # via apache-airflow-providers-google
+google-cloud-os-login==2.2.1  # via apache-airflow-providers-google
+google-cloud-pubsub==2.6.1  # via apache-airflow-providers-google
+google-cloud-redis==2.2.0  # via apache-airflow-providers-google
+google-cloud-secret-manager==1.0.0  # via apache-airflow-providers-google
+google-cloud-spanner==1.19.1  # via apache-airflow-providers-google
+google-cloud-speech==1.3.2  # via apache-airflow-providers-google
+google-cloud-storage==1.40.0  # via apache-airflow-providers-google
+google-cloud-tasks==2.4.0  # via apache-airflow-providers-google
+google-cloud-texttospeech==1.0.1  # via apache-airflow-providers-google
+google-cloud-translate==1.7.0  # via apache-airflow-providers-google
+google-cloud-videointelligence==1.16.1  # via apache-airflow-providers-google
+google-cloud-vision==1.0.0  # via apache-airflow-providers-google
+google-cloud-workflows==1.1.0  # via apache-airflow-providers-google
 google-crc32c==1.1.2      # via google-resumable-media
 google-resumable-media==1.3.1  # via google-cloud-bigquery, google-cloud-storage
 googleapis-common-protos[grpc]==1.53.0  # via google-ads, google-api-core, google-cloud-audit-log, grpc-google-iam-v1
 graphviz==0.16            # via apache-airflow
 greenlet==1.1.0           # via apache-airflow, eventlet, gevent
 grpc-google-iam-v1==0.12.3  # via google-cloud-bigtable, google-cloud-container, google-cloud-datacatalog, google-cloud-kms, google-cloud-pubsub, google-cloud-secret-manager, google-cloud-spanner, google-cloud-tasks
-grpcio-gcp==0.2.2         # via apache-airflow, apache-airflow-backport-providers-google, google-api-core
+grpcio-gcp==0.2.2         # via apache-airflow-providers-google, google-api-core
 grpcio==1.38.1            # via google-ads, google-api-core, google-cloud-bigquery, google-cloud-pubsub, googleapis-common-protos, grpc-google-iam-v1, grpcio-gcp
 gunicorn==20.1.0          # via apache-airflow
+h11==0.12.0               # via httpcore
 hiredis==2.0.0            # via -r requirements.in
-hmsclient==0.1.1          # via apache-airflow
+hmsclient==0.1.1          # via apache-airflow-providers-apache-hive
+httpcore==0.13.6          # via httpx
 httplib2==0.19.1          # via google-api-python-client, google-auth-httplib2
+httpx==0.19.0             # via apache-airflow, apache-airflow-providers-google
 humanize==3.10.0          # via flower
-idna==2.10                # via email-validator, requests
-importlib-metadata==2.1.0  # via -r requirements.in, apache-airflow, apache-airflow-upgrade-check, argcomplete, importlib-resources, jsonschema, kombu
+idna==2.10                # via anyio, email-validator, requests, rfc3986
+importlib-metadata==1.7.0  # via -r requirements.in, apache-airflow, argcomplete, importlib-resources, jsonschema, kombu, nox, virtualenv
 importlib-resources==1.5.0  # via apache-airflow
+inflection==0.5.1         # via apache-airflow
 iso8601==0.1.14           # via apache-airflow
-itsdangerous==1.1.0       # via flask, flask-wtf
-jaydebeapi==1.2.3         # via apache-airflow
-jinja2==2.11.3            # via apache-airflow, flask, flask-babel, python-nvd3
+isodate==0.6.0            # via openapi-schema-validator
+itsdangerous==1.1.0       # via apache-airflow, flask, flask-wtf
+jaydebeapi==1.2.3         # via apache-airflow-providers-jdbc
+jinja2==2.11.3            # via apache-airflow, flask, flask-babel, python-nvd3, swagger-ui-bundle
 jmespath==0.10.0          # via boto3, botocore
-jpype1==0.7.1             # via -r requirements.in, apache-airflow, jaydebeapi
-json-merge-patch==0.2     # via apache-airflow, apache-airflow-backport-providers-google
-jsonschema==3.2.0         # via -r requirements.in, apache-airflow, flask-appbuilder
+jpype1==0.7.1             # via -r requirements.in, jaydebeapi
+json-merge-patch==0.2     # via apache-airflow-providers-google
+jsonschema==3.2.0         # via -r requirements.in, apache-airflow, flask-appbuilder, openapi-schema-validator, openapi-spec-validator
 kombu==4.6.10             # via -r requirements.in, celery
-kubernetes==11.0.0        # via apache-airflow
+kubernetes==11.0.0        # via apache-airflow-providers-cncf-kubernetes
 lazy-object-proxy==1.4.3  # via apache-airflow
 libcst==0.3.19            # via google-cloud-bigquery-storage, google-cloud-datacatalog, google-cloud-os-login, google-cloud-pubsub, google-cloud-workflows
-lockfile==0.12.2          # via python-daemon
+lockfile==0.12.2          # via apache-airflow, python-daemon
 mako==1.1.4               # via alembic
 markdown==2.6.11          # via apache-airflow
-markupsafe==2.0.1         # via jinja2, mako, wtforms
+markupsafe==1.1.1         # via apache-airflow, jinja2, mako, wtforms
 marshmallow-enum==1.5.1   # via flask-appbuilder
-marshmallow-sqlalchemy==0.23.1  # via apache-airflow, flask-appbuilder
-marshmallow==2.21.0       # via flask-appbuilder, marshmallow-enum, marshmallow-sqlalchemy
+marshmallow-oneofschema==3.0.1  # via apache-airflow
+marshmallow-sqlalchemy==0.23.1  # via flask-appbuilder
+marshmallow==3.13.0       # via flask-appbuilder, marshmallow-enum, marshmallow-oneofschema, marshmallow-sqlalchemy
 mozlogging==0.1.0         # via -r requirements.in
 mypy-extensions==0.4.3    # via typing-inspect
-mysqlclient==1.3.14       # via apache-airflow
+mysql-connector-python==8.0.22  # via apache-airflow-providers-mysql
+mysqlclient==1.3.14       # via apache-airflow-providers-mysql
 natsort==7.1.1            # via croniter
 newrelic==6.4.4.161       # via -r requirements.in
-numpy==1.21.0             # via pandas, pyarrow
+nox==2020.12.31           # via google-ads
+numpy==1.21.0             # via apache-airflow, pandas, pyarrow
 oauthlib==2.1.0           # via apache-airflow, flask-oauthlib, requests-oauthlib
-packaging==21.0           # via apache-airflow, apache-airflow-upgrade-check, google-api-core, google-cloud-appengine-logging, google-cloud-automl, google-cloud-bigquery, google-cloud-bigquery-datatransfer, google-cloud-bigquery-storage, google-cloud-datacatalog, google-cloud-dataproc, google-cloud-kms, google-cloud-logging, google-cloud-memcache, google-cloud-monitoring, google-cloud-os-login, google-cloud-redis, google-cloud-tasks, google-cloud-workflows
-pandas-gbq==0.14.1        # via -r requirements.in, apache-airflow, apache-airflow-backport-providers-google
+openapi-schema-validator==0.1.5  # via openapi-spec-validator
+openapi-spec-validator==0.3.1  # via apache-airflow
+packaging==21.0           # via google-api-core, google-cloud-appengine-logging, google-cloud-automl, google-cloud-bigquery, google-cloud-bigquery-datatransfer, google-cloud-bigquery-storage, google-cloud-datacatalog, google-cloud-dataproc, google-cloud-kms, google-cloud-logging, google-cloud-monitoring, google-cloud-os-login, google-cloud-redis, google-cloud-tasks, google-cloud-workflows
+pandas-gbq==0.14.1        # via -r requirements.in, apache-airflow-providers-google
 pandas==1.3.0             # via apache-airflow, google-cloud-bigquery, pandas-gbq
-pendulum==1.4.4           # via apache-airflow
+pendulum==2.1.2           # via apache-airflow
+platformdirs==2.2.0       # via virtualenv
 prison==0.1.3             # via flask-appbuilder
 prometheus-client==0.8.0  # via flower
-proto-plus==1.19.0        # via google-cloud-appengine-logging, google-cloud-automl, google-cloud-bigquery, google-cloud-bigquery-datatransfer, google-cloud-bigquery-storage, google-cloud-datacatalog, google-cloud-dataproc, google-cloud-kms, google-cloud-logging, google-cloud-memcache, google-cloud-monitoring, google-cloud-os-login, google-cloud-pubsub, google-cloud-redis, google-cloud-tasks, google-cloud-workflows
-protobuf==3.17.3          # via google-ads, google-api-core, google-cloud-audit-log, google-cloud-bigquery, googleapis-common-protos, proto-plus
+proto-plus==1.19.0        # via google-ads, google-cloud-appengine-logging, google-cloud-automl, google-cloud-bigquery, google-cloud-bigquery-datatransfer, google-cloud-bigquery-storage, google-cloud-datacatalog, google-cloud-dataproc, google-cloud-kms, google-cloud-logging, google-cloud-memcache, google-cloud-monitoring, google-cloud-os-login, google-cloud-pubsub, google-cloud-redis, google-cloud-tasks, google-cloud-workflows
+protobuf==3.17.3          # via google-api-core, google-cloud-audit-log, google-cloud-bigquery, googleapis-common-protos, mysql-connector-python, proto-plus
 psutil==5.8.0             # via apache-airflow
-psycopg2-binary==2.9.1    # via apache-airflow
+psycopg2-binary==2.9.1    # via apache-airflow-providers-postgres
 pure-sasl==0.6.2          # via thrift-sasl
+py==1.10.0                # via nox
 pyarrow==4.0.1            # via google-cloud-bigquery
 pyasn1-modules==0.2.8     # via google-auth
 pyasn1==0.4.8             # via pyasn1-modules, rsa
 pycparser==2.20           # via cffi
 pydata-google-auth==1.2.0  # via pandas-gbq
-pygments==2.9.0           # via apache-airflow
-pyhive[hive]==0.6.4       # via apache-airflow
-pyjwt==1.7.1              # via flask-appbuilder, flask-jwt-extended
-pyopenssl==20.0.1         # via apache-airflow, apache-airflow-backport-providers-google
+pygments==2.9.0           # via apache-airflow, rich
+pyhive[hive]==0.6.4       # via apache-airflow-providers-apache-hive
+pyjwt==1.7.1              # via apache-airflow, flask-appbuilder, flask-jwt-extended
+pyopenssl==20.0.1         # via apache-airflow-providers-google
 pyparsing==2.4.7          # via httplib2, packaging
 pyrsistent==0.18.0        # via jsonschema
 python-daemon==2.3.0      # via apache-airflow
@@ -161,43 +189,47 @@ python-dateutil==2.8.1    # via alembic, apache-airflow, botocore, croniter, fla
 python-editor==1.0.4      # via alembic
 python-nvd3==0.15.0       # via apache-airflow
 python-slugify==4.0.1     # via apache-airflow, python-nvd3
-python3-openid==3.2.0     # via flask-openid
-pytz==2021.1              # via -r requirements.in, babel, celery, flask-babel, flower, google-api-core, pandas, tzlocal
+python3-openid==3.2.0     # via apache-airflow, flask-openid
+pytz==2021.1              # via -r requirements.in, babel, celery, flask-babel, flower, google-api-core, pandas
 pytzdata==2020.1          # via pendulum
-pyyaml==5.4.1             # via apispec, flask-swagger, google-ads, kubernetes, libcst
+pyyaml==5.4.1             # via apache-airflow, apispec, clickclick, google-ads, kubernetes, libcst, openapi-spec-validator
 redis==3.5.3              # via -r requirements.in
 requests-oauthlib==1.1.0  # via apache-airflow, flask-oauthlib, google-auth-oauthlib, kubernetes
-requests==2.23.0          # via -r requirements.in, apache-airflow, datadog, google-api-core, google-cloud-bigquery, google-cloud-storage, kubernetes, requests-oauthlib
+requests==2.23.0          # via -r requirements.in, airflow-provider-fivetran, apache-airflow-providers-http, datadog, google-api-core, google-cloud-bigquery, google-cloud-storage, kubernetes, requests-oauthlib
 retrying==1.3.3           # via -r requirements.in
+rfc3986[idna2008]==1.5.0  # via httpx
+rich==10.9.0              # via apache-airflow
 rsa==4.7.2                # via google-auth
 s3transfer==0.3.7         # via boto3
 sasl==0.3.1               # via pyhive
 setproctitle==1.2.2       # via apache-airflow
 shelljob==0.5.6           # via -r requirements.in
-six==1.16.0               # via bcrypt, eventlet, flask-jwt-extended, google-api-core, google-api-python-client, google-auth, google-auth-httplib2, google-cloud-core, google-resumable-media, grpcio, jsonschema, kubernetes, prison, protobuf, pyopenssl, python-dateutil, retrying, sasl, sqlalchemy-utils, tenacity, thrift, thrift-sasl
-sqlalchemy-jsonfield==0.9.0  # via apache-airflow
+six==1.16.0               # via bcrypt, eventlet, flask-jwt-extended, google-api-core, google-api-python-client, google-auth, google-auth-httplib2, google-cloud-core, google-resumable-media, grpcio, isodate, jsonschema, kubernetes, openapi-schema-validator, openapi-spec-validator, prison, protobuf, pyopenssl, python-dateutil, retrying, sasl, sqlalchemy-utils, tenacity, thrift, thrift-sasl, virtualenv
+sniffio==1.2.0            # via anyio, httpcore, httpx
+sqlalchemy-jsonfield==1.0.0  # via apache-airflow
 sqlalchemy-utils==0.37.8  # via flask-appbuilder
-sqlalchemy==1.3.15        # via -r requirements.in, alembic, apache-airflow, flask-sqlalchemy, marshmallow-sqlalchemy, sqlalchemy-jsonfield, sqlalchemy-utils
+sqlalchemy==1.3.24        # via -r requirements.in, alembic, apache-airflow, flask-appbuilder, flask-sqlalchemy, marshmallow-sqlalchemy, sqlalchemy-jsonfield, sqlalchemy-utils
 statsd==3.3.0             # via apache-airflow
+swagger-ui-bundle==0.0.8  # via apache-airflow
 tabulate==0.8.9           # via apache-airflow
-tenacity==4.12.0          # via apache-airflow
+tenacity==6.2.0           # via apache-airflow
+termcolor==1.1.0          # via apache-airflow
 text-unidecode==1.3       # via python-slugify
 thrift-sasl==0.4.3        # via pyhive
-thrift==0.13.0            # via apache-airflow, hmsclient, pyhive, thrift-sasl
-tornado==5.1.1            # via apache-airflow, flower
-typing-extensions==3.10.0.0  # via apache-airflow, libcst, typing-inspect
+thrift==0.13.0            # via apache-airflow-providers-apache-hive, hmsclient, pyhive, thrift-sasl
+tornado==5.1.1            # via flower
+typing-extensions==3.10.0.0  # via anyio, apache-airflow, libcst, rich, typing-inspect
 typing-inspect==0.7.1     # via libcst
-tzlocal==1.5.1            # via apache-airflow, pendulum
 unicodecsv==0.14.1        # via apache-airflow
 uritemplate==3.0.1        # via google-api-python-client
 urllib3==1.25.11          # via -r requirements.in, botocore, kubernetes, requests
-vine==1.3.0               # via amqp, apache-airflow, celery, flower
-watchtower==0.7.3         # via apache-airflow-backport-providers-amazon
+vine==1.3.0               # via amqp, apache-airflow-providers-celery, celery, flower
+virtualenv==20.7.2        # via nox
+watchtower==1.0.6         # via apache-airflow-providers-amazon
 websocket-client==1.1.0   # via -r requirements.in, kubernetes
-werkzeug==0.16.0          # via -r requirements.in, apache-airflow, flask, flask-caching, flask-jwt-extended
+werkzeug==1.0.1           # via -r requirements.in, apache-airflow, flask, flask-jwt-extended
 wtforms==2.3.3            # via flask-admin, flask-wtf
 zipp==3.5.0               # via importlib-metadata, importlib-resources
-zope.deprecation==4.4.0   # via apache-airflow
 zope.event==4.5.0         # via gevent
 zope.interface==5.4.0     # via gevent
 
