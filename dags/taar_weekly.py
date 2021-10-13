@@ -14,12 +14,12 @@ taar_ensemble_cluster_name = "dataproc-taar-ensemble"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 taar_gcpdataproc_project_id = "airflow-dataproc"
 
-TAAR_BIGTABLE_INSTANCE_ID = Variable(key="taar_bigtable_instance_id").get("taar_bigtable_instance_id")
-TAAR_ETL_STORAGE_BUCKET = Variable(key="taar_etl_storage_bucket").get("taar_etl_storage_bucket")
-TAAR_ETL_MODEL_STORAGE_BUCKET = Variable(key="taar_etl_model_storage_bucket").get("taar_etl_model_storage_bucket")
-TAAR_PROFILE_PROJECT_ID = Variable(key="taar_gcp_project_id").get("taar_gcp_project_id")
-TAAR_DATAFLOW_SUBNETWORK = Variable(key="taar_dataflow_subnetwork").get("taar_dataflow_subnetwork")
-TAAR_DATAFLOW_SERVICE_ACCOUNT = Variable(key="taar_dataflow_service_account_email").get("taar_dataflow_service_account_email")
+TAAR_BIGTABLE_INSTANCE_ID = Variable.get("taar_bigtable_instance_id")
+TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
+TAAR_ETL_MODEL_STORAGE_BUCKET = Variable.get("taar_etl_model_storage_bucket")
+TAAR_PROFILE_PROJECT_ID = Variable.get("taar_gcp_project_id")
+TAAR_DATAFLOW_SUBNETWORK = Variable.get("taar_dataflow_subnetwork")
+TAAR_DATAFLOW_SERVICE_ACCOUNT = Variable.get("taar_dataflow_service_account_email")
 
 # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
 TAAR_ETL_CONTAINER_IMAGE = (
