@@ -148,8 +148,7 @@ client_ltv_normalized_v1 = bigquery_etl_query(
     destination_table="client_ltv_normalized_v1",
     project_id="moz-fx-data-shared-prod",
     dataset_id="revenue_derived",
-    date_partition_parameter=None,
-    arguments=("--replace",),
+    gcp_conn_id="google_cloud_shared_prod",
     dag=dag,
 )
 
