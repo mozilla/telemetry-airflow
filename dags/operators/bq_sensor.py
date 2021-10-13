@@ -18,9 +18,8 @@
 # under the License.
 
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
-from airflow.contrib.hooks.bigquery_hook import BigQueryHook
-from airflow.utils.decorators import apply_defaults
 
+from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 
 class BigQuerySQLSensorOperator(BaseSensorOperator):
     """
@@ -30,9 +29,9 @@ class BigQuerySQLSensorOperator(BaseSensorOperator):
         single value. If that value is coerced to false in some way,
         the sensor continues to wait.
     :type sql: str
-    :param bigquery_conn_id: The connection ID to use when connecting to
+    :param gcp_conn_id: The connection ID to use when connecting to
         Google BigQuery.
-    :type bigquery_conn_id: str
+    :type gcp_conn_id: str
     :param use_legacy_sql: Whether to use BQ legacy SQL
     :type use_legacy_sql: bool
     :param timeout: Time in seconds to wait for the sensor,
@@ -40,14 +39,13 @@ class BigQuerySQLSensorOperator(BaseSensorOperator):
     :type timeout: int
     """
 
-    template_fields = BaseSensorOperator.template_fields + [
+    template_fields = BaseSensorOperator.template_fields + (
         'sql',
-    ]
+    )
 
-    @apply_defaults
     def __init__(self,
                  sql,
-                 bigquery_conn_id='bigquery_default_conn',
+                 gcp_conn_id='bigquery_default_conn',
                  use_legacy_sql=False,
                  timeout=60*60*24,
                  *args,
@@ -58,7 +56,7 @@ class BigQuerySQLSensorOperator(BaseSensorOperator):
             *args,
             **kwargs)
         self.sql = sql
-        self.bigquery_conn_id = bigquery_conn_id
+        self.gcp_conn_id = gcp_conn_id
         self.use_legacy_sql = use_legacy_sql
         self.poke_interval = 120
         self.mode = 'reschedule'
@@ -78,5 +76,5 @@ class BigQuerySQLSensorOperator(BaseSensorOperator):
                 return True
 
     def get_db_hook(self):
-        return BigQueryHook(bigquery_conn_id=self.bigquery_conn_id,
+        return BigQueryHook(gcp_conn_id=self.gcp_conn_id,
                             use_legacy_sql=self.use_legacy_sql)

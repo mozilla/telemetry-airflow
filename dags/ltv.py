@@ -5,7 +5,10 @@ from airflow import DAG
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
-from operators.backport.bigquery_operator_1_10_2 import BigQueryOperator
+
+from airflow.providers.google.cloud.operators.bigquery import (
+    BigQueryExecuteQueryOperator
+)
 from six.moves.urllib.request import urlopen
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
@@ -109,8 +112,7 @@ response = urlopen('/'.join([
     'https://raw.githubusercontent.com/mozilla/bigquery-etl/main/sql',
     'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_v1', 'query.sql']))
 
-BigQueryOperator.template_fields += ('query_params',)
-ltv_revenue_join=BigQueryOperator(
+ltv_revenue_join=BigQueryExecuteQueryOperator(
     task_id='ltv_revenue_join',
     sql=response.read().decode('utf-8'),
     query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
@@ -129,7 +131,7 @@ response = urlopen('/'.join([
     'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_normalized', 'query.sql']))
 
 # Normalized LTV View is for general-use and doesn't contain any revenue data
-ltv_normalized_view=BigQueryOperator(
+ltv_normalized_view=BigQueryExecuteQueryOperator(
     task_id='ltv_normalized_view',
     sql=response.read().decode('utf-8'),
     query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
@@ -147,7 +149,7 @@ response = urlopen('/'.join([
     'https://raw.githubusercontent.com/mozilla/bigquery-etl/main/sql',
     'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_normalized_v1', 'query.sql']))
 
-client_ltv_normalized_v1=BigQueryOperator(
+client_ltv_normalized_v1=BigQueryExecuteQueryOperator(
     task_id='client_ltv_normalized_v1',
     sql=response.read().decode('utf-8'),
     query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],

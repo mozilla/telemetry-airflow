@@ -1,17 +1,16 @@
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.contrib.operators.dataproc_operator import (
-    DataprocClusterCreateOperator,
-    DataprocClusterDeleteOperator,
-    DataProcPySparkOperator,
+from airflow.providers.google.cloud.operators.dataproc import (
+    DataprocCreateClusterOperator,
+    DataprocDeleteClusterOperator,
+    DataprocSubmitPySparkJobOperator,
 )
-
 
 def spark_subdag(
     parent_dag_name,
     child_dag_name,
     default_args,
     gcp_conn_id,
+    project_id,
     service_account,
     main,
     pyfiles,
@@ -27,6 +26,7 @@ def spark_subdag(
     :param str child_dag_name:          Name of the child DAG.
     :param Dict[str, Any] default_args: Default arguments for the child DAG.
     :param str gcp_conn_id:             Name of the connection string.
+    :param str project_id:              GCP project id corresponding to the gcp_conn_id.
     :param str service_account:         The address of the service account.
     :param str dataproc_region:           The region of the DataProc cluster.
     :param str main:
@@ -36,12 +36,10 @@ def spark_subdag(
     :return: DAG
     """
 
-    connection = GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id)
-
     shared_config = {
         "cluster_name": "prio-staging-{{ds_nodash}}",
         "gcp_conn_id": gcp_conn_id,
-        "project_id": connection.project_id,
+        "project_id": project_id,
         # From an error when not specifying the region:
         # - Dataproc images 2.0 and higher do not support the to-be
         #   deprecated global region. Please use any non-global Dataproc
@@ -54,7 +52,7 @@ def spark_subdag(
     }
 
     with DAG(f"{parent_dag_name}.{child_dag_name}", default_args=default_args) as dag:
-        create_dataproc_cluster = DataprocClusterCreateOperator(
+        create_dataproc_cluster = DataprocCreateClusterOperator(
             task_id="create_dataproc_cluster",
             image_version="preview-ubuntu18",
             service_account=service_account,
@@ -68,10 +66,10 @@ def spark_subdag(
             **shared_config,
         )
 
-        run_dataproc_spark = DataProcPySparkOperator(
+        run_dataproc_spark = DataprocSubmitPySparkJobOperator(
             task_id="run_dataproc_spark",
             main=main,
-            dataproc_pyspark_jars=[
+            dataproc_jars=[
                 "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar"
             ],
             pyfiles=pyfiles,
@@ -80,7 +78,7 @@ def spark_subdag(
             **shared_config,
         )
 
-        delete_dataproc_cluster = DataprocClusterDeleteOperator(
+        delete_dataproc_cluster = DataprocDeleteClusterOperator(
             task_id="delete_dataproc_cluster",
             trigger_rule="all_done",
             dag=dag,

@@ -1,7 +1,7 @@
 import datetime
 
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
@@ -35,13 +35,15 @@ with DAG(
 ) as dag:
     # top_signatures_correlations uploads results to public analysis bucket
     write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
-    analysis_access_key, analysis_secret_key, _ = AwsHook(
-        write_aws_conn_id
+    analysis_access_key, analysis_secret_key, _ = AwsBaseHook(
+        aws_conn_id=write_aws_conn_id,
+        client_type='s3'
     ).get_credentials()
 
     # modules_with_missing_symbols sends results as email
     ses_aws_conn_id = "aws_data_iam_ses"
-    ses_access_key, ses_secret_key, _ = AwsHook(ses_aws_conn_id).get_credentials()
+    ses_access_key, ses_secret_key, _ = AwsBaseHook(
+        aws_conn_id=ses_aws_conn_id, client_type='s3').get_credentials()
 
     wait_for_socorro_import = ExternalTaskCompletedSensor(
         task_id="wait_for_socorro_import",

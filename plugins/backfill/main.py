@@ -33,8 +33,6 @@ else:
 # Local file where history will be stored
 FILE = airflow_home_path + '/logs/backfill_history.txt'
 
-rbac_authentication_enabled = configuration.getboolean("webserver", "RBAC")
-
 # RE for remove ansi escape characters
 ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
 
@@ -58,26 +56,15 @@ def file_ops(mode, data=None):
             return 1
 
 def get_baseview():
-    if rbac_authentication_enabled == True:
-        return AppBuilderBaseView
-    else:
-        return BaseView
+    return AppBuilderBaseView
 
 class Backfill(get_baseview()):
 
     route_base = "/admin/backfill/"
 
-    if rbac_authentication_enabled == True:
-        @app_builder_expose('/')
-        def list(self):
-            """ Render the backfill page to client with RBAC"""
-            return self.render_template("backfill_page.html",
-                                        rbac_authentication_enabled=rbac_authentication_enabled)        
-    else:
-        @expose('/')
-        def base(self):
-            """ Render the backfill page to client """
-            return self.render("backfill_page.html")
+    @app_builder_expose('/')
+    def list(self):
+        return self.render_template("backfill_page.html")
 
     @expose('/stream')
     @app_builder_expose('/stream')
@@ -106,9 +93,10 @@ class Backfill(get_baseview()):
             if use_task_regex == 'true':
                 cmd.extend(['-t', str(task_regex)])
         elif clear == 'false':
+            cmd.append('dags')
             cmd.append('backfill')
             if dry_run == 'true':
-                cmd.append('--dry_run')
+                cmd.append('--dry-run')
 
             if use_task_regex == 'true':
                 cmd.extend(['-t', str(task_regex)])

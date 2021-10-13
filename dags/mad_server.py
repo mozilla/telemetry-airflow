@@ -1,7 +1,8 @@
+import os
 from airflow import DAG
 from datetime import datetime, timedelta
 
-from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 from utils.gcp import gke_command
 
@@ -17,17 +18,22 @@ default_args = {
 }
 
 with DAG("mad_server", default_args=default_args, schedule_interval="@weekly") as dag:
-
+    is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
     aws_conn_id="aws_dev_mad_resources_training"
-
     # mad-server expects AWS creds in some custom env vars.
-    s3_env_vars = {
-        key: value
-        for key, value in zip(
-            ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_SESSION_TOKEN"),
-            AwsHook(aws_conn_id).get_credentials() if aws_conn_id else (),
-        )
-        if value is not None}
+    if is_dev:
+        aws_conn_id = None
+        s3_env_vars = {}
+    else:
+        aws_conn_id="aws_dev_mad_resources_training"
+        s3_env_vars = {
+            key: value
+            for key, value in zip(
+                    ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_SESSION_TOKEN"),
+                    AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials() if aws_conn_id else (),
+            )
+            if value is not None
+        }
 
     mad_server_pull = gke_command(
         task_id="mad_server_pull",

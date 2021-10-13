@@ -1,14 +1,12 @@
 from operators.gcp_container_operator import GKEPodOperator
 
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-
 def simpleprophet_forecast(
     task_id,
     datasource,
-    project_id,
     dataset_id,
     table_id,
     gcp_conn_id="google_cloud_derived_datasets",
+    project_id='moz-fx-data-derived-datasets',        
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -25,6 +23,7 @@ def simpleprophet_forecast(
     :param str table_id:             [Required] ID of target table
 
     :param str gcp_conn_id:          Airflow connection id for GCP access
+    :param str project_id:           GCP project id associated with gcp_conn_id
     :param str gke_location:         GKE cluster location
     :param str gke_cluster_name:     GKE cluster name
     :param str gke_namespace:        GKE cluster namespace
@@ -40,7 +39,7 @@ def simpleprophet_forecast(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GoogleCloudBaseHook(gcp_conn_id=gcp_conn_id).project_id,
+        project_id=project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,

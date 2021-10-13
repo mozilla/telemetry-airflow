@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
-from airflow.executors import get_default_executor
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
@@ -38,12 +36,9 @@ PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
 dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 2 * * *")
 
-gcp_conn = GoogleCloudBaseHook("google_cloud_airflow_dataproc")
-
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
-    project_id=project_id,
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=1),
@@ -181,7 +176,6 @@ clients_histogram_aggregates = SubDagOperator(
         dataset_id,
     ),
     task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-    executor=get_default_executor(),
     dag=dag,
 )
 
@@ -236,6 +230,10 @@ client_scalar_probe_counts = gke_command(
 
 # SubdagOperator uses a SequentialExecutor by default
 # so its tasks will run sequentially.
+# Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
+# backfill to schedule tasks in the subdag. User no longer need to specify
+# the executor in SubDagOperator. (We don't but the assumption that Sequential
+# Executor is used is now wrong)
 clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
@@ -273,7 +271,6 @@ extract_counts = SubDagOperator(
         "counts"
     ),
     task_id="extract_user_counts",
-    executor=get_default_executor(),
     dag=dag
 )
 
@@ -288,7 +285,6 @@ extract_sample_counts = SubDagOperator(
         "sample-counts"
     ),
     task_id="extract_sample_counts",
-    executor=get_default_executor(),
     dag=dag
 )
 
@@ -301,7 +297,6 @@ extracts_per_channel = SubDagOperator(
         dataset_id
     ),
     task_id="extracts",
-    executor=get_default_executor(),
     dag=dag,
 )
 

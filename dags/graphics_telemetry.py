@@ -1,7 +1,8 @@
 import datetime
+import os
 
 from airflow import DAG
-from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
@@ -39,7 +40,11 @@ with DAG(
 ) as dag:
     # Jobs read from/write to s3://telemetry-public-analysis-2/gfx/telemetry-data/
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'
-    aws_access_key, aws_secret_key, _ = AwsHook(write_aws_conn_id).get_credentials()
+    is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
+    if is_dev:
+        aws_access_key, aws_secret_key = ('replace_me', 'replace_me')
+    else:
+        aws_access_key, aws_secret_key, _ = AwsBaseHook(aws_conn_id=write_aws_conn_id, client_type='s3').get_credentials()
 
     wait_for_main_ping = ExternalTaskCompletedSensor(
         task_id="wait_for_main_ping",

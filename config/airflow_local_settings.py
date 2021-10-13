@@ -1,3 +1,8 @@
+import gevent
+from gevent import monkey, pool
+
+monkey.patch_all()
+
 STATE_COLORS = {
     "queued": 'gray',
     "running": 'lime',

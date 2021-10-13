@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from os import environ
 
 from airflow import DAG
-from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
 from prio.processor import ingestion_subdag, load_bigquery_subdag, prio_processor_subdag
 
 DEFAULT_ARGS = {
@@ -26,13 +25,12 @@ IS_DEV = environ.get("DEPLOY_ENVIRONMENT") != "prod"
 ENVIRONMENT = "dev" if IS_DEV else "prod"
 
 PRIO_ADMIN_CONN = "google_cloud_prio_admin"
+PRIO_ADMIN_PROJECT_ID = "moz-fx-prio-admin-prod-098j"
 PRIO_A_CONN = "google_cloud_prio_a"
+PRIO_A_PROJECT_ID = "moz-fx-prio-a-prod-kju7"
 
-PROJECT_ADMIN = GoogleCloudStorageHook(PRIO_ADMIN_CONN).project_id
-PROJECT_A = GoogleCloudStorageHook(PRIO_A_CONN).project_id
-
-SERVICE_ACCOUNT_ADMIN = f"prio-admin-runner@{PROJECT_ADMIN}.iam.gserviceaccount.com"
-SERVICE_ACCOUNT_A = f"prio-runner-{ENVIRONMENT}-a@{PROJECT_A}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_ADMIN = f"prio-admin-runner@{PRIO_ADMIN_PROJECT_ID}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT_A = f"prio-runner-{ENVIRONMENT}-a@{PRIO_A_PROJECT_ID}.iam.gserviceaccount.com"
 
 # Private bucket of server B is necessary for transfer
 BUCKET_PRIVATE_A = f"moz-fx-prio-{ENVIRONMENT}-a-private"
@@ -58,6 +56,7 @@ ingest = ingestion_subdag(
     dag,
     DEFAULT_ARGS,
     PRIO_ADMIN_CONN,
+    PRIO_ADMIN_PROJECT_ID,
     SERVICE_ACCOUNT_ADMIN,
     BUCKET_BOOTSTRAP_ADMIN,
     BUCKET_DATA_ADMIN,
@@ -73,6 +72,7 @@ processor_a = prio_processor_subdag(
     dag,
     DEFAULT_ARGS,
     PRIO_A_CONN,
+    PRIO_A_PROJECT_ID,
     SERVICE_ACCOUNT_A,
     "a",
     {
@@ -99,6 +99,7 @@ load_bigquery = load_bigquery_subdag(
     dag,
     DEFAULT_ARGS,
     PRIO_ADMIN_CONN,
+    PRIO_ADMIN_PROJECT_ID,
     SERVICE_ACCOUNT_ADMIN,
     env_vars={
         "APP_NAME": APP_NAME,
