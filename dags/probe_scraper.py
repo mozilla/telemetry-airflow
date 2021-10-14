@@ -9,8 +9,35 @@ from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
 from operators.gcp_container_operator import GKEPodOperator
 
+DOCS = """\
+# Probe Scraper
+
+## Debugging failures
+
+Probe Scraper application logs aren't available via the Airflow web console. In
+order to access them, do the following:
+
+1. Navigate to [this page](https://workflow.telemetry.mozilla.org/tree?dag_id=probe_scraper)
+2. Click the `probe_scraper` DAG that failed, followed by `View Log`
+3. Search for logs like `Event: probe-scraper-[HEX-STRING] had an event of type Pending` and note the container id
+4. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-derived-datasets)
+If you can't access these logs but think you should be able to, [contact Data SRE](https://mana.mozilla.org/wiki/pages/viewpage.action?spaceKey=DOPS&title=Contacting+Data+SRE).
+5. Search for the following, replacing `POD_NAME_FROM_AIRFLOW_LOGS` with the string from (3):
+
+```
+resource.type="k8s_container"
+resource.labels.project_id="moz-fx-data-derived-datasets"
+resource.labels.location="us-central1-a"
+resource.labels.cluster_name="bq-load-gke-1"
+resource.labels.namespace_name="default"
+resource.labels.pod_name="POD_NAME_FROM_AIRFLOW_LOGS" severity>=DEFAULT
+```
+
+Adjust the time window as needed and you should be able to see logs associated with the failure.
+"""
+
 default_args = {
-    'owner': 'ascholtz@mozilla.com',
+    'owner': 'dthorn@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2019, 10, 28),
     'email_on_failure': True,
@@ -20,6 +47,7 @@ default_args = {
 }
 
 with DAG('probe_scraper',
+         doc_md=DOCS,
          default_args=default_args,
          schedule_interval='0 0 * * 1-5') as dag:
 
@@ -64,7 +92,7 @@ with DAG('probe_scraper',
         dag=dag)
 
     schema_generator = GKEPodOperator(
-        email=['amiyaguchi@mozilla.com', 'dataops+alerts@mozilla.com'],
+        email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
         task_id='mozilla_schema_generator',
         name='schema-generator-1',
         image='mozilla/mozilla-schema-generator:latest',
@@ -87,7 +115,7 @@ with DAG('probe_scraper',
             "--date", "{{ ds }}",
             "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}"
         ],
-        email=["bewu@mozilla.com"],
+        email=["dthorn@mozilla.com", "telemetry-alerts@mozilla.com"],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key
@@ -100,12 +128,13 @@ with DAG('probe_scraper',
         task_id="wait_for_30_minutes",
         dag=dag,
         python_callable=lambda: time.sleep(60 * 30))
-    
+
     probe_scraper >> delay_python_task
 
     gcp_gke_conn_id = "google_cloud_airflow_gke"
     lookml_generator_prod = GKEPodOperator(
-        email=["frank@mozilla.com", "dataops+alerts@mozilla.com"],
+        owner="ascholtz@mozilla.com",
+        email=["ascholtz@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="lookml_generator",
         name="lookml-generator-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + Variable.get("lookml_generator_release_str"),
@@ -133,6 +162,7 @@ with DAG('probe_scraper',
     delay_python_task >> lookml_generator_prod
 
     lookml_generator_staging = GKEPodOperator(
+        owner="ascholtz@mozilla.com",
         email=["ascholtz@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="lookml_generator_staging",
         name="lookml-generator-staging-1",
@@ -168,6 +198,7 @@ with DAG('probe_scraper',
         endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
         data={},
+        owner="wlach@mozilla.com",
         email=["wlach@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="glean_dictionary_build",
         dag=dag,
