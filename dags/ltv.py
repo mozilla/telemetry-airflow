@@ -128,27 +128,9 @@ ltv_revenue_join=BigQueryExecuteQueryOperator(
 
 response = urlopen('/'.join([
     'https://raw.githubusercontent.com/mozilla/bigquery-etl/main/sql',
-    'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_normalized', 'query.sql']))
-
-# Normalized LTV View is for general-use and doesn't contain any revenue data
-ltv_normalized_view=BigQueryExecuteQueryOperator(
-    task_id='ltv_normalized_view',
-    sql=response.read().decode('utf-8'),
-    query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
-    destination_dataset_table='moz-fx-data-shared-prod.revenue_derived.client_ltv_v1${{ ds_nodash }}',
-    bigquery_conn_id='google_cloud_shared_prod',
-    use_legacy_sql=False,
-    default_args=default_args,
-    time_partitioning={"type": "DAY", "field": "submission_date"},
-    cluster_fields=["engine", "country"],
-    write_disposition='WRITE_TRUNCATE',
-    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
-)
-
-response = urlopen('/'.join([
-    'https://raw.githubusercontent.com/mozilla/bigquery-etl/main/sql',
     'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_normalized_v1', 'query.sql']))
 
+# Normalized LTV View is for general-use and doesn't contain any revenue data
 client_ltv_normalized_v1=BigQueryExecuteQueryOperator(
     task_id='client_ltv_normalized_v1',
     sql=response.read().decode('utf-8'),
@@ -163,4 +145,4 @@ client_ltv_normalized_v1=BigQueryExecuteQueryOperator(
     schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
 )
 
-ltv_daily >> ltv_revenue_join >> [ltv_normalized_view, client_ltv_normalized_v1]
+ltv_daily >> ltv_revenue_join >> client_ltv_normalized_v1
