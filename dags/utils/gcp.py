@@ -218,7 +218,7 @@ def bigquery_etl_query(
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=project_id,
+        project_id=GCP_PROJECT_ID,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
