@@ -105,7 +105,7 @@ crash_report_parquet = SubDagOperator(
             "--dest-gcs-path",
             "gs://{}/{}".format(gcs_data_bucket, dataset),
         ],
-        idle_delete_ttl="14400",
+        idle_delete_ttl=14400,
         num_workers=8,
         worker_machine_type="n1-standard-8",
         aws_conn_id=read_aws_conn_id,
