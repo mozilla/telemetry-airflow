@@ -174,6 +174,7 @@ def bigquery_etl_query(
     project_id=None,
     sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
+    gcp_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -218,7 +219,7 @@ def bigquery_etl_query(
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=GCP_PROJECT_ID,
+        project_id=gcp_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -246,6 +247,7 @@ def bigquery_etl_copy_deduplicate(
     hourly=False,
     slices=None,
     gcp_conn_id="google_cloud_derived_datasets",
+    gcp_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -286,7 +288,7 @@ def bigquery_etl_copy_deduplicate(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GCP_PROJECT_ID,
+        project_id=gcp_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -312,6 +314,7 @@ def bigquery_xcom_query(
     arguments=(),
     project_id=None,
     gcp_conn_id="google_cloud_derived_datasets",
+    gcp_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -349,7 +352,7 @@ def bigquery_xcom_query(
     query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=GCP_PROJECT_ID,
+        project_id=gcp_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -386,6 +389,7 @@ def gke_command(
     docker_image,
     aws_conn_id="aws_dev_iam_s3",
     gcp_conn_id="google_cloud_derived_datasets",
+    gcp_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -424,7 +428,7 @@ def gke_command(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=GCP_PROJECT_ID,
+        project_id=gcp_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
