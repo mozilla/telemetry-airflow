@@ -83,7 +83,7 @@ with DAG(
                 "--run-on-days", "0",  # run monday
                 "--date", "{{ ds }}"
             ],
-            idle_delete_ttl="14400",
+            idle_delete_ttl=14400,
             num_workers=2,
             worker_machine_type="n1-standard-4",
             gcp_conn_id=params.conn_id,
@@ -116,7 +116,7 @@ with DAG(
                 "--run-on-days", "0", "2", "4",  # run monday, wednesday, friday
                 "--date", "{{ ds }}",
             ],
-            idle_delete_ttl="14400",
+            idle_delete_ttl=14400,
             num_workers=2,
             worker_machine_type="n1-standard-4",
             gcp_conn_id=params.conn_id,

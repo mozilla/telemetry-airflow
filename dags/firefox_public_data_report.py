@@ -78,7 +78,7 @@ hardware_report = SubDagOperator(
             "--s3_bucket", "telemetry-public-analysis-2",
             "--s3_path", "public-data-report/hardware/",
         ],
-        idle_delete_ttl='14400',
+        idle_delete_ttl=14400,
         num_workers=2,
         worker_machine_type='n1-standard-4',
         gcp_conn_id=params.conn_id,

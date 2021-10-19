@@ -60,7 +60,7 @@ crash_report_parquet = SubDagOperator(
             "--aws-access-key-id", aws_access_key,
             "--aws-secret-access-key", aws_secret_key
         ],
-        idle_delete_ttl='14400',
+        idle_delete_ttl=14400,
         num_workers=20,
         worker_machine_type='n1-standard-8',
         gcp_conn_id=gcp_conn_id)

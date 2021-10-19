@@ -67,7 +67,7 @@ with DAG(
                 "--date", "{{ ds }}",
                 "--sample-size", "0.5",
             ],
-            idle_delete_ttl="14400",
+            idle_delete_ttl=14400,
             num_workers=6,
             worker_machine_type="n1-highmem-4",
             gcp_conn_id=params.conn_id,
