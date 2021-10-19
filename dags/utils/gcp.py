@@ -174,7 +174,7 @@ def bigquery_etl_query(
     project_id=None,
     sql_file_path=None,
     gcp_conn_id="google_cloud_derived_datasets",
-    gcp_project_id=GCP_PROJECT_ID,
+    gke_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -194,6 +194,7 @@ def bigquery_etl_query(
     :param Optional[str] sql_file_path:            Optional override for path to the
                                                    SQL query file to run
     :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_project_id:                     GKE cluster project id
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
@@ -219,7 +220,7 @@ def bigquery_etl_query(
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=gcp_project_id,
+        project_id=gke_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -247,7 +248,7 @@ def bigquery_etl_copy_deduplicate(
     hourly=False,
     slices=None,
     gcp_conn_id="google_cloud_derived_datasets",
-    gcp_project_id=GCP_PROJECT_ID,
+    gke_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -268,6 +269,7 @@ def bigquery_etl_copy_deduplicate(
     :param bool hourly:              Alias for --slices=24
     :param int slices:               Number of time-based slices to deduplicate in, rather than for whole days at once
     :param str gcp_conn_id:          Airflow connection id for GCP access
+    :param str gke_project_id:       GKE cluster project id
     :param str gke_location:         GKE cluster location
     :param str gke_cluster_name:     GKE cluster name
     :param str gke_namespace:        GKE cluster namespace
@@ -288,7 +290,7 @@ def bigquery_etl_copy_deduplicate(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=gcp_project_id,
+        project_id=gke_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -314,7 +316,7 @@ def bigquery_xcom_query(
     arguments=(),
     project_id=None,
     gcp_conn_id="google_cloud_derived_datasets",
-    gcp_project_id=GCP_PROJECT_ID,
+    gke_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -331,6 +333,7 @@ def bigquery_xcom_query(
     :param Tuple[str] arguments:                   Additional bq query arguments
     :param Optional[str] project_id:               BigQuery default project id
     :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_project_id:                     GKE cluster project id
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
@@ -352,7 +355,7 @@ def bigquery_xcom_query(
     query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
-        project_id=gcp_project_id,
+        project_id=gke_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
@@ -389,7 +392,7 @@ def gke_command(
     docker_image,
     aws_conn_id="aws_dev_iam_s3",
     gcp_conn_id="google_cloud_derived_datasets",
-    gcp_project_id=GCP_PROJECT_ID,
+    gke_project_id=GCP_PROJECT_ID,
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -405,6 +408,7 @@ def gke_command(
     :param str docker_image:       [Required] docker image to use
     :param str aws_conn_id:        Airflow connection id for AWS access
     :param str gcp_conn_id:        Airflow connection id for GCP access
+    :param str gke_project_id:     GKE cluster project id
     :param str gke_location:       GKE cluster location
     :param str gke_cluster_name:   GKE cluster name
     :param str gke_namespace:      GKE cluster namespace
@@ -428,7 +432,7 @@ def gke_command(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=gcp_project_id,
+        project_id=gke_project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
