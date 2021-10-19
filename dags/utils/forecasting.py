@@ -3,10 +3,10 @@ from operators.gcp_container_operator import GKEPodOperator
 def simpleprophet_forecast(
     task_id,
     datasource,
+    project_id,
     dataset_id,
     table_id,
     gcp_conn_id="google_cloud_derived_datasets",
-    project_id='moz-fx-data-derived-datasets',        
     gke_location="us-central1-a",
     gke_cluster_name="bq-load-gke-1",
     gke_namespace="default",
@@ -39,7 +39,6 @@ def simpleprophet_forecast(
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
-        project_id=project_id,
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
