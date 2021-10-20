@@ -13,7 +13,7 @@ from utils.gcp import bigquery_etl_query, gke_command
 
 project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
-tmp_project = "mozdata"  # for temporary tables in analysis dataset
+tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis dataset
 default_args = {
     "owner": "msamuel@mozilla.com",
     "depends_on_past": False,
