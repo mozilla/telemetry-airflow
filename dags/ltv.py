@@ -118,15 +118,4 @@ ltv_revenue_join = bigquery_etl_query(
     dag=dag,
 )
 
-# Normalized LTV View is for general-use and doesn't contain any revenue data
-client_ltv_normalized_v1 = bigquery_etl_query(
-    task_id="client_ltv_normalized_v1",
-    destination_table="client_ltv_normalized_v1",
-    dataset_id="revenue_derived",
-    project_id="moz-fx-data-shared-prod",
-    arguments=("--clustering_fields=engine,country", "--schema_update_option=ALLOW_FIELD_ADDITION",
-               "--schema_update_option=ALLOW_FIELD_RELAXATION"),
-    dag=dag,
-)
-
-ltv_daily >> ltv_revenue_join >> client_ltv_normalized_v1
+ltv_daily >> ltv_revenue_join
