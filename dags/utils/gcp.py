@@ -36,6 +36,7 @@ def export_to_parquet(
     num_workers=2,
     num_preemptible_workers=0,
     gcs_output_bucket="moz-fx-data-derived-datasets-parquet",
+    region="us-west1",
 ):
 
     """ Export a BigQuery table to Parquet.
@@ -55,6 +56,9 @@ def export_to_parquet(
     :param str gcp_conn_id:                       Airflow connection id for GCP access
     :param str dataproc_storage_bucket:           Dataproc staging GCS bucket
     :param int num_preemptible_workers:           Number of Dataproc preemptible workers
+    :param str region:                            Region where the dataproc cluster will
+                                                  be located. Zone will be chosen
+                                                  automatically
 
     :return: airflow.models.DAG
     """
@@ -91,7 +95,7 @@ def export_to_parquet(
             cluster_name=cluster_name,
             project_id=project_id,
             gcp_conn_id=gcp_conn_id,
-            region="us-west1",
+            region=region,
             cluster_config=ClusterGenerator(
                 project_id=project_id,
                 num_workers=num_workers,
@@ -134,6 +138,7 @@ def export_to_parquet(
             + arguments,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
+            region=region,
         )
 
         delete_dataproc_cluster = DataprocDeleteClusterOperator(
@@ -142,7 +147,7 @@ def export_to_parquet(
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             trigger_rule="all_done",
-            region="us-west1",
+            region=region,
         )
 
         if not use_storage_api:
