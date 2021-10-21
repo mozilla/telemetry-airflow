@@ -108,41 +108,14 @@ else:
     )
     wait_for_search_clients_last_seen >> ltv_daily
 
-response = urlopen('/'.join([
-    'https://raw.githubusercontent.com/mozilla/bigquery-etl/main/sql',
-    'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_v1', 'query.sql']))
-
-ltv_revenue_join=BigQueryExecuteQueryOperator(
-    task_id='ltv_revenue_join',
-    sql=response.read().decode('utf-8'),
-    query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
-    destination_dataset_table='moz-it-eip-revenue-users.ltv_derived.client_ltv_v1${{ ds_nodash }}',
-    bigquery_conn_id='google_cloud_it_revenue',
-    use_legacy_sql=False,
-    default_args=default_args,
-    time_partitioning={"type": "DAY", "field": "submission_date"},
-    cluster_fields=["engine", "country"],
-    write_disposition='WRITE_TRUNCATE',
-    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
+ltv_revenue_join = bigquery_etl_query(
+    task_id="ltv_revenue_join",
+    destination_table="client_ltv_v1",
+    dataset_id="revenue_derived",
+    project_id="moz-fx-data-shared-prod",
+    arguments=("--clustering_fields=engine,country", "--schema_update_option=ALLOW_FIELD_ADDITION",
+               "--schema_update_option=ALLOW_FIELD_RELAXATION"),
+    dag=dag,
 )
 
-response = urlopen('/'.join([
-    'https://raw.githubusercontent.com/mozilla/bigquery-etl/main/sql',
-    'moz-fx-data-shared-prod', 'revenue_derived', 'client_ltv_normalized_v1', 'query.sql']))
-
-# Normalized LTV View is for general-use and doesn't contain any revenue data
-client_ltv_normalized_v1=BigQueryExecuteQueryOperator(
-    task_id='client_ltv_normalized_v1',
-    sql=response.read().decode('utf-8'),
-    query_params=[{"name": "submission_date", "parameterType": {"type": "DATE"}, "parameterValue": {"value": "{{ ds }}"}}],
-    destination_dataset_table='moz-fx-data-shared-prod.revenue_derived.client_ltv_normalized_v1${{ ds_nodash }}',
-    bigquery_conn_id='google_cloud_shared_prod',
-    use_legacy_sql=False,
-    default_args=default_args,
-    time_partitioning={"type": "DAY", "field": "submission_date"},
-    cluster_fields=["engine", "country"],
-    write_disposition='WRITE_TRUNCATE',
-    schema_update_options=['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'],
-)
-
-ltv_daily >> ltv_revenue_join >> client_ltv_normalized_v1
+ltv_daily >> ltv_revenue_join
