@@ -7,6 +7,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 from airflow.providers.google.cloud.operators.dataproc import (
+    ClusterGenerator,
     DataprocCreateClusterOperator,
     DataprocDeleteClusterOperator,
     DataprocSubmitPySparkJobOperator,
@@ -31,7 +32,6 @@ def export_to_parquet(
     parent_dag_name=None,
     default_args=None,
     gcp_conn_id="google_cloud_derived_datasets",
-    dataproc_zone="us-central1-a",
     dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
     num_workers=2,
     num_preemptible_workers=0,
@@ -54,7 +54,6 @@ def export_to_parquet(
     :param Optional[Dict[str, Any]] default_args: DAG configuration
     :param str gcp_conn_id:                       Airflow connection id for GCP access
     :param str dataproc_storage_bucket:           Dataproc staging GCS bucket
-    :param str dataproc_zone:                     GCP zone to launch dataproc clusters
     :param int num_preemptible_workers:           Number of Dataproc preemptible workers
 
     :return: airflow.models.DAG
@@ -90,20 +89,23 @@ def export_to_parquet(
         create_dataproc_cluster = DataprocCreateClusterOperator(
             task_id="create_dataproc_cluster",
             cluster_name=cluster_name,
+            project_id=project_id,
             gcp_conn_id=gcp_conn_id,
             region="us-west1",
-            project_id=project_id,
-            num_workers=num_workers,
-            image_version="1.4",
-            storage_bucket=dataproc_storage_bucket,
-            zone=dataproc_zone,
-            master_machine_type="n1-standard-8",
-            worker_machine_type="n1-standard-8",
-            num_preemptible_workers=num_preemptible_workers,
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh",
-            ],
-            metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
+            cluster_config=ClusterGenerator(
+                project_id=project_id,
+                num_workers=num_workers,
+                storage_bucket=dataproc_storage_bucket,
+                init_actions_uris=[
+                    "gs://dataproc-initialization-actions/python/pip-install.sh",
+                ],
+                metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
+                image_version="1.4",
+                properties={},
+                master_machine_type="n1-standard-8",
+                worker_machine_type="n1-standard-8",
+                num_preemptible_workers=num_preemptible_workers,
+            ).make(),
         )
 
         run_dataproc_pyspark = DataprocSubmitPySparkJobOperator(
