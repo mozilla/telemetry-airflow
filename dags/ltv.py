@@ -113,8 +113,9 @@ ltv_revenue_join = bigquery_etl_query(
     destination_table="client_ltv_v1",
     dataset_id="revenue_derived",
     project_id="moz-fx-data-shared-prod",
-    arguments=("--clustering_fields=engine,country", "--schema_update_option=ALLOW_FIELD_ADDITION",
-               "--schema_update_option=ALLOW_FIELD_RELAXATION"),
+    arguments=("--clustering_fields=engine,country",
+               "--schema_update_option=ALLOW_FIELD_ADDITION", "--schema_update_option=ALLOW_FIELD_RELAXATION",
+               "--time_partitioning_type=DAY", "--time_partitioning_field=submission_date"),
     dag=dag,
 )
 
