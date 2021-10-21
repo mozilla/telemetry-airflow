@@ -5,7 +5,7 @@ from airflow.providers.google.cloud.operators.bigquery import (
 )
 
 from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
-     CloudDataTransferServiceS3ToGCSOperator
+    CloudDataTransferServiceS3ToGCSOperator,
 )
 
 from datetime import datetime, timedelta
@@ -144,7 +144,9 @@ gke_args = [
 remove_bq_table_partition = BigQueryDeleteTableOperator(
     task_id="remove_bq_table_partition",
     gcp_conn_id=bq_gcp_conn_id,
-    deletion_dataset_table="{}.{}${{{{ds_nodash}}}}".format(bq_dataset, bq_table_name),
+    deletion_dataset_table="{}.{}.{}${{{{ds_nodash}}}}".format(
+        "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name
+    ),
     ignore_if_missing=True,
     dag=dag,
 )
