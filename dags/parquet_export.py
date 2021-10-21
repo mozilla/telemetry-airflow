@@ -73,7 +73,7 @@ main_summary_bigint_columns = [
 
 main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
+        table="moz-fx-data-shared-prod.telemetry_derived.main_summary_v4${{ds_nodash}}",
         static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             "--partition-by=sample_id",
@@ -89,7 +89,7 @@ main_summary_export = SubDagOperator(
 
 clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
+        table="moz-fx-data-shared-prod.telemetry_derived.clients_daily_v6${{ds_nodash}}",
         static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             # restore legacy schema
