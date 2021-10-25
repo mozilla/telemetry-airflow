@@ -34,7 +34,8 @@ GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
-dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 9 * * *")
+
+dag = DAG(GLAM_DAG, default_args=default_args, concurrency=2, schedule_interval="0 9 * * *")
 
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskCompletedSensor(
