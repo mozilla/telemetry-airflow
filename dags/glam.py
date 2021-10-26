@@ -332,7 +332,7 @@ clients_histogram_aggregates >> glam_sample_counts
 clients_histogram_bucket_counts >> clients_histogram_probe_counts
 clients_histogram_probe_counts >> histogram_percentiles
 
-clients_scalar_aggregates >> glam_user_counts `
+clients_scalar_aggregates >> glam_user_counts
 glam_user_counts >> extract_counts
 glam_sample_counts >> extract_sample_counts
 
