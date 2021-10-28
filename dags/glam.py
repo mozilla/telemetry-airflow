@@ -34,14 +34,14 @@ GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
-dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 4 * * *")
+dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 2 * * *")
 
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
-    execution_delta=timedelta(hours=3),
+    execution_delta=timedelta(hours=1),
     check_existence=True,
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
