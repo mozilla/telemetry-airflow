@@ -36,6 +36,7 @@ PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
 dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 2 * * *")
 
+
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
