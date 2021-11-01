@@ -34,15 +34,15 @@ GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
+dag = DAG(GLAM_DAG, default_args=default_args, schedule_interval="0 2 * * *")
 
-dag = DAG(GLAM_DAG, default_args=default_args, concurrency=2, schedule_interval="0 9 * * *")
 
 # Make sure all the data for the given day has arrived before running.
 wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
-    execution_delta=timedelta(hours=8),
+    execution_delta=timedelta(hours=1),
     check_existence=True,
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
@@ -243,7 +243,7 @@ clients_histogram_bucket_counts = SubDagOperator(
         dag.schedule_interval,
         dataset_id,
         ("submission_date:DATE:{{ds}}",),
-        50,
+        25,
         None,
     ),
     task_id="clients_histogram_bucket_counts",
@@ -331,7 +331,6 @@ clients_histogram_bucket_counts >> clients_histogram_probe_counts
 clients_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
-histogram_percentiles >> client_scalar_probe_counts
 glam_user_counts >> extract_counts
 glam_sample_counts >> extract_sample_counts
 
