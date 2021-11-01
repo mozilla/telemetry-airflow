@@ -89,6 +89,17 @@ wait_for_clients_daily_export = ExternalTaskSensor(
     email_on_retry=False,
     dag=dag)
 
+wait_for_clients_last_seen = ExternalTaskSensor(
+    task_id="wait_for_clients_last_seen",
+    external_dag_id="bqetl_main_summary",
+    external_task_id="telemetry_derived__clients_last_seen__v1",
+    execution_delta=timedelta(hours=2),
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
+    dag=dag,
+)
+
 taar_locale = SubDagOperator(
     task_id="taar_locale",
     subdag=moz_dataproc_pyspark_runner(
@@ -232,9 +243,13 @@ taar_lite_guidranking = GKEPodOperator(
 amodump >> amowhitelist
 amodump >> editorial_whitelist
 
-wait_for_clients_daily_export >> taar_similarity
-wait_for_clients_daily_export >> taar_locale
-wait_for_clients_daily_export >> taar_collaborative_recommender
-wait_for_clients_daily_export >> taar_lite
-wait_for_clients_daily_export >> taar_lite_guidranking
+taar_tasks = [
+    taar_similarity,
+    taar_locale,
+    taar_collaborative_recommender,
+    taar_lite,
+    taar_lite_guidranking,
+]
 
+wait_for_clients_daily_export >> taar_tasks
+wait_for_clients_last_seen >> taar_tasks
