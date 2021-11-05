@@ -1,3 +1,10 @@
+"""
+Powers the [jetstream](https://experimenter.info/jetstream/jetstream/)
+analysis framework for experiments.
+
+See the [jetstream repository](https://github.com/mozilla/jetstream).
+"""
+
 from airflow import DAG
 from operators.task_sensor import ExternalTaskCompletedSensor
 from datetime import timedelta, datetime
@@ -14,7 +21,12 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("jetstream", default_args=default_args, schedule_interval="0 4 * * *") as dag:
+with DAG(
+        "jetstream",
+        default_args=default_args,
+        schedule_interval="0 4 * * *",
+        doc_md=__doc__,
+) as dag:
 
     # Built from repo https://github.com/mozilla/jetstream
     jetstream_image = "gcr.io/moz-fx-data-experiments/jetstream:latest"

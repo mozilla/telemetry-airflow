@@ -1,3 +1,12 @@
+"""
+Client Lifetime Value.
+
+Kicks off jobs to run on a Dataproc cluster. The job code lives in
+[jobs/ltv_daily.py](https://github.com/mozilla/telemetry-airflow/blob/main/jobs/ltv_daily.py).
+
+See [client_ltv docs on DTMO](https://docs.telemetry.mozilla.org/datasets/search/client_ltv/reference.html).
+"""
+
 import json
 import os
 
@@ -32,7 +41,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *")
+dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 

@@ -1,3 +1,11 @@
+"""
+Export of a few BigQuery datasets to Parquet files on GCS.
+
+The only consumer of these datasets is the taar DAGs.
+We should eventually update the TAAR logic to use BigQuery directly,
+which would allow us to tear down this DAG.
+"""
+
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.subdag_operator import SubDagOperator
@@ -24,7 +32,7 @@ default_args = {
 
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
-dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *')
+dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *', doc_md=__doc__)
 
 main_summary_bigint_columns = [
     # bigquery does not have 32-bit int, and int->bigint is not a

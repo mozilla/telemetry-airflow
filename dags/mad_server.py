@@ -1,3 +1,11 @@
+"""
+Malicious Addons Detection
+
+This runs once a week to emit a trained model to GCS.
+
+Source code is in the private [mad-server repository](https://github.com/mozilla/mad-server/).
+"""
+
 import os
 from airflow import DAG
 from datetime import datetime, timedelta
@@ -17,7 +25,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("mad_server", default_args=default_args, schedule_interval="@weekly") as dag:
+with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__) as dag:
     is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
     aws_conn_id="aws_dev_mad_resources_training"
     # mad-server expects AWS creds in some custom env vars.

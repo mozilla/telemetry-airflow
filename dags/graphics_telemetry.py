@@ -1,3 +1,13 @@
+"""
+Processes main ping data and exports to S3 to power a graphics dashboard at
+https://firefoxgraphics.github.io/telemetry/
+
+This was originally a Databricks notebook that was migrated to a scheduled
+Dataproc task. Source code lives in the
+[FirefoxGraphics/telemetry](https://github.com/FirefoxGraphics/telemetry)
+repository.
+"""
+
 import datetime
 import os
 
@@ -37,6 +47,7 @@ with DAG(
         "graphics_telemetry",
         default_args=default_args,
         schedule_interval="0 3 * * *",
+        doc_md=__doc__,
 ) as dag:
     # Jobs read from/write to s3://telemetry-public-analysis-2/gfx/telemetry-data/
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'

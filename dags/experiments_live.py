@@ -1,3 +1,11 @@
+"""
+See [experiments-monitoring-data-export in the docker-etl repository]
+(https://github.com/mozilla/docker-etl/tree/main/jobs/experiments-monitoring-data-export).
+
+This DAG exports views related to experiment monitoring to GCS as JSON
+every 5 minutes to power the Experimenter console.
+"""
+
 from airflow import DAG
 from datetime import datetime, timedelta
 
@@ -21,7 +29,9 @@ with DAG('experiments_live',
          # max_active_tasks=4,
          concurrency=4,
          max_active_runs=1,
-         schedule_interval="*/5 * * * *") as dag:
+         schedule_interval="*/5 * * * *",
+         doc_md=__doc__,
+) as dag:
 
     # list of datasets to export data to GCS
     experiment_datasets = [

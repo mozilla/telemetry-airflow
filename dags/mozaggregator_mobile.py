@@ -1,3 +1,10 @@
+"""
+Aggregates that power the legacy telemetry
+[Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
+
+See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
+"""
+
 import json
 import os
 from datetime import datetime, timedelta
@@ -27,7 +34,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@daily")
+dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@daily", doc_md=__doc__)
 
 subdag_args = default_args.copy()
 subdag_args["retries"] = 0
