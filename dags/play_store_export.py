@@ -1,3 +1,10 @@
+"""
+Runs a Docker image that backfills data from the Google Play store to BigQuery.
+
+The container is defined in
+[docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/play-store-export)
+"""
+
 from airflow import DAG
 from datetime import datetime, timedelta
 from utils.gcp import gke_command
@@ -17,6 +24,7 @@ project_id = "moz-fx-data-marketing-prod"
 
 with DAG("play_store_export",
          default_args=default_args,
+         doc_md=__doc__,
          schedule_interval="@daily") as dag:
 
     play_store_export = gke_command(

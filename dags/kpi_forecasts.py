@@ -1,3 +1,11 @@
+"""
+Runs simpleprophet forecasting for corporate KPIs, dumping results to BQ tables
+which are then visualized in Looker dashboards.
+
+Source code is in
+[mozilla/forecasting](https://github.com/mozilla/forecasting/tree/main/simpleprophet).
+"""
+
 import datetime
 
 from airflow import models
@@ -23,6 +31,7 @@ dag_name = 'kpi_forecasts'
 with models.DAG(
         dag_name,
         schedule_interval='0 4 * * *',
+        doc_md=__doc__,
         default_args=default_args) as dag:
 
     simpleprophet_forecasts_mobile = simpleprophet_forecast(

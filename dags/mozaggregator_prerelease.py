@@ -1,3 +1,10 @@
+"""
+Aggregates that power the legacy telemetry
+[Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
+
+See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
+"""
+
 import json
 import os
 from datetime import datetime, timedelta
@@ -29,6 +36,7 @@ dag = DAG(
     "prerelease_telemetry_aggregates",
     default_args=default_args,
     schedule_interval="@daily",
+    doc_md=__doc__,
 )
 
 

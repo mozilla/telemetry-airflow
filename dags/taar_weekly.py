@@ -1,6 +1,9 @@
 """
 This configures a weekly DAG to run the TAAR Ensemble job off.
+
+For context, see https://github.com/mozilla/taar
 """
+
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.subdag_operator import SubDagOperator
@@ -47,7 +50,8 @@ default_args_weekly = {
 
 
 taar_weekly = DAG(
-    "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly"
+    "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly",
+    doc_md=__doc__,
 )
 
 

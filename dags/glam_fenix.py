@@ -1,3 +1,13 @@
+"""
+Firefox for Android ETL for https://glam.telemetry.mozilla.org/
+
+Generates and runs a series of BQ queries, see
+[bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
+in bigquery-etl and the
+[glam_subdags](https://github.com/mozilla/telemetry-airflow/tree/main/dags/glam_subdags)
+in telemetry-airflow.
+"""
+
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -57,6 +67,7 @@ dag = DAG(
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
+    doc_md=__doc__,
 )
 
 wait_for_copy_deduplicate = ExternalTaskCompletedSensor(

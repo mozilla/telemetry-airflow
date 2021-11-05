@@ -1,3 +1,12 @@
+"""
+Client Lifetime Value.
+
+Kicks off jobs to run on a Dataproc cluster. The job code lives in
+[jobs/ltv_daily.py](https://github.com/mozilla/telemetry-airflow/blob/main/jobs/ltv_daily.py).
+
+See [client_ltv docs on DTMO](https://docs.telemetry.mozilla.org/datasets/search/client_ltv/reference.html).
+"""
+
 import json
 import os
 

@@ -1,3 +1,12 @@
+"""
+Daily data exports used by TAAR.
+
+Source code is in [mozilla/telemetry-batch-view](https://github.com/mozilla/telemetry-batch-view/blob/main/src/main/scala/com/mozilla/telemetry/ml/AddonRecommender.scala).
+
+For context, see https://github.com/mozilla/taar
+"""
+
+
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -44,7 +53,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *")
+dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__)
 
 amodump = GKEPodOperator(
     task_id="taar_amodump",
