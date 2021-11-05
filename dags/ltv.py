@@ -41,7 +41,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *")
+dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
