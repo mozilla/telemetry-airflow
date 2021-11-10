@@ -11,6 +11,7 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from operators.gcp_container_operator import GKEPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
     generate_and_run_glean_queries,
@@ -207,3 +208,42 @@ for product in final_products:
     probe_counts >> extract_probe_counts >> export
     clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
     clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export
+
+# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
+glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
+
+base_docker_args = ['/venv/bin/python', 'manage.py']
+
+glam_fenix_import_glean_aggs_beta = GKEPodOperator(
+    task_id = 'glam_fenix_import_glean_aggs_beta',
+    name = 'glam_fenix_import_glean_aggs_beta',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_glean_aggs', 'beta'],
+    dag=dag)
+
+glam_fenix_import_glean_aggs_nightly = GKEPodOperator(
+    task_id = 'glam_fenix_import_glean_aggs_nightly',
+    name = 'glam_fenix_import_glean_aggs_nightly',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_glean_aggs', 'nightly'],
+    dag=dag)
+
+glam_fenix_import_glean_aggs_release = GKEPodOperator(
+    task_id = 'glam_fenix_import_glean_aggs_release',
+    name = 'glam_fenix_import_glean_aggs_release',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_glean_aggs', 'release'],
+    dag=dag)
+
+glam_fenix_import_glean_counts = GKEPodOperator(
+    task_id = 'glam_fenix_import_glean_counts',
+    name = 'glam_fenix_import_glean_counts',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_glean_counts'],
+    dag=dag)
+
+
+export >> glam_fenix_import_glean_aggs_beta
+export >> glam_fenix_import_glean_aggs_nightly
+export >> glam_fenix_import_glean_aggs_release
+export >> glam_fenix_import_glean_counts

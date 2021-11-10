@@ -11,6 +11,7 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from operators.gcp_container_operator import GKEPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
@@ -315,6 +316,46 @@ extracts_per_channel = SubDagOperator(
     dag=dag,
 )
 
+# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
+glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
+
+base_docker_args = ['/venv/bin/python', 'manage.py']
+
+glam_import_desktop_aggs_beta = GKEPodOperator(
+    task_id = 'glam_import_desktop_aggs_beta',
+    name = 'glam_import_desktop_aggs_beta',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_desktop_aggs', 'beta'],
+    dag=dag)
+
+glam_import_desktop_aggs_nightly = GKEPodOperator(
+    task_id = 'glam_import_desktop_aggs_nightly',
+    name = 'glam_import_desktop_aggs_nightly',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_desktop_aggs', 'nightly'],
+    dag=dag)
+
+glam_import_desktop_aggs_release = GKEPodOperator(
+    task_id = 'glam_import_desktop_aggs_release',
+    name = 'glam_import_desktop_aggs_release',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_desktop_aggs', 'release'],
+    dag=dag)
+
+glam_import_user_counts = GKEPodOperator(
+    task_id = 'glam_import_user_counts',
+    name = 'glam_import_user_counts',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_user_counts'],
+    dag=dag)
+
+glam_import_probes = GKEPodOperator(
+    task_id = 'glam_import_probes',
+    name = 'glam_import_probes',
+    image = glam_import_image,
+    arguments = base_docker_args + ['import_probes'],
+    dag=dag)
+
 
 wait_for_main_ping >> latest_versions
 
@@ -353,3 +394,9 @@ extract_sample_counts >> extracts_per_channel
 client_scalar_probe_counts >> extracts_per_channel
 scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
+
+extracts_per_channel >> glam_import_desktop_aggs_beta
+extracts_per_channel >> glam_import_desktop_aggs_nightly
+extracts_per_channel >> glam_import_desktop_aggs_release
+extracts_per_channel >> glam_import_user_counts
+extracts_per_channel >> glam_import_probes
