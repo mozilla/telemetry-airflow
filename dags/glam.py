@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from operators.gcp_container_operator import GKEPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
@@ -321,11 +322,21 @@ glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam
 
 base_docker_args = ['/venv/bin/python', 'manage.py']
 
+env_vars = dict(
+    DATABASE_URL = Variable.get("glam_secret__database_url"),
+    DJANGO_SECRET_KEY = Variable.get("glam_secret__django_secret_key"),
+    DJANGO_CONFIGURATION = "Prod",
+    DJANGO_DEBUG = "False",
+    DJANGO_SETTINGS_MODULE = "glam.settings",
+    GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
+)
+
 glam_import_desktop_aggs_beta = GKEPodOperator(
     task_id = 'glam_import_desktop_aggs_beta',
     name = 'glam_import_desktop_aggs_beta',
     image = glam_import_image,
     arguments = base_docker_args + ['import_desktop_aggs', 'beta'],
+    env_vars = env_vars,
     dag=dag)
 
 glam_import_desktop_aggs_nightly = GKEPodOperator(
@@ -333,6 +344,7 @@ glam_import_desktop_aggs_nightly = GKEPodOperator(
     name = 'glam_import_desktop_aggs_nightly',
     image = glam_import_image,
     arguments = base_docker_args + ['import_desktop_aggs', 'nightly'],
+    env_vars = env_vars,
     dag=dag)
 
 glam_import_desktop_aggs_release = GKEPodOperator(
@@ -340,6 +352,7 @@ glam_import_desktop_aggs_release = GKEPodOperator(
     name = 'glam_import_desktop_aggs_release',
     image = glam_import_image,
     arguments = base_docker_args + ['import_desktop_aggs', 'release'],
+    env_vars = env_vars,
     dag=dag)
 
 glam_import_user_counts = GKEPodOperator(
@@ -347,6 +360,7 @@ glam_import_user_counts = GKEPodOperator(
     name = 'glam_import_user_counts',
     image = glam_import_image,
     arguments = base_docker_args + ['import_user_counts'],
+    env_vars = env_vars,
     dag=dag)
 
 glam_import_probes = GKEPodOperator(
@@ -354,6 +368,7 @@ glam_import_probes = GKEPodOperator(
     name = 'glam_import_probes',
     image = glam_import_image,
     arguments = base_docker_args + ['import_probes'],
+    env_vars = env_vars,
     dag=dag)
 
 
