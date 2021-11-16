@@ -146,6 +146,9 @@ init_variables() {
 
     airflow variables set "glean_dictionary_netlify_build_webhook_id" "status/200"
     airflow variables set "lookml_generator_release_str" "v0.0.0"
+
+    airflow variables set "glam_secret__database_url" "glam_secret__database_url"
+    airflow variables set "glam_secret__django_secret_key" "glam_secret__django_secret_key"
 }
 
 [ $# -lt 1 ] && usage
