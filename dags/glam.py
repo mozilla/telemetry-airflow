@@ -11,7 +11,7 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
@@ -331,7 +331,7 @@ env_vars = dict(
     GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
 )
 
-glam_import_desktop_aggs_beta = GKEPodOperator(
+glam_import_desktop_aggs_beta = GKENatPodOperator(
     task_id = 'glam_import_desktop_aggs_beta',
     name = 'glam_import_desktop_aggs_beta',
     image = glam_import_image,
@@ -339,7 +339,7 @@ glam_import_desktop_aggs_beta = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_desktop_aggs_nightly = GKEPodOperator(
+glam_import_desktop_aggs_nightly = GKENatPodOperator(
     task_id = 'glam_import_desktop_aggs_nightly',
     name = 'glam_import_desktop_aggs_nightly',
     image = glam_import_image,
@@ -347,7 +347,7 @@ glam_import_desktop_aggs_nightly = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_desktop_aggs_release = GKEPodOperator(
+glam_import_desktop_aggs_release = GKENatPodOperator(
     task_id = 'glam_import_desktop_aggs_release',
     name = 'glam_import_desktop_aggs_release',
     image = glam_import_image,
@@ -355,7 +355,7 @@ glam_import_desktop_aggs_release = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_user_counts = GKEPodOperator(
+glam_import_user_counts = GKENatPodOperator(
     task_id = 'glam_import_user_counts',
     name = 'glam_import_user_counts',
     image = glam_import_image,
@@ -363,7 +363,7 @@ glam_import_user_counts = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_probes = GKEPodOperator(
+glam_import_probes = GKENatPodOperator(
     task_id = 'glam_import_probes',
     name = 'glam_import_probes',
     image = glam_import_image,

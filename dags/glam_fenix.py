@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import Variable
 
-from operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
     generate_and_run_glean_queries,
@@ -225,7 +225,7 @@ env_vars = dict(
     GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
 )
 
-glam_fenix_import_glean_aggs_beta = GKEPodOperator(
+glam_fenix_import_glean_aggs_beta = GKENatPodOperator(
     task_id = 'glam_fenix_import_glean_aggs_beta',
     name = 'glam_fenix_import_glean_aggs_beta',
     image = glam_import_image,
@@ -233,7 +233,7 @@ glam_fenix_import_glean_aggs_beta = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_fenix_import_glean_aggs_nightly = GKEPodOperator(
+glam_fenix_import_glean_aggs_nightly = GKENatPodOperator(
     task_id = 'glam_fenix_import_glean_aggs_nightly',
     name = 'glam_fenix_import_glean_aggs_nightly',
     image = glam_import_image,
@@ -241,7 +241,7 @@ glam_fenix_import_glean_aggs_nightly = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_fenix_import_glean_aggs_release = GKEPodOperator(
+glam_fenix_import_glean_aggs_release = GKENatPodOperator(
     task_id = 'glam_fenix_import_glean_aggs_release',
     name = 'glam_fenix_import_glean_aggs_release',
     image = glam_import_image,
@@ -249,7 +249,7 @@ glam_fenix_import_glean_aggs_release = GKEPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_fenix_import_glean_counts = GKEPodOperator(
+glam_fenix_import_glean_counts = GKENatPodOperator(
     task_id = 'glam_fenix_import_glean_counts',
     name = 'glam_fenix_import_glean_counts',
     image = glam_import_image,
