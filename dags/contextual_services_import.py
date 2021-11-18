@@ -36,7 +36,7 @@ with DAG("contextual_services_import",
             "--destination-project", project_id,
             "--destination-table-id", table_id,
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/quicksuggest2bq:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/quicksuggest2bq_docker_etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",
         dag=dag,
         email=[
