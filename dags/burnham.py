@@ -143,7 +143,7 @@ TEST_EXPERIMENTS = f"""WITH {DISCOVERY_V1_DEDUPED},
   WHERE
     metrics.string.test_name = "{DEFAULT_TEST_NAME}"
   LIMIT
-    20 ),
+    40 ),
   experiment_counts AS (
   SELECT
     experiment,
@@ -202,7 +202,7 @@ WHERE
 ORDER BY
   metrics.string.mission_identifier
 LIMIT
-  20
+  40
 """
 
 WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
@@ -337,6 +337,8 @@ ORDER BY
 
 WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
     {"mission_identifier": "MISSION B: TWO WARPS"},
+    {"mission_identifier": "MISSION B: TWO WARPS"},
+    {"mission_identifier": "MISSION C: ONE JUMP"},
     {"mission_identifier": "MISSION C: ONE JUMP"},
 ]
 
@@ -651,7 +653,7 @@ with DAG(
         burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
         burnham_test_run=burnham_test_run,
         burnham_test_name=DEFAULT_TEST_NAME,
-        burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS"],
+        burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS", "MISSION C: ONE JUMP"],
         burnham_spore_drive="tardigrade",
         owner=DAG_OWNER,
         email=DAG_EMAIL,
