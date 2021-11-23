@@ -706,7 +706,7 @@ with DAG(
     # We expect up to 20 minute latency for pings to get loaded to live tables
     # in BigQuery, so we have a task that explicitly sleeps for 20 minutes
     # and make that a dependency for our tasks that need to read the BQ data.
-    sleep_20_minutes = sleep_task(minutes=40, task_id="sleep_20_minutes")
+    sleep_20_minutes = sleep_task(minutes=20, task_id="sleep_20_minutes")
 
     # Tasks related to the discovery table
     wait_for_discovery_data = burnham_sensor(
