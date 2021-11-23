@@ -98,8 +98,8 @@ ORDER BY
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
-    {"key": "spore_drive", "value_sum": 25},
-    {"key": "warp_drive", "value_sum": 36},
+    {"key": "spore_drive", "value_sum": 30},
+    {"key": "warp_drive", "value_sum": 40},
 ]
 
 
@@ -714,7 +714,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=10,
+            min_count_rows=20,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -815,7 +815,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="space_ship_ready_v1",
-            min_count_rows=3,
+            min_count_rows=5,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -857,7 +857,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=3,
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
@@ -900,7 +900,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="deletion_request_v1",
-            min_count_rows=1,
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
