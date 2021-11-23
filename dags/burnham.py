@@ -703,10 +703,10 @@ with DAG(
 
     client8.set_upstream(generate_burnham_test_run_uuid)
 
-    # We expect up to 40 minute latency for pings to get loaded to live tables
-    # in BigQuery, so we have a task that explicitly sleeps for 40 minutes
+    # We expect up to 20 minute latency for pings to get loaded to live tables
+    # in BigQuery, so we have a task that explicitly sleeps for 20 minutes
     # and make that a dependency for our tasks that need to read the BQ data.
-    sleep_20_minutes = sleep_task(minutes=40, task_id="sleep_40_minutes")
+    sleep_20_minutes = sleep_task(minutes=40, task_id="sleep_20_minutes")
 
     # Tasks related to the discovery table
     wait_for_discovery_data = burnham_sensor(
@@ -714,7 +714,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=10,
+            min_count_rows=20,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -815,7 +815,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="space_ship_ready_v1",
-            min_count_rows=3,
+            min_count_rows=5,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -857,7 +857,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=3,
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
@@ -900,7 +900,7 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="deletion_request_v1",
-            min_count_rows=1,
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
