@@ -199,9 +199,13 @@ ORDER BY
 
 WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
     {
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
-        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 2}],
-    }
+    },
+    {
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
+        "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
+    },
 ]
 
 
