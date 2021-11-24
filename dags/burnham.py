@@ -98,8 +98,8 @@ ORDER BY
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
-    {"key": "spore_drive", "value_sum": 30},
-    {"key": "warp_drive", "value_sum": 40},
+    {"key": "spore_drive", "value_sum": 26},
+    {"key": "warp_drive", "value_sum": 36},
 ]
 
 
