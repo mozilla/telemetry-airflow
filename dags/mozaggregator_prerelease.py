@@ -18,13 +18,12 @@ from utils.gcp import gke_command
 EXPORT_TO_AVRO = True
 
 default_args = {
-    "owner": "frank@mozilla.com",
+    "owner": "linhnguyen@mozilla.com",
     "depends_on_past": True,
     "start_date": datetime(2018, 12, 23),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "frank@mozilla.com",
-        "amiyaguchi@mozilla.com",
+        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
