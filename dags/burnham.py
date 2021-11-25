@@ -718,6 +718,12 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
+            # client1 sends 2 discovery pings
+            # client2 sends 6 discovery pings
+            # client3 sends 2 discovery pings
+            # client5 sends 2 discovery pings
+            # client6 sends 6 discovery pings
+            # client7 sends 2 discovery pings
             min_count_rows=20,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
@@ -776,7 +782,9 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="starbase46_v1",
-            min_count_rows=1,
+            # client2 sends 1 starbase46 ping
+            # client6 sends 1 starbase46 ping
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -819,7 +827,13 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="space_ship_ready_v1",
-            min_count_rows=5,
+            # client1 sends 1 space_ship_ready ping
+            # client2 sends 1 space_ship_ready ping
+            # client3 sends 1 space_ship_ready ping
+            # client5 sends 1 space_ship_ready ping
+            # client6 sends 1 space_ship_ready ping
+            # client7 sends 1 space_ship_ready ping
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -861,6 +875,8 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
+            # client4 sends 3 discovery pings
+            # client8 sends 3 discovery pings
             min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
@@ -904,6 +920,8 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="deletion_request_v1",
+            # client4 sends 1 deletion_request ping
+            # client8 sends 1 deletion_request ping
             min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
