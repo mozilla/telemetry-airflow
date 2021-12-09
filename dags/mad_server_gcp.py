@@ -13,7 +13,7 @@ from utils.gcp import gke_command
 
 
 default_args = {
-    "owner": "jklukas@mozilla.com",
+    "owner": "gleonard@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2021, 4, 15),
     "email_on_failure": True,
@@ -24,6 +24,7 @@ default_args = {
 
 with DAG("mad_server_gcp",
          default_args=default_args,
+         # TODO set to weekly once ready for production schedule_interval="@weekly",
          schedule_interval=timedelta(minutes=5),
          doc_md=__doc__,
          tags=['mad'],
