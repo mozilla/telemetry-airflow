@@ -22,10 +22,11 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
+# TODO set to weekly once ready for production schedule_interval="@weekly",
 with DAG("mad_server_gcp",
          default_args=default_args,
-         # TODO set to weekly once ready for production schedule_interval="@weekly",
-         schedule_interval=timedelta(minutes=5),
+         schedule_interval="@hourly",
+         # schedule_interval=timedelta(minutes=5),
          doc_md=__doc__,
          tags=['mad'],
          start_date=datetime(2021, 1, 1),
@@ -40,7 +41,9 @@ with DAG("mad_server_gcp",
         ],
         command=[
             "bin/train_model",
-            './working'
+            "--publish",
+            "--publish-as-latest",
+            "./working",
         ],
         # TODO GLE need to specify latest version once branch is merged.
         docker_image="gcr.io/srg-team-sandbox/mad-server:latest-gcs",
