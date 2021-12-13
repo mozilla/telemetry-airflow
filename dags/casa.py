@@ -3,13 +3,14 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
+from utils.tags import Tag
 
 DOCS = """
 ### fivetran_casa
 
-#### Description 
+#### Description
 
-This DAG triggers Fivetran to import data from CASA using the 
+This DAG triggers Fivetran to import data from CASA using the
 [casa connector](https://github.com/mozilla/fivetran-connectors/tree/main/connectors/casa).
 
 #### Owner
@@ -28,10 +29,14 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG('fivetran_casa',
-         default_args=default_args,
-         doc_md=DOCS,
-         schedule_interval="0 5 * * *") as dag:
+tags = [Tag.ImpactTier.tier_1]
+
+with DAG(
+    'fivetran_casa',
+    default_args=default_args,
+    doc_md=DOCS,
+    schedule_interval="0 5 * * *",
+) as dag:
 
     casa_sync_start = FivetranOperator(
         connector_id='{{ var.value.fivetran_casa_connector_id }}',

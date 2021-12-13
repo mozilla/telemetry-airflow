@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 
 default_args = {
@@ -25,7 +26,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__) as dag:
+tags = [Tag.ImpactTier.tier_3]
+
+with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__, tags=tags,) as dag:
     is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
     aws_conn_id="aws_dev_mad_resources_training"
     # mad-server expects AWS creds in some custom env vars.

@@ -11,6 +11,7 @@ from utils.gcp import (
 )
 
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 DOCS = """\
 # Copy-Deduplicate
@@ -52,9 +53,10 @@ default_args = {
 }
 
 dag_name = "copy_deduplicate"
+tags = [Tag.ImpactTier.tier_1]
 
 with models.DAG(
-    dag_name, schedule_interval="0 1 * * *", doc_md=DOCS, default_args=default_args
+    dag_name, schedule_interval="0 1 * * *", doc_md=DOCS, default_args=default_args, tags=tags,
 ) as dag:
 
     # This single task is responsible for sequentially running copy queries

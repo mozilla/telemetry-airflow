@@ -21,6 +21,7 @@ from glam_subdags.generate_query import (
 )
 from utils.gcp import gke_command
 from functools import partial
+from utils.tags import Tag
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
@@ -65,12 +66,15 @@ LOGICAL_MAPPING = {
     "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
 }
 
+tags = [Tag.ImpactTier.tier_1]
+
 dag = DAG(
     "glam_fenix",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
     doc_md=__doc__,
+    tags=tags,
 )
 
 wait_for_copy_deduplicate = ExternalTaskCompletedSensor(

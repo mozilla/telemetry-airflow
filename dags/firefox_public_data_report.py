@@ -17,6 +17,7 @@ from utils.dataproc import (
     get_dataproc_parameters,
 )
 from utils.gcp import bigquery_etl_query
+from utils.tags import Tag
 
 
 """
@@ -38,11 +39,15 @@ default_args = {
     "retry_delay": timedelta(minutes=10),
 }
 
+tags = [Tag.ImpactTier.tier_3]
+
 dag = DAG(
     "firefox_public_data_report",
     default_args=default_args,
     schedule_interval="0 1 * * MON",
-    doc_md=__doc__)
+    doc_md=__doc__,
+    tags=tags,
+)
 
 # Required to write json output to s3://telemetry-public-analysis-2/public-data-report/hardware/
 write_aws_conn_id='aws_dev_telemetry_public_analysis_2_rw'

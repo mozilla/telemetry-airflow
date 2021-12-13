@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
+from utils.tags import Tag
 
 """
 
@@ -30,12 +31,15 @@ default_args = {
     "retry_delay": timedelta(minutes=10),
 }
 
+tags = [Tag.ImpactTier.tier_3]
+
 # run every Monday to maintain compatibility with legacy ATMO schedule
 dag = DAG(
     "update_orphaning_dashboard_etl",
     default_args=default_args,
     schedule_interval="0 2 * * MON",
     doc_md=__doc__,
+    tags=tags,
 )
 
 # Unsalted cluster name so subsequent runs fail if the cluster name exists

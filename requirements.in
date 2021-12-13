@@ -19,6 +19,7 @@ Flask-OAuthlib
 Authlib~=0.15.3
 Flask-AppBuilder>=3.3.0
 pytz
+pytest
 werkzeug>=1.0.1,~=1.0
 # The next requirements are for kubernetes-client/python
 urllib3>=1.24.2  # MIT

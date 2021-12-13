@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
+from utils.tags import Tag
 
 """
 Originally, this job read json (non-ndjson) from aws prod at:
@@ -45,7 +46,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("socorro_import", default_args=default_args, schedule_interval="@daily")
+tags = [Tag.ImpactTier.tier_2]
+
+dag = DAG("socorro_import", default_args=default_args, schedule_interval="@daily", tags=tags,)
 
 # Unsalted cluster name so subsequent runs fail if the cluster name exists
 cluster_name = "socorro-import-dataproc-cluster"

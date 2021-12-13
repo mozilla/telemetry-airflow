@@ -3,6 +3,7 @@ from os import environ
 
 from airflow import DAG
 from prio.processor import prio_processor_subdag
+from utils.tags import Tag
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
@@ -33,6 +34,8 @@ BUCKET_SHARED_B = f"moz-fx-prio-{ENVIRONMENT}-b-shared"
 APP_NAME = "origin-telemetry"
 BUCKET_PREFIX = "data/v1"
 
+tags = [Tag.ImpactTier.tier_1]
+
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
 dag = DAG(
@@ -41,6 +44,7 @@ dag = DAG(
     default_args=DEFAULT_ARGS,
     # 30 minute delay to account for data being transferred in
     schedule_interval="30 0 * * *",
+    tags=tags,
 )
 
 processor_b = prio_processor_subdag(

@@ -21,6 +21,7 @@ from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
 from utils.gcp import bigquery_etl_query, gke_command
+from utils.tags import Tag
 
 
 project_id = "moz-fx-data-shared-prod"
@@ -46,11 +47,15 @@ GLAM_DAG = "glam"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
+tags = [Tag.ImpactTier.tier_2]
+
 dag = DAG(
     GLAM_DAG,
     default_args=default_args,
     schedule_interval="0 2 * * *",
-    doc_md=__doc__)
+    doc_md=__doc__,
+    tags=tags,
+)
 
 
 # Make sure all the data for the given day has arrived before running.

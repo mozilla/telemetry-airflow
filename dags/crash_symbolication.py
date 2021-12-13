@@ -14,6 +14,7 @@ from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
+from utils.tags import Tag
 
 default_args = {
     "owner": "wkahngreene@mozilla.com",
@@ -34,6 +35,8 @@ PIP_PACKAGES = [
     "boto3==1.16.20",
     "scipy==1.5.4",
 ]
+
+tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
     "crash_symbolication",

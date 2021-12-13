@@ -4,6 +4,7 @@ from airflow import models
 from operators.task_sensor import ExternalTaskCompletedSensor
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import  bigquery_etl_query
+from utils.tags import Tag
 
 
 default_args = {
@@ -19,11 +20,14 @@ default_args = {
 }
 
 dag_name = "fission_experiment_monitoring"
+tags = [Tag.ImpactTier.tier_3]
 
 with models.DAG(
-        dag_name,
-        schedule_interval="0 3 * * *",
-        default_args=default_args) as dag:
+    dag_name,
+    schedule_interval="0 3 * * *",
+    default_args=default_args,
+    tags=tags,
+) as dag:
 
     wait_for_main_nightly = ExternalTaskCompletedSensor(
         task_id="wait_for_main_nightly",

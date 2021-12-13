@@ -11,6 +11,7 @@ from airflow.models import Variable
 
 from operators.gcp_container_operator import GKEPodOperator  # noqa
 from utils.dataproc import moz_dataproc_pyspark_runner
+from utils.tags import Tag
 
 
 taar_ensemble_cluster_name = "dataproc-taar-ensemble"
@@ -48,10 +49,12 @@ default_args_weekly = {
     "retry_delay": timedelta(minutes=60),
 }
 
+tags = [Tag.ImpactTier.tier_2]
 
 taar_weekly = DAG(
     "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly",
     doc_md=__doc__,
+    tags=tags,
 )
 
 

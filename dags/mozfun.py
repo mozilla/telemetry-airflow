@@ -10,6 +10,7 @@ on their own, hence the need for this nightly task.
 from airflow import DAG
 from datetime import timedelta, datetime
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
@@ -22,7 +23,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("mozfun", default_args=default_args, schedule_interval="@daily", doc_md=__doc__) as dag:
+tags = [Tag.ImpactTier.tier_1]
+
+with DAG("mozfun", default_args=default_args, schedule_interval="@daily", doc_md=__doc__, tags=tags,) as dag:
     docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
     publish_public_udfs = gke_command(

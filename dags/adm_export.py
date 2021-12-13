@@ -6,6 +6,7 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 
 from operators.gcp_container_operator import GKEPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
+from utils.tags import Tag
 
 
 DOCS = """\
@@ -29,9 +30,10 @@ default_args = {
 }
 
 dag_name = "adm_export"
+tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
-    dag_name, schedule_interval="0 5 * * MON", doc_md=DOCS, default_args=default_args
+    dag_name, schedule_interval="0 5 * * MON", doc_md=DOCS, default_args=default_args, tags=tags,
 ) as dag:
 
     conn = BaseHook.get_connection("adm_sftp")

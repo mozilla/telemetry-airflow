@@ -190,6 +190,7 @@ python-editor==1.0.4      # via alembic
 python-nvd3==0.15.0       # via apache-airflow
 python-slugify==4.0.1     # via apache-airflow, python-nvd3
 python3-openid==3.2.0     # via apache-airflow, flask-openid
+pytest==6.2.5             # via -r requirements.in
 pytz==2021.1              # via -r requirements.in, babel, celery, flask-babel, flower, google-api-core, pandas
 pytzdata==2020.1          # via pendulum
 pyyaml==5.4.1             # via apache-airflow, apispec, clickclick, google-ads, kubernetes, libcst, openapi-spec-validator

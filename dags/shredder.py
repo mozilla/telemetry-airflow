@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 docs = """
 ### shredder
@@ -42,11 +43,14 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 dag = DAG(
     "shredder",
     default_args=default_args,
     schedule_interval=timedelta(days=28),
     doc_md=docs,
+    tags=tags,
 )
 docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 base_command = [

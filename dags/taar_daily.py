@@ -21,6 +21,7 @@ from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     moz_dataproc_jar_runner,
 )
+from utils.tags import Tag
 
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
 TAAR_ETL_MODEL_STORAGE_BUCKET = Variable.get("taar_etl_model_storage_bucket")
@@ -53,7 +54,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__)
+tags = [Tag.ImpactTier.tier_2]
+
+dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__, tags=tags,)
 
 amodump = GKEPodOperator(
     task_id="taar_amodump",
