@@ -21,7 +21,7 @@ apache-airflow-providers-jdbc==2.0.0  # via apache-airflow
 apache-airflow-providers-mysql==2.1.0  # via apache-airflow
 apache-airflow-providers-postgres==2.0.0  # via apache-airflow
 apache-airflow-providers-sqlite==2.0.0  # via apache-airflow
-apache-airflow[amazon,apache.hive,async,celery,cncf.kubernetes,crypto,datadog,github_enterprise,google_auth,jdbc,mysql,password,postgres,statsd]==2.1.3  # via -r requirements.in, airflow-provider-fivetran, apache-airflow-providers-amazon, apache-airflow-providers-apache-hive, apache-airflow-providers-celery, apache-airflow-providers-cncf-kubernetes, apache-airflow-providers-datadog, apache-airflow-providers-google, apache-airflow-providers-http, apache-airflow-providers-jdbc, apache-airflow-providers-mysql, apache-airflow-providers-postgres
+apache-airflow[amazon,apache.hive,async,celery,cncf.kubernetes,crypto,datadog,github_enterprise,google_auth,jdbc,mysql,password,postgres,statsd]==2.1.4  # via -r requirements.in, airflow-provider-fivetran, apache-airflow-providers-amazon, apache-airflow-providers-apache-hive, apache-airflow-providers-celery, apache-airflow-providers-cncf-kubernetes, apache-airflow-providers-datadog, apache-airflow-providers-google, apache-airflow-providers-http, apache-airflow-providers-jdbc, apache-airflow-providers-mysql, apache-airflow-providers-postgres
 apispec[yaml]==3.3.2      # via flask-appbuilder
 argcomplete==1.12.2       # via -r requirements.in, apache-airflow, nox
 attrs==20.3.0             # via apache-airflow, cattrs, jsonschema
@@ -52,7 +52,7 @@ datadog==0.42.0           # via apache-airflow-providers-datadog
 defusedxml==0.7.1         # via python3-openid
 dill==0.3.4               # via apache-airflow
 distlib==0.3.2            # via virtualenv
-dnspython==1.16.0         # via email-validator, eventlet
+dnspython==1.16.0         # via apache-airflow, email-validator, eventlet
 docutils==0.16            # via apache-airflow, python-daemon
 email-validator==1.1.3    # via flask-appbuilder
 eventlet==0.31.1          # via apache-airflow
