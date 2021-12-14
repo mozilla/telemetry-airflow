@@ -1,19 +1,6 @@
-"""
-Firefox for Android ETL for https://glam.telemetry.mozilla.org/
-
-Generates and runs a series of BQ queries, see
-[bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
-in bigquery-etl and the
-[glam_subdags](https://github.com/mozilla/telemetry-airflow/tree/main/dags/glam_subdags)
-in telemetry-airflow.
-"""
-
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.models import Variable
-from operators.sleep_operator import SleepOperator
-from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
     generate_and_run_glean_queries,
@@ -23,13 +10,12 @@ from utils.gcp import gke_command
 from functools import partial
 
 default_args = {
-    "owner": "amiyaguchi@mozilla.com",
+    "owner": "akommasani@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 2, 19),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "amiyaguchi@mozilla.com",
-        "bewu@mozilla.com",
+        "akommasani@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -44,11 +30,7 @@ BUCKET = "moz-fx-data-glam-prod-fca7-etl-data"
 # start and end dates of the id in the app store.
 # https://docs.google.com/spreadsheets/d/18PzkzZxdpFl23__-CIO735NumYDqu7jHpqllo0sBbPA
 PRODUCTS = [
-    "org_mozilla_fenix",  # 2019-06-29 - 2020-07-03 (beta), 2020-07-03 - present (nightly)
-    "org_mozilla_fenix_nightly",  # 2019-06-30 - 2020-07-03
-    "org_mozilla_firefox",  # 2020-07-28 - present
-    "org_mozilla_firefox_beta",  # 2020-03-26 - present
-    "org_mozilla_fennec_aurora",  # 2020-01-21 - 2020-07-03
+    "firefox_desktop",
 ]
 
 # This is only required if there is a logical mapping defined within the
@@ -56,21 +38,17 @@ PRODUCTS = [
 # the dependency graph such that the view with the logical clients daily table
 # is always pointing to a concrete partition in BigQuery.
 LOGICAL_MAPPING = {
-    "org_mozilla_fenix_glam_nightly": [
-        "org_mozilla_fenix_nightly",
-        "org_mozilla_fenix",
-        "org_mozilla_fennec_aurora",
-    ],
-    "org_mozilla_fenix_glam_beta": ["org_mozilla_fenix", "org_mozilla_firefox_beta"],
-    "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
+    "firefox_desktop_glam_nightly": ["firefox_desktop"],
+    "firefox_desktop_glam_beta": ["firefox_desktop"],
+    "firefox_desktop_glam_release": ["firefox_desktop"],
+   
 }
 
 dag = DAG(
-    "glam_fenix",
+    "glam_firefox_desktop",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
-    doc_md=__doc__,
 )
 
 wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
@@ -210,61 +188,3 @@ for product in final_products:
     probe_counts >> extract_probe_counts >> export
     clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
     clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export
-
-# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
-
-base_docker_args = ['/venv/bin/python', 'manage.py']
-
-env_vars = dict(
-    DATABASE_URL = Variable.get("glam_secret__database_url"),
-    DJANGO_SECRET_KEY = Variable.get("glam_secret__django_secret_key"),
-    DJANGO_CONFIGURATION = "Prod",
-    DJANGO_DEBUG = "False",
-    DJANGO_SETTINGS_MODULE = "glam.settings",
-    GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
-)
-
-sleep_for_5_mins =  SleepOperator(
-    task_id='sleep_for_5_mins',
-    sleep_time=300,
-    dag=dag)
-
-
-glam_fenix_import_glean_aggs_beta = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_beta',
-    name = 'glam_fenix_import_glean_aggs_beta',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'beta'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_aggs_nightly = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_nightly',
-    name = 'glam_fenix_import_glean_aggs_nightly',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'nightly'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_aggs_release = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_release',
-    name = 'glam_fenix_import_glean_aggs_release',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'release'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_counts = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_counts',
-    name = 'glam_fenix_import_glean_counts',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_counts'],
-    env_vars = env_vars,
-    dag=dag)
-
-
-export >> sleep_for_5_mins >> glam_fenix_import_glean_aggs_beta
-export >> sleep_for_5_mins >> glam_fenix_import_glean_aggs_nightly
-export >> sleep_for_5_mins >> glam_fenix_import_glean_aggs_release
-export >> sleep_for_5_mins >> glam_fenix_import_glean_counts

@@ -95,12 +95,10 @@ GROUP BY
   technology_space_travel.key
 ORDER BY
   technology_space_travel.key
-LIMIT
-  20
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
-    {"key": "spore_drive", "value_sum": 25},
+    {"key": "spore_drive", "value_sum": 26},
     {"key": "warp_drive", "value_sum": 36},
 ]
 
@@ -117,8 +115,6 @@ WHERE
   AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
   AND metrics.string.test_name = "{DEFAULT_TEST_NAME}"
-LIMIT
-  20
 """
 
 WANT_TEST_CLIENT_IDS = [{"count_client_ids": 6}]
@@ -141,9 +137,7 @@ TEST_EXPERIMENTS = f"""WITH {DISCOVERY_V1_DEDUPED},
   FROM
     discovery_v1_deduped
   WHERE
-    metrics.string.test_name = "{DEFAULT_TEST_NAME}"
-  LIMIT
-    20 ),
+    metrics.string.test_name = "{DEFAULT_TEST_NAME}"),
   experiment_counts AS (
   SELECT
     experiment,
@@ -201,15 +195,17 @@ WHERE
   AND metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 ORDER BY
   metrics.string.mission_identifier
-LIMIT
-  20
 """
 
 WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
     {
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
         "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
-        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 2}],
-    }
+    },
+    {
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
+        "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
+    },
 ]
 
 
@@ -256,8 +252,6 @@ GROUP BY
   metrics.string.mission_identifier
 ORDER BY
   metrics.string.mission_identifier
-LIMIT
-  20
 """
 
 WANT_TEST_NO_PING_AFTER_UPLOAD_DISABLED = [
@@ -279,8 +273,6 @@ WHERE
   AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
   AND metrics.string.test_name = "test_disable_upload"
-LIMIT
-  20
 """
 
 WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 4}]
@@ -324,6 +316,7 @@ WITH
   WHERE
     metrics.string.test_name = "test_disable_upload")
 SELECT
+  count(*) as count_documents,
   discovery.mission_identifier
 FROM
   discovery
@@ -331,13 +324,15 @@ JOIN
   deletion_request
 USING
   (client_id)
+GROUP BY
+  discovery.mission_identifier
 ORDER BY
   discovery.mission_identifier
 """
 
 WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
-    {"mission_identifier": "MISSION B: TWO WARPS"},
-    {"mission_identifier": "MISSION C: ONE JUMP"},
+    {"mission_identifier": "MISSION B: TWO WARPS", "count_documents": 2},
+    {"mission_identifier": "MISSION C: ONE JUMP", "count_documents": 2},
 ]
 
 # Sensor template for the different burnham tables. Note that we use BigQuery
@@ -651,7 +646,7 @@ with DAG(
         burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
         burnham_test_run=burnham_test_run,
         burnham_test_name=DEFAULT_TEST_NAME,
-        burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS"],
+        burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS", "MISSION C: ONE JUMP"],
         burnham_spore_drive="tardigrade",
         owner=DAG_OWNER,
         email=DAG_EMAIL,
@@ -723,7 +718,13 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=10,
+            # client1 sends 2 discovery pings
+            # client2 sends 6 discovery pings
+            # client3 sends 2 discovery pings
+            # client5 sends 2 discovery pings
+            # client6 sends 6 discovery pings
+            # client7 sends 2 discovery pings
+            min_count_rows=20,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -781,7 +782,9 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="starbase46_v1",
-            min_count_rows=1,
+            # client2 sends 1 starbase46 ping
+            # client6 sends 1 starbase46 ping
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -824,7 +827,13 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="space_ship_ready_v1",
-            min_count_rows=3,
+            # client1 sends 1 space_ship_ready ping
+            # client2 sends 1 space_ship_ready ping
+            # client3 sends 1 space_ship_ready ping
+            # client5 sends 1 space_ship_ready ping
+            # client6 sends 1 space_ship_ready ping
+            # client7 sends 1 space_ship_ready ping
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -866,7 +875,9 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=3,
+            # client4 sends 3 discovery pings
+            # client8 sends 3 discovery pings
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
@@ -909,7 +920,9 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="deletion_request_v1",
-            min_count_rows=1,
+            # client4 sends 1 deletion_request ping
+            # client8 sends 1 deletion_request ping
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
