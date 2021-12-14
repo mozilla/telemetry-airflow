@@ -5,7 +5,7 @@ importlib-metadata>=1.7
 argcomplete==1.12.2
 pandas-gbq==0.14.1
 # removed hdfs
-apache-airflow[amazon,celery,postgres,apache.hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,mysql,google_auth,cncf.kubernetes]==2.1.1
+apache-airflow[amazon,celery,postgres,apache.hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,mysql,google_auth,cncf.kubernetes]==2.1.4
 cryptography>=3.2
 mozlogging
 retrying
