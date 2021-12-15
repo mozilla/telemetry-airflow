@@ -52,6 +52,10 @@ with DAG('fivetran_intacct_historical',
          doc_md=docs,
          schedule_interval="0 5 * * *") as dag:
 
+    fivetran_sensors_complete = DummyOperator(
+        task_id='end',
+    )
+
     for x,y in list_of_connectors.items():
 
         fivetran_sync_start = FivetranOperator(
@@ -65,10 +69,6 @@ with DAG('fivetran_intacct_historical',
                 fivetran_conn_id='fivetran',
                 connector_id='{}'.format(y),
                 poke_interval=5
-        )
-
-        fivetran_sensors_complete = DummyOperator(
-            task_id='end',
         )
 
         fivetran_sync_start >> fivetran_sync_wait >> fivetran_sensors_complete
