@@ -411,7 +411,8 @@ scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
 
 extracts_per_channel >> glam_import_desktop_aggs_beta
-extracts_per_channel >> glam_import_desktop_aggs_nightly
 extracts_per_channel >> glam_import_desktop_aggs_release
 extracts_per_channel >> glam_import_user_counts
 extracts_per_channel >> glam_import_probes
+
+glam_import_desktop_aggs_nightly
