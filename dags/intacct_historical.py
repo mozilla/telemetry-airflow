@@ -53,21 +53,21 @@ with DAG('fivetran_intacct_historical',
          schedule_interval="0 5 * * *") as dag:
 
     fivetran_sensors_complete = DummyOperator(
-        task_id='end',
+        task_id='intacct-fivetran-sensors-complete',
     )
 
-    for x,y in list_of_connectors.items():
+    for location, connector_id in list_of_connectors.items():
 
         fivetran_sync_start = FivetranOperator(
-                task_id='intacct-task-{}'.format(x),
+                task_id='intacct-task-{}'.format(location),
                 fivetran_conn_id='fivetran',
-                connector_id='{}'.format(y)
+                connector_id='{}'.format(connector_id)
         )
 
         fivetran_sync_wait = FivetranSensor(
-                task_id='intacct-sensor-{}'.format(x),
+                task_id='intacct-sensor-{}'.format(location),
                 fivetran_conn_id='fivetran',
-                connector_id='{}'.format(y),
+                connector_id='{}'.format(connector_id),
                 poke_interval=5
         )
 
