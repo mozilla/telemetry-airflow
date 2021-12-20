@@ -1,19 +1,27 @@
+"""
+Generates "Weekly report of modules with missing symbols in crash reports"
+and sends it to the Stability list.
+
+Generates correlations data for top crashers.
+
+Uses crash report data imported from Socorro.
+"""
 import datetime
 
 from airflow import DAG
+from airflow.operators.subdag_operator import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
-from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 
 default_args = {
-    "owner": "bewu@mozilla.com",
+    "owner": "wkahngreene@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "bewu@mozilla.com",
+        "wkahngreene@mozilla.com",
         "mcastelluccio@mozilla.com",
     ],
     "email_on_failure": True,
@@ -32,6 +40,7 @@ with DAG(
     default_args=default_args,
     # dag runs daily but tasks only run on certain days
     schedule_interval="0 5 * * *",
+    doc_md=__doc__,
 ) as dag:
     # top_signatures_correlations uploads results to public analysis bucket
     write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
@@ -113,7 +122,8 @@ with DAG(
                 "spark-env:AWS_SECRET_ACCESS_KEY": analysis_secret_key,
             },
             py_args=[
-                "--run-on-days", "0", "2", "4",  # run monday, wednesday, friday
+                # run monday, wednesday, and friday
+                "--run-on-days", "0", "2", "4",
                 "--date", "{{ ds }}",
             ],
             idle_delete_ttl=14400,
