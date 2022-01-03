@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-from operators.sleep_operator import SleepOperator
+
 from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
@@ -225,12 +225,6 @@ env_vars = dict(
     GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
 )
 
-sleep_for_5_mins =  SleepOperator(
-    task_id='sleep_for_5_mins',
-    sleep_time=300,
-    dag=dag)
-
-
 glam_fenix_import_glean_aggs_beta = GKENatPodOperator(
     task_id = 'glam_fenix_import_glean_aggs_beta',
     name = 'glam_fenix_import_glean_aggs_beta',
@@ -264,7 +258,7 @@ glam_fenix_import_glean_counts = GKENatPodOperator(
     dag=dag)
 
 
-export >> sleep_for_5_mins >> glam_fenix_import_glean_aggs_beta
-export >> sleep_for_5_mins >> glam_fenix_import_glean_aggs_nightly
-export >> sleep_for_5_mins >> glam_fenix_import_glean_aggs_release
-export >> sleep_for_5_mins >> glam_fenix_import_glean_counts
+export >> glam_fenix_import_glean_aggs_beta
+export >> glam_fenix_import_glean_aggs_nightly
+export >> glam_fenix_import_glean_aggs_release
+export >> glam_fenix_import_glean_counts
