@@ -192,7 +192,7 @@ taar_collaborative_recommender = SubDagOperator(
           f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints"
         ],
         cluster_name="addon-recommender-{{ds_nodash}}",
-        image_version="1.3",
+        image_version="1.4-debian10",
         worker_machine_type="n1-standard-8",
         num_workers=20,
         optional_components=[],
