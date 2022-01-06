@@ -66,7 +66,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5",
+            image_version="1.5-debian10",
             dag_name="bhr_collection",
             default_args=default_args,
             cluster_name="bhr-collection-{{ ds }}",

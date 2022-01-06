@@ -76,7 +76,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5",
+            image_version="1.5-debian10",
             dag_name="modules_with_missing_symbols",
             default_args=default_args,
             cluster_name="modules-with-missing-symbols-{{ ds }}",
@@ -109,7 +109,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5",
+            image_version="1.5-debian10",
             dag_name="top_signatures_correlations",
             default_args=default_args,
             cluster_name="top-signatures-correlations-{{ ds }}",
