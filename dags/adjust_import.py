@@ -10,6 +10,7 @@ from utils.dataproc import (
     copy_artifacts_dev,
     get_dataproc_parameters,
 )
+from utils.tags import Tag
 
 default_args = {
     "owner": "frank@mozilla.com",
@@ -25,7 +26,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("adjust_import", default_args=default_args, schedule_interval="@daily")
+tags = [Tag.ImpactTier.tier_1]
+
+dag = DAG("adjust_import", default_args=default_args, schedule_interval="@daily", tags=tags,)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 

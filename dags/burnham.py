@@ -15,6 +15,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 DOCS = """\
 # burnham
@@ -564,12 +565,14 @@ def sleep_task(minutes, task_id):
         op_kwargs=dict(minutes=minutes),
     )
 
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "burnham",
     schedule_interval="@daily",
     default_args=DEFAULT_ARGS,
     doc_md=DOCS,
+    tags=tags,
 ) as dag:
 
     # Generate a UUID for this test run

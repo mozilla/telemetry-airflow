@@ -13,6 +13,7 @@ from datetime import timedelta
 from utils.gcp import bigquery_etl_query
 from operators.task_sensor import ExternalTaskCompletedSensor
 from utils.forecasting import simpleprophet_forecast
+from utils.tags import Tag
 
 default_args = {
     'owner': 'jklukas@mozilla.com',
@@ -27,12 +28,15 @@ default_args = {
 }
 
 dag_name = 'kpi_forecasts'
+tags = [Tag.ImpactTier.tier_1]
 
 with models.DAG(
-        dag_name,
-        schedule_interval='0 4 * * *',
-        doc_md=__doc__,
-        default_args=default_args) as dag:
+    dag_name,
+    schedule_interval='0 4 * * *',
+    doc_md=__doc__,
+    default_args=default_args,
+    tags=tags,
+) as dag:
 
     simpleprophet_forecasts_mobile = simpleprophet_forecast(
         task_id="simpleprophet_forecasts_mobile",

@@ -7,6 +7,7 @@ This is currently only experimental.
 from airflow import DAG
 from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
@@ -19,7 +20,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("partybal", default_args=default_args, schedule_interval="0 */3 * * *", doc_md=__doc__) as dag:
+tags = [Tag.ImpactTier.tier_2]
+
+with DAG("partybal", default_args=default_args, schedule_interval="0 */3 * * *", doc_md=__doc__, tags=tags,) as dag:
 
     # Built from repo https://github.com/mozilla/partybal
     partybal_image = "gcr.io/partybal/partybal:latest"

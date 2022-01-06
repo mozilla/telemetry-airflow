@@ -8,6 +8,7 @@ from glam_subdags.generate_query import (
 )
 from utils.gcp import gke_command
 from functools import partial
+from utils.tags import Tag
 
 default_args = {
     "owner": "akommasani@mozilla.com",
@@ -44,11 +45,14 @@ LOGICAL_MAPPING = {
    
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 dag = DAG(
     "glam_firefox_desktop",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
+    tags=tags,
 )
 
 wait_for_copy_deduplicate = ExternalTaskCompletedSensor(

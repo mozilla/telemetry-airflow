@@ -17,6 +17,7 @@ from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
+from utils.tags import Tag
 
 default_args = {
     "owner": "bewu@mozilla.com",
@@ -33,11 +34,14 @@ default_args = {
     "retry_delay": datetime.timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_1]
+
 with DAG(
         "bhr_collection",
         default_args=default_args,
         schedule_interval="0 5 * * *",
         doc_md=__doc__,
+        tags=tags,
 ) as dag:
     # Jobs read from/write to s3://telemetry-public-analysis-2/bhr/data/hang_aggregates/
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'

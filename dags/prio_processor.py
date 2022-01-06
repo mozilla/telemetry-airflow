@@ -3,6 +3,7 @@ from os import environ
 
 from airflow import DAG
 from prio.processor import ingestion_subdag, load_bigquery_subdag, prio_processor_subdag
+from utils.tags import Tag
 
 DEFAULT_ARGS = {
     "owner": "amiyaguchi@mozilla.com",
@@ -43,6 +44,8 @@ BUCKET_BOOTSTRAP_ADMIN = f"moz-fx-data-{ENVIRONMENT}-prio-bootstrap"
 APP_NAME = "origin-telemetry"
 BUCKET_PREFIX = "data/v1"
 
+tags = [Tag.ImpactTier.tier_1]
+
 # https://airflow.apache.org/faq.html#how-can-my-airflow-dag-run-faster
 # max_active_runs controls the number of DagRuns at a given time.
 dag = DAG(
@@ -50,6 +53,7 @@ dag = DAG(
     max_active_runs=1,
     default_args=DEFAULT_ARGS,
     schedule_interval="@daily",
+    tags=tags,
 )
 
 ingest = ingestion_subdag(

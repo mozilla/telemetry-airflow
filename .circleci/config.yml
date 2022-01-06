@@ -28,6 +28,8 @@ jobs:
     working_directory: ~/mozilla/telemetry-airflow
     steps:
       - checkout
+      - run: python -m pip install pip --upgrade && python -m pip install pytest
+      - run: python -m pytest tests/
       - run: python -m py_compile dags/*.py
       - run: find . -name *.pyc -delete
 

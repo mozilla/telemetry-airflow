@@ -9,6 +9,7 @@ The container is defined in
 from airflow import DAG
 from datetime import datetime, timedelta
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 
 default_args = {
@@ -24,10 +25,15 @@ default_args = {
 project_id = "moz-fx-data-shared-prod"
 table_id = "search_terms_derived.remotesettings_suggestions_v1"
 
-with DAG("contextual_services_import",
-         default_args=default_args,
-         doc_md=__doc__,
-         schedule_interval="@daily") as dag:
+tags = [Tag.ImpactTier.tier_1]
+
+with DAG(
+    "contextual_services_import",
+    default_args=default_args,
+    doc_md=__doc__,
+    schedule_interval="@daily",
+    tags=tags,
+) as dag:
 
     quicksuggest2bq = gke_command(
         task_id="quicksuggest2bq",

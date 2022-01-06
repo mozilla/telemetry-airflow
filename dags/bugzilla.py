@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.utils.dates import days_ago
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
+from utils.tags import Tag
 
 docs = """
 ### fivetran_bugzilla
@@ -30,10 +31,15 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG('fivetran_bugzilla',
-         default_args=default_args,
-         doc_md=docs,
-         schedule_interval="0 5 * * *") as dag:
+tags = [Tag.ImpactTier.tier_3]
+
+with DAG(
+    'fivetran_bugzilla',
+    default_args=default_args,
+    doc_md=docs,
+    schedule_interval="0 5 * * *",
+    tags=tags,
+) as dag:
 
     bugzilla_sync_start = FivetranOperator(
             task_id='bugzilla-task',
