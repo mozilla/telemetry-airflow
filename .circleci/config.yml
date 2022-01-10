@@ -58,8 +58,9 @@ jobs:
             docker-compose build
             # now take ownership of the folder
             sudo chown -R 10001:10001 .
+
       - run:
-          name: Test if dag scripts can be parsed
+          name: Test if dag scripts can be parsed by Airflow and that tags have been correctly set
           command: bash bin/test-parse
 
   deploy:
