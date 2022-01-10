@@ -2,6 +2,9 @@ version: '2.1'
 
 services:
   db:
+    # platform key added for Macbook M1 compatibility, followed:
+    # https://stackoverflow.com/questions/65456814/docker-apple-silicon-m1-preview-mysql-no-matching-manifest-for-linux-arm64-v8
+    platform: linux/x86_64
     image: mysql:5.7
     ports:
       - '3306:3306'
