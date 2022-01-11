@@ -13,3 +13,10 @@ for 2019 KPIs. See:
 ## 2021-07-05 Amplitude export
 
 We no longer are using Amplitude as a partner, so don't need these export tasks.
+
+## 2021-01-04 Anomaly detection (anomdtct)
+
+See:
+
+- [Tracking bug (belated)](https://bugzilla.mozilla.org/show_bug.cgi?id=1749039)
+- [Removal PR](https://github.com/mozilla/telemetry-airflow/pull/1214)
