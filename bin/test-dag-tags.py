@@ -1,6 +1,7 @@
 #!/bin/python3
 from collections import defaultdict
 import subprocess
+from typing import Dict, Iterable
 
 
 VALID_TAGS = ("impact/tier_1", "impact/tier_2", "impact/tier_3", "repo/bigquery-etl", "repo/telemetry-airflow",)
@@ -11,13 +12,23 @@ class DagValidationError(Exception):
     pass
 
 
-def retrieve_existing_airflow_dags_from_db(pswd):
+def _execute_shell_cmd(cmd: str, cmd_params: Dict[str, dict] = dict()) -> str:
     mask_string = "###"
-    shell_cmd = "docker-compose exec web mysql -Ns -h db -u root -p{pswd} airflow -e 'SELECT dag_id, name FROM dag_tag;'"
 
-    print("Executing command: %s" % (shell_cmd.format(pswd=mask_string)))
+    cmd_params_log = {
+        key: val["value"] if not val["value"] else mask_string
+        for key, val in cmd_params.items()
+    }
+
+    print("Executing command: %s" % (cmd.format(**cmd_params_log)))
+
+    cmd_params_formatted = {
+        key: val["value"]
+        for key, val in cmd_params.items()
+    }
+
     cmd_output = subprocess.run(
-        shell_cmd.format(pswd=pswd),
+        cmd.format(**cmd_params_formatted),
         shell=True,
         capture_output=True,
         text=True,
@@ -30,26 +41,61 @@ def retrieve_existing_airflow_dags_from_db(pswd):
         raise _err
 
     print("Command executed successfully, processing output...")
-    processed_cmd_output = cmd_output.stdout.strip().replace("\r", "").split("\n")
+
+    return cmd_output.stdout.strip().replace("\r", "").split("\n")
+
+
+
+
+def retrieve_existing_airflow_dags_from_db(pswd: str) -> Dict[str, str]:
+    shell_cmd = "docker-compose exec web mysql -Ns -h db -u root -p{pswd} airflow -e 'SELECT dag_id, name FROM dag_tag;'"
+    cmd_params = {
+        "pswd": {
+            "value": pswd,
+            "is_sensitive": True,
+        }
+    }
+
+    cmd_output = _execute_shell_cmd(shell_cmd, cmd_params)
 
     dags = defaultdict(list)
 
-    for dag in processed_cmd_output:
+    for dag in cmd_output:
         dag_name, tag_name = dag.split("\t")
         dags[dag_name] = dags[dag_name] + [tag_name]
 
-    print("Number of DAGs found: %s" % (len(dags)))
+    print("Number of DAGs with tags found: %s" % (len(dags)))
 
     return dags
 
 
+def get_number_of_dags_loaded(pswd) -> int:
+    cmd_params = {
+        "pswd": {
+            "value": pswd,
+            "is_sensitive": True,
+        }
+    }
+    return _execute_shell_cmd("docker-compose exec web mysql -Ns -h db -u root -p{pswd} airflow -e 'SELECT dag_id from dag WHERE is_subdag = 0;'", cmd_params)
+
+
 if __name__ == "__main__":
+    db_pass = "secret"
     # Assumes the web and db containers are already running
     tag_errors = 0
 
-    dags = retrieve_existing_airflow_dags_from_db("secret")
+    dags = get_number_of_dags_loaded(db_pass)
+    num_of_dags = len(dags)
 
-    for file_name, tags in dags.items():
+    dags_with_tags = retrieve_existing_airflow_dags_from_db(db_pass)
+    num_of_dags_with_tags = len(dags_with_tags)
+
+    if num_of_dags != num_of_dags_with_tags:
+        print("Num of DAGs in `dag` table: %s, num of dags with tags: %s" % (num_of_dags, num_of_dags_with_tags))
+        dags_with_missing_tags = set(dags).difference(set(dags_with_tags))
+        raise DagValidationError("The following DAGs are missing tags entirely: %s" % (dags_with_missing_tags))
+
+    for file_name, tags in dags_with_tags.items():
         tag_categories = [category.split("/")[0] for category in tags]
 
         if not all(req_tag in tag_categories for req_tag in REQUIRED_TAG_TYPES):
