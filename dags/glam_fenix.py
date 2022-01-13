@@ -88,7 +88,7 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
 )
 
 pre_import = DummyOperator(
-    task_id=f'pre_import',
+    task_id='pre_import',
     dag=dag,
 )
 
