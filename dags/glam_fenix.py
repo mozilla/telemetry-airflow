@@ -1,6 +1,5 @@
 """
 Firefox for Android ETL for https://glam.telemetry.mozilla.org/
-
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
 in bigquery-etl and the
@@ -12,7 +11,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-
+from airflow.operators.dummy_operator import DummyOperator
 from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
@@ -24,13 +23,12 @@ from functools import partial
 from utils.tags import Tag
 
 default_args = {
-    "owner": "amiyaguchi@mozilla.com",
+    "owner": "akommasani@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 2, 19),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "amiyaguchi@mozilla.com",
-        "bewu@mozilla.com",
+        "akommasani@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -86,6 +84,11 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
+    dag=dag,
+)
+
+pre_import = DummyOperator(
+    task_id=f'pre_import',
     dag=dag,
 )
 
@@ -211,9 +214,9 @@ for product in final_products:
         >> histogram_percentiles
         >> probe_counts
     )
-    probe_counts >> extract_probe_counts >> export
-    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
-    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export
+    probe_counts >> extract_probe_counts >> export >> pre_import
+    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export >> pre_import
+    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export >> pre_import
 
 # Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
 glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
@@ -262,7 +265,7 @@ glam_fenix_import_glean_counts = GKENatPodOperator(
     dag=dag)
 
 
-export >> glam_fenix_import_glean_aggs_beta
-export >> glam_fenix_import_glean_aggs_nightly
-export >> glam_fenix_import_glean_aggs_release
-export >> glam_fenix_import_glean_counts
+pre_import >> glam_fenix_import_glean_aggs_beta
+pre_import >> glam_fenix_import_glean_aggs_nightly
+pre_import >> glam_fenix_import_glean_aggs_release
+pre_import >> glam_fenix_import_glean_counts
