@@ -51,10 +51,13 @@ list_of_connectors ={
   "uk": "toy_tribute"
 }
 
-with DAG('fivetran_intacct_historical',
-         default_args=default_args,
-         doc_md=docs,
-         schedule_interval="0 5 * * *") as dag:
+with DAG(
+    'fivetran_intacct_historical',
+    default_args=default_args,
+    doc_md=docs,
+    schedule_interval="0 5 * * *",
+    tags=tags,
+) as dag:
 
     fivetran_sensors_complete = DummyOperator(
         task_id='intacct-fivetran-sensors-complete',

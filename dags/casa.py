@@ -36,6 +36,7 @@ with DAG(
     default_args=default_args,
     doc_md=DOCS,
     schedule_interval="0 5 * * *",
+    tags=tags,
 ) as dag:
 
     casa_sync_start = FivetranOperator(

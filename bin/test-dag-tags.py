@@ -1,7 +1,7 @@
 #!/bin/python3
 from collections import defaultdict
 import subprocess
-from typing import Dict, Iterable
+from typing import Dict
 
 
 VALID_TAGS = ("impact/tier_1", "impact/tier_2", "impact/tier_3", "repo/bigquery-etl", "repo/telemetry-airflow",)
@@ -43,8 +43,6 @@ def _execute_shell_cmd(cmd: str, cmd_params: Dict[str, dict] = dict()) -> str:
     print("Command executed successfully, processing output...")
 
     return cmd_output.stdout.strip().replace("\r", "").split("\n")
-
-
 
 
 def retrieve_existing_airflow_dags_from_db(pswd: str) -> Dict[str, str]:
