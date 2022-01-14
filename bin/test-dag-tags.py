@@ -89,10 +89,18 @@ if __name__ == "__main__":
     dags_with_tags = get_loaded_airflow_dag_tags_from_db(db_pass)
     num_of_dags_with_tags = len(dags_with_tags)
 
+    print("Num of DAGs in `dag` table: %s, num of dags with tags: %s" % (num_of_dags, num_of_dags_with_tags))
+
     if num_of_dags != num_of_dags_with_tags:
-        print("Num of DAGs in `dag` table: %s, num of dags with tags: %s" % (num_of_dags, num_of_dags_with_tags))
-        dags_with_missing_tags = set(dags).difference(set(dags_with_tags))
-        raise DagValidationError("The following DAGs are missing tags entirely: %s" % (dags_with_missing_tags))
+
+        if num_of_dags > num_of_dags_with_tags:
+            error_msg = "The following DAGs are missing the tags entirely: %s" % (set(dags).difference(set(dags_with_tags)))
+            raise DagValidationError(error_msg)
+
+        elif num_of_dags < num_of_dags_with_tags:
+            error_msg = "The following DAGs seem to be missing in the dags table: %s" % (set(dags_with_tags).difference(set(dags)))
+            print("WARNING: %s" % (error_msg))
+
 
     for file_name, tags in dags_with_tags.items():
         tag_categories = [category.split("/")[0] for category in tags]
