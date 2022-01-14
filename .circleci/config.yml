@@ -61,6 +61,7 @@ jobs:
 
       - run:
           name: Test if dag scripts can be parsed by Airflow and that tags have been correctly set
+          #  Valid DAG tags are defined in: `bin/test-dag-tags.py`
           command: bash bin/test-parse
 
   deploy:

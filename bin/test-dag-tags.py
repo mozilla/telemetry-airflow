@@ -33,6 +33,7 @@ def _execute_shell_cmd(cmd: str, cmd_params: Dict[str, dict] = dict()) -> str:
         capture_output=True,
         text=True,
     )
+
     try:
         cmd_output.check_returncode()
     except subprocess.CalledProcessError as _err:
@@ -45,7 +46,7 @@ def _execute_shell_cmd(cmd: str, cmd_params: Dict[str, dict] = dict()) -> str:
     return cmd_output.stdout.strip().replace("\r", "").split("\n")
 
 
-def retrieve_existing_airflow_dags_from_db(pswd: str) -> Dict[str, str]:
+def get_loaded_airflow_dag_tags_from_db(pswd: str) -> Dict[str, str]:
     shell_cmd = "docker-compose exec web mysql -Ns -h db -u root -p{pswd} airflow -e 'SELECT dag_id, name FROM dag_tag;'"
     cmd_params = {
         "pswd": {
@@ -67,7 +68,7 @@ def retrieve_existing_airflow_dags_from_db(pswd: str) -> Dict[str, str]:
     return dags
 
 
-def get_number_of_dags_loaded(pswd) -> int:
+def get_loaded_dags_from_db(pswd) -> int:
     cmd_params = {
         "pswd": {
             "value": pswd,
@@ -82,10 +83,10 @@ if __name__ == "__main__":
     # Assumes the web and db containers are already running
     tag_errors = 0
 
-    dags = get_number_of_dags_loaded(db_pass)
+    dags = get_loaded_dags_from_db(db_pass)
     num_of_dags = len(dags)
 
-    dags_with_tags = retrieve_existing_airflow_dags_from_db(db_pass)
+    dags_with_tags = get_loaded_airflow_dag_tags_from_db(db_pass)
     num_of_dags_with_tags = len(dags_with_tags)
 
     if num_of_dags != num_of_dags_with_tags:
