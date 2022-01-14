@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
         elif num_of_dags < num_of_dags_with_tags:
             error_msg = "The following DAGs seem to be missing in the dags table: %s" % (set(dags_with_tags).difference(set(dags)))
-            print("WARNING: %s" % (error_msg))
+            print("WARNING: %s" % error_msg)
 
 
     for file_name, tags in dags_with_tags.items():
