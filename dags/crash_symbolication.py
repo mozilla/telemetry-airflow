@@ -43,6 +43,7 @@ with DAG(
     default_args=default_args,
     # dag runs daily but tasks only run on certain days
     schedule_interval="0 5 * * *",
+    tags=tags,
     doc_md=__doc__,
 ) as dag:
     # top_signatures_correlations uploads results to public analysis bucket

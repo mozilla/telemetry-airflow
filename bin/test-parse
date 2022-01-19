@@ -53,7 +53,7 @@ function main() {
         echo "Existing container is up, please bring it down and re-run."
         exit 1
     fi
-    
+
     # Register the cleanup function, note that the testing function may override
     # the trap on the exit signal.
     function cleanup {
@@ -87,6 +87,15 @@ function main() {
         fi
         echo "Unit tests passed!"
     fi
+
+    # Validate Airflow tags
+    # see Github Issue: https://github.com/mozilla/telemetry-airflow/issues/1443
+    python3 bin/test-dag-tags.py
+    if [[ $? -ne 0 ]]; then
+        echo "Invalid tag configuration detected."
+        exit 1
+    fi
+    # END Validate Airflow tags
 
     echo "All checks passed, the dags can be parsed locally."
 }

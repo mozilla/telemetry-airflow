@@ -4,6 +4,7 @@ from airflow import DAG
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
 from airflow.operators.dummy import DummyOperator
+from utils.tags import Tag
 
 docs = """
 ### fivetran_intacct
@@ -27,6 +28,9 @@ default_args = {
     "retries": 2,
     "retry_delay": timedelta(minutes=30),
 }
+
+tags = [Tag.ImpactTier.tier_1, "repo/telemetry-airflow", ]
+
 list_of_connectors ={
   "moz": "decently_wouldst",
   "germany": "backslid_mumps",
@@ -47,10 +51,13 @@ list_of_connectors ={
   "uk": "toy_tribute"
 }
 
-with DAG('fivetran_intacct_historical',
-         default_args=default_args,
-         doc_md=docs,
-         schedule_interval="0 5 * * *") as dag:
+with DAG(
+    'fivetran_intacct_historical',
+    default_args=default_args,
+    doc_md=docs,
+    schedule_interval="0 5 * * *",
+    tags=tags,
+) as dag:
 
     fivetran_sensors_complete = DummyOperator(
         task_id='intacct-fivetran-sensors-complete',
