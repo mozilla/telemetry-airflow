@@ -149,6 +149,8 @@ init_variables() {
 
     airflow variables set "glam_secret__database_url" "glam_secret__database_url"
     airflow variables set "glam_secret__django_secret_key" "glam_secret__django_secret_key"
+    airflow variables set "glam_secret__database_url_dev" "glam_secret__database_url_dev"
+    airflow variables set "glam_secret__django_secret_key_dev" "glam_secret__django_secret_key_dev"
 }
 
 [ $# -lt 1 ] && usage
