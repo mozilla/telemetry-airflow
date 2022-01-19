@@ -72,7 +72,11 @@ on_demand = gke_command(
     name="shredder-on-demand",
     command=base_command
     + [
-        "--parallelism=2",
+        # temporarily cover 4 intervals instead of 2, to process backlog
+        # per https://bugzilla.mozilla.org/show_bug.cgi?id=1747068
+        "--start-date={{macros.ds_add(ds, 27-28*4)}}",
+        # table has an increased limit for parallel DML statements
+        "--parallelism=4",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v4",
     ],
