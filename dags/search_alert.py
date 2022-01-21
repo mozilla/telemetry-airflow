@@ -39,6 +39,7 @@ with DAG("search_alert",
         command=[
             "python", "search_alert/main.py",
             "--submission_date={{ yesterday_ds }}",
+            "--project_id=mozdata",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert:latest",
         gcp_conn_id="google_cloud_derived_datasets",
