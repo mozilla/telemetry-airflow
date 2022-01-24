@@ -116,8 +116,7 @@ glam_import_glean_counts = GKENatPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-wait_for_fenix >> wait_for_fog
-wait_for_fog >> glam_import_glean_aggs_beta
-wait_for_fog >> glam_import_glean_aggs_nightly
-wait_for_fog >> glam_import_glean_aggs_release
-wait_for_fog >> glam_import_glean_counts
+[wait_for_fenix, wait_for_fog] >> glam_import_glean_aggs_beta
+[wait_for_fenix, wait_for_fog] >> glam_import_glean_aggs_nightly
+[wait_for_fenix, wait_for_fog] >> glam_import_glean_aggs_release
+[wait_for_fenix, wait_for_fog] >> glam_import_glean_counts
