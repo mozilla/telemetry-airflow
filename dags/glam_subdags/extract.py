@@ -58,7 +58,6 @@ def extract_channel_subdag(
         owner="akommasani@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
-            "msamuel@mozilla.com",
             "akommasani@mozilla.com",
             "linhnguyen@mozilla.com",
         ],
@@ -123,7 +122,6 @@ def extract_user_counts(
         owner="akommasani@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
-            "msamuel@mozilla.com",
             "akommasani@mozilla.com",
             "linhnguyen@mozilla.com",
         ],
