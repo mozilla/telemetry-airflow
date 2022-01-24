@@ -1,3 +1,10 @@
+"""
+Aggregates that power the legacy telemetry
+[Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
+
+See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
+"""
+
 import json
 import os
 from datetime import datetime, timedelta
@@ -7,17 +14,17 @@ from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperato
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 EXPORT_TO_AVRO = True
 
 default_args = {
-    "owner": "frank@mozilla.com",
+    "owner": "linhnguyen@mozilla.com",
     "depends_on_past": True,
     "start_date": datetime(2018, 12, 23),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "frank@mozilla.com",
-        "amiyaguchi@mozilla.com",
+        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -25,10 +32,14 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 dag = DAG(
     "prerelease_telemetry_aggregates",
     default_args=default_args,
     schedule_interval="@daily",
+    doc_md=__doc__,
+    tags=tags,
 )
 
 

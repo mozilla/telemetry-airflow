@@ -1,3 +1,14 @@
+"""
+This is a processing job on top of BHR pings, migrated from Databricks and now running
+as a scheduled Dataproc task.
+
+BHR is related to the Background Hang Monitor in desktop Firefox.
+See [bug 1675103](https://bugzilla.mozilla.org/show_bug.cgi?id=1675103)
+
+The [job source](https://github.com/mozilla/python_mozetl/blob/main/mozetl/bhr_collection)
+is maintained in the mozetl repository.
+"""
+
 import datetime
 
 from airflow import DAG
@@ -6,6 +17,7 @@ from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
+from utils.tags import Tag
 
 default_args = {
     "owner": "bewu@mozilla.com",
@@ -22,10 +34,14 @@ default_args = {
     "retry_delay": datetime.timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_1]
+
 with DAG(
         "bhr_collection",
         default_args=default_args,
         schedule_interval="0 5 * * *",
+        doc_md=__doc__,
+        tags=tags,
 ) as dag:
     # Jobs read from/write to s3://telemetry-public-analysis-2/bhr/data/hang_aggregates/
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'
@@ -50,7 +66,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5",
+            image_version="1.5-debian10",
             dag_name="bhr_collection",
             default_args=default_args,
             cluster_name="bhr-collection-{{ ds }}",

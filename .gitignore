@@ -9,7 +9,10 @@ unittests.cfg
 airflow-webserver.pid
 airflow-worker.pid
 .config
+.viminfo
 .credentials
+.bash_history
+.mysql_history
 
 /dags/bigquery-etl-dags
 /dags/bigquery-etl-dags/*

@@ -1,3 +1,9 @@
+"""
+Powers https://telemetry.mozilla.org/update-orphaning/
+
+See [jobs/update_orphaning_dashboard_etl.py](https://github.com/mozilla/telemetry-airflow/blob/main/jobs/update_orphaning_dashboard_etl.py).
+"""
+
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
@@ -5,6 +11,7 @@ from datetime import datetime, timedelta
 
 from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
+from utils.tags import Tag
 
 """
 
@@ -24,8 +31,16 @@ default_args = {
     "retry_delay": timedelta(minutes=10),
 }
 
+tags = [Tag.ImpactTier.tier_3]
+
 # run every Monday to maintain compatibility with legacy ATMO schedule
-dag = DAG("update_orphaning_dashboard_etl", default_args=default_args, schedule_interval="0 2 * * MON")
+dag = DAG(
+    "update_orphaning_dashboard_etl",
+    default_args=default_args,
+    schedule_interval="0 2 * * MON",
+    doc_md=__doc__,
+    tags=tags,
+)
 
 # Unsalted cluster name so subsequent runs fail if the cluster name exists
 cluster_name = 'app-update-out-of-date-dataproc-cluster'

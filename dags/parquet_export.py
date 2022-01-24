@@ -1,3 +1,11 @@
+"""
+Export of a few BigQuery datasets to Parquet files on GCS.
+
+The only consumer of these datasets is the taar DAGs.
+We should eventually update the TAAR logic to use BigQuery directly,
+which would allow us to tear down this DAG.
+"""
+
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.subdag_operator import SubDagOperator
@@ -9,22 +17,25 @@ from utils.gcp import (
     export_to_parquet,
     gke_command,
 )
+from utils.tags import Tag
 
 
 default_args = {
-    'owner': 'frank@mozilla.com',
+    'owner': 'dthorn@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 27),
-    'email': ['telemetry-alerts@mozilla.com', 'frank@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'dthorn@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
     'retry_delay': timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
-dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *')
+dag = DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *', doc_md=__doc__, tags=tags,)
 
 main_summary_bigint_columns = [
     # bigquery does not have 32-bit int, and int->bigint is not a
@@ -73,7 +84,7 @@ main_summary_bigint_columns = [
 
 main_summary_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.main_summary_v4${{ds_nodash}}",
+        table="moz-fx-data-shared-prod.telemetry_derived.main_summary_v4${{ds_nodash}}",
         static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             "--partition-by=sample_id",
@@ -89,7 +100,7 @@ main_summary_export = SubDagOperator(
 
 clients_daily_export = SubDagOperator(
     subdag=export_to_parquet(
-        table="moz-fx-data-shared-prod:telemetry_derived.clients_daily_v6${{ds_nodash}}",
+        table="moz-fx-data-shared-prod.telemetry_derived.clients_daily_v6${{ds_nodash}}",
         static_partitions=["submission_date_s3={{ds_nodash}}"],
         arguments=[
             # restore legacy schema

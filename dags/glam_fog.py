@@ -1,12 +1,3 @@
-"""
-Firefox for Android ETL for https://glam.telemetry.mozilla.org/
-Generates and runs a series of BQ queries, see
-[bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
-in bigquery-etl and the
-[glam_subdags](https://github.com/mozilla/telemetry-airflow/tree/main/dags/glam_subdags)
-in telemetry-airflow.
-"""
-
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -43,11 +34,7 @@ BUCKET = "moz-fx-data-glam-prod-fca7-etl-data"
 # start and end dates of the id in the app store.
 # https://docs.google.com/spreadsheets/d/18PzkzZxdpFl23__-CIO735NumYDqu7jHpqllo0sBbPA
 PRODUCTS = [
-    "org_mozilla_fenix",  # 2019-06-29 - 2020-07-03 (beta), 2020-07-03 - present (nightly)
-    "org_mozilla_fenix_nightly",  # 2019-06-30 - 2020-07-03
-    "org_mozilla_firefox",  # 2020-07-28 - present
-    "org_mozilla_firefox_beta",  # 2020-03-26 - present
-    "org_mozilla_fennec_aurora",  # 2020-01-21 - 2020-07-03
+    "firefox_desktop",
 ]
 
 # This is only required if there is a logical mapping defined within the
@@ -55,23 +42,19 @@ PRODUCTS = [
 # the dependency graph such that the view with the logical clients daily table
 # is always pointing to a concrete partition in BigQuery.
 LOGICAL_MAPPING = {
-    "org_mozilla_fenix_glam_nightly": [
-        "org_mozilla_fenix_nightly",
-        "org_mozilla_fenix",
-        "org_mozilla_fennec_aurora",
-    ],
-    "org_mozilla_fenix_glam_beta": ["org_mozilla_fenix", "org_mozilla_firefox_beta"],
-    "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
+    "firefox_desktop_glam_nightly": ["firefox_desktop"],
+    "firefox_desktop_glam_beta": ["firefox_desktop"],
+    "firefox_desktop_glam_release": ["firefox_desktop"],
+   
 }
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 dag = DAG(
-    "glam_fenix",
+    "glam_fog",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
-    doc_md=__doc__,
     tags=tags,
 )
 
@@ -88,7 +71,7 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
 )
 
 pre_import = DummyOperator(
-    task_id='pre_import',
+    task_id=f'pre_import',
     dag=dag,
 )
 

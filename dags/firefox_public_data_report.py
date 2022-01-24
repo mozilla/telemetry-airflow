@@ -1,3 +1,10 @@
+"""
+Powers the public https://data.firefox.com/ dashboard.
+
+Source code is in the [firefox-public-data-report-etl repository]
+(https://github.com/mozilla/firefox-public-data-report-etl).
+"""
+
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from operators.task_sensor import ExternalTaskCompletedSensor
@@ -10,6 +17,7 @@ from utils.dataproc import (
     get_dataproc_parameters,
 )
 from utils.gcp import bigquery_etl_query
+from utils.tags import Tag
 
 
 """
@@ -31,7 +39,15 @@ default_args = {
     "retry_delay": timedelta(minutes=10),
 }
 
-dag = DAG("firefox_public_data_report", default_args=default_args, schedule_interval="0 1 * * MON")
+tags = [Tag.ImpactTier.tier_3]
+
+dag = DAG(
+    "firefox_public_data_report",
+    default_args=default_args,
+    schedule_interval="0 1 * * MON",
+    doc_md=__doc__,
+    tags=tags,
+)
 
 # Required to write json output to s3://telemetry-public-analysis-2/public-data-report/hardware/
 write_aws_conn_id='aws_dev_telemetry_public_analysis_2_rw'
@@ -58,7 +74,7 @@ hardware_report = SubDagOperator(
     dag=dag,
     subdag = moz_dataproc_pyspark_runner(
         parent_dag_name=dag.dag_id,
-        image_version='1.5',
+        image_version='1.5-debian10',
         dag_name="public_data_hardware_report",
         default_args=default_args,
         cluster_name="public-data-hardware-report-{{ ds }}",

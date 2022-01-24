@@ -1,3 +1,13 @@
+"""
+Processes main ping data and exports to S3 to power a graphics dashboard at
+https://firefoxgraphics.github.io/telemetry/
+
+This was originally a Databricks notebook that was migrated to a scheduled
+Dataproc task. Source code lives in the
+[FirefoxGraphics/telemetry](https://github.com/FirefoxGraphics/telemetry)
+repository.
+"""
+
 import datetime
 import os
 
@@ -7,6 +17,7 @@ from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
+from utils.tags import Tag
 
 default_args = {
     "owner": "bewu@mozilla.com",
@@ -33,10 +44,14 @@ PIP_PACKAGES = [
 S3_BUCKET = "telemetry-public-analysis-2"
 S3_PREFIX = "gfx/telemetry-data/"
 
+tags = [Tag.ImpactTier.tier_1]
+
 with DAG(
-        "graphics_telemetry",
-        default_args=default_args,
-        schedule_interval="0 3 * * *",
+    "graphics_telemetry",
+    default_args=default_args,
+    schedule_interval="0 3 * * *",
+    doc_md=__doc__,
+    tags=tags,
 ) as dag:
     # Jobs read from/write to s3://telemetry-public-analysis-2/gfx/telemetry-data/
     write_aws_conn_id = 'aws_dev_telemetry_public_analysis_2_rw'
@@ -65,7 +80,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5",
+            image_version="1.5-debian10",
             dag_name="graphics_trends",
             default_args=default_args,
             cluster_name="graphics-trends-{{ ds }}",
@@ -97,7 +112,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5",
+            image_version="1.5-debian10",
             dag_name="graphics_dashboard",
             default_args=default_args,
             cluster_name="graphics-dashboard-{{ ds }}",

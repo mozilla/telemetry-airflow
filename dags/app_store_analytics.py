@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from utils.gcp import bigquery_etl_query, gke_command
+from utils.tags import Tag
 
 from airflow import DAG
 
@@ -42,10 +43,15 @@ DERIVED_TABLES = [
     "metrics_total",
 ]
 
-with DAG("app_store_analytics",
-         default_args=default_args,
-         max_active_runs=1,
-         schedule_interval="@daily") as dag:
+tags = [Tag.ImpactTier.tier_1]
+
+with DAG(
+    "app_store_analytics",
+    default_args=default_args,
+    max_active_runs=1,
+    schedule_interval="@daily",
+    tags=tags,
+) as dag:
 
     export_date = "macros.ds_add(ds, -2)"  # previous day data is incomplete
     tasks = []

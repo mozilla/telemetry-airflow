@@ -29,6 +29,7 @@ def repeated_subdag(
         f"{parent_dag_name}.{child_dag_name}",
         default_args=default_args,
         schedule_interval=schedule_interval,
+        concurrency=1,
     )
 
     # This task runs first and replaces the relevant partition, followed

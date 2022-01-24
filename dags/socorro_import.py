@@ -5,13 +5,14 @@ from airflow.providers.google.cloud.operators.bigquery import (
 )
 
 from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
-     CloudDataTransferServiceS3ToGCSOperator
+    CloudDataTransferServiceS3ToGCSOperator,
 )
 
 from datetime import datetime, timedelta
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
+from utils.tags import Tag
 
 """
 Originally, this job read json (non-ndjson) from aws prod at:
@@ -31,13 +32,12 @@ conn - aws_socorro_readonly_s3
 """
 
 default_args = {
-    "owner": "amiyaguchi@mozilla.com",
+    "owner": "wkahngreene@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 9, 10),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "amiyaguchi@mozilla.com",
-        "willkg@mozilla.com",
+        "wkahngreene@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -45,7 +45,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("socorro_import", default_args=default_args, schedule_interval="@daily")
+tags = [Tag.ImpactTier.tier_2]
+
+dag = DAG("socorro_import", default_args=default_args, schedule_interval="@daily", tags=tags,)
 
 # Unsalted cluster name so subsequent runs fail if the cluster name exists
 cluster_name = "socorro-import-dataproc-cluster"
@@ -144,7 +146,9 @@ gke_args = [
 remove_bq_table_partition = BigQueryDeleteTableOperator(
     task_id="remove_bq_table_partition",
     gcp_conn_id=bq_gcp_conn_id,
-    deletion_dataset_table="{}.{}${{{{ds_nodash}}}}".format(bq_dataset, bq_table_name),
+    deletion_dataset_table="{}.{}.{}${{{{ds_nodash}}}}".format(
+        "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name
+    ),
     ignore_if_missing=True,
     dag=dag,
 )

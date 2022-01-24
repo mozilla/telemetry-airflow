@@ -1,7 +1,16 @@
+"""
+See [etl-graph in the docker-etl repository]
+(https://github.com/mozilla/docker-etl/blob/main/jobs/etl-graph).
+
+This DAG is low priority, as it powers a stand-alone visualization internal
+to the data platform.
+"""
+
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 default_args = {
     "owner": "amiyaguchi@mozilla.com",
@@ -14,7 +23,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("etl_graph", default_args=default_args, schedule_interval="0 2 * * *") as dag:
+tags = [Tag.ImpactTier.tier_3]
+
+with DAG("etl_graph", default_args=default_args, schedule_interval="0 2 * * *", doc_md=__doc__, tags=tags,) as dag:
     etl_graph = GKEPodOperator(
         task_id="etl_graph",
         name="etl_graph",

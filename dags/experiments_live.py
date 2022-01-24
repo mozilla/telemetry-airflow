@@ -1,3 +1,11 @@
+"""
+See [experiments-monitoring-data-export in the docker-etl repository]
+(https://github.com/mozilla/docker-etl/tree/main/jobs/experiments-monitoring-data-export).
+
+This DAG exports views related to experiment monitoring to GCS as JSON
+every 5 minutes to power the Experimenter console.
+"""
+
 from airflow import DAG
 from datetime import datetime, timedelta
 
@@ -5,6 +13,7 @@ from utils.gcp import bigquery_etl_query, gke_command
 
 from airflow.sensors.external_task import ExternalTaskSensor
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 default_args = {
     'owner': 'ascholtz@mozilla.com',
@@ -14,14 +23,20 @@ default_args = {
     'email_on_retry': True,
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 # We rely on max_active_runs=1 at the DAG level to manage the dependency on past runs.
-with DAG('experiments_live',
-         default_args=default_args,
-         # Will be renamed to max_active_tasks sometime later as main upstream branch states
-         # max_active_tasks=4,
-         concurrency=4,
-         max_active_runs=1,
-         schedule_interval="*/5 * * * *") as dag:
+with DAG(
+    'experiments_live',
+    default_args=default_args,
+    # Will be renamed to max_active_tasks sometime later as main upstream branch states
+    # max_active_tasks=4,
+    concurrency=4,
+    max_active_runs=1,
+    schedule_interval="*/5 * * * *",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
 
     # list of datasets to export data to GCS
     experiment_datasets = [

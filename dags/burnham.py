@@ -9,10 +9,13 @@ import logging
 import uuid
 import time
 
+from dataclasses import dataclass
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 DOCS = """\
 # burnham
@@ -27,7 +30,7 @@ See https://github.com/mozilla/burnham
 """
 
 DAG_OWNER = "rpierzina@mozilla.com"
-DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com"]
+DAG_EMAIL = ["glean-team@mozilla.com", "rpierzina@mozilla.com", "bforehand@mozilla.com"]
 
 PROJECT_ID = "moz-fx-data-shared-prod"
 
@@ -93,13 +96,11 @@ GROUP BY
   technology_space_travel.key
 ORDER BY
   technology_space_travel.key
-LIMIT
-  20
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
-    {"key": "spore_drive", "value_sum": 13},
-    {"key": "warp_drive", "value_sum": 18},
+    {"key": "spore_drive", "value_sum": 26},
+    {"key": "warp_drive", "value_sum": 36},
 ]
 
 
@@ -115,11 +116,9 @@ WHERE
   AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
   AND metrics.string.test_name = "{DEFAULT_TEST_NAME}"
-LIMIT
-  20
 """
 
-WANT_TEST_CLIENT_IDS = [{"count_client_ids": 3}]
+WANT_TEST_CLIENT_IDS = [{"count_client_ids": 6}]
 
 
 # Test scenario test_experiments: Verify that the Glean SDK correctly reports
@@ -139,9 +138,7 @@ TEST_EXPERIMENTS = f"""WITH {DISCOVERY_V1_DEDUPED},
   FROM
     discovery_v1_deduped
   WHERE
-    metrics.string.test_name = "{DEFAULT_TEST_NAME}"
-  LIMIT
-    20 ),
+    metrics.string.test_name = "{DEFAULT_TEST_NAME}"),
   experiment_counts AS (
   SELECT
     experiment,
@@ -178,9 +175,9 @@ ORDER BY
 """
 
 WANT_TEST_EXPERIMENTS = [
-    {"experiment": "no_experiments", "document_count": 2},
-    {"experiment": "spore_drive:tardigrade", "document_count": 2},
-    {"experiment": "spore_drive:tardigrade-dna", "document_count": 6},
+    {"experiment": "no_experiments", "document_count": 4},
+    {"experiment": "spore_drive:tardigrade", "document_count": 4},
+    {"experiment": "spore_drive:tardigrade-dna", "document_count": 12},
 ]
 
 
@@ -199,15 +196,17 @@ WHERE
   AND metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 ORDER BY
   metrics.string.mission_identifier
-LIMIT
-  20
 """
 
 WANT_TEST_GLEAN_ERROR_INVALID_OVERFLOW = [
     {
-        "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
         "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
-    }
+        "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
+    },
+    {
+        "glean_error_invalid_overflow": [{"key": "mission.status", "value": 1}],
+        "mission_identifier": "MISSION E: ONE JUMP, ONE METRIC ERROR",
+    },
 ]
 
 
@@ -222,7 +221,7 @@ WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
 
-WANT_TEST_STARBASE46_PING = [{"count_documents": 1}]
+WANT_TEST_STARBASE46_PING = [{"count_documents": 2}]
 
 
 # Test scenario test_space_ship_ready_ping: Verify that the Glean SDK and the
@@ -236,7 +235,7 @@ WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
 """
 
-WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 3}]
+WANT_TEST_SPACE_SHIP_READY_PING = [{"count_documents": 6}]
 
 
 # Test scenario test_no_ping_after_upload_disabled: Verify that the Glean SDK
@@ -254,14 +253,12 @@ GROUP BY
   metrics.string.mission_identifier
 ORDER BY
   metrics.string.mission_identifier
-LIMIT
-  20
 """
 
 WANT_TEST_NO_PING_AFTER_UPLOAD_DISABLED = [
-    {"mission_identifier": "MISSION B: TWO WARPS", "count_documents": 1},
-    {"mission_identifier": "MISSION C: ONE JUMP", "count_documents": 1},
-    {"mission_identifier": "MISSION F: TWO WARPS, ONE JUMP", "count_documents": 1},
+    {"mission_identifier": "MISSION B: TWO WARPS", "count_documents": 2},
+    {"mission_identifier": "MISSION C: ONE JUMP", "count_documents": 2},
+    {"mission_identifier": "MISSION F: TWO WARPS, ONE JUMP", "count_documents": 2},
 ]
 
 
@@ -277,11 +274,9 @@ WHERE
   AND TIMESTAMP_ADD(@burnham_start_timestamp, INTERVAL 3 HOUR)
   AND metrics.uuid.test_run = @burnham_test_run
   AND metrics.string.test_name = "test_disable_upload"
-LIMIT
-  20
 """
 
-WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 2}]
+WANT_TEST_CLIENT_IDS_AFTER_UPLOAD_DISABLED = [{"count_client_ids": 4}]
 
 
 # Test scenario test_deletion_request_ping: Verify that the Glean SDK submitted
@@ -295,7 +290,7 @@ WHERE
   metrics.string.test_name = "test_disable_upload"
 """
 
-WANT_TEST_DELETION_REQUEST_PING = [{"count_documents": 1}]
+WANT_TEST_DELETION_REQUEST_PING = [{"count_documents": 2}]
 
 # Test scenario test_deletion_request_ping_client_id: Verify that the Glean SDK
 # submitted a deletion-request ping with the expected client ID by joining
@@ -322,6 +317,7 @@ WITH
   WHERE
     metrics.string.test_name = "test_disable_upload")
 SELECT
+  count(*) as count_documents,
   discovery.mission_identifier
 FROM
   discovery
@@ -329,13 +325,15 @@ JOIN
   deletion_request
 USING
   (client_id)
+GROUP BY
+  discovery.mission_identifier
 ORDER BY
   discovery.mission_identifier
 """
 
 WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
-    {"mission_identifier": "MISSION B: TWO WARPS"},
-    {"mission_identifier": "MISSION C: ONE JUMP"},
+    {"mission_identifier": "MISSION B: TWO WARPS", "count_documents": 2},
+    {"mission_identifier": "MISSION C: ONE JUMP", "count_documents": 2},
 ]
 
 # Sensor template for the different burnham tables. Note that we use BigQuery
@@ -356,6 +354,13 @@ WHERE
 """
 
 
+@dataclass(frozen=True)
+class BurnhamDistribution:
+    burnham_version: str
+    glean_sdk_version: str
+    glean_parser_version: str
+
+
 # GCP and GKE default values
 DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
 DEFAULT_GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
@@ -364,6 +369,14 @@ DEFAULT_GKE_CLUSTER_NAME = "bq-load-gke-1"
 DEFAULT_GKE_NAMESPACE = "default"
 
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
+
+BURNHAM_DISTRIBUTIONS = {
+    "21.0.0": BurnhamDistribution(
+        burnham_version="21.0.0",
+        glean_sdk_version="41.1.1",
+        glean_parser_version="4.0.0",
+    )
+}
 
 DEFAULT_ARGS = {
     "owner": DAG_OWNER,
@@ -381,6 +394,7 @@ def burnham_run(
     burnham_test_run,
     burnham_test_name,
     burnham_missions,
+    burnham_distribution=None,
     burnham_spore_drive=None,
     gcp_conn_id=DEFAULT_GCP_CONN_ID,
     gke_location=DEFAULT_GKE_LOCATION,
@@ -417,6 +431,11 @@ def burnham_run(
     if burnham_spore_drive is not None:
         env_vars["BURNHAM_SPORE_DRIVE"] = burnham_spore_drive
 
+    if burnham_distribution is not None:
+        image_version = burnham_distribution.burnham_version
+    else:
+        image_version = "latest"
+
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
@@ -424,7 +443,7 @@ def burnham_run(
         location=gke_location,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/burnham:latest",
+        image=f"gcr.io/moz-fx-data-airflow-prod-88e0/burnham:{image_version}",
         image_pull_policy="Always",
         env_vars=env_vars,
         arguments=burnham_missions,
@@ -546,12 +565,14 @@ def sleep_task(minutes, task_id):
         op_kwargs=dict(minutes=minutes),
     )
 
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "burnham",
     schedule_interval="@daily",
     default_args=DEFAULT_ARGS,
     doc_md=DOCS,
+    tags=tags,
 ) as dag:
 
     # Generate a UUID for this test run
@@ -623,6 +644,72 @@ with DAG(
     )
     client4.set_upstream(generate_burnham_test_run_uuid)
 
+    client5 = burnham_run(
+        task_id="client5",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name=DEFAULT_TEST_NAME,
+        burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS", "MISSION C: ONE JUMP"],
+        burnham_spore_drive="tardigrade",
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client5.set_upstream(generate_burnham_test_run_uuid)
+
+    client6 = burnham_run(
+        task_id="client6",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name=DEFAULT_TEST_NAME,
+        burnham_missions=[
+            "MISSION A: ONE WARP",
+            "MISSION B: TWO WARPS",
+            "MISSION D: TWO JUMPS",
+            "MISSION E: ONE JUMP, ONE METRIC ERROR",
+            "MISSION F: TWO WARPS, ONE JUMP",
+            "MISSION G: FIVE WARPS, FOUR JUMPS",
+        ],
+        burnham_spore_drive="tardigrade-dna",
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client6.set_upstream(generate_burnham_test_run_uuid)
+
+    client7 = burnham_run(
+        task_id="client7",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name=DEFAULT_TEST_NAME,
+        burnham_missions=["MISSION A: ONE WARP", "MISSION B: TWO WARPS"],
+        burnham_spore_drive=None,
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client7.set_upstream(generate_burnham_test_run_uuid)
+
+    client8 = burnham_run(
+        task_id="client8",
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_test_run=burnham_test_run,
+        burnham_test_name="test_disable_upload",
+        burnham_missions=[
+            "MISSION B: TWO WARPS",
+            "MISSION C: ONE JUMP",
+            "MISSION H: DISABLE GLEAN UPLOAD",
+            "MISSION D: TWO JUMPS",
+            "MISSION I: ENABLE GLEAN UPLOAD",
+            "MISSION F: TWO WARPS, ONE JUMP",
+        ],
+        burnham_spore_drive="tardigrade",
+        owner=DAG_OWNER,
+        email=DAG_EMAIL,
+    )
+
+    client8.set_upstream(generate_burnham_test_run_uuid)
+
     # We expect up to 20 minute latency for pings to get loaded to live tables
     # in BigQuery, so we have a task that explicitly sleeps for 20 minutes
     # and make that a dependency for our tasks that need to read the BQ data.
@@ -634,14 +721,30 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=10,
+            # client1 sends 2 discovery pings
+            # client2 sends 6 discovery pings
+            # client3 sends 2 discovery pings
+            # client5 sends 2 discovery pings
+            # client6 sends 6 discovery pings
+            # client7 sends 2 discovery pings
+            min_count_rows=20,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data.set_upstream([client1, client2, client3, sleep_20_minutes])
+    wait_for_discovery_data.set_upstream(
+        [
+            client1,
+            client2,
+            client3,
+            client5,
+            client6,
+            client7,
+            sleep_20_minutes,
+        ]
+    )
 
     discovery_test_scenarios = [
         {
@@ -682,14 +785,26 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="starbase46_v1",
-            min_count_rows=1,
+            # client2 sends 1 starbase46 ping
+            # client6 sends 1 starbase46 ping
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_starbase46_data.set_upstream([client1, client2, client3, sleep_20_minutes])
+    wait_for_starbase46_data.set_upstream(
+        [
+            client1,
+            client2,
+            client3,
+            client5,
+            client6,
+            client7,
+            sleep_20_minutes,
+        ]
+    )
 
     starbase46_test_scenarios = [
         {
@@ -715,7 +830,13 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="space_ship_ready_v1",
-            min_count_rows=3,
+            # client1 sends 1 space_ship_ready ping
+            # client2 sends 1 space_ship_ready ping
+            # client3 sends 1 space_ship_ready ping
+            # client5 sends 1 space_ship_ready ping
+            # client6 sends 1 space_ship_ready ping
+            # client7 sends 1 space_ship_ready ping
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name=DEFAULT_TEST_NAME,
@@ -723,7 +844,15 @@ with DAG(
         timeout=60 * 60 * 1,
     )
     wait_for_space_ship_ready_data.set_upstream(
-        [client1, client2, client3, sleep_20_minutes]
+        [
+            client1,
+            client2,
+            client3,
+            client5,
+            client6,
+            client7,
+            sleep_20_minutes,
+        ]
     )
 
     space_ship_ready_test_scenarios = [
@@ -749,14 +878,18 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="discovery_v1",
-            min_count_rows=3,
+            # client4 sends 3 discovery pings
+            # client8 sends 3 discovery pings
+            min_count_rows=6,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_discovery_data_disable_upload.set_upstream([client4, sleep_20_minutes])
+    wait_for_discovery_data_disable_upload.set_upstream(
+        [client4, client8, sleep_20_minutes]
+    )
 
     discovery_test_scenarios_disable_upload = [
         {
@@ -790,14 +923,16 @@ with DAG(
         sql=SENSOR_TEMPLATE.format(
             project_id=PROJECT_ID,
             table="deletion_request_v1",
-            min_count_rows=1,
+            # client4 sends 1 deletion_request ping
+            # client8 sends 1 deletion_request ping
+            min_count_rows=2,
             start_timestamp=start_timestamp,
             test_run=burnham_test_run,
             test_name="test_disable_upload",
         ),
         timeout=60 * 60 * 1,
     )
-    wait_for_deletion_request_data.set_upstream([client4, sleep_20_minutes])
+    wait_for_deletion_request_data.set_upstream([client4, client8, sleep_20_minutes])
 
     deletion_request_test_scenarios = [
         {

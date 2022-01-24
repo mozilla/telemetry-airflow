@@ -1,3 +1,12 @@
+"""
+Daily data exports used by TAAR.
+
+Source code is in [mozilla/telemetry-batch-view](https://github.com/mozilla/telemetry-batch-view/blob/main/src/main/scala/com/mozilla/telemetry/ml/AddonRecommender.scala).
+
+For context, see https://github.com/mozilla/taar
+"""
+
+
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -12,6 +21,7 @@ from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     moz_dataproc_jar_runner,
 )
+from utils.tags import Tag
 
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")
 TAAR_ETL_MODEL_STORAGE_BUCKET = Variable.get("taar_etl_model_storage_bucket")
@@ -44,7 +54,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *")
+tags = [Tag.ImpactTier.tier_2]
+
+dag = DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__, tags=tags,)
 
 amodump = GKEPodOperator(
     task_id="taar_amodump",
@@ -88,6 +100,17 @@ wait_for_clients_daily_export = ExternalTaskSensor(
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag)
+
+wait_for_clients_last_seen = ExternalTaskSensor(
+    task_id="wait_for_clients_last_seen",
+    external_dag_id="bqetl_main_summary",
+    external_task_id="telemetry_derived__clients_last_seen__v1",
+    execution_delta=timedelta(hours=2),
+    mode="reschedule",
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
+    dag=dag,
+)
 
 taar_locale = SubDagOperator(
     task_id="taar_locale",
@@ -232,9 +255,13 @@ taar_lite_guidranking = GKEPodOperator(
 amodump >> amowhitelist
 amodump >> editorial_whitelist
 
-wait_for_clients_daily_export >> taar_similarity
-wait_for_clients_daily_export >> taar_locale
-wait_for_clients_daily_export >> taar_collaborative_recommender
-wait_for_clients_daily_export >> taar_lite
-wait_for_clients_daily_export >> taar_lite_guidranking
+taar_tasks = [
+    taar_similarity,
+    taar_locale,
+    taar_collaborative_recommender,
+    taar_lite,
+    taar_lite_guidranking,
+]
 
+wait_for_clients_daily_export >> taar_tasks
+wait_for_clients_last_seen >> taar_tasks

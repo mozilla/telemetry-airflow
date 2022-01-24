@@ -1,3 +1,11 @@
+"""
+Malicious Addons Detection
+
+This runs once a week to emit a trained model to GCS.
+
+Source code is in the private [mad-server repository](https://github.com/mozilla/mad-server/).
+"""
+
 import os
 from airflow import DAG
 from datetime import datetime, timedelta
@@ -5,6 +13,7 @@ from datetime import datetime, timedelta
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 
 default_args = {
@@ -17,7 +26,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-with DAG("mad_server", default_args=default_args, schedule_interval="@weekly") as dag:
+tags = [Tag.ImpactTier.tier_3]
+
+with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__, tags=tags,) as dag:
     is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
     aws_conn_id="aws_dev_mad_resources_training"
     # mad-server expects AWS creds in some custom env vars.
@@ -48,6 +59,7 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly") a
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mad-server:latest",
         startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
+        gke_project_id="moz-fx-data-airflow-gke-prod",
         gke_cluster_name="workloads-prod-v1",
         gke_location="us-west1",
         aws_conn_id=aws_conn_id,
