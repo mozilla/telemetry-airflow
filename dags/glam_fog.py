@@ -51,7 +51,7 @@ LOGICAL_MAPPING = {
 tags = [Tag.ImpactTier.tier_2]
 
 dag = DAG(
-    "glam_firefox_desktop",
+    "glam_fog",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
@@ -200,55 +200,3 @@ for product in final_products:
     probe_counts >> extract_probe_counts >> export >> pre_import
     clients_scalar_aggregate >> user_counts >> extract_user_counts >> export >> pre_import
     clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export >> pre_import
-
-# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-dev/glam:latest-64'
-
-base_docker_args = ['/venv/bin/python', 'manage.py']
-
-env_vars = dict(
-    DATABASE_URL = Variable.get("glam_secret__database_url_dev"),
-    DJANGO_SECRET_KEY = Variable.get("glam_secret__django_secret_key_dev"),
-    DJANGO_CONFIGURATION = "Dev",
-    DJANGO_DEBUG = "False",
-    DJANGO_SETTINGS_MODULE = "glam.settings",
-    GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
-)
-
-glam_fenix_import_glean_aggs_beta = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_beta',
-    name = 'glam_fenix_import_glean_aggs_beta',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'beta'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_aggs_nightly = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_nightly',
-    name = 'glam_fenix_import_glean_aggs_nightly',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'nightly'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_aggs_release = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_release',
-    name = 'glam_fenix_import_glean_aggs_release',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'release'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_counts = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_counts',
-    name = 'glam_fenix_import_glean_counts',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_counts'],
-    env_vars = env_vars,
-    dag=dag)
-
-
-pre_import >> glam_fenix_import_glean_aggs_beta
-pre_import >> glam_fenix_import_glean_aggs_nightly
-pre_import >> glam_fenix_import_glean_aggs_release
-pre_import >> glam_fenix_import_glean_counts
