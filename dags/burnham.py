@@ -372,9 +372,9 @@ BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
 
 BURNHAM_DISTRIBUTIONS = {
     "21.0.0": BurnhamDistribution(
-        burnham_version="21.0.0",
-        glean_sdk_version="41.1.1",
-        glean_parser_version="4.0.0",
+        burnham_version="22.0.0",
+        glean_sdk_version="43.0.2",
+        glean_parser_version="4.4.0",
     )
 }
 
