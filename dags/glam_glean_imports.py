@@ -71,7 +71,7 @@ wait_for_fog = ExternalTaskCompletedSensor(
 )
 
 # Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
+glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.02.0-15'
 
 base_docker_args = ['/venv/bin/python', 'manage.py']
 
