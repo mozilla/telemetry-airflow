@@ -163,6 +163,7 @@ mozaggregator2bq_extract = gke_command(
         POSTGRES_PASS="{{ var.value.mozaggregator_postgres_pass }}",
         START_DS="{{ ds }}",
         END_DS="{{ next_ds }}",
+        SPARK_LOCAL_HOSTNAME="localhost",
     ),
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
     dag=dag,
