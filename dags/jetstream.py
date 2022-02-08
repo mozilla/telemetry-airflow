@@ -13,7 +13,7 @@ from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": ["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
+    "email": ["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),
     "email_on_failure": True,
@@ -39,7 +39,7 @@ with DAG(
         task_id="jetstream_run",
         name="jetstream_run",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
+        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
         arguments=[
             "--log_to_bigquery",
             "run-argo", 
