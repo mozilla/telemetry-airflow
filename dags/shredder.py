@@ -75,8 +75,23 @@ on_demand = gke_command(
         # temporarily cover 4 intervals instead of 2, to process backlog
         # per https://bugzilla.mozilla.org/show_bug.cgi?id=1747068
         "--start-date={{macros.ds_add(ds, 27-28*4)}}",
-        "--parallelism=2",
-        "--billing-project=moz-fx-data-shredder",
+        "--no-use-dml",
+        # "--parallelism=2",
+        # "--billing-project=moz-fx-data-shredder",
+        # temporarily override parallelism and billing projects to use backfill projects
+        # to spread jobs out and increase speed of sanitizing columns for Bug 1751979
+        "--parallelism=10",
+        "--billing-projects",
+        "moz-fx-data-backfill-20",
+        "moz-fx-data-backfill-21",
+        "moz-fx-data-backfill-22",
+        "moz-fx-data-backfill-23",
+        "moz-fx-data-backfill-24",
+        "moz-fx-data-backfill-25",
+        "moz-fx-data-backfill-26",
+        "moz-fx-data-backfill-27",
+        "moz-fx-data-backfill-28",
+        "moz-fx-data-backfill-29",
         "--only=telemetry_stable.main_v4",
     ],
     docker_image=docker_image,
