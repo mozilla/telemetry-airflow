@@ -12,6 +12,6 @@ requests==2.20.1
 scipy==1.0.0rc1
 typing==3.6.4
 six==1.11.0
-protobuf==3.6.1
+protobuf==3.15.0
 py4j==0.10.7
 ujson
