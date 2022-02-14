@@ -25,6 +25,7 @@ from utils.dataproc import (
     get_dataproc_parameters,
 )
 from utils.gcp import bigquery_etl_query
+from utils.tags import Tag
 
 
 default_args = {
@@ -41,7 +42,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__)
+tags = [Tag.ImpactTier.tier_2]
+
+dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__, tags=tags,)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 

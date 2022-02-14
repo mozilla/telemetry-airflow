@@ -15,6 +15,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 DOCS = """\
 # burnham
@@ -370,10 +371,10 @@ DEFAULT_GKE_NAMESPACE = "default"
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
 
 BURNHAM_DISTRIBUTIONS = {
-    "21.0.0": BurnhamDistribution(
-        burnham_version="21.0.0",
-        glean_sdk_version="41.1.1",
-        glean_parser_version="4.0.0",
+    "22.0.0": BurnhamDistribution(
+        burnham_version="22.0.0",
+        glean_sdk_version="43.0.2",
+        glean_parser_version="4.4.0",
     )
 }
 
@@ -564,12 +565,14 @@ def sleep_task(minutes, task_id):
         op_kwargs=dict(minutes=minutes),
     )
 
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "burnham",
     schedule_interval="@daily",
     default_args=DEFAULT_ARGS,
     doc_md=DOCS,
+    tags=tags,
 ) as dag:
 
     # Generate a UUID for this test run
@@ -643,7 +646,7 @@ with DAG(
 
     client5 = burnham_run(
         task_id="client5",
-        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["22.0.0"],
         burnham_test_run=burnham_test_run,
         burnham_test_name=DEFAULT_TEST_NAME,
         burnham_missions=["MISSION G: FIVE WARPS, FOUR JUMPS", "MISSION C: ONE JUMP"],
@@ -656,7 +659,7 @@ with DAG(
 
     client6 = burnham_run(
         task_id="client6",
-        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["22.0.0"],
         burnham_test_run=burnham_test_run,
         burnham_test_name=DEFAULT_TEST_NAME,
         burnham_missions=[
@@ -676,7 +679,7 @@ with DAG(
 
     client7 = burnham_run(
         task_id="client7",
-        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["22.0.0"],
         burnham_test_run=burnham_test_run,
         burnham_test_name=DEFAULT_TEST_NAME,
         burnham_missions=["MISSION A: ONE WARP", "MISSION B: TWO WARPS"],
@@ -689,7 +692,7 @@ with DAG(
 
     client8 = burnham_run(
         task_id="client8",
-        burnham_distribution=BURNHAM_DISTRIBUTIONS["21.0.0"],
+        burnham_distribution=BURNHAM_DISTRIBUTIONS["22.0.0"],
         burnham_test_run=burnham_test_run,
         burnham_test_name="test_disable_upload",
         burnham_missions=[

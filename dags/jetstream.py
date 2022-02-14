@@ -9,10 +9,11 @@ from airflow import DAG
 from operators.task_sensor import ExternalTaskCompletedSensor
 from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": ["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
+    "email": ["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),
     "email_on_failure": True,
@@ -21,11 +22,14 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_1]
+
 with DAG(
         "jetstream",
         default_args=default_args,
         schedule_interval="0 4 * * *",
         doc_md=__doc__,
+        tags=tags,
 ) as dag:
 
     # Built from repo https://github.com/mozilla/jetstream
@@ -35,7 +39,7 @@ with DAG(
         task_id="jetstream_run",
         name="jetstream_run",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
+        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
         arguments=[
             "--log_to_bigquery",
             "run-argo", 

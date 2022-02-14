@@ -104,7 +104,7 @@ def export_to_parquet(
                     "gs://dataproc-initialization-actions/python/pip-install.sh",
                 ],
                 metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
-                image_version="1.4",
+                image_version="1.4-debian10",
                 properties={},
                 master_machine_type="n1-standard-8",
                 worker_machine_type="n1-standard-8",

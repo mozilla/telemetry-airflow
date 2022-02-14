@@ -1,6 +1,7 @@
 from airflow import DAG
 from datetime import timedelta, datetime
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 from operators.task_sensor import ExternalTaskCompletedSensor
 
@@ -33,13 +34,16 @@ default_args = {
     "retries": 2,
     "retry_delay": timedelta(minutes=30),
 }
+
 DAG_NAME = "operational_monitoring"
+tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
     DAG_NAME,
     default_args=default_args,
     schedule_interval="0 3 * * *",
     doc_md=docs,
+    tags=tags,
 ) as dag:
     wait_for_main_nightly = ExternalTaskCompletedSensor(
         task_id="wait_for_main_nightly",

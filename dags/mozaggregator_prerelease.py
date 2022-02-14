@@ -14,6 +14,7 @@ from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperato
 from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 EXPORT_TO_AVRO = True
 
@@ -31,11 +32,14 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 dag = DAG(
     "prerelease_telemetry_aggregates",
     default_args=default_args,
     schedule_interval="@daily",
     doc_md=__doc__,
+    tags=tags,
 )
 
 
@@ -159,6 +163,7 @@ mozaggregator2bq_extract = gke_command(
         POSTGRES_PASS="{{ var.value.mozaggregator_postgres_pass }}",
         START_DS="{{ ds }}",
         END_DS="{{ next_ds }}",
+        SPARK_LOCAL_HOSTNAME="localhost",
     ),
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
     dag=dag,

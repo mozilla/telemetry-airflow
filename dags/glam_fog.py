@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.models import Variable
+from airflow.operators.dummy_operator import DummyOperator
+from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
     generate_and_run_glean_queries,
@@ -8,6 +11,7 @@ from glam_subdags.generate_query import (
 )
 from utils.gcp import gke_command
 from functools import partial
+from utils.tags import Tag
 
 default_args = {
     "owner": "akommasani@mozilla.com",
@@ -44,11 +48,14 @@ LOGICAL_MAPPING = {
    
 }
 
+tags = [Tag.ImpactTier.tier_2]
+
 dag = DAG(
-    "glam_firefox_desktop",
+    "glam_fog",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
+    tags=tags,
 )
 
 wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
@@ -60,6 +67,11 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
+    dag=dag,
+)
+
+pre_import = DummyOperator(
+    task_id=f'pre_import',
     dag=dag,
 )
 
@@ -185,6 +197,6 @@ for product in final_products:
         >> histogram_percentiles
         >> probe_counts
     )
-    probe_counts >> extract_probe_counts >> export
-    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
-    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export
+    probe_counts >> extract_probe_counts >> export >> pre_import
+    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export >> pre_import
+    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export >> pre_import

@@ -28,6 +28,8 @@ jobs:
     working_directory: ~/mozilla/telemetry-airflow
     steps:
       - checkout
+      - run: python -m pip install pip --upgrade && python -m pip install pytest
+      - run: python -m pytest tests/
       - run: python -m py_compile dags/*.py
       - run: find . -name *.pyc -delete
 
@@ -45,7 +47,7 @@ jobs:
 
   test-environment:
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202111-01
       docker_layer_caching: true
     working_directory: ~/mozilla/telemetry-airflow
     steps:
@@ -56,8 +58,10 @@ jobs:
             docker-compose build
             # now take ownership of the folder
             sudo chown -R 10001:10001 .
+
       - run:
-          name: Test if dag scripts can be parsed
+          name: Test if dag scripts can be parsed by Airflow and that tags have been correctly set
+          #  Valid DAG tags are defined in: `bin/test-dag-tags.py`
           command: bash bin/test-parse
 
   deploy:

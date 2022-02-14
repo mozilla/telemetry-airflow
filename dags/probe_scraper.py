@@ -7,6 +7,7 @@ from airflow.models import Variable
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 
 DOCS = """\
@@ -49,10 +50,14 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
+tags = [Tag.ImpactTier.tier_1]
+
 with DAG('probe_scraper',
-         doc_md=DOCS,
-         default_args=default_args,
-         schedule_interval='0 0 * * 1-5') as dag:
+    doc_md=DOCS,
+    default_args=default_args,
+    schedule_interval='0 0 * * 1-5',
+    tags=tags,
+) as dag:
 
     aws_conn_id='aws_prod_probe_scraper'
     aws_access_key, aws_secret_key, session = AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials()
@@ -65,7 +70,8 @@ with DAG('probe_scraper',
         '--cache-dir', '/app/probe_cache',
         '--output-bucket', 'net-mozaws-prod-us-west-2-data-pitmo',
         '--cache-bucket', 'telemetry-airflow-cache',
-        '--env', 'prod'
+        '--env', 'prod',
+        "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
     ]
 
     # Cluster autoscaling works on pod resource requests, instead of usage

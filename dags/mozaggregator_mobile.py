@@ -16,6 +16,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.gcp import gke_command
+from utils.tags import Tag
 
 EXPORT_TO_AVRO = True
 
@@ -34,7 +35,9 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@daily", doc_md=__doc__)
+tags = [Tag.ImpactTier.tier_1]
+
+dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@daily", doc_md=__doc__, tags=tags,)
 
 subdag_args = default_args.copy()
 subdag_args["retries"] = 0

@@ -1,6 +1,5 @@
 """
 Firefox for Android ETL for https://glam.telemetry.mozilla.org/
-
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
 in bigquery-etl and the
@@ -12,7 +11,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-
+from airflow.operators.dummy_operator import DummyOperator
 from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
@@ -21,15 +20,15 @@ from glam_subdags.generate_query import (
 )
 from utils.gcp import gke_command
 from functools import partial
+from utils.tags import Tag
 
 default_args = {
-    "owner": "amiyaguchi@mozilla.com",
+    "owner": "akommasani@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 2, 19),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "amiyaguchi@mozilla.com",
-        "bewu@mozilla.com",
+        "akommasani@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -65,12 +64,15 @@ LOGICAL_MAPPING = {
     "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
 }
 
+tags = [Tag.ImpactTier.tier_1]
+
 dag = DAG(
     "glam_fenix",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 2 * * *",
     doc_md=__doc__,
+    tags=tags,
 )
 
 wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
@@ -82,6 +84,11 @@ wait_for_copy_deduplicate = ExternalTaskCompletedSensor(
     mode="reschedule",
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
+    dag=dag,
+)
+
+pre_import = DummyOperator(
+    task_id='pre_import',
     dag=dag,
 )
 
@@ -207,58 +214,6 @@ for product in final_products:
         >> histogram_percentiles
         >> probe_counts
     )
-    probe_counts >> extract_probe_counts >> export
-    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export
-    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export
-
-# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
-
-base_docker_args = ['/venv/bin/python', 'manage.py']
-
-env_vars = dict(
-    DATABASE_URL = Variable.get("glam_secret__database_url"),
-    DJANGO_SECRET_KEY = Variable.get("glam_secret__django_secret_key"),
-    DJANGO_CONFIGURATION = "Prod",
-    DJANGO_DEBUG = "False",
-    DJANGO_SETTINGS_MODULE = "glam.settings",
-    GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
-)
-
-glam_fenix_import_glean_aggs_beta = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_beta',
-    name = 'glam_fenix_import_glean_aggs_beta',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'beta'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_aggs_nightly = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_nightly',
-    name = 'glam_fenix_import_glean_aggs_nightly',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'nightly'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_aggs_release = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_aggs_release',
-    name = 'glam_fenix_import_glean_aggs_release',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_aggs', 'release'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_fenix_import_glean_counts = GKENatPodOperator(
-    task_id = 'glam_fenix_import_glean_counts',
-    name = 'glam_fenix_import_glean_counts',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_glean_counts'],
-    env_vars = env_vars,
-    dag=dag)
-
-
-export >> glam_fenix_import_glean_aggs_beta
-export >> glam_fenix_import_glean_aggs_nightly
-export >> glam_fenix_import_glean_aggs_release
-export >> glam_fenix_import_glean_counts
+    probe_counts >> extract_probe_counts >> export >> pre_import
+    clients_scalar_aggregate >> user_counts >> extract_user_counts >> export >> pre_import
+    clients_histogram_aggregate >> sample_counts >> extract_sample_counts >> export >> pre_import
