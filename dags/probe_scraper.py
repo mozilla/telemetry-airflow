@@ -70,7 +70,7 @@ with DAG('probe_scraper',
         '--cache-dir', '/app/probe_cache',
         '--output-bucket', 'net-mozaws-prod-us-west-2-data-pitmo',
         '--cache-bucket', 'telemetry-airflow-cache',
-        '--env', 'prod'
+        '--env', 'prod',
         "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}"
     ]
 
