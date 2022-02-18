@@ -64,17 +64,19 @@ base_command = [
     # race conditions with downstream tables and pings received shortly after a
     # deletion request.
     "--start-date={{macros.ds_add(ds, 27-28*2)}}",
+    # non-dml statements use LEFT JOIN instead of IN to filter rows, which takes about
+    # half as long as of 2022-02-14, and reduces cost by using less flat rate slot time
+    "--no-use-dml",
 ]
 
-# main_v4 is cheaper to handle in a project without flat-rate query pricing
-on_demand = gke_command(
-    task_id="on_demand",
-    name="shredder-on-demand",
+# handle telemetry main separately to ensure it runs continuously and don't slow down
+# other tables. run it in a separate project with its own slot reservation to ensure
+# that it can finish on time, because it uses more slots than everything else combined
+telemetry_main = gke_command(
+    task_id="telemetry_main",
+    name="shredder-telemetry-main",
     command=base_command
     + [
-        # temporarily cover 4 intervals instead of 2, to process backlog
-        # per https://bugzilla.mozilla.org/show_bug.cgi?id=1747068
-        "--start-date={{macros.ds_add(ds, 27-28*4)}}",
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v4",
@@ -84,12 +86,11 @@ on_demand = gke_command(
     dag=dag,
 )
 
-# handle main_summary separately to ensure that it doesn't slow everything else
-# down and also to avoid timeout errors related to queueing when running more
-# than 2 DML DELETE statements at once on a single table
-flat_rate_main_summary = gke_command(
-    task_id="flat_rate_main_summary",
-    name="shredder-flat-rate-main-summary",
+# handle telemetry main summary separately to ensure it runs continuously and doesn't
+# slow down other tables
+telemetry_main_summary = gke_command(
+    task_id="telemetry_main_summary",
+    name="shredder-telemetry-main-summary",
     command=base_command
     + [
         "--parallelism=2",
@@ -103,8 +104,8 @@ flat_rate_main_summary = gke_command(
 
 # everything else
 flat_rate = gke_command(
-    task_id="flat_rate",
-    name="shredder-flat-rate",
+    task_id="all",
+    name="shredder-all",
     command=base_command
     + [
         "--parallelism=4",
