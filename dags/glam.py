@@ -295,20 +295,6 @@ extract_counts = SubDagOperator(
     dag=dag
 )
 
-extract_sample_counts = SubDagOperator(
-    subdag=extract_user_counts(
-        GLAM_DAG,
-        "extract_sample_counts",
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-        "sample_counts",
-        "sample-counts"
-    ),
-    task_id="extract_sample_counts",
-    dag=dag
-)
-
 extracts_per_channel = SubDagOperator(
     subdag=extracts_subdag(
         GLAM_DAG,
@@ -406,10 +392,9 @@ clients_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 glam_user_counts >> extract_counts
-glam_sample_counts >> extract_sample_counts
+
 
 extract_counts >> extracts_per_channel
-extract_sample_counts >> extracts_per_channel
 client_scalar_probe_counts >> extracts_per_channel
 scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
