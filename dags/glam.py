@@ -15,6 +15,7 @@ from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.operators.dummy_operator import DummyOperator
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
@@ -54,6 +55,11 @@ dag = DAG(
     schedule_interval="0 2 * * *",
     doc_md=__doc__,
     tags=tags,
+)
+
+pre_import = DummyOperator(
+    task_id='pre_import',
+    dag=dag,
 )
 
 
@@ -307,60 +313,6 @@ extracts_per_channel = SubDagOperator(
     dag=dag,
 )
 
-# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2021.8.1-10'
-
-base_docker_args = ['/venv/bin/python', 'manage.py']
-
-env_vars = dict(
-    DATABASE_URL = Variable.get("glam_secret__database_url"),
-    DJANGO_SECRET_KEY = Variable.get("glam_secret__django_secret_key"),
-    DJANGO_CONFIGURATION = "Prod",
-    DJANGO_DEBUG = "False",
-    DJANGO_SETTINGS_MODULE = "glam.settings",
-    GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
-)
-
-glam_import_desktop_aggs_beta = GKENatPodOperator(
-    task_id = 'glam_import_desktop_aggs_beta',
-    name = 'glam_import_desktop_aggs_beta',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_desktop_aggs', 'beta'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_desktop_aggs_nightly = GKENatPodOperator(
-    task_id = 'glam_import_desktop_aggs_nightly',
-    name = 'glam_import_desktop_aggs_nightly',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_desktop_aggs', 'nightly'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_desktop_aggs_release = GKENatPodOperator(
-    task_id = 'glam_import_desktop_aggs_release',
-    name = 'glam_import_desktop_aggs_release',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_desktop_aggs', 'release'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_user_counts = GKENatPodOperator(
-    task_id = 'glam_import_user_counts',
-    name = 'glam_import_user_counts',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_user_counts'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_probes = GKENatPodOperator(
-    task_id = 'glam_import_probes',
-    name = 'glam_import_probes',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_probes'],
-    env_vars = env_vars,
-    dag=dag)
-
 
 wait_for_main_ping >> latest_versions
 
@@ -400,8 +352,4 @@ scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
 glam_sample_counts >> extracts_per_channel
 
-extracts_per_channel >> glam_import_desktop_aggs_beta
-extracts_per_channel >> glam_import_desktop_aggs_nightly
-extracts_per_channel >> glam_import_user_counts
-extracts_per_channel >> glam_import_probes
-glam_import_desktop_aggs_release
+extracts_per_channel >> pre_import
