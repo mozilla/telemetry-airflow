@@ -424,6 +424,7 @@ def burnham_run(
         "BURNHAM_PLATFORM_URL": BURNHAM_PLATFORM_URL,
         "BURNHAM_TEST_RUN": burnham_test_run,
         "BURNHAM_TEST_NAME": burnham_test_name,
+        "BURNHAM_AIRFLOW_TASK_ID": task_id,
         "BURNHAM_VERBOSE": "true",
         "GLEAN_LOG_PINGS": "true",
     }
@@ -564,6 +565,7 @@ def sleep_task(minutes, task_id):
         python_callable=do_sleep,
         op_kwargs=dict(minutes=minutes),
     )
+
 
 tags = [Tag.ImpactTier.tier_2]
 
