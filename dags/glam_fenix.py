@@ -213,6 +213,6 @@ for product in final_products:
         >> histogram_percentiles
         >> probe_counts
     )
-    probe_counts >> extract_probe_counts >> export >> pre_import
+    probe_counts >> sample_counts >> extract_probe_counts >> export >> pre_import
     clients_scalar_aggregate >> user_counts >> extract_user_counts >> export >> pre_import
-    clients_histogram_aggregate >> sample_counts >> export >> pre_import
+    clients_histogram_aggregate >> export >> pre_import
