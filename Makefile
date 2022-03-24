@@ -21,6 +21,7 @@ build:
 clean:	stop
 	docker-compose rm -f
 	rm -rf logs/*
+	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
 shell:
 	docker-compose run web bash
