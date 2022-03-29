@@ -50,3 +50,6 @@ clean-gke:
 
 test:
 	tox
+
+compile-requirements:
+	venv/bin/pip-compile requirements.in --output-file requirements.txt

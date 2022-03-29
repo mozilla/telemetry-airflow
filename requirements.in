@@ -40,3 +40,4 @@ apache-airflow-providers-google==5.0.0
 # 2.6.0 and 3.0.0 are newer but not compatible with apache-airflow-providers-google
 # yet until maybe v7.0.0 bc 'google.cloud.dataproc_v1beta2' is deprecated
 google-cloud-dataproc==2.5.0
+xmltodict==0.12.0
