@@ -56,7 +56,7 @@ with DAG(
         task_id="jetstream_run_config_changed",
         name="jetstream_run_config_changed",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "tdsmith@mozilla.com",],
+        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
         arguments=[
             "--log_to_bigquery",
             "rerun-config-changed",
