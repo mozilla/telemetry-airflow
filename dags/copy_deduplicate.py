@@ -78,7 +78,10 @@ with models.DAG(
         parallelism=10,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job elsewhere.
-        except_tables=["telemetry_live.main_v4", "telemetry_live.event_v4"],
+        except_tables=[
+            "telemetry_live.main_v4",
+            "telemetry_live.event_v4",
+            "telemetry_live.first_shutdown_v4"],
         node_selectors={"nodepool": "highmem"},
         resources=resources,
     )
@@ -105,6 +108,16 @@ with models.DAG(
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=["telemetry_live.event_v4"],
         priority_weight=100,
+        parallelism=1,
+        owner="jklukas@mozilla.com",
+    )
+
+    copy_deduplicate_first_shutdown_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_first_shutdown_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=["telemetry_live.first_shutdown_v4"],
+        priority_weight=50,
         parallelism=1,
         owner="jklukas@mozilla.com",
     )
