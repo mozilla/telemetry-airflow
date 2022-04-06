@@ -82,23 +82,35 @@ DELETION_REQUEST_V1_DEDUPED = DEDUPED_TABLE.format(
 # Test scenario test_labeled_counter_metrics: Verify that labeled_counter
 # metric values reported by the Glean SDK across several documents from three
 # different clients are correct.
-TEST_LABELED_COUNTER_METRICS = f"""WITH {DISCOVERY_V1_DEDUPED}
+TEST_LABELED_COUNTER_METRICS = f"""WITH {DISCOVERY_V1_DEDUPED},
+  discovery_v1_drives AS (
+      SELECT
+        technology_space_travel.key,
+        SUM(technology_space_travel.value) AS value_sum
+      FROM
+        discovery_v1_deduped
+      CROSS JOIN
+        UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
+      WHERE
+        metrics.string.test_name = "{DEFAULT_TEST_NAME}"
+      GROUP BY
+        technology_space_travel.key
+  )
+
+SELECT * FROM discovery_v1_drives
+UNION ALL
 SELECT
-  technology_space_travel.key,
-  SUM(technology_space_travel.value) AS value_sum
-FROM
-  discovery_v1_deduped
-CROSS JOIN
-  UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
+  'row_count' AS key,
+  COUNT(*) as value_sum
+FROM discovery_v1_deduped
 WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
-GROUP BY
-  technology_space_travel.key
 ORDER BY
-  technology_space_travel.key
+  key
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
+    {"key": "row_count", "value_sum": 20},
     {"key": "spore_drive", "value_sum": 26},
     {"key": "warp_drive", "value_sum": 36},
 ]
