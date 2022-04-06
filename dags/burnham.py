@@ -341,16 +341,25 @@ WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
 # the test scenarios to JSON and b64-encode them to ensure we can safely pass
 # this information to the burnham-bigquery Docker container. We can use
 # string-formatting here, because Airflow executes the query directly.
+# This tries to deduplicate based on the document_id, to avoid miscounting.
 SENSOR_TEMPLATE = """
+WITH {table}_numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{project_id}.burnham_live.{table}`
+  WHERE
+    submission_timestamp BETWEEN TIMESTAMP_SUB("{start_timestamp}", INTERVAL 1 HOUR)
+    AND TIMESTAMP_ADD("{start_timestamp}", INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = "{test_run}"
+    AND metrics.string.test_name = "{test_name}")
 SELECT
   COUNT(*) >= {min_count_rows}
 FROM
-  `{project_id}.burnham_live.{table}`
+  {table}_numbered
 WHERE
-  submission_timestamp BETWEEN TIMESTAMP_SUB("{start_timestamp}", INTERVAL 1 HOUR)
-  AND TIMESTAMP_ADD("{start_timestamp}", INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = "{test_run}"
-  AND metrics.string.test_name = "{test_name}"
+  _n = 1
 """
 
 
