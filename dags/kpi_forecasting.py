@@ -33,9 +33,9 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
     kpi_forecasting_mobile = gke_command(
         task_id="kpi_forecasting_mobile",
         command=[
-            "python", "kpi-forecasting/kpi-forecasting.py",
+            "python", "kpi-forecasting/kpi_forecasting.py",
             "-c",
-        ] + ["yaml/mobile.yaml"],
+        ] + ["kpi-forecasting/yaml/mobile.yaml"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
         dag=dag,
     )
@@ -43,9 +43,9 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
     kpi_forecasting_desktop = gke_command(
         task_id="kpi_forecasting_desktop",
         command=[
-            "python", "kpi-forecasting/kpi-forecasting.py",
+            "python", "kpi-forecasting/kpi_forecasting.py",
             "-c",
-        ] + ["yaml/desktop.yaml"],
+        ] + ["kpi-forecasting/yaml/desktop.yaml"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
         dag=dag,
     )
