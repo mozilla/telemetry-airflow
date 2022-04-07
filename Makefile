@@ -21,6 +21,7 @@ build:
 clean:	stop
 	docker-compose rm -f
 	rm -rf logs/*
+	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
 shell:
 	docker-compose run web bash
@@ -50,3 +51,6 @@ clean-gke:
 
 test:
 	tox
+
+compile-requirements:
+	venv/bin/pip-compile requirements.in --output-file requirements.txt

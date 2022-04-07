@@ -1,0 +1,11 @@
+<Envelope>
+  <Body>
+    <GetAggregateTrackingForOrg>
+      {% if private %}<PRIVATE/>{% endif %}
+      {% if sent %}<SENT/>{% endif %}
+      {% if top_domain %}<TOP_DOMAIN/>{% endif %}
+      <DATE_START>{{ date_start }}</DATE_START>
+      <DATE_END>{{ date_end }}</DATE_END>
+    </GetAggregateTrackingForOrg>
+  </Body>
+</Envelope>

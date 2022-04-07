@@ -78,11 +78,17 @@ with models.DAG(
         parallelism=10,
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job elsewhere.
-        except_tables=["telemetry_live.main_v4", "telemetry_live.event_v4"],
+        except_tables=[
+            "telemetry_live.main_v4",
+            "telemetry_live.event_v4",
+            "telemetry_live.first_shutdown_v4",
+            "telemetry_live.saved_session_v4"],
         node_selectors={"nodepool": "highmem"},
         resources=resources,
     )
 
+    # We split out main ping since it's the highest volume and has a distinct
+    # set of downstream dependencies.
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_main_ping",
         target_project_id="moz-fx-data-shared-prod",
@@ -99,6 +105,30 @@ with models.DAG(
         ],
     )
 
+    # We also separate out variant pings that share the main ping schema since these
+    # ultrawide tables can sometimes have unique performance problems.
+    copy_deduplicate_first_shutdown_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_first_shutdown_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=["telemetry_live.first_shutdown_v4"],
+        priority_weight=50,
+        parallelism=1,
+        owner="jklukas@mozilla.com",
+    )
+
+    copy_deduplicate_saved_session_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_saved_session_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=["telemetry_live.saved_session_v4"],
+        priority_weight=50,
+        parallelism=1,
+        owner="jklukas@mozilla.com",
+    )
+
+    # Events.
+
     copy_deduplicate_event_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_event_ping",
         target_project_id="moz-fx-data-shared-prod",
@@ -108,8 +138,6 @@ with models.DAG(
         parallelism=1,
         owner="jklukas@mozilla.com",
     )
-
-    # Events.
 
     event_events = bigquery_etl_query(
         task_id="event_events",

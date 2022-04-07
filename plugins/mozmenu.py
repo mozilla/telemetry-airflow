@@ -19,6 +19,13 @@ wtmo_dev = {
     "href": "https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide"
 }
 
+airflow_triage_guide = {
+    "name": "Airflow Triage Guide",
+    "category": "Mozilla",
+    "href": "https://mana.mozilla.org/wiki/display/DATA/Airflow+Triage+Process",
+}
+
+
 class MozMenuPlugin(AirflowPlugin):
     name = "Mozilla"
     operators = []
@@ -26,4 +33,4 @@ class MozMenuPlugin(AirflowPlugin):
     hooks = []
     executors = []
     appbuilder_views = []
-    appbuilder_menu_items = [telemetry_airflow, wtmo_dev]
+    appbuilder_menu_items = [telemetry_airflow, wtmo_dev, airflow_triage_guide]

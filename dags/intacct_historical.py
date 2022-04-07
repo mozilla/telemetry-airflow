@@ -55,7 +55,7 @@ with DAG(
     'fivetran_intacct_historical',
     default_args=default_args,
     doc_md=docs,
-    schedule_interval="0 5 * * *",
+    schedule_interval="0 2 * * *",
     tags=tags,
 ) as dag:
 
