@@ -10,6 +10,9 @@ from utils.acoustic.acoustic_client import AcousticClient
 
 
 def _generate_acoustic_report(conn_id, report_type, config, *args, **kwargs):
+    if config["request_params"]["date_start"] == config["request_params"]["date_end"]:
+        raise ValueError("It appears start and end date are exactly the same.")
+
     conn = BaseHook.get_connection(conn_id)
 
     acoustic_connection = {
@@ -43,7 +46,7 @@ DAG_OWNER = "kignasiak@mozilla.com"
 ACOUSTIC_CONNECTION_ID = "acoustic"
 
 EXEC_START = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
-EXEC_END = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
+EXEC_END = '{{ macros.ds_format(next_ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
 
 REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
 

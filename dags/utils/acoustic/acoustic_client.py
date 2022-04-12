@@ -152,7 +152,8 @@ class AcousticClient:
 
         supported_report_types = ("raw_recipient_export", "contact_export",)
         if report_type not in supported_report_types:
-            pass  # TODO: raise with options
+            err_msg = f"{report_type} is not a valid option, support report types: {supported_report_types}"
+            raise AttributeError(err_msg)
 
         with open(request_template, "r") as _file:
             request_body_template = jinja2.Template(_file.read())
