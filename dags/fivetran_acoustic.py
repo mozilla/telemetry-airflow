@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any, Dict
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -9,7 +10,15 @@ from utils.tags import Tag
 from utils.acoustic.acoustic_client import AcousticClient
 
 
-def _generate_acoustic_report(conn_id, report_type, config, *args, **kwargs):
+def _generate_acoustic_report(conn_id: str, report_type: str, config: Dict[Any, Any], *args, **kwargs):
+    """
+    A wrapper function for retrieving Acoustic connection details from Airflow instantiating AcousticClient and generating report.
+    """
+
+    if config["request_params"]["date_start"] == config["request_params"]["date_end"]:
+        err_msg = "It appears start and end date are exactly the same. This is undesired and will result in data being generated for 0 second time range."
+        raise ValueError(err_msg)
+
     conn = BaseHook.get_connection(conn_id)
 
     acoustic_connection = {
@@ -43,7 +52,7 @@ DAG_OWNER = "kignasiak@mozilla.com"
 ACOUSTIC_CONNECTION_ID = "acoustic"
 
 EXEC_START = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
-EXEC_END = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
+EXEC_END = '{{ macros.ds_format(next_ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
 
 REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
 
