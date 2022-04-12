@@ -152,7 +152,7 @@ class AcousticClient:
 
         supported_report_types = ("raw_recipient_export", "contact_export",)
         if report_type not in supported_report_types:
-            err_msg = f"{report_type} is not a valid option, support report types: {supported_report_types}"
+            err_msg = f"{report_type} is not a valid option, supported types are: {supported_report_types}"
             raise AttributeError(err_msg)
 
         with open(request_template, "r") as _file:
