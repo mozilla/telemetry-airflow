@@ -145,9 +145,6 @@ class AcousticClient:
         :param template_params: values that should be used to render the request template provided
 
         :return: Returns back a list of rows of data returned by the API call as a dictionary
-
-        More information about the specific API call:
-        https://developer.goacoustic.com/acoustic-campaign/reference/reporting#getaggregatetrackingfororg
         """
 
         supported_report_types = ("raw_recipient_export", "contact_export",)
@@ -187,3 +184,53 @@ class AcousticClient:
         logging.info(f"{report_type} generation complete. Report location: {report_loc}. Time taken: {datetime.now() - start}")
 
         return
+
+
+if __name__ == "__main__":
+
+    EXEC_START = "01/04/2022 00:00:00"
+    EXEC_END = "02/04/2022 00:00:00"
+
+    REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
+
+    REPORTS_CONFIG = {
+        "raw_recipient_export": {
+            "request_template": f"{REQUEST_TEMPLATE_LOC}/reporting_raw_recipient_data_export.xml.jinja",
+            "request_params": {
+                "export_format": 0,
+                "date_start": EXEC_START,
+                "date_end": EXEC_END,
+            },
+        },
+        "contact_export": {
+            "request_template": f"{REQUEST_TEMPLATE_LOC}/export_database.xml.jinja",
+            "request_params": {
+                "list_id": 1364939,
+                "export_type": "ALL",
+                "export_format": "CSV",
+                "visibility": 1,
+                "date_start": EXEC_START,
+                "date_end": EXEC_END,
+                "columns": "\n".join([
+                    f"<COLUMN>{column}</COLUMN>" for column in [
+                        "email",
+                        "RECIPIENT_ID",
+                        "Last Modified Date",
+                    ]
+                ])
+            },
+        },
+    }
+
+    acoustic_connection = {
+        "client_id": "",
+        "client_secret": "",
+        "refresh_token": "",
+    }
+
+    acoustic_client = AcousticClient(**acoustic_connection)
+    acoustic_client.generate_report(
+        request_template=REPORTS_CONFIG["contact_export"]["request_template"],
+        template_params=REPORTS_CONFIG["contact_export"]["request_params"],
+        report_type="contact_export"
+    )
