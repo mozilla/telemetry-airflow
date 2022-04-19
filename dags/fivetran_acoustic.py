@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any, Dict
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -9,7 +10,15 @@ from utils.tags import Tag
 from utils.acoustic.acoustic_client import AcousticClient
 
 
-def _generate_acoustic_report(conn_id, report_type, config, *args, **kwargs):
+def _generate_acoustic_report(conn_id: str, report_type: str, config: Dict[Any, Any], *args, **kwargs):
+    """
+    A wrapper function for retrieving Acoustic connection details from Airflow instantiating AcousticClient and generating report.
+    """
+
+    if config["request_params"]["date_start"] == config["request_params"]["date_end"]:
+        err_msg = "It appears start and end date are exactly the same. This is undesired and will result in data being generated for 0 second time range."
+        raise ValueError(err_msg)
+
     conn = BaseHook.get_connection(conn_id)
 
     acoustic_connection = {
@@ -43,7 +52,7 @@ DAG_OWNER = "kignasiak@mozilla.com"
 ACOUSTIC_CONNECTION_ID = "acoustic"
 
 EXEC_START = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
-EXEC_END = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
+EXEC_END = '{{ macros.ds_format(next_ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
 
 REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
 
@@ -60,13 +69,53 @@ REPORTS_CONFIG = {
         "request_template": f"{REQUEST_TEMPLATE_LOC}/export_database.xml.jinja",
         "request_params": {
             "list_id": "{{ var.value.fivetran_acoustic_contact_export_list_id }}",  # list_name: "Main Contact Table revision 3"
-            # "list_id": 1390189,  # dev
-            # "list_id": 1364939,  # prod
             "export_type": "ALL",
             "export_format": "CSV",
             "visibility": 1,  # 0 (Private) or 1 (Shared)
             "date_start": EXEC_START,
             "date_end": EXEC_END,
+            "columns": "\n".join([
+                f"<COLUMN>{column}</COLUMN>" for column in [
+                    "email",
+                    "basket_token",
+                    "sfdc_id",
+                    "double_opt_in",
+                    "has_opted_out_of_email",
+                    "email_format",
+                    "email_lang",
+                    "fxa_created_date",
+                    "fxa_first_service",
+                    "fxa_id",
+                    "fxa_account_deleted",
+                    "email_id",
+                    "mailing_country",
+                    "cohort",
+                    "sub_mozilla_foundation",
+                    "sub_common_voice",
+                    "sub_hubs",
+                    "sub_mixed_reality",
+                    "sub_internet_health_report",
+                    "sub_miti",
+                    "sub_mozilla_fellowship_awardee_alumni",
+                    "sub_mozilla_festival",
+                    "sub_mozilla_technology",
+                    "sub_mozillians_nda",
+                    "sub_firefox_accounts_journey",
+                    "sub_knowledge_is_power",
+                    "sub_take_action_for_the_internet",
+                    "sub_test_pilot",
+                    "sub_firefox_news",
+                    "vpn_waitlist_geo",
+                    "vpn_waitlist_platform",
+                    "sub_about_mozilla",
+                    "sub_apps_and_hacks",
+                    "sub_rally",
+                    "sub_firefox_sweepstakes",
+                    "relay_waitlist_geo",
+                    "RECIPIENT_ID",
+                    "Last Modified Date",
+                ]
+            ])
         },
     },
 }
@@ -113,6 +162,9 @@ for report_type, _config in REPORTS_CONFIG.items():
             connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
             poke_interval=30
         )
+
+        # TODO: trigger corresponding BQETL Dag
+        # TODO: Wait for that Dag to finish
 
         generate_report >> sync_trigger >> sync_wait
         globals()[dag_id] = dag
