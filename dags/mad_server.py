@@ -24,6 +24,13 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_3]
 
+gcs_bucket = "mad-resources-training"
+gcs_root_training = "datasets"
+cloud_service = "GCS"
+customs_training_allow_overwrite = "True"
+gcloud_project = 'mad-model-training'
+gcs_report_bucket = 'mad-reports'
+
 with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__, tags=tags,) as dag:
 
     mad_server_pull = gke_command(
@@ -43,10 +50,10 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gke_cluster_name="workloads-prod-v1",
         gke_location="us-west1",
         env_vars=dict(
-            GCS_BUCKET="mad-resources-training",
-            GCS_ROOT_TRAINING="datasets",
-            CLOUD_SERVICE="GCS",
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE="True",
+            GCS_BUCKET=gcs_bucket,
+            GCS_ROOT_TRAINING=gcs_root_training,
+            CLOUD_SERVICE=cloud_service,
+            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
             AMO_CRED_ISSUER="{{ var.value.AMO_CRED_ISSUER }}",
             AMO_CRED_SECRET="{{ var.value.AMO_CRED_SECRET }}",
         ),
@@ -61,7 +68,6 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         cmds=[
             "/bin/bash",
         ],
-        image_pull_policy='Always',
         command=[
             "bin/train_model",
             "--publish",
@@ -75,12 +81,12 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gke_cluster_name="workloads-prod-v1",
         gke_location='us-west1',
         env_vars=dict(
-            GCS_BUCKET="mad-resources-training",
-            GCS_ROOT_TRAINING="datasets",
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE="True",
-            CLOUD_SERVICE="GCS",
-            GCLOUD_PROJECT='mad-model-training',
-            GCS_REPORT_BUCKET='mad-reports',
+            GCS_BUCKET=gcs_bucket,
+            GCS_ROOT_TRAINING=gcs_root_training,
+            CLOUD_SERVICE=cloud_service,
+            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
+            GCLOUD_PROJECT=gcloud_project,
+            GCS_REPORT_BUCKET=gcs_report_bucket,
         ),
         email=[
             "jklukas@mozilla.com",
@@ -93,7 +99,6 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         cmds=[
             "/bin/bash",
         ],
-        image_pull_policy='Always',
         command=[
             "bin/evaluate_new_data",
             "--publish",
@@ -107,12 +112,12 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gke_cluster_name="workloads-prod-v1",
         gke_location='us-west1',
         env_vars=dict(
-            GCS_BUCKET="mad-resources-training",
-            GCS_ROOT_TRAINING="datasets",
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE="True",
-            CLOUD_SERVICE="GCS",
-            GCLOUD_PROJECT='mad-model-training',
-            GCS_REPORT_BUCKET='mad-reports',
+            GCS_BUCKET=gcs_bucket,
+            GCS_ROOT_TRAINING=gcs_root_training,
+            CLOUD_SERVICE=cloud_service,
+            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
+            GCLOUD_PROJECT=gcloud_project,
+            GCS_REPORT_BUCKET=gcs_report_bucket,
         ),
         email=[
             "jklukas@mozilla.com",
