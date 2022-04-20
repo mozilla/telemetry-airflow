@@ -82,23 +82,35 @@ DELETION_REQUEST_V1_DEDUPED = DEDUPED_TABLE.format(
 # Test scenario test_labeled_counter_metrics: Verify that labeled_counter
 # metric values reported by the Glean SDK across several documents from three
 # different clients are correct.
-TEST_LABELED_COUNTER_METRICS = f"""WITH {DISCOVERY_V1_DEDUPED}
+TEST_LABELED_COUNTER_METRICS = f"""WITH {DISCOVERY_V1_DEDUPED},
+  discovery_v1_drives AS (
+      SELECT
+        technology_space_travel.key,
+        SUM(technology_space_travel.value) AS value_sum
+      FROM
+        discovery_v1_deduped
+      CROSS JOIN
+        UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
+      WHERE
+        metrics.string.test_name = "{DEFAULT_TEST_NAME}"
+      GROUP BY
+        technology_space_travel.key
+  )
+
+SELECT * FROM discovery_v1_drives
+UNION ALL
 SELECT
-  technology_space_travel.key,
-  SUM(technology_space_travel.value) AS value_sum
-FROM
-  discovery_v1_deduped
-CROSS JOIN
-  UNNEST(metrics.labeled_counter.technology_space_travel) AS technology_space_travel
+  'row_count' AS key,
+  COUNT(*) as value_sum
+FROM discovery_v1_deduped
 WHERE
   metrics.string.test_name = "{DEFAULT_TEST_NAME}"
-GROUP BY
-  technology_space_travel.key
 ORDER BY
-  technology_space_travel.key
+  key
 """
 
 WANT_TEST_LABELED_COUNTER_METRICS = [
+    {"key": "row_count", "value_sum": 20},
     {"key": "spore_drive", "value_sum": 26},
     {"key": "warp_drive", "value_sum": 36},
 ]
@@ -341,16 +353,25 @@ WANT_TEST_DELETION_REQUEST_PING_CLIENT_ID = [
 # the test scenarios to JSON and b64-encode them to ensure we can safely pass
 # this information to the burnham-bigquery Docker container. We can use
 # string-formatting here, because Airflow executes the query directly.
+# This tries to deduplicate based on the document_id, to avoid miscounting.
 SENSOR_TEMPLATE = """
+WITH {table}_numbered AS (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY document_id ORDER BY submission_timestamp) AS _n,
+    *
+  FROM
+    `{project_id}.burnham_live.{table}`
+  WHERE
+    submission_timestamp BETWEEN TIMESTAMP_SUB("{start_timestamp}", INTERVAL 1 HOUR)
+    AND TIMESTAMP_ADD("{start_timestamp}", INTERVAL 3 HOUR)
+    AND metrics.uuid.test_run = "{test_run}"
+    AND metrics.string.test_name = "{test_name}")
 SELECT
   COUNT(*) >= {min_count_rows}
 FROM
-  `{project_id}.burnham_live.{table}`
+  {table}_numbered
 WHERE
-  submission_timestamp BETWEEN TIMESTAMP_SUB("{start_timestamp}", INTERVAL 1 HOUR)
-  AND TIMESTAMP_ADD("{start_timestamp}", INTERVAL 3 HOUR)
-  AND metrics.uuid.test_run = "{test_run}"
-  AND metrics.string.test_name = "{test_name}"
+  _n = 1
 """
 
 
