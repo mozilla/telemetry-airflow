@@ -75,7 +75,8 @@ with DAG(
                 task_id='intacct-sensor-{}'.format(location),
                 fivetran_conn_id='fivetran',
                 connector_id='{}'.format(connector_id),
-                poke_interval=5
+                poke_interval=5,
+                timeout=3*60*60,  # Timeout of 3 hours
         )
 
         fivetran_sync_start >> fivetran_sync_wait >> fivetran_sensors_complete
