@@ -4,6 +4,7 @@ from typing import Any, Dict
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.base import BaseHook
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
 from utils.tags import Tag
@@ -56,6 +57,47 @@ EXEC_END = '{{ macros.ds_format(next_ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
 
 REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
 
+CONTACT_COLUMNS = [
+    "email",
+    "basket_token",
+    "sfdc_id",
+    "double_opt_in",
+    "has_opted_out_of_email",
+    "email_format",
+    "email_lang",
+    "fxa_created_date",
+    "fxa_first_service",
+    "fxa_id",
+    "fxa_account_deleted",
+    "email_id",
+    "mailing_country",
+    "cohort",
+    "sub_mozilla_foundation",
+    "sub_common_voice",
+    "sub_hubs",
+    "sub_mixed_reality",
+    "sub_internet_health_report",
+    "sub_miti",
+    "sub_mozilla_fellowship_awardee_alumni",
+    "sub_mozilla_festival",
+    "sub_mozilla_technology",
+    "sub_mozillians_nda",
+    "sub_firefox_accounts_journey",
+    "sub_knowledge_is_power",
+    "sub_take_action_for_the_internet",
+    "sub_test_pilot",
+    "sub_firefox_news",
+    "vpn_waitlist_geo",
+    "vpn_waitlist_platform",
+    "sub_about_mozilla",
+    "sub_apps_and_hacks",
+    "sub_rally",
+    "sub_firefox_sweepstakes",
+    "relay_waitlist_geo",
+    "RECIPIENT_ID",
+    "Last Modified Date",
+]
+
 REPORTS_CONFIG = {
     "raw_recipient_export": {
         "request_template": f"{REQUEST_TEMPLATE_LOC}/reporting_raw_recipient_data_export.xml.jinja",
@@ -75,46 +117,7 @@ REPORTS_CONFIG = {
             "date_start": EXEC_START,
             "date_end": EXEC_END,
             "columns": "\n".join([
-                f"<COLUMN>{column}</COLUMN>" for column in [
-                    "email",
-                    "basket_token",
-                    "sfdc_id",
-                    "double_opt_in",
-                    "has_opted_out_of_email",
-                    "email_format",
-                    "email_lang",
-                    "fxa_created_date",
-                    "fxa_first_service",
-                    "fxa_id",
-                    "fxa_account_deleted",
-                    "email_id",
-                    "mailing_country",
-                    "cohort",
-                    "sub_mozilla_foundation",
-                    "sub_common_voice",
-                    "sub_hubs",
-                    "sub_mixed_reality",
-                    "sub_internet_health_report",
-                    "sub_miti",
-                    "sub_mozilla_fellowship_awardee_alumni",
-                    "sub_mozilla_festival",
-                    "sub_mozilla_technology",
-                    "sub_mozillians_nda",
-                    "sub_firefox_accounts_journey",
-                    "sub_knowledge_is_power",
-                    "sub_take_action_for_the_internet",
-                    "sub_test_pilot",
-                    "sub_firefox_news",
-                    "vpn_waitlist_geo",
-                    "vpn_waitlist_platform",
-                    "sub_about_mozilla",
-                    "sub_apps_and_hacks",
-                    "sub_rally",
-                    "sub_firefox_sweepstakes",
-                    "relay_waitlist_geo",
-                    "RECIPIENT_ID",
-                    "Last Modified Date",
-                ]
+                f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS
             ])
         },
     },
@@ -135,6 +138,7 @@ DEFAULT_ARGS = {
 TAGS = [Tag.ImpactTier.tier_1]
 
 for report_type, _config in REPORTS_CONFIG.items():
+    # IMPORTANT that BQETL DAG follows the following naming convention: bqetl_acoustic_{report_type}
     dag_id = f'fivetran_acoustic_{report_type}'
 
     with DAG(
@@ -150,6 +154,7 @@ for report_type, _config in REPORTS_CONFIG.items():
             task_id="generate_acoustic_report",
             python_callable=_generate_acoustic_report,
             op_args=[ACOUSTIC_CONNECTION_ID, report_type, _config],
+            execution_timeout=timedelta(seconds=600),
         )
 
         sync_trigger = FivetranOperator(
@@ -163,8 +168,15 @@ for report_type, _config in REPORTS_CONFIG.items():
             poke_interval=30
         )
 
-        # TODO: trigger corresponding BQETL Dag
-        # TODO: Wait for that Dag to finish
+        downstream_dag = dag_id.replace("fivetran", "bqetl")
 
-        generate_report >> sync_trigger >> sync_wait
+        trigger_dependent_dag_and_wait = TriggerDagRunOperator(
+            task_id="trigger_dependent_bqetl_process",
+            trigger_dag_id=downstream_dag,
+            wait_for_completion=True,
+            execution_date="{{ ds }}",
+            reset_dag_run=True,
+        )
+
+        generate_report >> sync_trigger >> sync_wait >> trigger_dependent_dag_and_wait
         globals()[dag_id] = dag
