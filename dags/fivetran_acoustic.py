@@ -127,7 +127,7 @@ REPORTS_CONFIG = {
 DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": [DAG_OWNER],
-    "depends_on_past": False,
+    "depends_on_past": True,
     "start_date": datetime(2021, 1, 20),
     "email_on_failure": True,
     "email_on_retry": False,
@@ -154,7 +154,7 @@ for report_type, _config in REPORTS_CONFIG.items():
             task_id="generate_acoustic_report",
             python_callable=_generate_acoustic_report,
             op_args=[ACOUSTIC_CONNECTION_ID, report_type, _config],
-            execution_timeout=timedelta(seconds=600),
+            execution_timeout=timedelta(hours=1),
         )
 
         sync_trigger = FivetranOperator(
