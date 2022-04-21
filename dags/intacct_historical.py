@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.operators.dummy import DummyOperator
 from airflow.utils.task_group import TaskGroup
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
-from airflow.operators.dummy import DummyOperator
 from utils.tags import Tag
 
 docs = """
