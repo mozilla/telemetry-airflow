@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.utils.task_group import TaskGroup
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
 from airflow.operators.dummy import DummyOperator
@@ -64,21 +65,23 @@ with DAG(
     )
 
     for location, connector_id in list_of_connectors.items():
-
-        fivetran_sync_start = FivetranOperator(
+        with TaskGroup(f'intacct-{location}', prefix_group_id=False):
+            fivetran_sync_start = FivetranOperator(
                 task_id='intacct-task-{}'.format(location),
                 fivetran_conn_id='fivetran',
                 connector_id='{}'.format(connector_id)
-        )
+            )
 
-        fivetran_sync_wait = FivetranSensor(
+            # It's best if the sensor starts before the Fivetran sync is triggered to avoid any
+            # chance of it missing the Fivetran sync happening, so we give it a higher priority and
+            # don't set it as downstream of the sync start operator.
+            fivetran_sync_wait = FivetranSensor(
                 task_id='intacct-sensor-{}'.format(location),
                 fivetran_conn_id='fivetran',
                 connector_id='{}'.format(connector_id),
                 poke_interval=5,
                 timeout=3*60*60,  # Timeout of 3 hours
-        )
+                priority_weight=fivetran_sync_start.priority_weight + 1,
+            )
 
-        fivetran_sync_start >> fivetran_sync_wait >> fivetran_sensors_complete
-
-
+            fivetran_sync_wait >> fivetran_sensors_complete
