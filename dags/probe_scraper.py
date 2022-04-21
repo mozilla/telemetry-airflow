@@ -134,9 +134,9 @@ with DAG('probe_scraper',
     probe_expiry_alerts.set_upstream(probe_scraper)
 
     delay_python_task = PythonOperator(
-        task_id="wait_for_30_minutes",
+        task_id="wait_for_1_hour",
         dag=dag,
-        python_callable=lambda: time.sleep(60 * 30))
+        python_callable=lambda: time.sleep(60 * 60))
 
     probe_scraper >> delay_python_task
 

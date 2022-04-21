@@ -6,18 +6,14 @@ This runs once a week to emit a trained model to GCS.
 Source code is in the private [mad-server repository](https://github.com/mozilla/mad-server/).
 """
 
-import os
 from airflow import DAG
 from datetime import datetime, timedelta
-
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-
 from utils.gcp import gke_command
 from utils.tags import Tag
 
 
 default_args = {
-    "owner": "jklukas@mozilla.com",
+    "owner": "gleonard@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2021, 4, 15),
     "email_on_failure": True,
@@ -28,23 +24,14 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_3]
 
+gcs_bucket = "mad-resources-training"
+gcs_root_training = "datasets"
+cloud_service = "GCS"
+customs_training_allow_overwrite = "True"
+gcloud_project = 'mad-model-training'
+gcs_report_bucket = 'mad-reports'
+
 with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__, tags=tags,) as dag:
-    is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
-    aws_conn_id="aws_dev_mad_resources_training"
-    # mad-server expects AWS creds in some custom env vars.
-    if is_dev:
-        aws_conn_id = None
-        s3_env_vars = {}
-    else:
-        aws_conn_id="aws_dev_mad_resources_training"
-        s3_env_vars = {
-            key: value
-            for key, value in zip(
-                    ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_SESSION_TOKEN"),
-                    AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials() if aws_conn_id else (),
-            )
-            if value is not None
-        }
 
     mad_server_pull = gke_command(
         task_id="mad_server_pull",
@@ -62,18 +49,81 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gke_project_id="moz-fx-data-airflow-gke-prod",
         gke_cluster_name="workloads-prod-v1",
         gke_location="us-west1",
-        aws_conn_id=aws_conn_id,
         env_vars=dict(
-            S3_BUCKET="mad-resources-training",
-            S3_ROOT_TRAINING="datasets",
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE="True",
+            GCS_BUCKET=gcs_bucket,
+            GCS_ROOT_TRAINING=gcs_root_training,
+            CLOUD_SERVICE=cloud_service,
+            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
             AMO_CRED_ISSUER="{{ var.value.AMO_CRED_ISSUER }}",
             AMO_CRED_SECRET="{{ var.value.AMO_CRED_SECRET }}",
-            **s3_env_vars
         ),
         email=[
             "jklukas@mozilla.com",
             "dzeber@mozilla.com",
-            "alissy@mozilla.com",
+            "gleonard@mozilla.com",
         ],
     )
+    mad_train_model = gke_command(
+        task_id="train_model",
+        cmds=[
+            "/bin/bash",
+        ],
+        command=[
+            "bin/train_model",
+            "--publish",
+            "--publish-as-latest",
+            "./working",
+        ],
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mad-server:latest",
+        startup_timeout_seconds=500,
+        gcp_conn_id="google_cloud_airflow_gke",
+        gke_project_id="moz-fx-data-airflow-gke-prod",
+        gke_cluster_name="workloads-prod-v1",
+        gke_location='us-west1',
+        env_vars=dict(
+            GCS_BUCKET=gcs_bucket,
+            GCS_ROOT_TRAINING=gcs_root_training,
+            CLOUD_SERVICE=cloud_service,
+            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
+            GCLOUD_PROJECT=gcloud_project,
+            GCS_REPORT_BUCKET=gcs_report_bucket,
+        ),
+        email=[
+            "jklukas@mozilla.com",
+            "dzeber@mozilla.com",
+            "gleonard@mozilla.com",
+        ],
+    )
+    new_data_eval = gke_command(
+        task_id="evaluate_new_data",
+        cmds=[
+            "/bin/bash",
+        ],
+        command=[
+            "bin/evaluate_new_data",
+            "--publish",
+            "--publish-as-latest",
+            "./working",
+        ],
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mad-server:latest",
+        startup_timeout_seconds=500,
+        gcp_conn_id="google_cloud_airflow_gke",
+        gke_project_id="moz-fx-data-airflow-gke-prod",
+        gke_cluster_name="workloads-prod-v1",
+        gke_location='us-west1',
+        env_vars=dict(
+            GCS_BUCKET=gcs_bucket,
+            GCS_ROOT_TRAINING=gcs_root_training,
+            CLOUD_SERVICE=cloud_service,
+            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
+            GCLOUD_PROJECT=gcloud_project,
+            GCS_REPORT_BUCKET=gcs_report_bucket,
+        ),
+        email=[
+            "jklukas@mozilla.com",
+            "dzeber@mozilla.com",
+            "gleonard@mozilla.com",
+        ],
+    )
+
+    mad_server_pull >> mad_train_model >> new_data_eval
