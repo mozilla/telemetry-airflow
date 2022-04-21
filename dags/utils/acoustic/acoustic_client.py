@@ -157,6 +157,8 @@ class AcousticClient:
 
         request_body = request_body_template.render(**template_params)
 
+        print(f"DEBUG: {request_body}")
+
         request = {
             "url": f"{self.base_url}/{self.XML_API_ENDPOINT}",
             "headers": {
