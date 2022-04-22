@@ -83,6 +83,7 @@ with DAG(
             connector_id=connector_id,
             poke_interval=5,
             execution_timeout=timedelta(hours=3),
+            retries=0,
             priority_weight=fivetran_sync_start.priority_weight + 1,
         )
         fivetran_sync >> fivetran_sync_wait >> fivetran_sensors_complete
