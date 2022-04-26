@@ -8,7 +8,8 @@ in bigquery-etl and the
 in telemetry-airflow.
 """
 
-from datetime import datetime, timedelta
+import datetime
+from datetime import timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
@@ -31,7 +32,7 @@ tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis data
 default_args = {
     "owner": "msamuel@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2019, 10, 22),
+    "start_date": datetime.datetime(2019, 10, 22),
     "email": [
         "telemetry-alerts@mozilla.com",
         "msamuel@mozilla.com",

@@ -2,7 +2,8 @@
 Desktop ETL for importing glean data into GLAM app
 """
 
-from datetime import datetime, timedelta
+import datetime
+from datetime import timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
@@ -21,7 +22,7 @@ from utils.tags import Tag
 default_args = {
     "owner": "akommasani@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2019, 10, 22),
+    "start_date": datetime.datetime(2019, 10, 22),
     "email": [
         "telemetry-alerts@mozilla.com",
         "akommasani@mozilla.com",
