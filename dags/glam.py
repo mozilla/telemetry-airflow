@@ -15,6 +15,7 @@ from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.providers.google.cloud.operators.pubsub import PubSubPublishMessageOperator
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
@@ -361,6 +362,19 @@ glam_import_probes = GKENatPodOperator(
     env_vars = env_vars,
     dag=dag)
 
+m1 = {'data': b'Pubsub message from Airflow',
+      'attributes': {'date': datetime.date.today().strftime('%Y%m%d'),
+                     'dag': 'glam.py',
+      }
+}
+
+publish_to_pubsub = PubSubPublishMessageOperator(
+    task_id="publish_to_pubsub",
+    project_id="moz-fx-data-airflow-prod-88e0",
+    topic="airflow-glam-triggers",
+    gcp_conn_id="google_cloud_airflow_pubsub",
+    messages=[m1],
+    dag=dag)
 
 wait_for_main_ping >> latest_versions
 
@@ -405,3 +419,5 @@ extracts_per_channel >> glam_import_desktop_aggs_nightly
 extracts_per_channel >> glam_import_user_counts
 extracts_per_channel >> glam_import_probes
 glam_import_desktop_aggs_release
+
+extracts_per_channel >> publish_to_pubsub
