@@ -108,7 +108,7 @@ REPORTS_CONFIG = {
         },
     },
     "contact_export": {
-        "request_template": f"{REQUEST_TEMPLATE_LOC}/export_database.xml.jinja",
+        "request_template": f"{REQUEST_TEMPLATE_LOC}/export_database_v2.xml.jinja",
         "request_params": {
             "list_id": "{{ var.value.fivetran_acoustic_contact_export_list_id }}",  # list_name: "Main Contact Table revision 3"
             "export_type": "ALL",

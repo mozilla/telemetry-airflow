@@ -174,8 +174,6 @@ class AcousticClient:
         response = _request_wrapper(request_method=requests.post, request_body=request)
         data = xmltodict.parse(response.text)
 
-        print(data)
-
         if report_type == "contact_export":
             job_id = data["Envelope"]["Body"]["RESULT"]["JOB_ID"]
             report_loc = data["Envelope"]["Body"]["RESULT"]["FILE_PATH"]
@@ -188,90 +186,3 @@ class AcousticClient:
         logging.info(f"{report_type} generation complete. Report location: {report_loc}. Time taken: {datetime.now() - start}")
 
         return
-
-
-if __name__ == "__main__":
-
-    EXEC_START = "01/04/2022 00:00:00"
-    EXEC_END = "01/05/2022 00:00:00"
-
-    REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
-
-    CONTACT_COLUMNS = [
-        "email",
-        "basket_token",
-        "sfdc_id",
-        "double_opt_in",
-        "has_opted_out_of_email",
-        "email_format",
-        "email_lang",
-        "fxa_created_date",
-        "fxa_first_service",
-        "fxa_id",
-        "fxa_account_deleted",
-        "email_id",
-        "mailing_country",
-        "cohort",
-        "sub_mozilla_foundation",
-        "sub_common_voice",
-        "sub_hubs",
-        "sub_mixed_reality",
-        "sub_internet_health_report",
-        "sub_miti",
-        "sub_mozilla_fellowship_awardee_alumni",
-        "sub_mozilla_festival",
-        "sub_mozilla_technology",
-        "sub_mozillians_nda",
-        "sub_firefox_accounts_journey",
-        "sub_knowledge_is_power",
-        "sub_take_action_for_the_internet",
-        "sub_test_pilot",
-        "sub_firefox_news",
-        "vpn_waitlist_geo",
-        "vpn_waitlist_platform",
-        "sub_about_mozilla",
-        "sub_apps_and_hacks",
-        "sub_rally",
-        "sub_firefox_sweepstakes",
-        "relay_waitlist_geo",
-        "RECIPIENT_ID",
-        "Last Modified Date",
-    ]
-
-    REPORTS_CONFIG = {
-        "raw_recipient_export": {
-            "request_template": f"{REQUEST_TEMPLATE_LOC}/reporting_raw_recipient_data_export.xml.jinja",
-            "request_params": {
-                "export_format": 0,
-                "date_start": EXEC_START,
-                "date_end": EXEC_END,
-            },
-        },
-        "contact_export": {
-            "request_template": f"{REQUEST_TEMPLATE_LOC}/export_database.xml.jinja",
-            "request_params": {
-                "list_id": 1364939,
-                "export_type": "ALL",
-                "export_format": "CSV",
-                "visibility": 1,  # 0 (Private) or 1 (Shared)
-                "date_start": EXEC_START,
-                "date_end": EXEC_END,
-                "columns": "\n".join([
-                    f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS
-                ])
-            },
-        },
-    }
-
-    acoustic_connection = {
-        "client_id": "",
-        "client_secret": "",
-        "refresh_token": "",
-    }
-
-    acoustic_client = AcousticClient(**acoustic_connection)
-    acoustic_client.generate_report(
-        request_template=REPORTS_CONFIG["contact_export"]["request_template"],
-        template_params=REPORTS_CONFIG["contact_export"]["request_params"],
-        report_type="contact_export"
-    )
