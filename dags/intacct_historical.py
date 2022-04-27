@@ -73,7 +73,7 @@ with DAG(
             task_id=f'intacct-task-{location}',
             fivetran_conn_id='fivetran',
             connector_id=connector_id,
-            priority_weight=index*2,
+            priority_weight=(index * 2) + 1,
         )
         fivetran_sync >> fivetran_sync_start
 
