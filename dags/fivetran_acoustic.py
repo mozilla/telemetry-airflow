@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
+
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.base import BaseHook
@@ -55,8 +56,6 @@ ACOUSTIC_CONNECTION_ID = "acoustic"
 EXEC_START = '{{ macros.ds_format(ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
 EXEC_END = '{{ macros.ds_format(next_ds, "%Y-%m-%d", "%m/%d/%Y %H:%M:%S") }}'
 
-REQUEST_TEMPLATE_LOC = "dags/utils/acoustic/request_templates"
-
 CONTACT_COLUMNS = [
     "email",
     "basket_token",
@@ -100,27 +99,59 @@ CONTACT_COLUMNS = [
 
 REPORTS_CONFIG = {
     "raw_recipient_export": {
-        "request_template": f"{REQUEST_TEMPLATE_LOC}/reporting_raw_recipient_data_export.xml.jinja",
+        "request_template": """
+        <Envelope>
+        <Body>
+            <RawRecipientDataExport>
+            <EVENT_DATE_START>{date_start}</EVENT_DATE_START>
+            <EVENT_DATE_END>{date_end}</EVENT_DATE_END>
+            <MOVE_TO_FTP/>
+            <EXPORT_FORMAT>{export_format}</EXPORT_FORMAT>
+            <ALL_EVENT_TYPES/>
+            <INCLUDE_INBOX_MONITORING/>
+            </RawRecipientDataExport>
+        </Body>
+        </Envelope>
+        """,
         "request_params": {
             "export_format": 0,
             "date_start": EXEC_START,
             "date_end": EXEC_END,
         },
     },
-    "contact_export": {
-        "request_template": f"{REQUEST_TEMPLATE_LOC}/export_database_v2.xml.jinja",
-        "request_params": {
-            "list_id": "{{ var.value.fivetran_acoustic_contact_export_list_id }}",  # list_name: "Main Contact Table revision 3"
-            "export_type": "ALL",
-            "export_format": "CSV",
-            "visibility": 1,  # 0 (Private) or 1 (Shared)
-            "date_start": EXEC_START,
-            "date_end": EXEC_END,
-            "columns": "\n".join([
-                f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS
-            ])
-        },
+"contact_export": {
+    "request_template": """
+    <!-- https://developer.goacoustic.com/acoustic-campaign/reference/export-from-a-database -->
+    <!-- date_format: 07/25/2011 12:12:11 (time is optional) -->
+    <Envelope>
+    <Body>
+        <ExportList>
+        <LIST_ID>{list_id}</LIST_ID>
+        <EXPORT_TYPE>{export_type}</EXPORT_TYPE>
+        <EXPORT_FORMAT>{export_format}</EXPORT_FORMAT>
+        <INCLUDE_RECIPIENT_ID></INCLUDE_RECIPIENT_ID>
+        <EXPORT_COLUMNS>
+            {columns}
+        </EXPORT_COLUMNS>
+        <DATE_START>{date_start}</DATE_START>
+        <DATE_END>{date_end}</DATE_END>
+        <VISIBILITY>{visibility}</VISIBILITY>
+        </ExportList>
+    </Body>
+    </Envelope>
+    """,
+    "request_params": {
+        "list_id": "{{ var.value.fivetran_acoustic_contact_export_list_id }}",  # list_name: "Main Contact Table revision 3"
+        "export_type": "ALL",
+        "export_format": "CSV",
+        "visibility": 1,  # 0 (Private) or 1 (Shared)
+        "date_start": EXEC_START,
+        "date_end": EXEC_END,
+        "columns": "\n".join([
+            f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS
+        ])
     },
+},
 }
 
 
@@ -128,7 +159,7 @@ DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": [DAG_OWNER],
     "depends_on_past": True,
-    "start_date": datetime(2021, 1, 20),
+    "start_date": datetime(2021, 3, 1),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 1,  # at this point we can probably be confident user intervention is required

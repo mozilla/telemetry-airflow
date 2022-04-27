@@ -8,8 +8,8 @@ from datetime import datetime
 from time import sleep
 import logging
 
-import jinja2
 import requests
+
 import xmltodict  # type: ignore
 
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S"
@@ -28,8 +28,6 @@ class AcousticClient:
 
     DEFAULT_BASE_URL = "https://api-campaign-us-6.goacoustic.com"
     XML_API_ENDPOINT = "XMLAPI"
-
-    REQUEST_TEMPLATE_PATH = "request_templates"
 
     def __init__(
         self,
@@ -103,14 +101,17 @@ class AcousticClient:
         :return: Returns True if job status in Acoustic is showing as complete
         """
 
-        get_job_status_request_body_template = (
-            f"dags/utils/acoustic/{self.REQUEST_TEMPLATE_PATH}/get_job_status.xml.jinja"
-        )
+        request_template = """
+        <Envelope>
+        <Body>
+            <GetJobStatus>
+            <JOB_ID>{job_id}</JOB_ID>
+            </GetJobStatus>
+        </Body>
+        </Envelope>
+        """
 
-        with open(get_job_status_request_body_template, "r") as _file:
-            request_body_template = jinja2.Template(_file.read())
-
-        request_body = request_body_template.render(job_id=job_id)
+        request_body = request_template.format(job_id=job_id)
 
         request = {
             "url": f"{self.base_url}/{self.XML_API_ENDPOINT}",
@@ -152,12 +153,7 @@ class AcousticClient:
             err_msg = f"{report_type} is not a valid option, supported types are: {supported_report_types}"
             raise AttributeError(err_msg)
 
-        with open(request_template, "r") as _file:
-            request_body_template = jinja2.Template(_file.read())
-
-        request_body = request_body_template.render(**template_params)
-
-        print(f"DEBUG: {request_body}")
+        request_body = request_template.format(**template_params)
 
         request = {
             "url": f"{self.base_url}/{self.XML_API_ENDPOINT}",
@@ -173,6 +169,9 @@ class AcousticClient:
 
         response = _request_wrapper(request_method=requests.post, request_body=request)
         data = xmltodict.parse(response.text)
+
+        if data["Envelope"]["Body"]["RESULT"]["SUCCESS"].lower() == "false":
+            raise Exception(data["Envelope"]["Body"]["Fault"])
 
         if report_type == "contact_export":
             job_id = data["Envelope"]["Body"]["RESULT"]["JOB_ID"]
