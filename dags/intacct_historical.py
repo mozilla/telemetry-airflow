@@ -63,14 +63,17 @@ with DAG(
         task_id='intacct-fivetran-sensors-complete',
     )
 
-    for location, connector_id in list_of_connectors.items():
+    for index, (location, connector_id) in enumerate(list_of_connectors.items()):
 
         fivetran_sync = DummyOperator(task_id=f'intacct-{location}')
 
+        # In order to avoid hitting DAG concurrency limits by sensor tasks below,
+        # sync tasks here have variable priority weights
         fivetran_sync_start = FivetranOperator(
             task_id=f'intacct-task-{location}',
             fivetran_conn_id='fivetran',
             connector_id=connector_id,
+            priority_weight=index*2,
         )
         fivetran_sync >> fivetran_sync_start
 
