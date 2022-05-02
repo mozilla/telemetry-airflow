@@ -47,8 +47,8 @@ default_args = {
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
-    # If a task fails, retry it once after waiting at least 5 minutes
-    "retries": 1,
+    # If a task fails, retry it twice after waiting at least 5 minutes
+    "retries": 2,
     "retry_delay": datetime.timedelta(minutes=5),
 }
 
