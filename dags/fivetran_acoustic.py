@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
-
 from airflow import DAG
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.base import BaseHook
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
 from utils.tags import Tag
@@ -169,7 +168,6 @@ DEFAULT_ARGS = {
 TAGS = [Tag.ImpactTier.tier_1]
 
 for report_type, _config in REPORTS_CONFIG.items():
-    # IMPORTANT that BQETL DAG follows the following naming convention: bqetl_acoustic_{report_type}
     dag_id = f'fivetran_acoustic_{report_type}'
 
     with DAG(
@@ -199,15 +197,9 @@ for report_type, _config in REPORTS_CONFIG.items():
             poke_interval=30
         )
 
-        downstream_dag = dag_id.replace("fivetran", "bqetl")
-
-        trigger_dependent_dag_and_wait = TriggerDagRunOperator(
-            task_id="trigger_dependent_bqetl_process",
-            trigger_dag_id=downstream_dag,
-            wait_for_completion=True,
-            execution_date="{{ ds }}",
-            reset_dag_run=True,
+        load_completed = DummyOperator(
+            task_id='fivetran_load_completed',
         )
 
-        generate_report >> sync_trigger >> sync_wait >> trigger_dependent_dag_and_wait
+        generate_report >> sync_trigger >> sync_wait >> load_completed
         globals()[dag_id] = dag
