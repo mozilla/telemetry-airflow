@@ -93,6 +93,7 @@ CONTACT_COLUMNS = [
     "sub_firefox_sweepstakes",
     "relay_waitlist_geo",
     "RECIPIENT_ID",
+    "create_timestamp",
     "Last Modified Date",
 ]
 
