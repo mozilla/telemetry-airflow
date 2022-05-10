@@ -12,10 +12,9 @@ import datetime
 import os
 
 from airflow import DAG
-from airflow.utils.task_group import TaskGroup
-from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
 
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
@@ -70,7 +69,7 @@ with DAG(
         check_existence=True,
         mode="reschedule",
         allowed_states=['success'],
-        failed_states=['failed', 'upstream_failed'],
+        failed_states=['failed', 'upstream_failed', 'skipped'],
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,

@@ -105,20 +105,20 @@ with models.DAG(
         ],
     )
 
-    with TaskGroup(group_id='main_ping_downstream_external') as main_ping_downstream_external:
+    with TaskGroup('main_ping_downstream_external') as main_ping_downstream_external:
         ExternalTaskMarker(
-            task_id="graphics_telemetry_graphics_trends",
+            task_id="graphics_telemetry__graphics_trends",
             external_dag_id="graphics_telemetry",
             external_task_id="graphics_trends",
         )
 
         ExternalTaskMarker(
-            task_id="graphics_telemetry_graphics_dashboard",
+            task_id="graphics_telemetry__graphics_dashboard",
             external_dag_id="graphics_telemetry",
             external_task_id="graphics_dashboard",
         )
 
-    copy_deduplicate_main_ping >> main_ping_downstream_external
+        copy_deduplicate_main_ping >> main_ping_downstream_external
 
     # We also separate out variant pings that share the main ping schema since these
     # ultrawide tables can sometimes have unique performance problems.
