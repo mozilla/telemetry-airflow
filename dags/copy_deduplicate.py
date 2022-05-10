@@ -1,8 +1,8 @@
 import datetime
 
 from airflow import models
-from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskMarker
+from airflow.utils.task_group import TaskGroup
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
@@ -104,6 +104,21 @@ with models.DAG(
             "jklukas@mozilla.com",
         ],
     )
+
+    with TaskGroup(group_id='main_ping_downstream_external') as main_ping_downstream_external:
+        ExternalTaskMarker(
+            task_id="graphics_telemetry_graphics_trends",
+            external_dag_id="graphics_telemetry",
+            external_task_id="graphics_trends",
+        )
+
+        ExternalTaskMarker(
+            task_id="graphics_telemetry_graphics_dashboard",
+            external_dag_id="graphics_telemetry",
+            external_task_id="graphics_dashboard",
+        )
+
+    copy_deduplicate_main_ping >> main_ping_downstream_external
 
     # We also separate out variant pings that share the main ping schema since these
     # ultrawide tables can sometimes have unique performance problems.
