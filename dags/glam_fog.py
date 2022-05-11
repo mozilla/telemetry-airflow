@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.models import Variable
 from airflow.operators.dummy_operator import DummyOperator
-from operators.gcp_container_operator import GKENatPodOperator
 from operators.task_sensor import ExternalTaskCompletedSensor
 from glam_subdags.generate_query import (
     generate_and_run_glean_queries,
@@ -20,6 +18,9 @@ default_args = {
     "email": [
         "telemetry-alerts@mozilla.com",
         "akommasani@mozilla.com",
+        "akomarzewski@mozilla.com",
+        "efilho@mozilla.com",
+        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,

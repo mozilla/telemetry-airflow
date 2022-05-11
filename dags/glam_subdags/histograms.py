@@ -25,8 +25,6 @@ def histogram_aggregates_subdag(
         destination_table="clients_histogram_aggregates_new_v1",
         dataset_id=dataset_id,
         project_id="moz-fx-data-shared-prod",
-        owner="msamuel@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
         date_partition_parameter=None,
         parameters=("submission_date:DATE:{{ds}}",),
         arguments=("--replace",),
