@@ -1,10 +1,9 @@
 from airflow import DAG
+from airflow.sensors.external_task import ExternalTaskSensor
 from datetime import timedelta, datetime
 from utils.gcp import gke_command
 from utils.tags import Tag
 from operators.gcp_container_operator import GKEPodOperator
-
-from operators.task_sensor import ExternalTaskCompletedSensor
 
 
 docs = """
@@ -59,34 +58,40 @@ with DAG(
         dag=dag,
     )
 
-    wait_for_clients_daily_export = ExternalTaskCompletedSensor(
+    wait_for_clients_daily_export = ExternalTaskSensor(
         task_id="wait_for_clients_daily",
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__clients_daily__v6",
         execution_delta=timedelta(hours=2),
         mode="reschedule",
+        allowed_states=['success'],
+        failed_states=['failed', 'upstream_failed', 'skipped'],
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
     )
 
-    wait_for_main_summary_export = ExternalTaskCompletedSensor(
+    wait_for_main_summary_export = ExternalTaskSensor(
         task_id="wait_for_main_summary",
         external_dag_id="bqetl_main_summary",
         external_task_id="telemetry_derived__main_summary__v4",
         execution_delta=timedelta(hours=2),
         mode="reschedule",
+        allowed_states=['success'],
+        failed_states=['failed', 'upstream_failed', 'skipped'],
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
     )
 
-    wait_for_search_clients_daily = ExternalTaskCompletedSensor(
+    wait_for_search_clients_daily = ExternalTaskSensor(
         task_id="wait_for_search_clients_daily",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_daily__v8",
         execution_delta=timedelta(hours=1),
         mode="reschedule",
+        allowed_states=['success'],
+        failed_states=['failed', 'upstream_failed', 'skipped'],
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
