@@ -33,8 +33,10 @@ default_args = {
     "start_date": datetime(2019, 10, 22),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
         "akommasani@mozilla.com",
+        "efilho@mozilla.com",
+        "linhnguyen@mozilla.com",
+        "akomarzewski@mozilla.com"
     ],
     "email_on_failure": True,
     "email_on_retry": True,

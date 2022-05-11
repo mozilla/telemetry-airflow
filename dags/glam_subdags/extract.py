@@ -14,6 +14,8 @@ alert_emails = [
     "telemetry-alerts@mozilla.com",
     "akommasani@mozilla.com",
     "linhnguyen@mozilla.com",
+    "efilho@mozilla.com",
+    "akomarzewski@mozilla.com"
 ]
 
 def extracts_subdag(
