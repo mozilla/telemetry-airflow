@@ -107,15 +107,9 @@ with models.DAG(
 
     with TaskGroup('main_ping_downstream_external') as main_ping_downstream_external:
         ExternalTaskMarker(
-            task_id="graphics_telemetry__graphics_trends",
+            task_id="graphics_telemetry__wait_for_main_ping",
             external_dag_id="graphics_telemetry",
-            external_task_id="graphics_trends",
-        )
-
-        ExternalTaskMarker(
-            task_id="graphics_telemetry__graphics_dashboard",
-            external_dag_id="graphics_telemetry",
-            external_task_id="graphics_dashboard",
+            external_task_id="wait_for_main_ping",
         )
 
         copy_deduplicate_main_ping >> main_ping_downstream_external
