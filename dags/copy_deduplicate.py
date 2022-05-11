@@ -198,7 +198,8 @@ with models.DAG(
     baseline_args = [
         "--project-id=moz-fx-data-shared-prod",
         "--start_date={{ ds }}",
-        "--end_date={{ ds }}"
+        "--end_date={{ ds }}",
+        "--max_rows=0",
     ]
 
     baseline_clients_first_seen = gke_command(
