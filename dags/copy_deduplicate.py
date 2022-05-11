@@ -110,6 +110,7 @@ with models.DAG(
             task_id="graphics_telemetry__wait_for_main_ping",
             external_dag_id="graphics_telemetry",
             external_task_id="wait_for_main_ping",
+            execution_date="{{ (execution_date + macros.timedelta(hours=2)).isoformat() }}",
         )
 
         copy_deduplicate_main_ping >> main_ping_downstream_external
