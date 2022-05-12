@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.models import Variable
 
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
@@ -42,26 +43,30 @@ dag = DAG(
 
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_fenix = ExternalTaskCompletedSensor(
+wait_for_fenix = ExternalTaskSensor(
     task_id="wait_for_fenix",
     external_dag_id="glam_fenix",
     external_task_id="pre_import",
     execution_delta=timedelta(hours=3),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,
 )
 
 
-wait_for_fog = ExternalTaskCompletedSensor(
+wait_for_fog = ExternalTaskSensor(
     task_id="wait_for_fog",
     external_dag_id="glam_fog",
     external_task_id="pre_import",
     execution_delta=timedelta(hours=3),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,

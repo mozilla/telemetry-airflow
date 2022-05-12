@@ -7,6 +7,8 @@ from airflow.providers.google.cloud.operators.bigquery import (
 from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
     CloudDataTransferServiceS3ToGCSOperator,
 )
+from airflow.sensors.external_task import ExternalTaskMarker
+from airflow.utils.task_group import TaskGroup
 
 from datetime import datetime, timedelta
 
@@ -47,123 +49,128 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
-dag = DAG("socorro_import", default_args=default_args, schedule_interval="@daily", tags=tags,)
+with DAG("socorro_import", default_args=default_args, schedule_interval="@daily", tags=tags,) as dag:
 
-# Unsalted cluster name so subsequent runs fail if the cluster name exists
-cluster_name = "socorro-import-dataproc-cluster"
+    # Unsalted cluster name so subsequent runs fail if the cluster name exists
+    cluster_name = "socorro-import-dataproc-cluster"
 
-# Defined in Airflow's UI -> Admin -> Connections
-gcp_conn_id = "google_cloud_airflow_dataproc"
-project_id = "airflow-dataproc"
+    # Defined in Airflow's UI -> Admin -> Connections
+    gcp_conn_id = "google_cloud_airflow_dataproc"
+    project_id = "airflow-dataproc"
 
-# Required to copy socorro json data from aws prod s3 to gcs
-read_aws_conn_id = "aws_socorro_readonly_s3"
+    # Required to copy socorro json data from aws prod s3 to gcs
+    read_aws_conn_id = "aws_socorro_readonly_s3"
 
-# We use an application-specific gcs bucket since the copy operator can't set the destination
-# bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead
-# of having the dataset name come first
+    # We use an application-specific gcs bucket since the copy operator can't set the destination
+    # bucket prefix, and unfortunately socorro data in s3 has prefix version/dataset instead
+    # of having the dataset name come first
 
-gcs_data_bucket = "moz-fx-data-prod-socorro-data"
+    gcs_data_bucket = "moz-fx-data-prod-socorro-data"
 
-dataset = "socorro_crash"
-dataset_version = "v2"
-date_submission_col = "crash_date"
+    dataset = "socorro_crash"
+    dataset_version = "v2"
+    date_submission_col = "crash_date"
 
-objects_prefix = "{}/{}/{}={}".format(
-    dataset, dataset_version, date_submission_col, "{{ ds_nodash }}"
-)
+    objects_prefix = "{}/{}/{}={}".format(
+        dataset, dataset_version, date_submission_col, "{{ ds_nodash }}"
+    )
 
-# copy json crashstats from s3 to gcs
-s3_to_gcs = CloudDataTransferServiceS3ToGCSOperator(
-    task_id="s3_to_gcs",
-    s3_bucket="crashstats-telemetry-crashes-prod-us-west-2",
-    project_id=project_id,
-    gcs_bucket=gcs_data_bucket,
-    description="socorro crash report copy from s3 to gcs",
-    aws_conn_id=read_aws_conn_id,
-    gcp_conn_id=gcp_conn_id,
-    object_conditions={"includePrefixes": "v1/crash_report/{{ ds_nodash }}"},
-    transfer_options={"deleteObjectsUniqueInSink": True},
-    timeout=3600,
-    dag=dag,
-)
-
-# Spark job reads gcs json and writes gcs parquet
-crash_report_parquet = SubDagOperator(
-    task_id="crash_report_parquet",
-    dag=dag,
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="crash_report_parquet",
-        default_args=default_args,
-        cluster_name=cluster_name,
-        job_name="Socorro_Crash_Reports_to_Parquet",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/socorro_import_crash_data.py",
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--source-gcs-path",
-            "gs://{}/v1/crash_report".format(gcs_data_bucket),
-            "--dest-gcs-path",
-            "gs://{}/{}".format(gcs_data_bucket, dataset),
-        ],
-        idle_delete_ttl=14400,
-        num_workers=8,
-        worker_machine_type="n1-standard-8",
+    # copy json crashstats from s3 to gcs
+    s3_to_gcs = CloudDataTransferServiceS3ToGCSOperator(
+        task_id="s3_to_gcs",
+        s3_bucket="crashstats-telemetry-crashes-prod-us-west-2",
+        project_id=project_id,
+        gcs_bucket=gcs_data_bucket,
+        description="socorro crash report copy from s3 to gcs",
         aws_conn_id=read_aws_conn_id,
         gcp_conn_id=gcp_conn_id,
-    ),
-)
+        object_conditions={"includePrefixes": "v1/crash_report/{{ ds_nodash }}"},
+        transfer_options={"deleteObjectsUniqueInSink": True},
+        timeout=3600,
+    )
+
+    # Spark job reads gcs json and writes gcs parquet
+    crash_report_parquet = SubDagOperator(
+        task_id="crash_report_parquet",
+        subdag=moz_dataproc_pyspark_runner(
+            parent_dag_name=dag.dag_id,
+            dag_name="crash_report_parquet",
+            default_args=default_args,
+            cluster_name=cluster_name,
+            job_name="Socorro_Crash_Reports_to_Parquet",
+            python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/socorro_import_crash_data.py",
+            py_args=[
+                "--date",
+                "{{ ds_nodash }}",
+                "--source-gcs-path",
+                "gs://{}/v1/crash_report".format(gcs_data_bucket),
+                "--dest-gcs-path",
+                "gs://{}/{}".format(gcs_data_bucket, dataset),
+            ],
+            idle_delete_ttl=14400,
+            num_workers=8,
+            worker_machine_type="n1-standard-8",
+            aws_conn_id=read_aws_conn_id,
+            gcp_conn_id=gcp_conn_id,
+        ),
+    )
 
 
-bq_gcp_conn_id = "google_cloud_derived_datasets"
-bq_project_id = "moz-fx-data-derived-datasets"
+    bq_gcp_conn_id = "google_cloud_derived_datasets"
+    bq_project_id = "moz-fx-data-derived-datasets"
 
-dest_s3_key = "s3://telemetry-parquet"
+    dest_s3_key = "s3://telemetry-parquet"
 
-# Not using load_to_bigquery since our source data is on GCS.
-# We do use the parquet2bigquery container to load gcs parquet into bq though.
-bq_dataset = "telemetry_derived"
-bq_table_name = "{}_{}".format(dataset, dataset_version)
+    # Not using load_to_bigquery since our source data is on GCS.
+    # We do use the parquet2bigquery container to load gcs parquet into bq though.
+    bq_dataset = "telemetry_derived"
+    bq_table_name = "{}_{}".format(dataset, dataset_version)
 
-docker_image = "docker.io/mozilla/parquet2bigquery:20190722"
+    docker_image = "docker.io/mozilla/parquet2bigquery:20190722"
 
-gke_args = [
-    "--dataset",
-    bq_dataset,
-    "--concurrency",
-    "10",
-    "--bucket",
-    gcs_data_bucket,
-    "--no-resume",
-    "--prefix",
-    objects_prefix,
-    "--cluster-by",
-    "crash_date",
-]
+    gke_args = [
+        "--dataset",
+        bq_dataset,
+        "--concurrency",
+        "10",
+        "--bucket",
+        gcs_data_bucket,
+        "--no-resume",
+        "--prefix",
+        objects_prefix,
+        "--cluster-by",
+        "crash_date",
+    ]
 
-# We remove the current date partition for idempotency.
-remove_bq_table_partition = BigQueryDeleteTableOperator(
-    task_id="remove_bq_table_partition",
-    gcp_conn_id=bq_gcp_conn_id,
-    deletion_dataset_table="{}.{}.{}${{{{ds_nodash}}}}".format(
-        "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name
-    ),
-    ignore_if_missing=True,
-    dag=dag,
-)
+    # We remove the current date partition for idempotency.
+    remove_bq_table_partition = BigQueryDeleteTableOperator(
+        task_id="remove_bq_table_partition",
+        gcp_conn_id=bq_gcp_conn_id,
+        deletion_dataset_table="{}.{}.{}${{{{ds_nodash}}}}".format(
+            "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name
+        ),
+        ignore_if_missing=True,
+    )
 
-bq_load = GKEPodOperator(
-    task_id="bigquery_load",
-    gcp_conn_id=bq_gcp_conn_id,
-    project_id=bq_project_id,
-    name="load-socorro-crash-parquet-to-bq",
-    image=docker_image,
-    arguments=gke_args,
-    env_vars={"GOOGLE_CLOUD_PROJECT": "{{ var.value.gcp_shared_prod_project }}"},
-    dag=dag,
-)
+    bq_load = GKEPodOperator(
+        task_id="bigquery_load",
+        gcp_conn_id=bq_gcp_conn_id,
+        project_id=bq_project_id,
+        name="load-socorro-crash-parquet-to-bq",
+        image=docker_image,
+        arguments=gke_args,
+        env_vars={"GOOGLE_CLOUD_PROJECT": "{{ var.value.gcp_shared_prod_project }}"},
+    )
 
+    with TaskGroup('socorro_external') as socorro_external:
+        ExternalTaskMarker(
+            task_id="crash_symbolication__wait_for_socorro_import",
+            external_dag_id="crash_symbolication",
+            external_task_id="wait_for_socorro_import",
+            execution_date="{{ execution_date.replace(hour=5, minute=0).isoformat() }}",
+        )
 
-s3_to_gcs >> crash_report_parquet
-crash_report_parquet >> remove_bq_table_partition >> bq_load
+        bq_load >> socorro_external
+
+    s3_to_gcs >> crash_report_parquet
+    crash_report_parquet >> remove_bq_table_partition >> bq_load

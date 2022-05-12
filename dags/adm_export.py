@@ -6,7 +6,7 @@ from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from operators.gcp_container_operator import GKEPodOperator
-from utils.constants import FAILED_STATES, ALLOWED_STATES
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 

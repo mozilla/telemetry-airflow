@@ -11,7 +11,7 @@ import json
 import os
 
 from airflow import DAG
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 
@@ -24,6 +24,7 @@ from utils.dataproc import (
     copy_artifacts_dev,
     get_dataproc_parameters,
 )
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query
 from utils.tags import Tag
 
@@ -107,13 +108,15 @@ if params.is_dev:
     )
     copy_to_dev >> ltv_daily
 else:
-    wait_for_search_clients_last_seen = ExternalTaskCompletedSensor(
+    wait_for_search_clients_last_seen = ExternalTaskSensor(
         task_id="wait_for_search_clients_last_seen",
         external_dag_id="bqetl_search",
         external_task_id="search_derived__search_clients_last_seen__v1",
         execution_delta=timedelta(hours=1),
         check_existence=True,
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,

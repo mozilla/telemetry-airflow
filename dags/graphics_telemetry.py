@@ -16,7 +16,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
-from utils.constants import FAILED_STATES, ALLOWED_STATES
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
 

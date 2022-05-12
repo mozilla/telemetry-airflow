@@ -13,7 +13,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
-from utils.constants import FAILED_STATES, ALLOWED_STATES
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
 
@@ -70,14 +70,12 @@ with DAG(
         failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
-        dag=dag,
     )
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
     modules_with_missing_symbols = SubDagOperator(
         task_id="modules_with_missing_symbols",
-        dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
             image_version="1.5-debian10",
@@ -110,7 +108,6 @@ with DAG(
 
     top_signatures_correlations = SubDagOperator(
         task_id="top_signatures_correlations",
-        dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
             image_version="1.5-debian10",
