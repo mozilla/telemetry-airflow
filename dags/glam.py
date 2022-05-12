@@ -12,14 +12,15 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query, gke_command
 from utils.tags import Tag
 
@@ -60,13 +61,15 @@ dag = DAG(
 
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskCompletedSensor(
+wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=1),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,

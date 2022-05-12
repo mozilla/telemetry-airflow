@@ -13,7 +13,8 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from utils.gcp import gke_command
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
@@ -50,25 +51,29 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
         dag=dag,
     )
 
-    wait_for_mobile_usage = ExternalTaskCompletedSensor(
+    wait_for_mobile_usage = ExternalTaskSensor(
         task_id="wait_for_mobile_usage",
         external_dag_id="bqetl_nondesktop",
         external_task_id="telemetry_derived__mobile_usage__v1",
         execution_delta=timedelta(hours=1),
         check_existence=True,
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
     )
 
-    wait_for_unified_metrics = ExternalTaskCompletedSensor(
+    wait_for_unified_metrics = ExternalTaskSensor(
         task_id="wait_for_unified_metrics",
         external_dag_id="bqetl_unified",
         external_task_id="telemetry_derived__unified_metrics__v1",
         execution_delta=timedelta(hours=1),
         check_existence=True,
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,

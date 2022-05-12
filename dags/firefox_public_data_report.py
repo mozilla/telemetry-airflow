@@ -7,11 +7,12 @@ Source code is in the [firefox-public-data-report-etl repository]
 
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 from operators.gcp_container_operator import GKEPodOperator
 
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     get_dataproc_parameters,
@@ -55,13 +56,15 @@ aws_access_key, aws_secret_key, session = AwsBaseHook(aws_conn_id=write_aws_conn
 
 # hardware_report's execution date will be {now}-7days. It will read last week's main pings,
 # therefore we need to wait for yesterday's Main Ping deduplication task to finish
-wait_for_main_ping = ExternalTaskCompletedSensor(
+wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(days=-6),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,
@@ -103,13 +106,15 @@ hardware_report = SubDagOperator(
     )
 )
 
-wait_for_clients_last_seen = ExternalTaskCompletedSensor(
+wait_for_clients_last_seen = ExternalTaskSensor(
     task_id="wait_for_clients_last_seen",
     external_dag_id="bqetl_main_summary",
     external_task_id="telemetry_derived__clients_last_seen__v1",
     execution_delta=timedelta(days=-6, hours=-1),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,

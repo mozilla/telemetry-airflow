@@ -87,14 +87,29 @@ with models.DAG(
         resources=resources,
     )
 
-    with TaskGroup('copy_deduplicate_all_downstream_external') as copy_deduplicate_all_downstream_external:
+    with TaskGroup('copy_deduplicate_all_external') as copy_deduplicate_all_external:
         ExternalTaskMarker(
             task_id="bhr_collection__wait_for_bhr_ping",
             external_dag_id="bhr_collection",
             external_task_id="wait_for_bhr_ping",
+            execution_date="{{ execution_date.replace(hour=5, minute=0).isoformat() }}",
         )
 
-        copy_deduplicate_all >> copy_deduplicate_all_downstream_external
+        ExternalTaskMarker(
+            task_id="glam_fenix__wait_for_copy_deduplicate",
+            external_dag_id="glam_fenix",
+            external_task_id="wait_for_copy_deduplicate",
+            execution_date="{{ execution_date.replace(hour=2, minute=0).isoformat() }}",
+        )
+
+        ExternalTaskMarker(
+            task_id="glam_fog__wait_for_copy_deduplicate",
+            external_dag_id="glam_fog",
+            external_task_id="wait_for_copy_deduplicate",
+            execution_date="{{ execution_date.replace(hour=2, minute=0).isoformat() }}",
+        )
+
+        copy_deduplicate_all >> copy_deduplicate_all_external
 
     # We split out main ping since it's the highest volume and has a distinct
     # set of downstream dependencies.
@@ -114,15 +129,22 @@ with models.DAG(
         ],
     )
 
-    with TaskGroup('main_ping_downstream_external') as main_ping_downstream_external:
+    with TaskGroup('main_ping_external') as main_ping_external:
         ExternalTaskMarker(
             task_id="graphics_telemetry__wait_for_main_ping",
             external_dag_id="graphics_telemetry",
             external_task_id="wait_for_main_ping",
-            execution_date="{{ (execution_date + macros.timedelta(hours=2)).isoformat() }}",
+            execution_date="{{ execution_date.replace(hour=3, minute=0).isoformat() }}",
         )
 
-        copy_deduplicate_main_ping >> main_ping_downstream_external
+        ExternalTaskMarker(
+            task_id="glam__wait_for_main_ping",
+            external_dag_id="glam",
+            external_task_id="wait_for_main_ping",
+            execution_date="{{ execution_date.replace(hour=2, minute=0).isoformat() }}",
+        )
+
+        copy_deduplicate_main_ping >> main_ping_external
 
     # We also separate out variant pings that share the main ping schema since these
     # ultrawide tables can sometimes have unique performance problems.
@@ -168,6 +190,16 @@ with models.DAG(
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
+    with TaskGroup('event_events_external') as event_events_external:
+        ExternalTaskMarker(
+            task_id="jetstream__wait_for_copy_deduplicate_events",
+            external_dag_id="jetstream",
+            external_task_id="wait_for_copy_deduplicate_events",
+            execution_date="{{ execution_date.replace(hour=4, minute=0).isoformat() }}",
+        )
+
+        event_events >> event_events_external
+
     copy_deduplicate_event_ping >> event_events
 
     bq_main_events = bigquery_etl_query(
@@ -180,6 +212,16 @@ with models.DAG(
         dag=dag,
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
+
+    with TaskGroup('bq_main_events_external') as bq_main_events_external:
+        ExternalTaskMarker(
+            task_id="jetstream__wait_for_bq_events",
+            external_dag_id="jetstream",
+            external_task_id="wait_for_bq_events",
+            execution_date="{{ execution_date.replace(hour=4, minute=0).isoformat() }}",
+        )
+
+        bq_main_events >> bq_main_events_external
 
     copy_deduplicate_main_ping >> bq_main_events
 
