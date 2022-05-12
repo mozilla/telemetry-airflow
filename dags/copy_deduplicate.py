@@ -87,6 +87,15 @@ with models.DAG(
         resources=resources,
     )
 
+    with TaskGroup('copy_deduplicate_all_downstream_external') as copy_deduplicate_all_downstream_external:
+        ExternalTaskMarker(
+            task_id="bhr_collection__wait_for_bhr_ping",
+            external_dag_id="bhr_collection",
+            external_task_id="wait_for_bhr_ping",
+        )
+
+        copy_deduplicate_all >> copy_deduplicate_all_downstream_external
+
     # We split out main ping since it's the highest volume and has a distinct
     # set of downstream dependencies.
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(

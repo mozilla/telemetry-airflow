@@ -16,6 +16,7 @@ from airflow.operators.subdag_operator import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
+from utils.constants import FAILED_STATES, ALLOWED_STATES
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
 
@@ -68,8 +69,8 @@ with DAG(
         execution_delta=datetime.timedelta(hours=2),
         check_existence=True,
         mode="reschedule",
-        allowed_states=['success'],
-        failed_states=['failed', 'upstream_failed', 'skipped'],
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,

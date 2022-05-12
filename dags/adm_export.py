@@ -3,9 +3,10 @@ import datetime
 from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
 from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
 
 from operators.gcp_container_operator import GKEPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
+from utils.constants import FAILED_STATES, ALLOWED_STATES
 from utils.tags import Tag
 
 
@@ -66,12 +67,14 @@ with DAG(
         ],
     )
 
-    wait_for_clients_daily_export = ExternalTaskCompletedSensor(
+    wait_for_clients_daily_export = ExternalTaskSensor(
         task_id="wait_for_adm_weekly_aggregates",
         external_dag_id="bqetl_search_terms_daily",
         external_task_id="search_terms_derived__adm_weekly_aggregates__v1",
         execution_delta=datetime.timedelta(hours=2),
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
     )
