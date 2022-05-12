@@ -11,8 +11,9 @@ import datetime
 from airflow import DAG
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 
+from utils.constants import FAILED_STATES, ALLOWED_STATES
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
 
@@ -58,13 +59,15 @@ with DAG(
     ses_access_key, ses_secret_key, _ = AwsBaseHook(
         aws_conn_id=ses_aws_conn_id, client_type='s3').get_credentials()
 
-    wait_for_socorro_import = ExternalTaskCompletedSensor(
+    wait_for_socorro_import = ExternalTaskSensor(
         task_id="wait_for_socorro_import",
         external_dag_id="socorro_import",
         external_task_id="bigquery_load",
         check_existence=True,
         execution_delta=datetime.timedelta(hours=5),
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
