@@ -6,7 +6,9 @@ The container is defined in
 """
 
 from airflow import DAG
+from airflow.sensors.external_task import ExternalTaskSensor
 from datetime import datetime, timedelta
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -31,8 +33,25 @@ with DAG("search_alert",
     default_args=default_args,
     doc_md=__doc__,
     schedule_interval="@daily",
+    # We don't want to run more than a single instance of this DAG
+    # since underlying tables are not partitioned
+    max_active_runs=1,
     tags=tags,
 ) as dag:
+
+    wait_for_search_aggregates = ExternalTaskSensor(
+        task_id="wait_for_search_aggregates",
+        external_dag_id="bqetl_search",
+        external_task_id="search_derived__search_aggregates__v8",
+        execution_delta=timedelta(hours=1),
+        check_existence=True,
+        mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
+        dag=dag,
+    )
 
     search_alert = gke_command(
         task_id="search_alert",
@@ -44,3 +63,5 @@ with DAG("search_alert",
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
         gcp_conn_id="google_cloud_derived_datasets",
     )
+
+    wait_for_search_aggregates >> search_alert
