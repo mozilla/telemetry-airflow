@@ -32,7 +32,7 @@ tags = [Tag.ImpactTier.tier_2]
 with DAG("search_alert",
     default_args=default_args,
     doc_md=__doc__,
-    schedule_interval="@daily",
+    schedule_interval="0 4 * * *",
     # We don't want to run more than a single instance of this DAG
     # since underlying tables are not partitioned
     max_active_runs=1,
