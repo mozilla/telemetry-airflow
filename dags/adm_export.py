@@ -11,7 +11,7 @@ from utils.tags import Tag
 
 
 DOCS = """\
-Weekly data exports of contextual services data aggregates to adMarketplace.
+Daily data exports of contextual services data aggregates to adMarketplace.
 This is a complementary approach to the near real-time sharing that is implemented
 in gcp-ingestion.
 
@@ -34,14 +34,14 @@ dag_name = "adm_export"
 tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
-    dag_name, schedule_interval="0 5 * * MON", doc_md=DOCS, default_args=default_args, tags=tags,
+    dag_name, schedule_interval="0 5 * * *", doc_md=DOCS, default_args=default_args, tags=tags,
 ) as dag:
 
     conn = BaseHook.get_connection("adm_sftp")
 
-    adm_weekly_aggregates_to_sftp = GKEPodOperator(
-        task_id="adm_weekly_aggregates_to_sftp",
-        name="adm_weekly_aggregates_to_sftp",
+    adm_daily_aggregates_to_sftp = GKEPodOperator(
+        task_id="adm_daily_aggregates_to_sftp",
+        name="adm_daily_aggregates_to_sftp",
         # See https://github.com/mozilla/docker-etl/pull/28
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bq2sftp_docker_etl:latest",
         project_id="moz-fx-data-airflow-gke-prod",
@@ -54,13 +54,11 @@ with DAG(
             SFTP_HOST=conn.host,
             SFTP_PORT=str(conn.port),
             KNOWN_HOSTS=conn.extra_dejson["known_hosts"],
-            SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_weekly_aggregates_v1",
-            # The execution_date (ds) is always the beginning of the one-week period, so
-            # 7 days earlier than the start time of the job. The following path will be
+            SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_daily_aggregates_v1",
+            # The run for submission_date=2021-10-11 will be named:
             # Aggregated-Query-Data-10042021-10102021.csv.gz
-            # for ds=2021-10-04 which actually runs on 2021-10-11.
-            DST_PATH='files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}-{{ macros.ds_format(macros.ds_add(ds, 6), "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
-            SUBMISSION_DATE="{{ macros.ds_add(ds, 6) }}",
+            DST_PATH='files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
+            SUBMISSION_DATE="{{ ds }}",
         ),
         email=[
             "jklukas@mozilla.com",
@@ -68,9 +66,9 @@ with DAG(
     )
 
     wait_for_clients_daily_export = ExternalTaskSensor(
-        task_id="wait_for_adm_weekly_aggregates",
+        task_id="wait_for_adm_daily_aggregates",
         external_dag_id="bqetl_search_terms_daily",
-        external_task_id="search_terms_derived__adm_weekly_aggregates__v1",
+        external_task_id="search_terms_derived__adm_daily_aggregates__v1",
         execution_delta=datetime.timedelta(hours=2),
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
@@ -79,4 +77,4 @@ with DAG(
         email_on_retry=False,
     )
 
-    wait_for_clients_daily_export >> adm_weekly_aggregates_to_sftp
+    wait_for_clients_daily_export >> adm_daily_aggregates_to_sftp
