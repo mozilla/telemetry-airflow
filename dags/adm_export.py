@@ -55,8 +55,8 @@ with DAG(
             SFTP_PORT=str(conn.port),
             KNOWN_HOSTS=conn.extra_dejson["known_hosts"],
             SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_daily_aggregates_v1",
-            # The run for submission_date=2021-10-11 will be named:
-            # Aggregated-Query-Data-10042021-10102021.csv.gz
+            # The run for submission_date=2022-03-04 will be named:
+            # Aggregated-Query-Data-03042022.csv.gz
             DST_PATH='files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
             SUBMISSION_DATE="{{ ds }}",
         ),
