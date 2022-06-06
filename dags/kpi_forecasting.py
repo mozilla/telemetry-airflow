@@ -63,8 +63,8 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
 
     wait_for_desktop_usage = ExternalTaskSensor(
         task_id="wait_for_desktop_usage",
-        external_dag_id="bqetl_main_summary ",
-        external_task_id="telemetry_derived__firefox_desktop_usage__v1 ",
+        external_dag_id="bqetl_main_summary",
+        external_task_id="telemetry_derived__firefox_desktop_usage__v1",
         execution_delta=timedelta(hours=2),
         check_existence=True,
         mode="reschedule",
