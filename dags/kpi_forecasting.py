@@ -104,4 +104,4 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
 
     wait_for_mobile_usage >> kpi_forecasting_mobile
     wait_for_unified_metrics >> kpi_forecasting_desktop
-    wait_for_unified_metrics >> kpi_forecasting_desktop_non_cumulative
+    wait_for_desktop_usage >> kpi_forecasting_desktop_non_cumulative
