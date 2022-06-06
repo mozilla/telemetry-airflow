@@ -61,6 +61,19 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
         dag=dag,
     )
 
+    wait_for_desktop_usage = ExternalTaskSensor(
+        task_id="wait_for_desktop_usage",
+        external_dag_id="bqetl_main_summary ",
+        external_task_id="telemetry_derived__firefox_desktop_usage__v1 ",
+        execution_delta=timedelta(hours=2),
+        check_existence=True,
+        mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
+        dag=dag,
+    )
     wait_for_mobile_usage = ExternalTaskSensor(
         task_id="wait_for_mobile_usage",
         external_dag_id="bqetl_nondesktop",
