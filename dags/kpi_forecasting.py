@@ -51,6 +51,29 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
         dag=dag,
     )
 
+    kpi_forecasting_desktop_non_cumulative = gke_command(
+        task_id="kpi_forecasting_desktop_non_cumulative",
+        command=[
+            "python", "kpi-forecasting/kpi_forecasting.py",
+            "-c",
+        ] + ["kpi-forecasting/yaml/desktop_non_cumulative.yaml"],
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
+        dag=dag,
+    )
+
+    wait_for_desktop_usage = ExternalTaskSensor(
+        task_id="wait_for_desktop_usage",
+        external_dag_id="bqetl_main_summary",
+        external_task_id="telemetry_derived__firefox_desktop_usage__v1",
+        execution_delta=timedelta(hours=2),
+        check_existence=True,
+        mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
+        dag=dag,
+    )
     wait_for_mobile_usage = ExternalTaskSensor(
         task_id="wait_for_mobile_usage",
         external_dag_id="bqetl_nondesktop",
@@ -81,3 +104,4 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
 
     wait_for_mobile_usage >> kpi_forecasting_mobile
     wait_for_unified_metrics >> kpi_forecasting_desktop
+    wait_for_desktop_usage >> kpi_forecasting_desktop_non_cumulative
