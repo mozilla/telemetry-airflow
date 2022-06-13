@@ -29,7 +29,6 @@ def repeated_subdag(
         f"{parent_dag_name}.{child_dag_name}",
         default_args=default_args,
         schedule_interval=schedule_interval,
-        concurrency=1,
     )
 
     # This task runs first and replaces the relevant partition, followed
@@ -53,6 +52,8 @@ def repeated_subdag(
         dag=dag,
     )
 
+    upstream_task = task_0
+
     for partition in range(1, num_partitions):
         min_param = partition * PARTITION_SIZE
         max_param = min_param + PARTITION_SIZE - 1
@@ -68,6 +69,7 @@ def repeated_subdag(
             arguments=("--append_table", "--noreplace",),
             dag=dag,
         )
-        task_0 >> task
+        upstream_task >> task
+        upstream_task = task
 
     return dag

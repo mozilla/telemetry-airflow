@@ -17,7 +17,6 @@ def histogram_aggregates_subdag(
         GLAM_HISTOGRAM_AGGREGATES_SUBDAG,
         default_args=default_args,
         schedule_interval=schedule_interval,
-        concurrency=1,
     )
 
     clients_histogram_aggregates_new = bigquery_etl_query(
