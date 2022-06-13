@@ -249,12 +249,6 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
-# SubdagOperator uses a SequentialExecutor by default
-# so its tasks will run sequentially.
-# Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
-# backfill to schedule tasks in the subdag. User no longer need to specify
-# the executor in SubDagOperator. (We don't but the assumption that Sequential
-# Executor is used is now wrong)
 clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
