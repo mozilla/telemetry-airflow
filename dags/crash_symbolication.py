@@ -132,7 +132,7 @@ with DAG(
             ],
             idle_delete_ttl=14400,
             num_workers=2,
-            worker_machine_type="n1-standard-4",
+            worker_machine_type="n1-standard-8",
             gcp_conn_id=params.conn_id,
             service_account=params.client_email,
             storage_bucket=params.storage_bucket,
