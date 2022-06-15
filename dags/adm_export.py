@@ -15,6 +15,9 @@ Daily data exports of contextual services data aggregates to adMarketplace.
 This is a complementary approach to the near real-time sharing that is implemented
 in gcp-ingestion.
 
+Relies on the [`bq2stfp` container defined in `docker-etl`](https://github.com/mozilla/docker-etl/tree/main/jobs/bq2sftp)
+and credentials stored in the `adm_sftp` connection.
+
 For more context, see https://bugzilla.mozilla.org/show_bug.cgi?id=1729524
 """
 
