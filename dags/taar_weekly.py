@@ -35,8 +35,6 @@ DELETE_DAYS = 29
 default_args_weekly = {
     "owner": "epavlov@mozilla.com",
     "email": [
-        "anatal@mozilla.com",
-        "mlopatka@mozilla.com",
         "hwoo@mozilla.com",
         "epavlov@mozilla.com",
         "telemetry-alerts@mozilla.com"

@@ -47,7 +47,7 @@ default_args = {
     "owner": "epavlov@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 7),
-    "email": ["telemetry-alerts@mozilla.com", "mlopatka@mozilla.com", "anatal@mozilla.com", "hwoo@mozilla.com",
+    "email": ["telemetry-alerts@mozilla.com", "hwoo@mozilla.com",
               "epavlov@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
