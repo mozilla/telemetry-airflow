@@ -49,7 +49,7 @@ with DAG(
     aws_access_key, aws_secret_key, _ = AwsBaseHook(aws_conn_id=write_aws_conn_id, client_type='s3').get_credentials()
 
     wait_for_bhr_ping = ExternalTaskSensor(
-        task_id="wait_for_bhr_ping",
+        task_id="wait_for_copy_deduplicate",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         execution_delta=datetime.timedelta(hours=4),
