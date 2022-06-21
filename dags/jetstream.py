@@ -110,7 +110,7 @@ with DAG(
     )
 
     wait_for_bq_events = ExternalTaskSensor(
-        task_id="wait_for_bq_events",
+        task_id="wait_for_bq_main_events",
         external_dag_id="copy_deduplicate",
         external_task_id="bq_main_events",
         execution_delta=timedelta(hours=3),
@@ -123,7 +123,7 @@ with DAG(
     )
 
     wait_for_copy_deduplicate_events = ExternalTaskSensor(
-        task_id="wait_for_copy_deduplicate_events",
+        task_id="wait_for_event_events",
         external_dag_id="copy_deduplicate",
         external_task_id="event_events",
         execution_delta=timedelta(hours=3),
