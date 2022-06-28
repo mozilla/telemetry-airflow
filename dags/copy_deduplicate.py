@@ -380,9 +380,28 @@ with models.DAG(
             "query",
             "backfill",
             "*.clients_last_seen_joined_v1",
-        ] + baseline_args,
+        ] + [    # metrics pings are usually delayed by one day after their logical activity period
+            "--project-id=moz-fx-data-shared-prod",
+            "--start_date={{ macros.ds_add(ds, -1) }}",
+            "--end_date={{ macros.ds_add(ds, -1) }}",
+            "--max_rows=0",
+        ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
+    with TaskGroup('clients_last_seen_joined_external') as clients_last_seen_joined_external:
+        downstream_dag_times = {
+            "bqetl_unified": "hour=3, minute=0",
+        }
+
+        for downstream_dag, dag_time_parts in downstream_dag_times.items():
+            ExternalTaskMarker(
+                task_id=f"{downstream_dag}__wait_for_clients_last_seen_joined",
+                external_dag_id=downstream_dag,
+                external_task_id="wait_for_clients_last_seen_joined",
+                execution_date="{{ execution_date.replace(" + dag_time_parts + ").isoformat() }}",
+            )
+
+        clients_last_seen_joined >> clients_last_seen_joined_external
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
     baseline_clients_first_seen >> baseline_clients_daily
