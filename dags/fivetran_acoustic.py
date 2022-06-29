@@ -186,7 +186,7 @@ for report_type, _config in REPORTS_CONFIG.items():
             task_id="generate_acoustic_report",
             python_callable=_generate_acoustic_report,
             op_args=[ACOUSTIC_CONNECTION_ID, report_type, _config],
-            execution_timeout=timedelta(hours=1),
+            execution_timeout=timedelta(hours=2),
         )
 
         sync_trigger = FivetranOperator(
