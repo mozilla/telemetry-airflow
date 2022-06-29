@@ -6,15 +6,10 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.models import Variable
-from airflow.operators.subdag_operator import SubDagOperator
 
-from glam_subdags.extract import extracts_subdag, extract_user_counts
-from glam_subdags.histograms import histogram_aggregates_subdag
-from glam_subdags.general import repeated_subdag
-from glam_subdags.generate_query import generate_and_run_desktop_query
-from utils.gcp import bigquery_etl_query, gke_command
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
@@ -24,6 +19,9 @@ default_args = {
     "email": [
         "telemetry-alerts@mozilla.com",
         "akommasani@mozilla.com",
+        "akomarzewski@mozilla.com",
+        "efilho@mozilla.com",
+        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -45,26 +43,30 @@ dag = DAG(
 
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_fenix = ExternalTaskCompletedSensor(
+wait_for_fenix = ExternalTaskSensor(
     task_id="wait_for_fenix",
     external_dag_id="glam_fenix",
     external_task_id="pre_import",
     execution_delta=timedelta(hours=3),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,
 )
 
 
-wait_for_fog = ExternalTaskCompletedSensor(
+wait_for_fog = ExternalTaskSensor(
     task_id="wait_for_fog",
     external_dag_id="glam_fog",
     external_task_id="pre_import",
     execution_delta=timedelta(hours=3),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,

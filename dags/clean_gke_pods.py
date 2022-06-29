@@ -36,7 +36,7 @@ tags = [Tag.ImpactTier.tier_3]
 
 dag = DAG("clean-gke-pods", default_args=default_args, schedule_interval="@daily", doc_md = docs, tags=tags,)
 
-docker_image='gcr.io/moz-fx-data-airflow-prod-88e0/gke-pod-clean:1.3'
+docker_image='us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/gke-pod-clean:1.3'
 gke_cluster_name='bq-load-gke-1'
 gke_location='us-central1-a'
 

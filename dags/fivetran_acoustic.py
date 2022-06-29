@@ -5,6 +5,8 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.base import BaseHook
+from airflow.sensors.external_task import ExternalTaskMarker
+from airflow.utils.task_group import TaskGroup
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
 from utils.tags import Tag

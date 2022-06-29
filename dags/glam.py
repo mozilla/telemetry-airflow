@@ -12,14 +12,15 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query, gke_command
 from utils.tags import Tag
 
@@ -28,13 +29,15 @@ project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
 tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis dataset
 default_args = {
-    "owner": "msamuel@mozilla.com",
+    "owner": "akommasani@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
         "akommasani@mozilla.com",
+        "akomarzewski@mozilla.com",
+        "efilho@mozilla.com",
+        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -58,13 +61,15 @@ dag = DAG(
 
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskCompletedSensor(
-    task_id="wait_for_main_ping",
+wait_for_main_ping = ExternalTaskSensor(
+    task_id="wait_for_copy_deduplicate_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=1),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,
@@ -75,7 +80,6 @@ latest_versions = bigquery_etl_query(
     destination_table="latest_versions",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -118,7 +122,6 @@ clients_scalar_aggregates = bigquery_etl_query(
     destination_table="clients_scalar_aggregates_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     depends_on_past=True,
     arguments=("--replace",),
     dag=dag,
@@ -205,7 +208,6 @@ histogram_percentiles = bigquery_etl_query(
     destination_table="histogram_percentiles_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
@@ -216,7 +218,6 @@ glam_user_counts = bigquery_etl_query(
     destination_table="glam_user_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
@@ -228,7 +229,6 @@ glam_sample_counts = bigquery_etl_query(
     destination_table="glam_sample_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="akommasani@mozilla.com",
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
@@ -249,12 +249,6 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
-# SubdagOperator uses a SequentialExecutor by default
-# so its tasks will run sequentially.
-# Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
-# backfill to schedule tasks in the subdag. User no longer need to specify
-# the executor in SubDagOperator. (We don't but the assumption that Sequential
-# Executor is used is now wrong)
 clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
@@ -275,7 +269,6 @@ clients_histogram_probe_counts = bigquery_etl_query(
     destination_table="clients_histogram_probe_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,

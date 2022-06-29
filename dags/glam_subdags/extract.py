@@ -9,13 +9,6 @@ gcp_conn_id = "google_cloud_airflow_dataproc"
 project_id = "moz-fx-data-shared-prod"
 glam_bucket = "moz-fx-data-glam-prod-fca7-etl-data"
 
-owner_emails = "akommasani@mozilla.com"
-alert_emails = [
-    "telemetry-alerts@mozilla.com",
-    "akommasani@mozilla.com",
-    "linhnguyen@mozilla.com",
-]
-
 def extracts_subdag(
     parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id
 ):
@@ -61,8 +54,6 @@ def extract_channel_subdag(
         destination_table=bq_extract_table,
         dataset_id=dataset_id,
         project_id=project_id,
-        owner=owner_emails,
-        email=alert_emails,
         date_partition_parameter=None,
         arguments=("--replace",),
         sql_file_path="sql/moz-fx-data-shared-prod/{}/glam_client_probe_counts_extract_v1/query.sql".format(
@@ -121,8 +112,6 @@ def extract_user_counts(
         destination_table=bq_extract_table,
         dataset_id=dataset_id,
         project_id=project_id,
-        owner=owner_emails,
-        email=alert_emails,
         date_partition_parameter=None,
         arguments=("--replace",),
         dag=dag,
