@@ -221,7 +221,7 @@ def bigquery_etl_query(
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
     if not project_id:
         project_id = "moz-fx-data-shared-prod"
-    destination_table_no_partition = destination_table.split("$")[0]
+    destination_table_no_partition = destination_table.split("$")[0] if destination_table is not None else None
     sql_file_path = sql_file_path or "sql/{}/{}/{}/query.sql".format(project_id, dataset_id, destination_table_no_partition)
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
