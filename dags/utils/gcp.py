@@ -233,7 +233,7 @@ def bigquery_etl_query(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["script/run_multipart_query" if multipart else "query"]
+        arguments=["`script/bqetl query run-multipart`" if multipart else "query"]
         + (["--destination_table=" + destination_table] if destination_table else [])
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
