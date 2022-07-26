@@ -122,7 +122,7 @@ def export_to_parquet(
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/main"
-            "/script/pyspark/export_to_parquet.py",
+            "/script/legacy/export_to_parquet.py",
             arguments=[table]
             + [
                 "--" + key + "=" + value
