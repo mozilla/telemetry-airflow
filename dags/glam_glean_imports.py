@@ -157,16 +157,12 @@ for env in ['Dev','Prod']:
         glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
 
     env_vars = dict(
-        # Todo - make secrets in wtmo
         DATABASE_URL = Variable.get(env + "_glam_secret__database_url"),
         DJANGO_SECRET_KEY = Variable.get(env + "_glam_secret__django_secret_key"),
-        # Todo - What does this do?
         DJANGO_CONFIGURATION = env,
         DJANGO_DEBUG = "False",
         DJANGO_SETTINGS_MODULE= "glam.settings",
-        # Todo add the project ids to WTMO UI
         GOOGLE_CLOUD_PROJECT = Variable.get(env + "_glam_project"),
-        #GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
     )
 
     with dag as dag:
