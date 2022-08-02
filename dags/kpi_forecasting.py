@@ -61,6 +61,16 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
         dag=dag,
     )
 
+    kpi_forecasting_mobile_non_cumulative = gke_command(
+        task_id="kpi_forecasting_mobile_non_cumulative",
+        command=[
+            "python", "kpi-forecasting/kpi_forecasting.py",
+            "-c",
+        ] + ["kpi-forecasting/yaml/mobile_non_cumulative.yaml"],
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
+        dag=dag,
+    )
+
     wait_for_desktop_usage = ExternalTaskSensor(
         task_id="wait_for_desktop_usage",
         external_dag_id="bqetl_main_summary",
@@ -104,4 +114,5 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
 
     wait_for_mobile_usage >> kpi_forecasting_mobile
     wait_for_unified_metrics >> kpi_forecasting_desktop
-    wait_for_desktop_usage >> kpi_forecasting_desktop_non_cumulative
+    wait_for_unified_metrics >> kpi_forecasting_desktop_non_cumulative
+    wait_for_unified_metrics >> kpi_forecasting_mobile_non_cumulative
