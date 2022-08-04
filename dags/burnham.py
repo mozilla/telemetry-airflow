@@ -20,6 +20,9 @@ from utils.tags import Tag
 DOCS = """\
 # burnham
 
+**As of August 4, 2022, the burnham end-to-end test suite was disabled on
+Airflow. For more information please reach out to rpierzina@mozilla.com.**
+
 The burnham project is an end-to-end test suite that aims to automatically
 verify that Glean-based products correctly measure, collect, and submit
 non-personal information to the GCP-based Data Platform and that the received
