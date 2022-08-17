@@ -28,7 +28,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_3]
+tags = [Tag.ImpactTier.tier_1]
 
 with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * * SAT", doc_md=__doc__, tags=tags,) as dag:
     
