@@ -116,13 +116,13 @@ def export_to_parquet(
             task_id="run_dataproc_pyspark",
             cluster_name=cluster_name,
             dataproc_jars=[
-                "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+                "gs://spark-lib/bigquery/spark-2.4-bigquery-latest.jar"
             ],
             dataproc_properties={
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/main"
-            "/script/pyspark/export_to_parquet.py",
+            "/script/legacy/export_to_parquet.py",
             arguments=[table]
             + [
                 "--" + key + "=" + value

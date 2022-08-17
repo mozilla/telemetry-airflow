@@ -20,7 +20,7 @@ order to access them, do the following:
 
 1. Navigate to [this page](https://workflow.telemetry.mozilla.org/tree?dag_id=probe_scraper)
 2. Click the `probe_scraper` DAG that failed, followed by `View Log`
-3. Search for logs like `Event: probe-scraper-[HEX-STRING] had an event of type Pending` and note the container id
+3. Search for logs like `Event: probe-scraper.[HEX-STRING] had an event of type Pending` and note the pod name (`probe-scraper.[HEX-STRING]`)
 4. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-derived-datasets)
 If you can't access these logs but think you should be able to, [contact Data SRE](https://mana.mozilla.org/wiki/pages/viewpage.action?spaceKey=DOPS&title=Contacting+Data+SRE).
 5. Search for the following, replacing `POD_NAME_FROM_AIRFLOW_LOGS` with the string from (3):
