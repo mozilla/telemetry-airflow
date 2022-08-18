@@ -226,6 +226,10 @@ def bigquery_etl_query(
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    if multipart:
+        args = ["script/bqetl", "query", "run-multipart"]
+    else:
+        args = ["query"]
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
@@ -233,7 +237,7 @@ def bigquery_etl_query(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["`script/bqetl query run-multipart`" if multipart else "query"]
+        arguments=args
         + (["--destination_table=" + destination_table] if destination_table else [])
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
