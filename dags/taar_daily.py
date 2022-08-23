@@ -187,7 +187,7 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
             jar_args=[
             "train",
             "--runDate={{ds_nodash}}",
-            "--inputTable=gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6",
+            "--inputTable=gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6",
             f"--privateBucket=gs://{TAAR_ETL_MODEL_STORAGE_BUCKET}",
             f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints"
             ],

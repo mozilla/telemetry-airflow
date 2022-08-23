@@ -119,7 +119,7 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
                 "--source",
                 "avro",
                 "--avro-prefix",
-                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/prerelease/moz-fx-data-shared-prod",
+                "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/prerelease/moz-fx-data-shared-prod",
             ]
         ),
         gcp_conn_id=gcp_conn_id,
@@ -206,7 +206,7 @@ if EXPORT_TO_AVRO:
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
-            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/prerelease",
+            "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/prerelease",
             "main_v4",
             "'nightly', 'beta'",
             "{{ ds }}",
@@ -218,7 +218,7 @@ if EXPORT_TO_AVRO:
     # Delete the GCS data
     GCSDeleteObjectsOperator(
         task_id="delete_main_avro",
-        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        bucket_name="airflow-dataproc-bq-parquet-exports-tmp",
         prefix="avro/mozaggregator/prerelease/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v4",
         gcp_conn_id=gcp_conn_id,
         dag=dag,

@@ -61,7 +61,7 @@ with DAG("search_alert",
             "--project_id=mozdata",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
-        gcp_conn_id="google_cloud_derived_datasets",
+        gcp_conn_id="google_cloud_airflow_gke",
     )
 
     wait_for_search_aggregates >> search_alert

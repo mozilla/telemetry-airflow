@@ -386,10 +386,10 @@ class BurnhamDistribution:
 
 
 # GCP and GKE default values
-DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
-DEFAULT_GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
-DEFAULT_GKE_LOCATION = "us-central1-a"
-DEFAULT_GKE_CLUSTER_NAME = "bq-load-gke-1"
+DEFAULT_GCP_CONN_ID = "google_cloud_airflow_gke"
+DEFAULT_GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
+DEFAULT_GKE_LOCATION = "us-west1"
+DEFAULT_GKE_CLUSTER_NAME = "workloads-prod-v1"
 DEFAULT_GKE_NAMESPACE = "default"
 
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"
