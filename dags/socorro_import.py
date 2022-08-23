@@ -29,7 +29,7 @@ into bigquery.
 
 The following WTMO connections are needed in order for this job to run:
 conn - google_cloud_airflow_dataproc
-conn - google_cloud_derived_datasets
+conn - google_cloud_airflow_gke
 conn - aws_socorro_readonly_s3
 """
 
@@ -116,7 +116,7 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
     )
 
 
-    bq_gcp_conn_id = "google_cloud_derived_datasets"
+    bq_gcp_conn_id = "google_cloud_airflow_gke"
     bq_project_id = "moz-fx-data-derived-datasets"
 
     dest_s3_key = "s3://telemetry-parquet"

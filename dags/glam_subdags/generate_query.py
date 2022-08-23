@@ -11,7 +11,7 @@ def generate_and_run_desktop_query(
     destination_dataset_id=None,
     process=None,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     **kwargs,
 ):
     """
@@ -64,7 +64,7 @@ def generate_and_run_glean_queries(
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     env_vars={},
     **kwargs,
 ):
@@ -106,7 +106,7 @@ def generate_and_run_glean_task(
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     env_vars={},
     **kwargs,
 ):

@@ -20,7 +20,7 @@ from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperato
 import json
 import re
 
-GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
+GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 
 def export_to_parquet(
     table,
@@ -31,11 +31,11 @@ def export_to_parquet(
     dag_name="export_to_parquet",
     parent_dag_name=None,
     default_args=None,
-    gcp_conn_id="google_cloud_derived_datasets",
-    dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
+    gcp_conn_id="google_cloud_airflow_dataproc",
+    dataproc_storage_bucket="airflow-dataproc-bq-parquet-exports",
     num_workers=2,
     num_preemptible_workers=0,
-    gcs_output_bucket="moz-fx-data-derived-datasets-parquet",
+    gcs_output_bucket="airflow-dataproc-bq-parquet-exports",
     region="us-west1",
 ):
 
@@ -101,6 +101,8 @@ def export_to_parquet(
                 num_workers=num_workers,
                 storage_bucket=dataproc_storage_bucket,
                 init_actions_uris=[
+                    # This is probably a google hosted bucket for
+                    # https://github.com/GoogleCloudDataproc/initialization-actions/blob/master/python/pip-install.sh
                     "gs://dataproc-initialization-actions/python/pip-install.sh",
                 ],
                 metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
@@ -180,10 +182,10 @@ def bigquery_etl_query(
     arguments=(),
     project_id=None,
     sql_file_path=None,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
@@ -259,10 +261,10 @@ def bigquery_etl_copy_deduplicate(
     priority="INTERACTIVE",
     hourly=False,
     slices=None,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     **kwargs
@@ -330,10 +332,10 @@ def bigquery_xcom_query(
     parameters=(),
     arguments=(),
     project_id=None,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
@@ -406,10 +408,10 @@ def gke_command(
     command,
     docker_image,
     aws_conn_id="aws_dev_iam_s3",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     xcom_push=False,
     env_vars={},

@@ -51,7 +51,7 @@ CONTINUOUS_FEATURES = [
 
 def get_df(spark, date_from, sample_rate):
     # TODO: switch to BigQuery, should be faster
-    gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6"
+    gs_url = "gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6"
     parquetFile = spark.read.parquet(gs_url)
     # Use the parquet files to create a temporary view and then used in SQL statements.
     parquetFile.createOrReplaceTempView("clients_daily")

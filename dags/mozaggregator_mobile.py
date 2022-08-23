@@ -63,7 +63,7 @@ storage_bucket = (
     if is_dev
     else "moz-fx-data-prod-dataproc-scratch"
 )
-output_bucket = artifact_bucket if is_dev else "moz-fx-data-derived-datasets-parquet"
+output_bucket = artifact_bucket if is_dev else "airflow-dataproc-bq-parquet-exports"
 
 
 mobile_aggregate_view_dataproc = SubDagOperator(
@@ -106,7 +106,7 @@ mobile_aggregate_view_dataproc = SubDagOperator(
                 "--source",
                 "avro",
                 "--avro-prefix",
-                "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/mobile/moz-fx-data-shared-prod",
+                "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/mobile/moz-fx-data-shared-prod",
             ]
         ),
         gcp_conn_id=gcp_conn_id,
@@ -126,7 +126,7 @@ if EXPORT_TO_AVRO:
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
-            "gs://moz-fx-data-derived-datasets-parquet-tmp/avro/mozaggregator/mobile",
+            "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/mobile",
             "mobile_metrics_v1",
             '""',
             "{{ ds }}",
@@ -137,7 +137,7 @@ if EXPORT_TO_AVRO:
 
     GCSDeleteObjectsOperator(
         task_id="delete_mobile_metrics_avro",
-        bucket_name="moz-fx-data-derived-datasets-parquet-tmp",
+        bucket_name="airflow-dataproc-bq-parquet-exports-tmp",
         prefix="avro/mozaggregator/mobile/moz-fx-data-shared-prod/{{ ds_nodash }}/mobile_metrics_v1",
         gcp_conn_id=gcp_conn_id,
         dag=dag

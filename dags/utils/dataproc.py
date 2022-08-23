@@ -773,7 +773,7 @@ def get_dataproc_parameters(conn_id="google_cloud_airflow_dataproc"):
         else "moz-fx-data-prod-dataproc-scratch"
     )
     output_bucket = (
-        artifact_bucket if is_dev else "moz-fx-data-derived-datasets-parquet"
+        artifact_bucket if is_dev else "airflow-dataproc-bq-parquet-exports"
     )
     return DataprocParameters(
         conn_id,
