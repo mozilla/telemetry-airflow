@@ -37,7 +37,10 @@ with DAG("search_term_data_validation", default_args=default_args, schedule_inte
         command=[
             "python", "data_validation_job.py",
             "--data_validation_origin",
-        ] + ["mozdata.search_terms_unsanitized_analysis.prototype_data_validation_metrics"],
+            "moz-fx-data-shared-prod.search_terms.sanitization_job_data_validation_metrics",
+            "--data_validation_reporting_destination",
+            "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1"
+        ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation_docker_etl:latest",
         dag=dag,
     )
