@@ -35,7 +35,7 @@ with DAG("search_term_data_validation", default_args=default_args, schedule_inte
     search_term_data_validation = gke_command(
         task_id="search_term_data_validation",
         command=[
-            "python", "src/data_validation_job.py",
+            "python", "data_validation_job.py",
             "--data_validation_origin",
         ] + ["mozdata.search_terms_unsanitized_analysis.prototype_data_validation_metrics"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation_docker_etl:latest",
