@@ -294,11 +294,14 @@ def bigquery_etl_copy_deduplicate(
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
     table_qualifiers = []
     if only_tables:
-        table_qualifiers.append('--only')
-        table_qualifiers += only_tables
+        # bqetl expects multiple args as --only ... --only ...
+        for only_table in only_tables:
+            table_qualifiers.append('--only')
+            table_qualifiers.append(only_table)
     if except_tables:
-        table_qualifiers.append('--except')
-        table_qualifiers += except_tables
+        for except_table in except_tables:
+            table_qualifiers.append('--except')
+            table_qualifiers.append(except_table)
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
@@ -307,7 +310,7 @@ def bigquery_etl_copy_deduplicate(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["script/copy_deduplicate"]
+        arguments=["script/bqetl", "copy_deduplicate"]
         + ["--project-id=" + target_project_id]
         + (["--billing-projects"] + list(billing_projects) if billing_projects else [])
         + ["--date={{ds}}"]
