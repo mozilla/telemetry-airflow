@@ -78,6 +78,7 @@ with DAG('probe_scraper',
     resources = {'request_memory':'13312Mi', 'request_cpu': None,
                  'limit_memory':'20480Mi', 'limit_cpu': None, 'limit_gpu': None}
 
+    # this is the production probe_scraper task. all other probe_scraper_* tasks are not yet prod
     probe_scraper = GKEPodOperator(
         task_id="probe_scraper",
         name='probe-scraper',
@@ -99,6 +100,110 @@ with DAG('probe_scraper',
             "AWS_SECRET_ACCESS_KEY": aws_secret_key
         },
         dag=dag)
+
+    probe_scraper_base_arguments = [
+        "python3",
+        "-m",
+        "probe_scraper.runner",
+        "--out-dir=/app/probe_data",
+        "--cache-dir=/app/probe_cache",
+        "--output-bucket=gs://probe-scraper-prod-artifacts/",
+        "--env=prod",
+    ]
+
+    probe_scraper_moz_central = GKEPodOperator(
+        task_id="probe_scraper_moz_central",
+        name="probe-scraper-moz-central",
+        # Needed to scale the highmem pool from 0 -> 1
+        resources=resources,
+        # This python job requires 13 GB of memory, thus the highmem node pool
+        node_selectors={"nodepool": "highmem"},
+        # Due to the nature of the container run, we set get_logs to False, to avoid
+        # urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes
+        # read)' errors where the pod continues to run, but airflow loses its connection
+        # and sets the status to Failed
+        get_logs=False,
+        # Give additional time since we will likely always scale up when running this job
+        startup_timeout_seconds=360,
+        image=probe_scraper_image,
+        arguments=(
+            probe_scraper_base_arguments
+            + [
+                "--cache-bucket=s3://telemetry-airflow-cache/cache/probe-scraper",
+                "--moz-central",
+            ]
+        ),
+        email=[
+            "telemetry-client-dev@mozilla.com",
+            "aplacitelli@mozilla.com",
+            "hwoo@mozilla.com",
+        ],
+        env_vars={
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+        },
+        dag=dag,
+    )
+
+    probe_scraper_glean = [
+        GKEPodOperator(
+            task_id=f"probe_scraper_glean_{name.replace('-', '_')}",
+            name=f"probe-scraper-glean-{name}",
+            image=probe_scraper_image,
+            arguments=(
+                probe_scraper_base_arguments
+                + [
+                    "--update",
+                    "--glean",
+                    f"--glean-url={url}",
+                    "--glean-limit-date={{ds}}",
+                ]
+                + (
+                    [
+                        "--bugzilla-api-key",
+                        "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
+                    ]
+                    if name == "gecko-dev"
+                    else []
+                )
+            ),
+            email=[
+                "telemetry-client-dev@mozilla.com",
+                "aplacitelli@mozilla.com",
+                "hwoo@mozilla.com",
+            ],
+            dag=dag,
+        )
+        for name, url in (
+            ("gecko-dev", "https://github.com/mozilla/gecko-dev"),
+            ("phabricator", "https://github.com/mozilla-conduit/review"),
+            (
+                "search_engine_usage_study",
+                "https://github.com/mozilla-rally/search-engine-usage-study",
+            ),
+        )
+    ]
+
+    probe_scraper_glean_repositories = GKEPodOperator(
+        task_id="probe_scraper_glean_repositories",
+        name="probe-scraper-glean-repositories",
+        image=probe_scraper_image,
+        arguments=(
+            probe_scraper_base_arguments
+            + [
+                # when --update is specified without --glean-repo or --glean-url,
+                # this only writes metadata files that are not per glean repo.
+                "--update",
+                "--glean",
+            ]
+        ),
+        email=[
+            "telemetry-client-dev@mozilla.com",
+            "aplacitelli@mozilla.com",
+            "hwoo@mozilla.com",
+        ],
+        dag=dag,
+    )
 
     schema_generator = GKEPodOperator(
         email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
