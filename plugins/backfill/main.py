@@ -82,13 +82,14 @@ class Backfill(get_baseview()):
         cmd = ['airflow']
 
         if clear == 'true':
+            cmd.append('tasks')
             cmd.append('clear')
             if dry_run == 'true':
                 # For dryruns we simply timeout to avoid zombie procs waiting on user input. The output is what we're interested in
                 timeout_list = ['timeout', '60']
                 cmd = timeout_list + cmd
             elif dry_run == 'false':
-                cmd.append('-c')
+                cmd.append('-y')
 
             if use_task_regex == 'true':
                 cmd.extend(['-t', str(task_regex)])
@@ -125,7 +126,7 @@ class Backfill(get_baseview()):
                         # Adhere to text/event-stream format
                         line = line.replace('<','').replace('>','')
                     elif clear == 'true' and dry_run == 'false':
-                        # Special case/hack, airflow clear -y no longer outputs a termination string, so we put one
+                        # Special case/hack, airflow tasks clear -y no longer outputs a termination string, so we put one
                         line = "Clear Done"
 
                     yield "data:" + line + "\n\n"
