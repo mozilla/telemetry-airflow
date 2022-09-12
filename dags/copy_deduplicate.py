@@ -41,9 +41,9 @@ https://github.com/mozilla/telemetry-airflow/pull/1279/files)
 """
 
 default_args = {
-    "owner": "jklukas@mozilla.com",
+    "owner": "akomarzewski@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
-    "email": ["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "akomarzewski@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
@@ -132,11 +132,11 @@ with models.DAG(
         priority_weight=100,
         parallelism=5,
         slices=20,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
             "relud@mozilla.com",
-            "jklukas@mozilla.com",
+            "akomarzewski@mozilla.com",
         ],
     )
 
@@ -175,7 +175,7 @@ with models.DAG(
         only_tables=["telemetry_live.first_shutdown_v4"],
         priority_weight=50,
         parallelism=1,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
     )
 
     copy_deduplicate_saved_session_ping = bigquery_etl_copy_deduplicate(
@@ -185,7 +185,7 @@ with models.DAG(
         only_tables=["telemetry_live.saved_session_v4"],
         priority_weight=50,
         parallelism=1,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
     )
 
     # Events.
@@ -197,7 +197,7 @@ with models.DAG(
         only_tables=["telemetry_live.event_v4"],
         priority_weight=100,
         parallelism=1,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
     )
 
     event_events = bigquery_etl_query(
@@ -206,7 +206,7 @@ with models.DAG(
         destination_table="event_events_v1",
         dataset_id="telemetry_derived",
         priority_weight=90,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
@@ -237,7 +237,7 @@ with models.DAG(
         destination_table="main_events_v1",
         dataset_id="telemetry_derived",
         priority_weight=90,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
         dag=dag,
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
