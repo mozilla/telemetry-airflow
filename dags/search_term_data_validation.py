@@ -35,7 +35,7 @@ with DAG("search_term_data_validation", default_args=default_args, schedule_inte
     search_term_data_validation = gke_command(
         task_id="search_term_data_validation",
         command=[
-            "python", "data_validation_job.py",
+            "python", "src/data_validation_job.py",
             "--data_validation_origin",
             "moz-fx-data-shared-prod.search_terms.sanitization_job_data_validation_metrics",
             "--data_validation_reporting_destination",
