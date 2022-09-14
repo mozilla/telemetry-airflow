@@ -1,6 +1,8 @@
 """
 DEV Desktop ETL for https://glam.telemetry.mozilla.org/
 
+**Note to Airflow triagers:**
+Please disregard any failures from this DAG. It is being monitored by efilho
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
 in bigquery-etl and the
@@ -33,7 +35,6 @@ default_args = {
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
     "email": [
-        "telemetry-alerts@mozilla.com",
         "efilho@mozilla.com",
     ],
     "email_on_failure": True,
