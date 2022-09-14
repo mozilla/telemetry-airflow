@@ -165,10 +165,8 @@ with DAG('probe_scraper',
             arguments=(
                 probe_scraper_base_arguments
                 + [
-                    "--update",
                     "--glean",
                     f"--glean-url={url}",
-                    "--glean-limit-date={{ds}}",
                 ]
                 + (
                     [
@@ -176,7 +174,10 @@ with DAG('probe_scraper',
                         "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
                     ]
                     if name == "gecko-dev"
-                    else []
+                    else [
+                        "--update",
+                        "--glean-limit-date={{ds}}",
+                    ]
                 )
             ),
             email=[
