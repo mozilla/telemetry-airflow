@@ -93,9 +93,6 @@ init_connections() {
       "google_cloud_airflow_gke"
       "google_cloud_airflow_pubsub"
       "google_cloud_derived_datasets"
-      "google_cloud_prio_a"
-      "google_cloud_prio_admin"
-      "google_cloud_prio_b"
       "google_cloud_glam_fenix_dev"
       "google_cloud_shared_prod"
     )

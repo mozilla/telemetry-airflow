@@ -2,6 +2,10 @@
 
 This document records interesting code that we've deleted for the sake of discoverability for the future.
 
+## 2022-09-15 Prio Processor
+
+As of 2022 we no longer work on this implementation of privacy-preserving telemetry.
+
 ## 2022-01-11 KPI forecast
 
 As of 2022, we no longer need these MAU forecasts which were originally conceived
