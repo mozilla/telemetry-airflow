@@ -240,7 +240,7 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
         # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
         image=TAAR_ETL_CONTAINER_IMAGE,
         arguments=["-m", "taar_etl.taar_lite_guid_ranking",
-                "--date", "{{ ds }}",
+                "--date", "{{ macros.ds_add(ds, -1) }}",
                 "--prefix", "taar/lite",
                 "--bucket", TAAR_ETL_MODEL_STORAGE_BUCKET],
     )
