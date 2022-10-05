@@ -16,13 +16,14 @@ DOCS = """\
 ## Debugging failures
 
 probe_scraper and probe_scraper_moz_central task logs aren't available via the Airflow web console. In
-order to access them, do the following:
+order to access them, go to [GCP Logs Explorer](https://cloudlogging.app.goo.gl/qqvCsTbFGCiFmG7L7).
+This link should get you directly to the last 12 hours of probe_scraper pod logs. If necessary, replace
+`"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` in the query field.
+If the above link fails, do the following:
 
-1. Navigate to [this page](https://workflow.telemetry.mozilla.org/tree?dag_id=probe_scraper)
-2. Click the `probe_scraper` DAG that failed, followed by `View Log`
-3. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-airflow-gke-prod)
+1. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-airflow-gke-prod)
 If you can't access these logs but think you should be able to, [contact Data SRE](https://mana.mozilla.org/wiki/pages/viewpage.action?spaceKey=DOPS&title=Contacting+Data+SRE).
-4. Search for the following, replacing `"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` if necessary:
+2. Search for the following, replacing `"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` if necessary (make sure to put this in the raw query field - you might need to click the "Show query" button for it to appear):
 
 ```
 resource.type="k8s_container"
@@ -35,6 +36,10 @@ severity>=DEFAULT
 ```
 
 Adjust the time window as needed and you should be able to see logs associated with the failure.
+
+To find a name of the pod related to specific run, navigate to
+[probe_scraper DAG in Airflow](https://workflow.telemetry.mozilla.org/tree?dag_id=probe_scraper),
+click the task that failed, followed by `View Log`. Here, look for `probe-scraper.[ID]`.
 """
 
 DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION = "v1.17.0"
