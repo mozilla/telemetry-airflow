@@ -1,8 +1,5 @@
 from airflow import DAG
 from airflow.operators.subdag_operator import SubDagOperator
-from airflow.providers.google.cloud.operators.bigquery import (
-    BigQueryDeleteTableOperator,
-)
 
 from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
     CloudDataTransferServiceS3ToGCSOperator,
@@ -117,7 +114,6 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
 
 
     bq_gcp_conn_id = "google_cloud_airflow_gke"
-    bq_project_id = "moz-fx-data-derived-datasets"
 
     dest_s3_key = "s3://telemetry-parquet"
 
@@ -143,19 +139,20 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
     ]
 
     # We remove the current date partition for idempotency.
-    remove_bq_table_partition = BigQueryDeleteTableOperator(
-        task_id="remove_bq_table_partition",
+    table_name = "{}:{}.{}${{{{ds_nodash}}}}".format(
+            "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name)
+
+    remove_bq_table_partition = GKEPodOperator(
+        task_id="remove_socorro_crash_bq_table_partition",
         gcp_conn_id=bq_gcp_conn_id,
-        deletion_dataset_table="{}.{}.{}${{{{ds_nodash}}}}".format(
-            "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name
-        ),
-        ignore_if_missing=True,
+        name="remove_socorro_crash_bq_table_partition",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+        arguments=["bq", "rm", "-f", "--table", table_name]
     )
 
     bq_load = GKEPodOperator(
         task_id="bigquery_load",
         gcp_conn_id=bq_gcp_conn_id,
-        project_id=bq_project_id,
         name="load-socorro-crash-parquet-to-bq",
         image=docker_image,
         arguments=gke_args,
