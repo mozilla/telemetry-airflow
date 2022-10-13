@@ -21,6 +21,7 @@ import json
 import re
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
+DATAPROC_PROJECT_ID = "airflow-dataproc"
 
 def export_to_parquet(
     table,
@@ -75,7 +76,7 @@ def export_to_parquet(
     cluster_name += "-export-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
-    project_id = GCP_PROJECT_ID
+    project_id = DATAPROC_PROJECT_ID
 
     if destination_table is None:
         destination_table = unqualified_table
