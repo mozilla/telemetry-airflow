@@ -17,6 +17,8 @@ from airflow.providers.google.cloud.transfers.bigquery_to_gcs import BigQueryToG
 
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 
+from utils.dataproc import get_dataproc_parameters
+
 import json
 import re
 
@@ -89,6 +91,8 @@ def export_to_parquet(
         avro_prefix += "partition_id=" + partition_id + "/"
     avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
+    params = get_dataproc_parameters("google_cloud_airflow_dataproc")
+
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
         create_dataproc_cluster = DataprocCreateClusterOperator(
@@ -99,6 +103,7 @@ def export_to_parquet(
             region=region,
             cluster_config=ClusterGenerator(
                 project_id=project_id,
+                service_account=params.client_email,
                 num_workers=num_workers,
                 storage_bucket=dataproc_storage_bucket,
                 init_actions_uris=[
