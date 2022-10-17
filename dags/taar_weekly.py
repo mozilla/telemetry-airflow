@@ -87,8 +87,6 @@ wipe_gcs_bucket = GKEPodOperator(
     name="wipe_taar_gcs_bucket",
     image="google/cloud-sdk:242.0.0-alpine",
     arguments=wipe_gcs_files(),
-    location="us-central1-a",
-    cluster_name="bq-load-gke-1",
     dag=taar_weekly,
 )
 
@@ -133,8 +131,6 @@ delete_optout = GKEPodOperator(
 wipe_gcs_bucket_cleanup = GKEPodOperator(
     task_id="wipe_gcs_bucket_cleanup",
     name="wipe_taar_gcs_bucket",
-    location="us-central1-a",
-    cluster_name="bq-load-gke-1",
     image="google/cloud-sdk:242.0.0-alpine",
     arguments=wipe_gcs_files(),
     dag=taar_weekly,
