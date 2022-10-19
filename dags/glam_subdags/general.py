@@ -24,6 +24,7 @@ def repeated_subdag(
     additional_params=None,
     num_partitions=5,
     date_partition_parameter="submission_date",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 ):
     dag = DAG(
         f"{parent_dag_name}.{child_dag_name}",
@@ -53,6 +54,7 @@ def repeated_subdag(
         date_partition_parameter=date_partition_parameter,
         arguments=("--replace",),
         dag=dag,
+        docker_image=docker_image,
     )
 
     for partition in range(1, num_partitions):
@@ -71,6 +73,7 @@ def repeated_subdag(
             date_partition_parameter=date_partition_parameter,
             arguments=("--append_table", "--noreplace",),
             dag=dag,
+            docker_image=docker_image,
         )
         task_0 >> task
 
