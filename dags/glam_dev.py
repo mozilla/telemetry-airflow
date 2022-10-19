@@ -47,7 +47,7 @@ GLAM_DAG = "glam-dev"
 GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
-tags = [Tag.ImpactTier.tier_2]
+tags = [Tag.ImpactTier.tier_3]
 
 dag = DAG(
     GLAM_DAG,
