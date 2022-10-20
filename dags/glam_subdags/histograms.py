@@ -9,7 +9,12 @@ GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG = "clients_histogram_aggregates"
 
 
 def histogram_aggregates_subdag(
-    parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id
+    parent_dag_name,
+    child_dag_name,
+    default_args,
+    schedule_interval,
+    dataset_id,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 ):
     GLAM_HISTOGRAM_AGGREGATES_SUBDAG = "%s.%s" % (parent_dag_name, child_dag_name)
     default_args["depends_on_past"] = True
@@ -28,6 +33,7 @@ def histogram_aggregates_subdag(
         parameters=("submission_date:DATE:{{ds}}",),
         arguments=("--replace",),
         dag=dag,
+        docker_image=docker_image,
     )
 
     clients_histogram_aggregates_final = SubDagOperator(
@@ -37,6 +43,7 @@ def histogram_aggregates_subdag(
             default_args,
             dag.schedule_interval,
             dataset_id,
+            docker_image=docker_image,
         ),
         task_id=GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG,
         dag=dag,
