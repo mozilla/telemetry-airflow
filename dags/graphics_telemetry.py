@@ -12,10 +12,11 @@ import datetime
 import os
 
 from airflow import DAG
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
 
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
 
@@ -61,13 +62,15 @@ with DAG(
     else:
         aws_access_key, aws_secret_key, _ = AwsBaseHook(aws_conn_id=write_aws_conn_id, client_type='s3').get_credentials()
 
-    wait_for_main_ping = ExternalTaskCompletedSensor(
-        task_id="wait_for_main_ping",
+    wait_for_main_ping = ExternalTaskSensor(
+        task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_main_ping",
         execution_delta=datetime.timedelta(hours=2),
         check_existence=True,
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,

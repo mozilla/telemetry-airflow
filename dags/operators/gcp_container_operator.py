@@ -3,6 +3,7 @@ from airflow.providers.google.cloud.operators.kubernetes_engine import GKEStartP
 
 class GKEPodOperator(UpstreamGKEPodOperator):
     """
+    - This will now have the same defaults as GkeNatPodOperator pointing to the newer GKE cluster
     - In 1.10.x this inherited from upstream GKEPodOperator, rather than GKEStartPodOperator(v2)
     - In 1.10.x we needed to override the execute and helper methods to set an environment
 variable for authentication to work (CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE). Fixed in v2
@@ -25,10 +26,10 @@ do_xcom_push=False and GKE params
                  do_xcom_push=False,
                  reattach_on_restart=False,
                  # Defined in Airflow's UI -> Admin -> Connections
-                 gcp_conn_id='google_cloud_derived_datasets',
-                 project_id='moz-fx-data-derived-datasets',
-                 location='us-central1-a',
-                 cluster_name='bq-load-gke-1',
+                 gcp_conn_id='google_cloud_airflow_gke',
+                 project_id='moz-fx-data-airflow-gke-prod',
+                 location='us-west1',
+                 cluster_name='workloads-prod-v1',
                  namespace='default',
                  *args,
                  **kwargs):

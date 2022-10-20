@@ -2,8 +2,8 @@
 Runs a Docker image that imports Quicksuggest suggestions
 from Remote Settings to BigQuery.
 
-The container is defined in
-[docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/quicksuggest2bq)
+See the [`quicksuggest2bq`](https://github.com/mozilla/docker-etl/tree/main/jobs/quicksuggest2bq)
+docker image defined in `docker-etl`.
 """
 
 from airflow import DAG
@@ -43,7 +43,7 @@ with DAG(
             "--destination-table-id", table_id,
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/quicksuggest2bq_docker_etl:latest",
-        gcp_conn_id="google_cloud_derived_datasets",
+        gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[
             "aplacitelli@mozilla.com",

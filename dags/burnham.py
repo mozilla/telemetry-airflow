@@ -20,6 +20,9 @@ from utils.tags import Tag
 DOCS = """\
 # burnham
 
+**As of August 4, 2022, the burnham end-to-end test suite was disabled on
+Airflow. For more information please reach out to rpierzina@mozilla.com.**
+
 The burnham project is an end-to-end test suite that aims to automatically
 verify that Glean-based products correctly measure, collect, and submit
 non-personal information to the GCP-based Data Platform and that the received
@@ -383,10 +386,10 @@ class BurnhamDistribution:
 
 
 # GCP and GKE default values
-DEFAULT_GCP_CONN_ID = "google_cloud_derived_datasets"
-DEFAULT_GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
-DEFAULT_GKE_LOCATION = "us-central1-a"
-DEFAULT_GKE_CLUSTER_NAME = "bq-load-gke-1"
+DEFAULT_GCP_CONN_ID = "google_cloud_airflow_gke"
+DEFAULT_GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
+DEFAULT_GKE_LOCATION = "us-west1"
+DEFAULT_GKE_CLUSTER_NAME = "workloads-prod-v1"
 DEFAULT_GKE_NAMESPACE = "default"
 
 BURNHAM_PLATFORM_URL = "https://incoming.telemetry.mozilla.org"

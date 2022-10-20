@@ -22,7 +22,6 @@ def histogram_aggregates_subdag(
         GLAM_HISTOGRAM_AGGREGATES_SUBDAG,
         default_args=default_args,
         schedule_interval=schedule_interval,
-        concurrency=1,
     )
 
     clients_histogram_aggregates_new = bigquery_etl_query(
@@ -30,8 +29,6 @@ def histogram_aggregates_subdag(
         destination_table="clients_histogram_aggregates_new_v1",
         dataset_id=dataset_id,
         project_id="moz-fx-data-shared-prod",
-        owner="msamuel@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
         date_partition_parameter=None,
         parameters=("submission_date:DATE:{{ds}}",),
         arguments=("--replace",),

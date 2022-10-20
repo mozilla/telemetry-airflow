@@ -104,7 +104,7 @@ def get_client_addons(spark, start_date):
 
     addons_query = addons_query_template.format(start_date=start_date)
 
-    gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
+    gs_url = "gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6/submission_date_s3={}".format(
         start_date
     )
     parquetFile = spark.read.parquet(gs_url)

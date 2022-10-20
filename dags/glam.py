@@ -12,14 +12,17 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
 from airflow.models import Variable
 from airflow.operators.subdag_operator import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskMarker
+from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.utils.task_group import TaskGroup
 
 from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query, gke_command
 from utils.tags import Tag
 
@@ -28,13 +31,15 @@ project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
 tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis dataset
 default_args = {
-    "owner": "msamuel@mozilla.com",
+    "owner": "akommasani@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "msamuel@mozilla.com",
         "akommasani@mozilla.com",
+        "akomarzewski@mozilla.com",
+        "efilho@mozilla.com",
+        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -58,13 +63,15 @@ dag = DAG(
 
 
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskCompletedSensor(
-    task_id="wait_for_main_ping",
+wait_for_main_ping = ExternalTaskSensor(
+    task_id="wait_for_copy_deduplicate_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
     execution_delta=timedelta(hours=1),
     check_existence=True,
     mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,
@@ -75,7 +82,6 @@ latest_versions = bigquery_etl_query(
     destination_table="latest_versions",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace",),
     dag=dag,
@@ -118,7 +124,6 @@ clients_scalar_aggregates = bigquery_etl_query(
     destination_table="clients_scalar_aggregates_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     depends_on_past=True,
     arguments=("--replace",),
     dag=dag,
@@ -205,7 +210,6 @@ histogram_percentiles = bigquery_etl_query(
     destination_table="histogram_percentiles_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
@@ -216,7 +220,6 @@ glam_user_counts = bigquery_etl_query(
     destination_table="glam_user_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
@@ -228,7 +231,6 @@ glam_sample_counts = bigquery_etl_query(
     destination_table="glam_sample_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="akommasani@mozilla.com",
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
@@ -249,12 +251,6 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
-# SubdagOperator uses a SequentialExecutor by default
-# so its tasks will run sequentially.
-# Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
-# backfill to schedule tasks in the subdag. User no longer need to specify
-# the executor in SubDagOperator. (We don't but the assumption that Sequential
-# Executor is used is now wrong)
 clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
@@ -275,7 +271,6 @@ clients_histogram_probe_counts = bigquery_etl_query(
     destination_table="clients_histogram_probe_counts_v1",
     dataset_id=dataset_id,
     project_id=project_id,
-    owner="msamuel@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace", "--clustering_fields=metric,channel"),
     dag=dag,
@@ -295,71 +290,27 @@ extract_counts = SubDagOperator(
     dag=dag
 )
 
-extracts_per_channel = SubDagOperator(
-    subdag=extracts_subdag(
-        GLAM_DAG,
-        "extracts",
-        default_args,
-        dag.schedule_interval,
-        dataset_id
-    ),
-    task_id="extracts",
-    dag=dag,
-)
+with dag as dag:
+    extracts_per_channel = SubDagOperator(
+        subdag=extracts_subdag(
+            GLAM_DAG,
+            "extracts",
+            default_args,
+            dag.schedule_interval,
+            dataset_id
+        ),
+        task_id="extracts",
+    )
 
-# Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+    with TaskGroup('glam_external') as glam_external:
+        ExternalTaskMarker(
+            task_id="glam_glean_imports__wait_for_glam",
+            external_dag_id="glam_glean_imports",
+            external_task_id="wait_for_glam",
+            execution_date="{{ execution_date.replace(hour=5, minute=0).isoformat() }}",
+        )
 
-base_docker_args = ['/venv/bin/python', 'manage.py']
-
-env_vars = dict(
-    DATABASE_URL = Variable.get("glam_secret__database_url"),
-    DJANGO_SECRET_KEY = Variable.get("glam_secret__django_secret_key"),
-    DJANGO_CONFIGURATION = "Prod",
-    DJANGO_DEBUG = "False",
-    DJANGO_SETTINGS_MODULE = "glam.settings",
-    GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
-)
-
-glam_import_desktop_aggs_beta = GKENatPodOperator(
-    task_id = 'glam_import_desktop_aggs_beta',
-    name = 'glam_import_desktop_aggs_beta',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_desktop_aggs', 'beta'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_desktop_aggs_nightly = GKENatPodOperator(
-    task_id = 'glam_import_desktop_aggs_nightly',
-    name = 'glam_import_desktop_aggs_nightly',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_desktop_aggs', 'nightly'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_desktop_aggs_release = GKENatPodOperator(
-    task_id = 'glam_import_desktop_aggs_release',
-    name = 'glam_import_desktop_aggs_release',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_desktop_aggs', 'release'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_user_counts = GKENatPodOperator(
-    task_id = 'glam_import_user_counts',
-    name = 'glam_import_user_counts',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_user_counts'],
-    env_vars = env_vars,
-    dag=dag)
-
-glam_import_probes = GKENatPodOperator(
-    task_id = 'glam_import_probes',
-    name = 'glam_import_probes',
-    image = glam_import_image,
-    arguments = base_docker_args + ['import_probes'],
-    env_vars = env_vars,
-    dag=dag)
+        extracts_per_channel >> glam_external
 
 
 wait_for_main_ping >> latest_versions
@@ -399,9 +350,3 @@ client_scalar_probe_counts >> extracts_per_channel
 scalar_percentiles >> extracts_per_channel
 histogram_percentiles >> extracts_per_channel
 glam_sample_counts >> extracts_per_channel
-
-extracts_per_channel >> glam_import_desktop_aggs_beta
-extracts_per_channel >> glam_import_desktop_aggs_nightly
-extracts_per_channel >> glam_import_user_counts
-extracts_per_channel >> glam_import_probes
-glam_import_desktop_aggs_release

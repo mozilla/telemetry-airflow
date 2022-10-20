@@ -2,18 +2,19 @@
 See [kpi-forecasting in the docker-etl repository]
 (https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
 
-This DAG runs the forecast for year-end KPI values for Desktop QCDOU, Mobile CDOU and Pocket.
-The forecast is only updated once per week since values aren't expected to change significantly
-day-to-day. The output powers KPI dashboards.
+This DAG runs the forecast for year-end KPI values for Desktop QDAU and Mobile DAU. These forecasts can then be aggregated to calculate Desktop QCDOU and Mobile CDOU.
+The forecast is only updated once per week since values aren't expected to change significantly day-to-day. 
+The output powers KPI dashboards and monthly revenue forecasts.
 
-This DAG is low priority.
+This DAG is high priority for week 1 of the month. This DAG is low priority for weeks 2-4 of each month. 
 """
 
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from utils.gcp import gke_command
-from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.sensors.external_task import ExternalTaskSensor
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
@@ -27,52 +28,43 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_3]
+tags = [Tag.ImpactTier.tier_1]
 
 with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * * SAT", doc_md=__doc__, tags=tags,) as dag:
-    kpi_forecasting_mobile = gke_command(
-        task_id="kpi_forecasting_mobile",
+    
+    kpi_forecasting_desktop_non_cumulative = gke_command(
+        task_id="kpi_forecasting_desktop_non_cumulative",
         command=[
             "python", "kpi-forecasting/kpi_forecasting.py",
             "-c",
-        ] + ["kpi-forecasting/yaml/mobile.yaml"],
+        ] + ["kpi-forecasting/yaml/desktop_non_cumulative.yaml"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
         dag=dag,
     )
 
-    kpi_forecasting_desktop = gke_command(
-        task_id="kpi_forecasting_desktop",
+    kpi_forecasting_mobile_non_cumulative = gke_command(
+        task_id="kpi_forecasting_mobile_non_cumulative",
         command=[
             "python", "kpi-forecasting/kpi_forecasting.py",
             "-c",
-        ] + ["kpi-forecasting/yaml/desktop.yaml"],
+        ] + ["kpi-forecasting/yaml/mobile_non_cumulative.yaml"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
         dag=dag,
     )
 
-    wait_for_mobile_usage = ExternalTaskCompletedSensor(
-        task_id="wait_for_mobile_usage",
-        external_dag_id="bqetl_nondesktop",
-        external_task_id="telemetry_derived__mobile_usage__v1",
-        execution_delta=timedelta(hours=1),
-        check_existence=True,
-        mode="reschedule",
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
-        email_on_retry=False,
-        dag=dag,
-    )
-
-    wait_for_unified_metrics = ExternalTaskCompletedSensor(
+    wait_for_unified_metrics = ExternalTaskSensor(
         task_id="wait_for_unified_metrics",
         external_dag_id="bqetl_unified",
         external_task_id="telemetry_derived__unified_metrics__v1",
         execution_delta=timedelta(hours=1),
         check_existence=True,
         mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
     )
 
-    wait_for_mobile_usage >> kpi_forecasting_mobile
-    wait_for_unified_metrics >> kpi_forecasting_desktop
+    wait_for_unified_metrics >> kpi_forecasting_desktop_non_cumulative
+    wait_for_unified_metrics >> kpi_forecasting_mobile_non_cumulative

@@ -30,7 +30,6 @@ def repeated_subdag(
         f"{parent_dag_name}.{child_dag_name}",
         default_args=default_args,
         schedule_interval=schedule_interval,
-        concurrency=1,
     )
 
     # This task runs first and replaces the relevant partition, followed
@@ -47,8 +46,6 @@ def repeated_subdag(
         destination_table=f"{child_dag_name}_v1",
         dataset_id=dataset_id,
         project_id="moz-fx-data-shared-prod",
-        owner="msamuel@mozilla.com",
-        email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
         depends_on_past=True,
         parameters=merge_params(0, PARTITION_SIZE - 1, additional_params),
         date_partition_parameter=date_partition_parameter,
@@ -56,6 +53,8 @@ def repeated_subdag(
         dag=dag,
         docker_image=docker_image,
     )
+
+    upstream_task = task_0
 
     for partition in range(1, num_partitions):
         min_param = partition * PARTITION_SIZE
@@ -66,8 +65,6 @@ def repeated_subdag(
             destination_table=f"{child_dag_name}_v1",
             dataset_id=dataset_id,
             project_id="moz-fx-data-shared-prod",
-            owner="msamuel@mozilla.com",
-            email=["telemetry-alerts@mozilla.com", "msamuel@mozilla.com"],
             depends_on_past=True,
             parameters=merge_params(min_param, max_param, additional_params),
             date_partition_parameter=date_partition_parameter,
@@ -75,6 +72,7 @@ def repeated_subdag(
             dag=dag,
             docker_image=docker_image,
         )
-        task_0 >> task
+        upstream_task >> task
+        upstream_task = task
 
     return dag

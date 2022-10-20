@@ -1,8 +1,8 @@
 import datetime
 
 from airflow import models
-from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskMarker
+from airflow.utils.task_group import TaskGroup
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
@@ -41,14 +41,14 @@ https://github.com/mozilla/telemetry-airflow/pull/1279/files)
 """
 
 default_args = {
-    "owner": "jklukas@mozilla.com",
+    "owner": "akomarzewski@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
-    "email": ["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "akomarzewski@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
-    # If a task fails, retry it once after waiting at least 5 minutes
-    "retries": 1,
+    # If a task fails, retry it twice after waiting at least 5 minutes
+    "retries": 2,
     "retry_delay": datetime.timedelta(minutes=5),
 }
 
@@ -87,6 +87,41 @@ with models.DAG(
         resources=resources,
     )
 
+    with TaskGroup('copy_deduplicate_all_external') as copy_deduplicate_all_external:
+        # list of downstream dependencies consisting of external DAG name and execution delta
+        downstream_dependencies = {
+            ("bhr_collection", "hour=5, minute=0"),
+            ("glam_fenix", "hour=2, minute=0"),
+            ("glam_fog", "hour=2, minute=0"),
+            ("bqetl_activity_stream", "hour=2, minute=0"),
+            ("bqetl_amo_stats", "hour=3, minute=0"),
+            ("bqetl_core", "hour=2, minute=0"),
+            ("bqetl_ctxsvc_derived", "hour=3, minute=0"),
+            ("bqetl_desktop_funnel", "hour=4, minute=0"),
+            ("bqetl_event_rollup", "hour=3, minute=0"),
+            ("bqetl_experiments_daily", "hour=3, minute=0"),
+            ("bqetl_feature_usage", "hour=5, minute=0"),
+            ("bqetl_fenix_event_rollup", "hour=2, minute=0"),
+            ("bqetl_internal_tooling", "hour=4, minute=0"),
+            ("bqetl_internet_outages", "hour=7, minute=0"),
+            ("bqetl_messaging_system", "hour=2, minute=0"),
+            ("bqetl_mobile_search", "hour=2, minute=0"),
+            ("bqetl_monitoring", "hour=2, minute=0"),
+            ("bqetl_org_mozilla_fenix_derived", "hour=2, minute=0"),
+            ("bqetl_regrets_reporter_summary", "hour=4, minute=0"),
+            ("bqetl_search_terms_daily", "hour=3, minute=0")
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_all",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_all",
+                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+            )
+
+        copy_deduplicate_all >> copy_deduplicate_all_external
+
     # We split out main ping since it's the highest volume and has a distinct
     # set of downstream dependencies.
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
@@ -97,13 +132,39 @@ with models.DAG(
         priority_weight=100,
         parallelism=5,
         slices=20,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
             "relud@mozilla.com",
-            "jklukas@mozilla.com",
+            "akomarzewski@mozilla.com",
         ],
     )
+
+    with TaskGroup('main_ping_external') as main_ping_external:
+        downstream_dependencies = {
+            ("graphics_telemetry", "hour=3, minute=0"),
+            ("glam", "hour=2, minute=0"),
+            ("bqetl_addons", "hour=4, minute=0"),
+            ("bqetl_amo_stats", "hour=3, minute=0"),
+            ("bqetl_desktop_platform", "hour=3, minute=0"),
+            ("bqetl_devtools", "hour=3, minute=0"),
+            ("bqetl_experiments_daily", "hour=3, minute=0"),
+            ("bqetl_fog_decision_support", "hour=4, minute=0"),
+            ("bqetl_internet_outages", "hour=7, minute=0"),
+            ("bqetl_main_summary", "hour=2, minute=0"),
+            ("bqetl_monitoring", "hour=2, minute=0"),
+            ("bqetl_ssl_ratios", "hour=2, minute=0")
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_main_ping",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_main_ping",
+                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+            )
+
+        copy_deduplicate_main_ping >> main_ping_external
 
     # We also separate out variant pings that share the main ping schema since these
     # ultrawide tables can sometimes have unique performance problems.
@@ -114,7 +175,7 @@ with models.DAG(
         only_tables=["telemetry_live.first_shutdown_v4"],
         priority_weight=50,
         parallelism=1,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
     )
 
     copy_deduplicate_saved_session_ping = bigquery_etl_copy_deduplicate(
@@ -124,7 +185,7 @@ with models.DAG(
         only_tables=["telemetry_live.saved_session_v4"],
         priority_weight=50,
         parallelism=1,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
     )
 
     # Events.
@@ -136,7 +197,7 @@ with models.DAG(
         only_tables=["telemetry_live.event_v4"],
         priority_weight=100,
         parallelism=1,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
     )
 
     event_events = bigquery_etl_query(
@@ -145,9 +206,28 @@ with models.DAG(
         destination_table="event_events_v1",
         dataset_id="telemetry_derived",
         priority_weight=90,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
+
+    with TaskGroup('event_events_external') as event_events_external:
+        downstream_dependencies = {
+            ("jetstream", "hour=4, minute=0"),
+            ("bqetl_amo_stats", "hour=3, minute=0"),
+            ("bqetl_experiments_daily", "hour=3, minute=0"),
+            ("bqetl_feature_usage", "hour=5, minute=0"),
+            ("bqetl_main_summary", "hour=2, minute=0")
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_event_events",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_event_events",
+                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+            )
+
+        event_events >> event_events_external
 
     copy_deduplicate_event_ping >> event_events
 
@@ -157,10 +237,29 @@ with models.DAG(
         destination_table="main_events_v1",
         dataset_id="telemetry_derived",
         priority_weight=90,
-        owner="jklukas@mozilla.com",
+        owner="akomarzewski@mozilla.com",
         dag=dag,
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
+
+    with TaskGroup('bq_main_events_external') as bq_main_events_external:
+        downstream_dependencies = {
+            ("jetstream", "hour=4, minute=0"),
+            ("bqetl_amo_stats", "hour=3, minute=0"),
+            ("bqetl_experiments_daily", "hour=3, minute=0"),
+            ("bqetl_feature_usage", "hour=5, minute=0"),
+            ("bqetl_main_summary", "hour=2, minute=0")
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_bq_main_events",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_bq_main_events",
+                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+            )
+
+        bq_main_events >> bq_main_events_external
 
     copy_deduplicate_main_ping >> bq_main_events
 
@@ -184,12 +283,23 @@ with models.DAG(
         dag=dag,
     )
 
+    with TaskGroup('core_clients_first_seen_external') as core_clients_first_seen_external:
+        ExternalTaskMarker(
+            task_id="bqetl_core__wait_for_core_clients_first_seen",
+            external_dag_id="bqetl_core",
+            external_task_id="wait_for_telemetry_derived__core_clients_first_seen__v1",
+            execution_date="{{ execution_date.replace(hour=2, minute=0).isoformat() }}",
+        )
+
+        telemetry_derived__core_clients_first_seen__v1 >> core_clients_first_seen_external
+
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
 
     baseline_args = [
         "--project-id=moz-fx-data-shared-prod",
         "--start_date={{ ds }}",
-        "--end_date={{ ds }}"
+        "--end_date={{ ds }}",
+        "--max_rows=0",
     ]
 
     baseline_clients_first_seen = gke_command(
@@ -225,6 +335,23 @@ with models.DAG(
         depends_on_past=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
+
+    with TaskGroup('baseline_clients_last_seen_external') as baseline_clients_last_seen_external:
+        downstream_dependencies = {
+            ("bqetl_gud", "hour=3, minute=0"),
+            ("bqetl_nondesktop", "hour=3, minute=0")
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_baseline_clients_last_seen",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_baseline_clients_last_seen",
+                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+            )
+
+        baseline_clients_last_seen >> baseline_clients_last_seen_external
+
     metrics_clients_daily = gke_command(
         task_id="metrics_clients_daily",
         command=[
@@ -253,9 +380,28 @@ with models.DAG(
             "query",
             "backfill",
             "*.clients_last_seen_joined_v1",
-        ] + baseline_args,
+        ] + [    # metrics pings are usually delayed by one day after their logical activity period
+            "--project-id=moz-fx-data-shared-prod",
+            "--start_date={{ macros.ds_add(ds, -1) }}",
+            "--end_date={{ macros.ds_add(ds, -1) }}",
+            "--max_rows=0",
+        ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
+    with TaskGroup('clients_last_seen_joined_external') as clients_last_seen_joined_external:
+        downstream_dag_times = {
+            "bqetl_unified": "hour=3, minute=0",
+        }
+
+        for downstream_dag, dag_time_parts in downstream_dag_times.items():
+            ExternalTaskMarker(
+                task_id=f"{downstream_dag}__wait_for_clients_last_seen_joined",
+                external_dag_id=downstream_dag,
+                external_task_id="wait_for_clients_last_seen_joined",
+                execution_date="{{ execution_date.replace(" + dag_time_parts + ").isoformat() }}",
+            )
+
+        clients_last_seen_joined >> clients_last_seen_joined_external
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
     baseline_clients_first_seen >> baseline_clients_daily

@@ -131,8 +131,8 @@ def fetch_schema():
     
     region = "us-west-2"
     bucket = "crashstats-telemetry-crashes-prod-us-west-2"
-    key = "crash_report.json"
-    fallback_url = "https://raw.githubusercontent.com/mozilla/socorro/master/socorro/schemas/crash_report.json"
+    key = "telemetry_socorro_crash.json"
+    fallback_url = f"https://raw.githubusercontent.com/mozilla-services/socorro/master/socorro/schemas/{key}"
 
     try:
         log.info("Fetching latest crash data schema from s3://{}/{}".format(bucket, key))

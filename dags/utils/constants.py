@@ -5,3 +5,7 @@ DS_WEEKLY = (
         '{{ macros.ds_format(macros.ds_add(ds, 6), "%Y-%m-%d", "%Y%m%d") }}'
     '{% endif %}'
 )
+
+FAILED_STATES = ['failed', 'upstream_failed', 'skipped']
+
+ALLOWED_STATES = ['success']

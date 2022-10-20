@@ -1,7 +1,7 @@
 """
 Daily deployment of static bigquery-etl data to various projects.
 
-See the publish script [here](https://github.com/mozilla/bigquery-etl/blob/main/bigquery_etl/publish_static.py).
+See the publish command [here](https://github.com/mozilla/bigquery-etl/blob/main/bigquery_etl/static/__init__.py).
 """
 
 from airflow import DAG
@@ -38,7 +38,7 @@ with DAG(
     publish_static_mozdata = gke_command(
         task_id="publish_static_mozdata",
         command=[
-            "script/publish_static",
+            "script/bqetl", "static", "publish",
             "--project_id", "mozdata"
         ],
         docker_image=IMAGE,
@@ -47,7 +47,7 @@ with DAG(
     publish_static_shared_prod = gke_command(
         task_id="publish_static_shared_prod",
         command=[
-            "script/publish_static",
+            "script/bqetl", "static", "publish",
             "--project_id", "moz-fx-data-shared-prod"
         ],
         docker_image=IMAGE,

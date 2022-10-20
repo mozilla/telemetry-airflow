@@ -17,10 +17,13 @@ from airflow.providers.google.cloud.transfers.bigquery_to_gcs import BigQueryToG
 
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 
+from utils.dataproc import get_dataproc_parameters
+
 import json
 import re
 
-GCP_PROJECT_ID = "moz-fx-data-derived-datasets"
+GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
+DATAPROC_PROJECT_ID = "airflow-dataproc"
 
 def export_to_parquet(
     table,
@@ -31,11 +34,11 @@ def export_to_parquet(
     dag_name="export_to_parquet",
     parent_dag_name=None,
     default_args=None,
-    gcp_conn_id="google_cloud_derived_datasets",
-    dataproc_storage_bucket="moz-fx-data-derived-datasets-parquet",
+    gcp_conn_id="google_cloud_airflow_dataproc",
+    dataproc_storage_bucket="airflow-dataproc-bq-parquet-exports",
     num_workers=2,
     num_preemptible_workers=0,
-    gcs_output_bucket="moz-fx-data-derived-datasets-parquet",
+    gcs_output_bucket="airflow-dataproc-bq-parquet-exports",
     region="us-west1",
 ):
 
@@ -75,7 +78,7 @@ def export_to_parquet(
     cluster_name += "-export-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
-    project_id = GCP_PROJECT_ID
+    project_id = DATAPROC_PROJECT_ID
 
     if destination_table is None:
         destination_table = unqualified_table
@@ -88,6 +91,8 @@ def export_to_parquet(
         avro_prefix += "partition_id=" + partition_id + "/"
     avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
+    params = get_dataproc_parameters("google_cloud_airflow_dataproc")
+
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
         create_dataproc_cluster = DataprocCreateClusterOperator(
@@ -98,9 +103,12 @@ def export_to_parquet(
             region=region,
             cluster_config=ClusterGenerator(
                 project_id=project_id,
+                service_account=params.client_email,
                 num_workers=num_workers,
                 storage_bucket=dataproc_storage_bucket,
                 init_actions_uris=[
+                    # This is probably a google hosted bucket for
+                    # https://github.com/GoogleCloudDataproc/initialization-actions/blob/master/python/pip-install.sh
                     "gs://dataproc-initialization-actions/python/pip-install.sh",
                 ],
                 metadata={"PIP_PACKAGES": "google-cloud-bigquery==1.20.0"},
@@ -116,13 +124,13 @@ def export_to_parquet(
             task_id="run_dataproc_pyspark",
             cluster_name=cluster_name,
             dataproc_jars=[
-                "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+                "gs://spark-lib/bigquery/spark-2.4-bigquery-latest.jar"
             ],
             dataproc_properties={
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
             main="https://raw.githubusercontent.com/mozilla/bigquery-etl/main"
-            "/script/pyspark/export_to_parquet.py",
+            "/script/legacy/export_to_parquet.py",
             arguments=[table]
             + [
                 "--" + key + "=" + value
@@ -180,10 +188,10 @@ def bigquery_etl_query(
     arguments=(),
     project_id=None,
     sql_file_path=None,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
@@ -221,10 +229,15 @@ def bigquery_etl_query(
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
     if not project_id:
         project_id = "moz-fx-data-shared-prod"
-    sql_file_path = sql_file_path or "sql/{}/{}/{}/query.sql".format(project_id, dataset_id, destination_table)
+    destination_table_no_partition = destination_table.split("$")[0] if destination_table is not None else None
+    sql_file_path = sql_file_path or "sql/{}/{}/{}/query.sql".format(project_id, dataset_id, destination_table_no_partition)
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + "${{ds_nodash}}"
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    if multipart:
+        args = ["script/bqetl", "query", "run-multipart"]
+    else:
+        args = ["query"]
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
@@ -232,7 +245,7 @@ def bigquery_etl_query(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["script/run_multipart_query" if multipart else "query"]
+        arguments=args
         + (["--destination_table=" + destination_table] if destination_table else [])
         + ["--dataset_id=" + dataset_id]
         + (["--project_id=" + project_id] if project_id else [])
@@ -254,10 +267,10 @@ def bigquery_etl_copy_deduplicate(
     priority="INTERACTIVE",
     hourly=False,
     slices=None,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     **kwargs
@@ -289,11 +302,14 @@ def bigquery_etl_copy_deduplicate(
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
     table_qualifiers = []
     if only_tables:
-        table_qualifiers.append('--only')
-        table_qualifiers += only_tables
+        # bqetl expects multiple args as --only ... --only ...
+        for only_table in only_tables:
+            table_qualifiers.append('--only')
+            table_qualifiers.append(only_table)
     if except_tables:
-        table_qualifiers.append('--except')
-        table_qualifiers += except_tables
+        for except_table in except_tables:
+            table_qualifiers.append('--except')
+            table_qualifiers.append(except_table)
     return GKEPodOperator(
         task_id=task_id,
         gcp_conn_id=gcp_conn_id,
@@ -302,7 +318,7 @@ def bigquery_etl_copy_deduplicate(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=["script/copy_deduplicate"]
+        arguments=["script/bqetl", "copy_deduplicate"]
         + ["--project-id=" + target_project_id]
         + (["--billing-projects"] + list(billing_projects) if billing_projects else [])
         + ["--date={{ds}}"]
@@ -322,10 +338,10 @@ def bigquery_xcom_query(
     parameters=(),
     arguments=(),
     project_id=None,
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
@@ -398,10 +414,10 @@ def gke_command(
     command,
     docker_image,
     aws_conn_id="aws_dev_iam_s3",
-    gcp_conn_id="google_cloud_derived_datasets",
+    gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-central1-a",
-    gke_cluster_name="bq-load-gke-1",
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     xcom_push=False,
     env_vars={},

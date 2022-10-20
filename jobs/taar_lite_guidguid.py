@@ -120,7 +120,7 @@ def get_initial_sample(spark, thedate):
     # Could scale this up to grab more than what is in
     # longitudinal and see how long it takes to run.
     # TODO: switch to BigQuery
-    gcs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
+    gcs_url = "gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6/submission_date_s3={}".format(
         thedate.strftime("%Y%m%d")
     )
     logging.info("Loading data from : {}".format(gcs_url))

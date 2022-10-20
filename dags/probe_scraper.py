@@ -15,26 +15,31 @@ DOCS = """\
 
 ## Debugging failures
 
-Probe Scraper application logs aren't available via the Airflow web console. In
-order to access them, do the following:
+probe_scraper and probe_scraper_moz_central task logs aren't available via the Airflow web console. In
+order to access them, go to [GCP Logs Explorer](https://cloudlogging.app.goo.gl/qqvCsTbFGCiFmG7L7).
+This link should get you directly to the last 12 hours of probe_scraper pod logs. If necessary, replace
+`"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` in the query field.
+If the above link fails, do the following:
 
-1. Navigate to [this page](https://workflow.telemetry.mozilla.org/tree?dag_id=probe_scraper)
-2. Click the `probe_scraper` DAG that failed, followed by `View Log`
-3. Search for logs like `Event: probe-scraper-[HEX-STRING] had an event of type Pending` and note the container id
-4. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-derived-datasets)
+1. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-airflow-gke-prod)
 If you can't access these logs but think you should be able to, [contact Data SRE](https://mana.mozilla.org/wiki/pages/viewpage.action?spaceKey=DOPS&title=Contacting+Data+SRE).
-5. Search for the following, replacing `POD_NAME_FROM_AIRFLOW_LOGS` with the string from (3):
+2. Search for the following, replacing `"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` if necessary (make sure to put this in the raw query field - you might need to click the "Show query" button for it to appear):
 
 ```
 resource.type="k8s_container"
-resource.labels.project_id="moz-fx-data-derived-datasets"
-resource.labels.location="us-central1-a"
-resource.labels.cluster_name="bq-load-gke-1"
+resource.labels.project_id="moz-fx-data-airflow-gke-prod"
+resource.labels.location="us-west1"
+resource.labels.cluster_name="workloads-prod-v1"
 resource.labels.namespace_name="default"
-resource.labels.pod_name="POD_NAME_FROM_AIRFLOW_LOGS" severity>=DEFAULT
+resource.labels.pod_name=~"probe-scraper[.]"
+severity>=DEFAULT
 ```
 
 Adjust the time window as needed and you should be able to see logs associated with the failure.
+
+To find a name of the pod related to specific run, navigate to
+[probe_scraper DAG in Airflow](https://workflow.telemetry.mozilla.org/tree?dag_id=probe_scraper),
+click the task that failed, followed by `View Log`. Here, look for `probe-scraper.[ID]`.
 """
 
 DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION = "v1.17.0"
@@ -59,6 +64,12 @@ with DAG('probe_scraper',
     tags=tags,
 ) as dag:
 
+    airflow_gke_prod_kwargs = dict(
+        gcp_conn_id="google_cloud_airflow_gke",
+        project_id="moz-fx-data-airflow-gke-prod",
+        location="us-west1",
+        cluster_name="workloads-prod-v1",
+    )
     aws_conn_id='aws_prod_probe_scraper'
     aws_access_key, aws_secret_key, session = AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials()
 
@@ -68,8 +79,8 @@ with DAG('probe_scraper',
         'python3', '-m', 'probe_scraper.runner',
         '--out-dir', '/app/probe_data',
         '--cache-dir', '/app/probe_cache',
-        '--output-bucket', 'net-mozaws-prod-us-west-2-data-pitmo',
-        '--cache-bucket', 'telemetry-airflow-cache',
+        '--output-bucket', 's3://net-mozaws-prod-us-west-2-data-pitmo/',
+        '--cache-bucket', 's3://telemetry-airflow-cache/cache/probe-scraper',
         '--env', 'prod',
         "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
     ]
@@ -78,13 +89,14 @@ with DAG('probe_scraper',
     resources = {'request_memory':'13312Mi', 'request_cpu': None,
                  'limit_memory':'20480Mi', 'limit_cpu': None, 'limit_gpu': None}
 
+    # this is the production probe_scraper task. all other probe_scraper_* tasks are not yet prod
     probe_scraper = GKEPodOperator(
         task_id="probe_scraper",
-        name='probe-scraper',
+        name="probe-scraper",
         # Needed to scale the highmem pool from 0 -> 1
         resources=resources,
         # This python job requires 13 GB of memory, thus the highmem node pool
-        node_selectors={"nodepool" : "highmem"},
+        node_selectors={"nodepool": "highmem"},
         # Due to the nature of the container run, we set get_logs to False,
         # To avoid urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes read)' errors
         # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
@@ -93,12 +105,128 @@ with DAG('probe_scraper',
         startup_timeout_seconds=360,
         image=probe_scraper_image,
         arguments=probe_scraper_args,
-        email=['telemetry-client-dev@mozilla.com', 'aplacitelli@mozilla.com', 'hwoo@mozilla.com'],
+        email=[
+            "telemetry-client-dev@mozilla.com",
+            "aplacitelli@mozilla.com",
+            "hwoo@mozilla.com",
+            "relud@mozilla.com",
+        ],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key
         },
-        dag=dag)
+        dag=dag,
+        **airflow_gke_prod_kwargs,
+    )
+
+    probe_scraper_base_arguments = [
+        "python3",
+        "-m",
+        "probe_scraper.runner",
+        "--out-dir=/app/probe_data",
+        "--cache-dir=/app/probe_cache",
+        "--output-bucket=gs://probe-scraper-prod-artifacts/",
+        "--env=prod",
+    ]
+
+    probe_scraper_moz_central = GKEPodOperator(
+        task_id="probe_scraper_moz_central",
+        name="probe-scraper-moz-central",
+        # Needed to scale the highmem pool from 0 -> 1
+        resources=resources,
+        # This python job requires 13 GB of memory, thus the highmem node pool
+        node_selectors={"nodepool": "highmem"},
+        # Due to the nature of the container run, we set get_logs to False, to avoid
+        # urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes
+        # read)' errors where the pod continues to run, but airflow loses its connection
+        # and sets the status to Failed
+        get_logs=False,
+        # Give additional time since we will likely always scale up when running this job
+        startup_timeout_seconds=360,
+        image=probe_scraper_image,
+        arguments=(
+            probe_scraper_base_arguments
+            + [
+                "--cache-bucket=gs://probe-scraper-prod-cache/",
+                "--moz-central",
+            ]
+        ),
+        email=[
+            "telemetry-client-dev@mozilla.com",
+            "aplacitelli@mozilla.com",
+            "hwoo@mozilla.com",
+            "relud@mozilla.com",
+        ],
+        env_vars={"BOTO_PATH": ".gce_boto"},
+        dag=dag,
+        **airflow_gke_prod_kwargs,
+    )
+
+    probe_scraper_glean = [
+        GKEPodOperator(
+            task_id=f"probe_scraper_glean_{name.replace('-', '_')}",
+            name=f"probe-scraper-glean-{name}",
+            image=probe_scraper_image,
+            arguments=(
+                probe_scraper_base_arguments
+                + [
+                    "--update",
+                    "--glean",
+                    f"--glean-url={url}",
+                    "--glean-limit-date={{ds}}",
+                ]
+                + (
+                    [
+                        "--bugzilla-api-key",
+                        "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
+                    ]
+                    if name == "gecko-dev"
+                    else []
+                )
+            ),
+            email=[
+                "telemetry-client-dev@mozilla.com",
+                "aplacitelli@mozilla.com",
+                "hwoo@mozilla.com",
+                "relud@mozilla.com",
+            ],
+            env_vars={"BOTO_PATH": ".gce_boto"},
+            dag=dag,
+            **airflow_gke_prod_kwargs,
+        )
+        for name, url in (
+            ("gecko-dev", "https://github.com/mozilla/gecko-dev"),
+            ("phabricator", "https://github.com/mozilla-conduit/review"),
+            (
+                "search_engine_usage_study",
+                "https://github.com/mozilla-rally/search-engine-usage-study",
+            ),
+        )
+    ]
+
+    probe_scraper_glean_repositories = GKEPodOperator(
+        task_id="probe_scraper_glean_repositories",
+        name="probe-scraper-glean-repositories",
+        image=probe_scraper_image,
+        arguments=(
+            probe_scraper_base_arguments
+            + [
+                # when --update is specified without --glean-repo or --glean-url,
+                # this only writes metadata files that are not per glean repo.
+                "--update",
+                "--glean",
+            ]
+        ),
+        email=[
+            "telemetry-client-dev@mozilla.com",
+            "aplacitelli@mozilla.com",
+            "hwoo@mozilla.com",
+            "relud@mozilla.com",
+        ],
+        env_vars={"BOTO_PATH": ".gce_boto"},
+        dag=dag,
+        **airflow_gke_prod_kwargs,
+    )
 
     schema_generator = GKEPodOperator(
         email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
@@ -140,8 +268,6 @@ with DAG('probe_scraper',
 
     probe_scraper >> delay_python_task
 
-    gcp_gke_conn_id = "google_cloud_airflow_gke"
-    project_id = "moz-fx-data-airflow-gke-prod"
     image_tag = Variable.get("lookml_generator_release_str")
     if image_tag is None:
         image_tag = DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION
@@ -153,10 +279,6 @@ with DAG('probe_scraper',
         name="lookml-generator-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + image_tag,
         startup_timeout_seconds=500,
-        gcp_conn_id=gcp_gke_conn_id,
-        project_id=project_id,
-        cluster_name="workloads-prod-v1",
-        location="us-west1",
         dag=dag,
         env_vars={
             "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
@@ -170,7 +292,8 @@ with DAG('probe_scraper',
             "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
             "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
             "UPDATE_SPOKE_BRANCHES": "true",
-        }
+        },
+        **airflow_gke_prod_kwargs,
     )
 
     delay_python_task >> lookml_generator_prod
@@ -181,10 +304,6 @@ with DAG('probe_scraper',
         task_id="lookml_generator_staging",
         name="lookml-generator-staging-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
-        gcp_conn_id=gcp_gke_conn_id,
-        project_id=project_id,
-        cluster_name="workloads-prod-v1",
-        location="us-west1",
         dag=dag,
         env_vars={
             "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
@@ -198,7 +317,8 @@ with DAG('probe_scraper',
             "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
             "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
             "UPDATE_SPOKE_BRANCHES": "true",
-        }
+        },
+        **airflow_gke_prod_kwargs,
     )
 
     delay_python_task >> lookml_generator_staging
