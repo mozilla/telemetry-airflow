@@ -29,7 +29,7 @@ from utils.tags import Tag
 prod_project_id = "moz-fx-data-shared-prod"
 prod_dataset_id = "telemetry_derived"
 dev_dataset_id = "dev_telemetry_derived"
-tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis dataset
+tmp_project = "moz-fx-data-glam-nonprod-7d0f"  # for temporary tables in analysis dataset
 default_args = {
     "owner": "efilho@mozilla.com",
     "depends_on_past": False,
