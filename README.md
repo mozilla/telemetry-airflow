@@ -25,6 +25,8 @@ This app is built and deployed with
 [docker](https://docs.docker.com/) and
 [docker-compose](https://docs.docker.com/compose/).
 
+You'll also need to install MySQL to build the database container.
+
 ### Updating Python dependencies
 
 Add new Python dependencies into `requirements.in`. Run the following commands with the same Python
@@ -53,7 +55,7 @@ Airflow database migration is no longer a separate step for dev but is run by th
 A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
 
 ```bash
-make run COMMAND="test example spark 20180101"
+make run COMMAND="tasks test example spark 20180101"
 ```
 
 ```bash
