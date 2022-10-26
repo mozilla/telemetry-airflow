@@ -1,15 +1,16 @@
-# Ported from fivetran provider v1.1.2 https://github.com/fivetran/airflow-provider-fivetran/blob/be5ab77defbbffe6000202fc5fc37b6e27c07a54/fivetran_provider/sensors/fivetran.py
+# Ported from https://github.com/fivetran/airflow-provider-fivetran/blob/main/fivetran_provider/sensors/fivetran.py
 
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 
-from fivetran_provider.hooks.fivetran import FivetranHook
+from operators.backport.fivetran.hook import FivetranHook
 from typing import Any
 
 
 class FivetranSensor(BaseSensorOperator):
     """
     `FivetranSensor` monitors a Fivetran sync job for completion.
+
     Monitoring with `FivetranSensor` allows you to trigger downstream processes only
     when the Fivetran sync jobs have completed, ensuring data consistency. You can
     use multiple instances of `FivetranSensor` to monitor multiple Fivetran
@@ -20,6 +21,8 @@ class FivetranSensor(BaseSensorOperator):
     requires that you specify the `connector_id` of the sync job to start. You can
     find `connector_id` in the Settings page of the connector you configured in the
     `Fivetran dashboard <https://fivetran.com/dashboard/connectors>`_.
+
+
     :param fivetran_conn_id: `Conn ID` of the Connection to be used to configure
         the hook.
     :type fivetran_conn_id: str
@@ -33,13 +36,10 @@ class FivetranSensor(BaseSensorOperator):
     :type fivetran_retry_limit: Optional[int]
     :param fivetran_retry_delay: Time to wait before retrying API request
     :type fivetran_retry_delay: int
-    :param xcom: If used, FivetranSensor receives timestamp of previously
-        completed sync from FivetranOperator via XCOM
-    :type xcom: str
     """
 
     # Define which fields get jinjaified
-    template_fields = ["connector_id", "xcom"]
+    template_fields = ["connector_id"]
 
     @apply_defaults
     def __init__(
@@ -49,7 +49,6 @@ class FivetranSensor(BaseSensorOperator):
         poke_interval: int = 60,
         fivetran_retry_limit: int = 3,
         fivetran_retry_delay: int = 1,
-        xcom: str = "",
         **kwargs: Any
     ) -> None:
         super().__init__(**kwargs)
@@ -60,7 +59,6 @@ class FivetranSensor(BaseSensorOperator):
         self.fivetran_retry_limit = fivetran_retry_limit
         self.fivetran_retry_delay = fivetran_retry_delay
         self.hook = None
-        self.xcom = xcom
 
     def _get_hook(self) -> FivetranHook:
         if self.hook is None:
@@ -74,7 +72,5 @@ class FivetranSensor(BaseSensorOperator):
     def poke(self, context):
         hook = self._get_hook()
         if self.previous_completed_at is None:
-            self.previous_completed_at = hook.get_last_sync(
-                self.connector_id, self.xcom
-            )
+            self.previous_completed_at = hook.get_last_sync(self.connector_id)
         return hook.get_sync_status(self.connector_id, self.previous_completed_at)
