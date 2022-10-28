@@ -6,6 +6,7 @@ from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.weekday import DayOfWeekSensor
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -227,6 +228,54 @@ with DAG('probe_scraper',
         dag=dag,
         **airflow_gke_prod_kwargs,
     )
+
+    probe_scraper_checks = []
+    for check_name, week_day in [("check-expiry", "Monday"), ("check-fog-expiry", "Wednesday")]:
+        day_check = DayOfWeekSensor(
+            task_id=f"week_day_check_{week_day.lower()}",
+            week_day=week_day,
+            use_task_execution_day=True,
+            dag=dag,
+        )
+        check_task = GKEPodOperator(
+            task_id=f"probe_scraper_{check_name.replace('-', '_')}",
+            name=f"probe-scraper-{check_name}",
+            image=probe_scraper_image,
+            arguments=(
+                probe_scraper_base_arguments
+                + [
+                    "--{check_name}",
+                    "--bugzilla-api-key={{ var.value.bugzilla_probe_expiry_bot_api_key }}"
+                    # don't write any generated files, this job is for emails only
+                    "--env=dev",
+                    # specify --update without --glean-repo or --glean-url to not scrape any
+                    # repos, and download probe data from --output-bucket for expiry checks
+                    "--update",
+                    "--glean",
+                ]
+            ),
+            email=[
+                "telemetry-client-dev@mozilla.com",
+                "aplacitelli@mozilla.com",
+                "hwoo@mozilla.com",
+                "relud@mozilla.com",
+            ],
+            env_vars={
+                "BOTO_PATH": ".gce_boto",
+                "AWS_ACCESS_KEY_ID": aws_access_key,
+                "AWS_SECRET_ACCESS_KEY": aws_secret_key
+            },
+            # wait for upstream, ignore upstream failures, and don't run if day_check
+            # status is "skipped", i.e. still only run on specific days
+            trigger_rule="none_skipped",
+            dag=dag,
+            **airflow_gke_prod_kwargs,
+        )
+        day_check >> check_task
+        probe_scraper_glean_repositories >> check_task
+        for glean_task in probe_scraper_glean:
+            glean_task >> check_task
+        probe_scraper_checks.append(check_task)
 
     schema_generator = GKEPodOperator(
         email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
