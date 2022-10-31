@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
+from airflow.operators.dummy import DummyOperator
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
-from airflow.sensors.weekday import DayOfWeekSensor
+from airflow.operators.branch_operator import BaseBranchOperator
+from airflow.utils.weekday import WeekDay
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -229,22 +231,15 @@ with DAG('probe_scraper',
         **airflow_gke_prod_kwargs,
     )
 
-    probe_scraper_checks = []
-    for check_name, week_day in [("check-expiry", "Monday"), ("check-fog-expiry", "Wednesday")]:
-        day_check = DayOfWeekSensor(
-            task_id=f"week_day_check_{week_day.lower()}",
-            week_day=week_day,
-            use_task_execution_day=True,
-            dag=dag,
-        )
-        check_task = GKEPodOperator(
+    probe_scraper_checks = [
+        GKEPodOperator(
             task_id=f"probe_scraper_{check_name.replace('-', '_')}",
             name=f"probe-scraper-{check_name}",
             image=probe_scraper_image,
             arguments=(
                 probe_scraper_base_arguments
                 + [
-                    "--{check_name}",
+                    f"--{check_name}",
                     "--bugzilla-api-key={{ var.value.bugzilla_probe_expiry_bot_api_key }}"
                     # don't write any generated files, this job is for emails only
                     "--env=dev",
@@ -265,17 +260,40 @@ with DAG('probe_scraper',
                 "AWS_ACCESS_KEY_ID": aws_access_key,
                 "AWS_SECRET_ACCESS_KEY": aws_secret_key
             },
-            # wait for upstream, ignore upstream failures, and don't run if day_check
-            # status is "skipped", i.e. still only run on specific days
-            trigger_rule="none_skipped",
             dag=dag,
             **airflow_gke_prod_kwargs,
         )
-        day_check >> check_task
-        probe_scraper_glean_repositories >> check_task
-        for glean_task in probe_scraper_glean:
-            glean_task >> check_task
-        probe_scraper_checks.append(check_task)
+        for check_name in ("check-expiry", "check-fog-expiry")
+    ]
+    dummy_branch = DummyOperator(
+        task_id=f"dummy_branch",
+        dag=dag,
+    )
+
+
+    class CheckBranchOperator(BaseBranchOperator):
+        def choose_branch(self, context):
+            """
+            Run an extra branch on the first day of the month
+            """
+            weekday = context["execution_date"].isoweekday()
+            if weekday == WeekDay.MONDAY:
+                return ["probe_scraper_check_expiry"]
+            elif weekday == WeekDay.WEDNESDAY:
+                return ["probe_scraper_check_fog_expiry"]
+            else:
+                return ["dummy_branch"]
+
+
+    check_branch = CheckBranchOperator(
+        task_id="probe_scraper_check_branch",
+        # wait for upstream, but ignore upstream failures
+        trigger_rule="all_done",
+        dag=dag,
+    )
+    check_branch >> [*probe_scraper_checks, dummy_branch]
+    check_branch << probe_scraper_glean
+    check_branch << probe_scraper_glean_repositories
 
     schema_generator = GKEPodOperator(
         email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
