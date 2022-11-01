@@ -266,7 +266,7 @@ with DAG('probe_scraper',
         for check_name in ("check-expiry", "check-fog-expiry")
     ]
     dummy_branch = DummyOperator(
-        task_id=f"dummy_branch",
+        task_id="dummy_branch",
         dag=dag,
     )
 
@@ -274,7 +274,8 @@ with DAG('probe_scraper',
     class CheckBranchOperator(BaseBranchOperator):
         def choose_branch(self, context):
             """
-            Run an extra branch on the first day of the month
+            Return an array of task_ids to be executed. These tasks must be
+            downstream of the branch task.
             """
             weekday = context["execution_date"].isoweekday()
             if weekday == WeekDay.MONDAY:
@@ -292,8 +293,8 @@ with DAG('probe_scraper',
         dag=dag,
     )
     check_branch >> [*probe_scraper_checks, dummy_branch]
-    check_branch << probe_scraper_glean
-    check_branch << probe_scraper_glean_repositories
+    probe_scraper_glean >> check_branch
+    probe_scraper_glean_repositories >> check_branch
 
     schema_generator = GKEPodOperator(
         email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
