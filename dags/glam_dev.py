@@ -348,7 +348,7 @@ extracts_per_channel = SubDagOperator(
 )
 
 # Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
 
 base_docker_args = ['/venv/bin/python', 'manage.py']
 
