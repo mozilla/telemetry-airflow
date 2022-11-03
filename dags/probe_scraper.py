@@ -240,7 +240,7 @@ with DAG('probe_scraper',
                 probe_scraper_base_arguments
                 + [
                     f"--{check_name}",
-                    "--bugzilla-api-key={{ var.value.bugzilla_probe_expiry_bot_api_key }}"
+                    "--bugzilla-api-key={{ var.value.bugzilla_probe_expiry_bot_api_key }}",
                     # don't write any generated files, this job is for emails only
                     "--env=dev",
                     # specify --update without --glean-repo or --glean-url to not scrape any
