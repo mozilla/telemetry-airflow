@@ -78,48 +78,13 @@ with DAG('probe_scraper',
 
     # Built from repo https://github.com/mozilla/probe-scraper
     probe_scraper_image='gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest'
-    probe_scraper_args = [
-        'python3', '-m', 'probe_scraper.runner',
-        '--out-dir', '/app/probe_data',
-        '--cache-dir', '/app/probe_cache',
-        '--output-bucket', 's3://net-mozaws-prod-us-west-2-data-pitmo/',
-        '--cache-bucket', 's3://telemetry-airflow-cache/cache/probe-scraper',
-        '--env', 'prod',
-        "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
-    ]
 
-    # Cluster autoscaling works on pod resource requests, instead of usage
-    resources = {'request_memory':'13312Mi', 'request_cpu': None,
-                 'limit_memory':'20480Mi', 'limit_cpu': None, 'limit_gpu': None}
-
-    # this is the production probe_scraper task. all other probe_scraper_* tasks are not yet prod
-    probe_scraper = GKEPodOperator(
+    # probe scraper used to be a single task, but it has beeen split up, and individual
+    # failures do not block downstream tasks
+    probe_scraper = DummyOperator(
         task_id="probe_scraper",
-        name="probe-scraper",
-        # Needed to scale the highmem pool from 0 -> 1
-        resources=resources,
-        # This python job requires 13 GB of memory, thus the highmem node pool
-        node_selectors={"nodepool": "highmem"},
-        # Due to the nature of the container run, we set get_logs to False,
-        # To avoid urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes read)' errors
-        # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
-        get_logs=False,
-        # Give additional time since we will likely always scale up when running this job
-        startup_timeout_seconds=360,
-        image=probe_scraper_image,
-        arguments=probe_scraper_args,
-        email=[
-            "telemetry-client-dev@mozilla.com",
-            "aplacitelli@mozilla.com",
-            "hwoo@mozilla.com",
-            "relud@mozilla.com",
-        ],
-        env_vars={
-            "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_key
-        },
+        trigger_rule="all_done",
         dag=dag,
-        **airflow_gke_prod_kwargs,
     )
 
     probe_scraper_base_arguments = [
@@ -135,8 +100,15 @@ with DAG('probe_scraper',
     probe_scraper_moz_central = GKEPodOperator(
         task_id="probe_scraper_moz_central",
         name="probe-scraper-moz-central",
-        # Needed to scale the highmem pool from 0 -> 1
-        resources=resources,
+        # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
+        # works on pod resource requests, instead of usage
+        resources={
+            "request_memory": "13312Mi",
+            "request_cpu": None,
+            "limit_memory": "20480Mi",
+            "limit_cpu": None,
+            "limit_gpu": None,
+        },
         # This python job requires 13 GB of memory, thus the highmem node pool
         node_selectors={"nodepool": "highmem"},
         # Due to the nature of the container run, we set get_logs to False, to avoid
@@ -164,6 +136,8 @@ with DAG('probe_scraper',
         dag=dag,
         **airflow_gke_prod_kwargs,
     )
+
+    probe_scraper_moz_central >> probe_scraper
 
     probe_scraper_glean = [
         GKEPodOperator(
@@ -207,6 +181,8 @@ with DAG('probe_scraper',
         )
     ]
 
+    probe_scraper_glean >> probe_scraper
+
     probe_scraper_glean_repositories = GKEPodOperator(
         task_id="probe_scraper_glean_repositories",
         name="probe-scraper-glean-repositories",
@@ -230,6 +206,8 @@ with DAG('probe_scraper',
         dag=dag,
         **airflow_gke_prod_kwargs,
     )
+
+    probe_scraper_glean_repositories >> probe_scraper
 
     probe_scraper_checks = [
         GKEPodOperator(
@@ -293,8 +271,7 @@ with DAG('probe_scraper',
         dag=dag,
     )
     check_branch >> [*probe_scraper_checks, dummy_branch]
-    probe_scraper_glean >> check_branch
-    probe_scraper_glean_repositories >> check_branch
+    probe_scraper >> check_branch
 
     schema_generator = GKEPodOperator(
         email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
