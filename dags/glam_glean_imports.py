@@ -84,16 +84,16 @@ wait_for_glam = ExternalTaskSensor(
 )
 
 # Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing
-default_glean_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+default_glean_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
 
 base_docker_args = ['/venv/bin/python', 'manage.py']
 
 for env in ['Dev','Prod']:
     glean_import_image = default_glean_import_image
     if env == 'Dev':
-        glean_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+        glean_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
     elif env == 'Prod':
-        glean_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+        glean_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
 
     env_vars = dict(
         DATABASE_URL = Variable.get(env + "_glam_secret__database_url"),
@@ -145,16 +145,16 @@ for env in ['Dev','Prod']:
 
 
 
-default_glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+default_glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
 
 base_docker_args = ['/venv/bin/python', 'manage.py']
 
 for env in ['Dev','Prod']:
     glam_import_image = default_glam_import_image
     if env == 'Dev':
-        glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+        glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
     elif env == 'Prod':
-        glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.03.0-17'
+        glam_import_image = 'gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2022.11.0-31'
 
     env_vars = dict(
         DATABASE_URL = Variable.get(env + "_glam_secret__database_url"),
