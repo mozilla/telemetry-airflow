@@ -96,6 +96,7 @@ class Backfill(get_baseview()):
         elif clear == 'false':
             cmd.append('dags')
             cmd.append('backfill')
+            cmd.append('--donot-pickle')
             if dry_run == 'true':
                 cmd.append('--dry-run')
 
