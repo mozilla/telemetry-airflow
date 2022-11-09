@@ -39,67 +39,6 @@ tags = [Tag.ImpactTier.tier_2]
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
 with DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *', doc_md=__doc__, tags=tags,) as dag:
-    main_summary_bigint_columns = [
-        # bigquery does not have 32-bit int, and int->bigint is not a
-        # backward compatible schema change in spark, so these are the
-        # bigint columns from when main summary was generated in spark, and
-        # the rest are converted to 32-bit int for backward compatibility
-        "--bigint-columns",
-        "search_counts.count",
-        "events.timestamp",
-        "sample_id",
-        "os_service_pack_major",
-        "os_service_pack_minor",
-        "windows_build_number",
-        "windows_ubr",
-        "install_year",
-        "profile_creation_date",
-        "profile_reset_date",
-        "session_length",
-        "subsession_length",
-        "timestamp",
-        "e10s_multi_processes",
-        "active_addons_count",
-        "client_clock_skew",
-        "client_submission_latency",
-        "gc_max_pause_ms_main_above_150",
-        "gc_max_pause_ms_main_above_250",
-        "gc_max_pause_ms_main_above_2500",
-        "gc_max_pause_ms_content_above_150",
-        "gc_max_pause_ms_content_above_250",
-        "gc_max_pause_ms_content_above_2500",
-        "cycle_collector_max_pause_main_above_150",
-        "cycle_collector_max_pause_main_above_250",
-        "cycle_collector_max_pause_main_above_2500",
-        "cycle_collector_max_pause_content_above_150",
-        "cycle_collector_max_pause_content_above_250",
-        "cycle_collector_max_pause_content_above_2500",
-        "input_event_response_coalesced_ms_main_above_150",
-        "input_event_response_coalesced_ms_main_above_250",
-        "input_event_response_coalesced_ms_main_above_2500",
-        "input_event_response_coalesced_ms_content_above_150",
-        "input_event_response_coalesced_ms_content_above_250",
-        "input_event_response_coalesced_ms_content_above_2500",
-        "ghost_windows_main_above_1",
-        "ghost_windows_content_above_1",
-    ]
-
-    main_summary_export = SubDagOperator(
-        subdag=export_to_parquet(
-            table="moz-fx-data-shared-prod.telemetry_derived.main_summary_v4${{ds_nodash}}",
-            static_partitions=["submission_date_s3={{ds_nodash}}"],
-            arguments=[
-                "--partition-by=sample_id",
-                "--replace='{{ds_nodash}}' AS submission_date",
-                "--maps-from-entries",
-            ] + main_summary_bigint_columns,
-            parent_dag_name=dag.dag_id,
-            dag_name="main_summary_export",
-            default_args=default_args,
-            num_workers=40),
-        task_id="main_summary_export",
-        dag=dag)
-
     clients_daily_export = SubDagOperator(
         subdag=export_to_parquet(
             table="moz-fx-data-shared-prod.telemetry_derived.clients_daily_v6${{ds_nodash}}",
@@ -171,17 +110,4 @@ with DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * *
         email_on_retry=False,
         dag=dag)
 
-    wait_for_main_summary = ExternalTaskSensor(
-        task_id="wait_for_main_summary",
-        external_dag_id="bqetl_main_summary",
-        external_task_id="telemetry_derived__main_summary__v4",
-        execution_delta=timedelta(hours=1),
-        mode="reschedule",
-        allowed_states=ALLOWED_STATES,
-        failed_states=FAILED_STATES,
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
-        email_on_retry=False,
-        dag=dag)
-
-    main_summary_export.set_upstream(wait_for_main_summary)
     clients_daily_export.set_upstream(wait_for_clients_daily)
