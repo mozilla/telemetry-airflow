@@ -119,7 +119,6 @@ def backfill_dag():
 
     backfill_task = BashOperator(
         task_id='execute_backfill',
-        # bash_command="echo 1",
         bash_command="{{ ti.xcom_pull(task_ids='generate_backfill_command') }}",
     )
 
