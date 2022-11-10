@@ -20,11 +20,6 @@ def __parse_string_params(string_params: str) -> Optional[BackfillParams]:
     this workaround will no longer be required in Airflow >=2.2, see link below for future implementation
     https://airflow.apache.org/docs/apache-airflow/stable/concepts/params.html
     """
-    # Workaround with dummy variables if function is called with unevaluated templated variables
-    templated_variable_is_not_evaluated = string_params.startswith("{{ ") and string_params.endswith(" }}")
-    if templated_variable_is_not_evaluated:
-        return BackfillParams(dag_name="dag_name", start_date="2022-10-01", end_date="2022-10-02",
-                              clear=False, dry_run=True, task_regex=None)
     params_parsed = ast.literal_eval(string_params)
     return BackfillParams(**params_parsed)
 
@@ -125,7 +120,7 @@ def backfill_dag():
     backfill_task = BashOperator(
         task_id='execute_backfill',
         # bash_command="echo 1",
-        bash_command=generate_bash_command("{{ dag_run.conf }}"),
+        bash_command="{{ ti.xcom_pull(task_ids='generate_backfill_command') }}",
     )
 
     param_validation_task >> dry_run_branch_task >> [dry_run_task, real_deal_task] >> clear_branch_task >> [
