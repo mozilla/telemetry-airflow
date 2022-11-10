@@ -98,6 +98,7 @@ telemetry_main = gke_command(
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )
 
@@ -114,6 +115,7 @@ telemetry_main_summary = gke_command(
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )
 
@@ -131,5 +133,6 @@ flat_rate = gke_command(
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )
