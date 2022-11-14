@@ -11,7 +11,7 @@ from airflow.models import DagModel
 
 
 from utils.backfill import BackfillParams
-
+from utils.tags import Tag
 
 def __parse_string_params(string_params: str) -> Optional[BackfillParams]:
     """
@@ -75,6 +75,7 @@ doc_md = """
     catchup=False,
     start_date=datetime.datetime(2022, 11, 1),
     dagrun_timeout=datetime.timedelta(days=1),
+    tags=[Tag.ImpactTier.tier_3],
     params={"dag_name": "dag_name",
             "start_date": (datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
             "end_date": datetime.date.today().isoformat(),
