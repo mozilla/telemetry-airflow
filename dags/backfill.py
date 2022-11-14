@@ -1,6 +1,7 @@
 import ast
 import datetime
 from typing import Optional
+from enum import Enum
 
 from airflow.decorators import dag
 from airflow.operators.bash import BashOperator
@@ -12,6 +13,14 @@ from airflow.models import DagModel
 
 from utils.backfill import BackfillParams
 from utils.tags import Tag
+
+
+class TaskId(Enum):
+    dry_run = "dry_run"
+    real_deal = "real_deal"
+    clear_tasks = "clear_tasks"
+    do_not_clear_tasks = "do_not_clear_tasks"
+
 
 def __parse_string_params(string_params: str) -> Optional[BackfillParams]:
     """
@@ -26,12 +35,12 @@ def __parse_string_params(string_params: str) -> Optional[BackfillParams]:
 
 def dry_run_branch_callable(params: str) -> str:
     backfill_params = __parse_string_params(params)
-    return "dry_run" if backfill_params.dry_run else "real_deal"
+    return TaskId.dry_run.value if backfill_params.dry_run else TaskId.real_deal.value
 
 
 def clear_branch_callable(params: str) -> str:
     backfill_params = __parse_string_params(params)
-    return "clear_tasks" if backfill_params.clear else "do_not_clear_tasks"
+    return TaskId.clear_tasks.value if backfill_params.clear else TaskId.do_not_clear_tasks.value
 
 
 def param_validation(params: str) -> bool:
@@ -98,8 +107,8 @@ def backfill_dag():
         trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
-    dry_run_task = DummyOperator(task_id="dry_run")
-    real_deal_task = DummyOperator(task_id="real_deal")
+    dry_run_task = DummyOperator(task_id=TaskId.dry_run.value)
+    real_deal_task = DummyOperator(task_id=TaskId.real_deal.value)
 
     clear_branch_task = BranchPythonOperator(
         task_id="clear_parameter",
@@ -108,8 +117,8 @@ def backfill_dag():
         trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
-    clear_tasks_task = DummyOperator(task_id="clear_tasks")
-    do_not_clear_tasks_task = DummyOperator(task_id="do_not_clear_tasks")
+    clear_tasks_task = DummyOperator(task_id=TaskId.clear_tasks.value)
+    do_not_clear_tasks_task = DummyOperator(task_id=TaskId.do_not_clear_tasks.value)
 
     generate_backfill_command_task = PythonOperator(
         task_id="generate_backfill_command",
