@@ -7,12 +7,13 @@ import json
 import logging
 import datetime
 import re
+from typing import List
 
 # Custom Imports
 import flask
 from flask import request
 from flask_admin import BaseView, expose
-from flask_appbuilder import expose as app_builder_expose, BaseView as AppBuilderBaseView,has_access
+from flask_appbuilder import expose as app_builder_expose, BaseView as AppBuilderBaseView, has_access
 from airflow import configuration
 
 from shelljob import proc
@@ -36,6 +37,7 @@ FILE = airflow_home_path + '/logs/backfill_history.txt'
 # RE for remove ansi escape characters
 ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
 
+
 # Creating a flask admin BaseView
 def file_ops(mode, data=None):
     """ File operators - logging/writing and reading user request """
@@ -55,11 +57,12 @@ def file_ops(mode, data=None):
             f.write(file_data)
             return 1
 
+
 def get_baseview():
     return AppBuilderBaseView
 
-class Backfill(get_baseview()):
 
+class Backfill(get_baseview()):
     route_base = "/admin/backfill/"
 
     @app_builder_expose('/')
@@ -79,31 +82,15 @@ class Backfill(get_baseview()):
         use_task_regex = request.args.get("use_task_regex")
 
         # Construct the airflow command
-        cmd = ['airflow']
-
-        if clear == 'true':
-            cmd.append('tasks')
-            cmd.append('clear')
-            if dry_run == 'true':
-                # For dryruns we simply timeout to avoid zombie procs waiting on user input. The output is what we're interested in
-                timeout_list = ['timeout', '60']
-                cmd = timeout_list + cmd
-            elif dry_run == 'false':
-                cmd.append('-y')
-
-            if use_task_regex == 'true':
-                cmd.extend(['-t', str(task_regex)])
-        elif clear == 'false':
-            cmd.append('dags')
-            cmd.append('backfill')
-            cmd.append('--donot-pickle')
-            if dry_run == 'true':
-                cmd.append('--dry-run')
-
-            if use_task_regex == 'true':
-                cmd.extend(['-t', str(task_regex)])
-
-        cmd.extend(['-s', str(start_date), '-e', str(end_date), str(dag_name)])
+        cmd = generate_backfill_command(
+            dag_name=dag_name,
+            start_date=start_date,
+            end_date=end_date,
+            clear=clear,
+            dry_run=dry_run,
+            task_regex=task_regex,
+            use_task_regex=use_task_regex,
+        )
 
         print('BACKFILL CMD:', cmd)
 
@@ -125,13 +112,12 @@ class Backfill(get_baseview()):
 
                     if result:
                         # Adhere to text/event-stream format
-                        line = line.replace('<','').replace('>','')
+                        line = line.replace('<', '').replace('>', '')
                     elif clear == 'true' and dry_run == 'false':
                         # Special case/hack, airflow tasks clear -y no longer outputs a termination string, so we put one
                         line = "Clear Done"
 
                     yield "data:" + line + "\n\n"
-
 
         return flask.Response(read_process(), mimetype='text/event-stream')
 
@@ -176,3 +162,40 @@ class Backfill(get_baseview()):
     def history(self):
         """ Outputs recent user request history """
         return flask.Response(file_ops('r'), mimetype='text/txt')
+
+
+def generate_backfill_command(dag_name: str,
+                              start_date: str,
+                              end_date: str,
+                              clear: str,
+                              dry_run: str,
+                              task_regex: str,
+                              use_task_regex,
+                              ) -> List[str]:
+    # Construct the airflow command
+    cmd = ['airflow']
+
+    if clear == 'true':
+        cmd.append('tasks')
+        cmd.append('clear')
+        if dry_run == 'true':
+            # For dryruns we simply timeout to avoid zombie procs waiting on user input. The output is what we're interested in
+            timeout_list = ['timeout', '60']
+            cmd = timeout_list + cmd
+        elif dry_run == 'false':
+            cmd.append('-y')
+
+        if use_task_regex == 'true':
+            cmd.extend(['-t', str(task_regex)])
+    elif clear == 'false':
+        cmd.append('dags')
+        cmd.append('backfill')
+        cmd.append('--donot-pickle')
+        if dry_run == 'true':
+            cmd.append('--dry-run')
+
+        if use_task_regex == 'true':
+            cmd.extend(['-t', str(task_regex)])
+
+    cmd.extend(['-s', str(start_date), '-e', str(end_date), str(dag_name)])
+    return cmd
