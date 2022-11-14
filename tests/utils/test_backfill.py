@@ -49,17 +49,9 @@ def test_validate_regex_pattern(base_backfill_params) -> None:
 def test_generate_backfill_command(base_backfill_params) -> None:
     """Assert backfill commands are equivalent between the backfill plugin and backfill DAG
 
-    This test can be removed once we chose between the backfill plugin and the backfill DAG
+    Expected results were generated from the plugin implementation
 
     """
-    # append plugins directory to system path
-    # we should fix inconsistent path between deployment and test
-    from tests.conftest import PROJECT_DIR
-    import sys
-    sys.path.append(str(PROJECT_DIR / "plugins"))
-
-    from plugins.backfill.main import generate_backfill_command
-
     test_start_date = "2022-01-01"
     test_end_date = "2022-01-10"
 
@@ -77,13 +69,21 @@ def test_generate_backfill_command(base_backfill_params) -> None:
                        end_date=test_end_date),
     ]
 
-    for params in test_params:
-        plugin_command = generate_backfill_command(clear=str(params.clear).lower(),
-                                                   dry_run=str(params.dry_run).lower(),
-                                                   use_task_regex=str(params.task_regex is not None).lower(),
-                                                   task_regex=params.task_regex,
-                                                   dag_name=params.dag_name,
-                                                   start_date=params.start_date,
-                                                   end_date=params.end_date)
+    expected_results = [
+        [
+            'timeout', '60', 'airflow', 'tasks', 'clear', '-s', '2022-01-01', '-e', '2022-01-10', 'test_value'],
+        [
+            'airflow', 'dags', 'backfill', '--donot-pickle', '--dry-run', '-s', '2022-01-01', '-e', '2022-01-10',
+            'test_value'],
+        [
+            'airflow', 'tasks', 'clear', '-y', '-s', '2022-01-01', '-e', '2022-01-10', 'test_value'],
+        [
+            'airflow', 'dags', 'backfill', '--donot-pickle', '-s', '2022-01-01', '-e', '2022-01-10', 'test_value'],
+        [
+            'airflow', 'dags', 'backfill', '--donot-pickle', '-t', '/ab+c/', '-s', '2022-01-01', '-e', '2022-01-10',
+            'test_value']
+    ]
+
+    for params, result in zip(test_params, expected_results):
         backfill_command = params.generate_backfill_command()
-        assert plugin_command == backfill_command
+        assert backfill_command == result
