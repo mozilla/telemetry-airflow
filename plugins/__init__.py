@@ -6,7 +6,7 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow import configuration
 
 # Backfill Plugin Imports
-from .backfill.main import Backfill
+from backfill.main import Backfill
 
 # Init the plugin in Webserver's "Admin" Menu with Menu Item as "Backfill"
 backfill_admin_view = {"category" : "Admin", "name" : "Backfill (Alpha)",  "view": Backfill()}

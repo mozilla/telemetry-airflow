@@ -50,7 +50,7 @@ clean-gke:
 	bin/stop_gke
 
 test:
-	tox
+	python -m pytest tests/
 
 compile-requirements:
 	venv/bin/pip-compile requirements.in --output-file requirements.txt
