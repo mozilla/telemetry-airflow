@@ -54,7 +54,7 @@ def generate_bash_command(params: str) -> str:
 
 
 doc_md = """
-# Backfill (Alpha)
+# Backfill DAG
 
 #### Use with caution 
 

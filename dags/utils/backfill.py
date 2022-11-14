@@ -26,8 +26,12 @@ class BackfillParams:
             except re.error:
                 raise ValueError(f"Invalid regex pattern for `task_regex`={self.task_regex}")
 
-
     def generate_backfill_command(self) -> List[str]:
+        """Backfill command based off the Airflow plugin implemented by hwoo
+
+        Original implementation in plugins/backfill/main.py
+
+        """
         # Construct the airflow command
         cmd = ['airflow']
 
