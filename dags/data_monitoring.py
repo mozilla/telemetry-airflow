@@ -23,12 +23,11 @@ TARGET_DATASETS = (
 
 default_args = {
     "owner": "akommasani@mozilla.com",
-    "depends_on_past": False,
     "start_date": datetime(2022, 11, 1),
-    "email_on_failure": True,
-    "email_on_retry": True,
-    "retries": 1,
-    "retry_delay": timedelta(minutes=30),
+    "depends_on_past": False,
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 0,
 }
 
 TAGS = ["repo/telemetry-airflow", "impact/tier_3",]
@@ -37,7 +36,7 @@ IMAGE = "gcr.io/data-monitoring-dev/dim:latest-app"
 with DAG(
     "data_monitoring",
     default_args=default_args,
-    schedule_interval="@daily",
+    schedule_interval="0 7 * * *",  # all bqetl jobs should have finished by 7am UTC
     doc_md=DOCS,
     tags=TAGS,
     catchup=True,
@@ -54,6 +53,7 @@ with DAG(
             image=IMAGE,
             arguments=[
                 "run",
+                "--fail_process_on_failure",
                 f"--project_id={project_id}",
                 f"--dataset={dataset}",
                 f"--table={table}"
