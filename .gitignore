@@ -18,3 +18,8 @@ airflow-worker.pid
 /dags/bigquery-etl-dags/*
 
 *~
+
+.cache
+
+# VsCode artifacts
+.vscode/*.log
