@@ -46,7 +46,7 @@ with DAG(
     for target_dataset in TARGET_DATASETS:
         project_id, dataset, table = target_dataset.split(".")
 
-        task_name = f"rim_run_check_{target_dataset}"
+        task_name = f"dim_run_check_{target_dataset}"
 
         run_data_monitoring = GKEPodOperator(
             task_id=task_name,
@@ -61,8 +61,8 @@ with DAG(
             ],
             env_vars=dict(
                 SLACK_BOT_TOKEN="{{ var.value.dim_slack_secret_token }}"),
-            gcp_conn_id='google_cloud_gke_sandbox',
-            project_id='moz-fx-data-gke-sandbox',
-            cluster_name='akommasani-gke-sandbox',
+            gcp_conn_id='google_cloud_airflow_gke',
+            project_id='moz-fx-data-airflow-gke-prod',
+            cluster_name='workloads-prod-v1',
             location='us-west1',
         )
