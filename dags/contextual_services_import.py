@@ -13,7 +13,7 @@ from utils.tags import Tag
 
 
 default_args = {
-    "owner": "aplacitelli@mozilla.com",
+    "owner": "wstuckey@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2021, 11, 18),
     "email_on_failure": True,
@@ -46,6 +46,7 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[
-            "aplacitelli@mozilla.com",
+            "wstuckey@mozilla.com",
+            "ctroy@mozilla.com",
         ],
     )
