@@ -57,7 +57,7 @@ with DAG(
                 f"--project_id={project_id}",
                 f"--dataset={dataset}",
                 f"--table={table}"
-                "--date_partition_parameter={{ ds }}"
+                "--date={{ macros.ds_add(ds, -1) }}"
             ],
             env_vars=dict(
                 SLACK_BOT_TOKEN="{{ var.value.dim_slack_secret_token }}"),
