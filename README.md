@@ -75,16 +75,32 @@ test this by restarting the orchestrated containers and checking for error messa
 administration UI at `localhost:8000`.
 
 ### Local Deployment
-
-Assuming you're using macOS and Docker for macOS, start the docker service,
+#### macOS
+Assuming you're using Docker for Docker Desktop for macOS, start the docker service,
 click the docker icon in the menu bar, click on preferences and change the
 available memory to 4GB.
 
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 
 ```bash
+make build
 make up
 ```
+
+#### Linux
+
+Users on Linux distributions will encounter permission issues with `docker-compose`.
+This is because the local application folder is mounted as a volume into the running container.
+The Airflow user and group in the container is set to `10001`.
+
+To work around this, use `build-linux` Make command.
+
+```bash
+make build-linux
+make up
+```
+
+### Usage
 
 You can now connect to your local Airflow web console at
 `http://localhost:8000/`.
@@ -93,18 +109,6 @@ All DAGs are paused by default for local instances and our staging instance of A
 In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On".
 You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
 
-#### Workaround for permission issues
-
-Users on Linux distributions will encounter permission issues with `docker-compose`.
-This is because the local application folder is mounted as a volume into the running container.
-The Airflow user and group in the container is set to `10001`.
-
-To work around this, replace all instances of `10001` in `Dockerfile.dev` with the host user id.
-
-```bash
-sed -i "s/10001/$(id -u)/g" Dockerfile.dev
-
-```
 
 ### Testing GKE Jobs (including BigQuery-etl changes)
 
@@ -247,13 +251,6 @@ docker-compose exec web airflow list_dags
   - Click the "Clear" button
   - Confirm that you want to clear it
   - The task should be scheduled to run again straight away.
-
-### Triggering backfill tasks using the CLI
-
-- SSH into the ECS container instance
-- List docker containers using `docker ps`
-- Log in to one of the docker containers using `docker exec -it <container_id> bash`. The web server instance is a good choice.
-- Run the desired backfill command, something like `$ airflow backfill main_summary -s 2018-05-20 -e 2018-05-26`
 
 ### CircleCI
 
