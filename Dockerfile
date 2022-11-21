@@ -2,7 +2,7 @@
 # linux kernel than provided by CircleCI, per
 # https://forums.docker.com/t/multiple-projects-stopped-building-on-docker-hub-operation-not-permitted/92570/6
 # and https://forums.docker.com/t/multiple-projects-stopped-building-on-docker-hub-operation-not-permitted/92570/11
-FROM python:3.7-slim-buster
+FROM python:3.8.12-slim-buster
 MAINTAINER Harold Woo <hwoo@mozilla.com>
 
 # Due to AIRFLOW-6854, Python 3.7 is chosen as the base python version.
