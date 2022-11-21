@@ -38,6 +38,6 @@ class Tag(Enum):
         Valid options for Impact tier tag
         """
 
-        tier_1 = "impact/tier_1"
-        tier_2 = "impact/tier_2"
-        tier_3 = "impact/tier_3"
+        tier_1: str = "impact/tier_1"
+        tier_2: str = "impact/tier_2"
+        tier_3: str = "impact/tier_3"

@@ -77,12 +77,28 @@ telemetry_main = gke_command(
     name="shredder-telemetry-main",
     command=base_command
     + [
-        "--parallelism=2",
-        "--billing-project=moz-fx-data-shredder",
+        # "--parallelism=2",
+        # "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v4",
+        # handle backlog using on-demand slots in 10 backfill projects
+        "--parallelism=10",
+        "--billing-project",
+        "moz-fx-data-backfill-10",
+        "moz-fx-data-backfill-11",
+        "moz-fx-data-backfill-12",
+        "moz-fx-data-backfill-13",
+        "moz-fx-data-backfill-14",
+        "moz-fx-data-backfill-15",
+        "moz-fx-data-backfill-16",
+        "moz-fx-data-backfill-17",
+        "moz-fx-data-backfill-18",
+        "moz-fx-data-backfill-19",
+        # handle additional 5 "month" backlog with current run
+        "--start-date={{macros.ds_add(ds, 27-28*(2+5))}}",
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )
 
@@ -99,6 +115,7 @@ telemetry_main_summary = gke_command(
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )
 
@@ -116,5 +133,6 @@ flat_rate = gke_command(
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )

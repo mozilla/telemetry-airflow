@@ -1,22 +1,27 @@
 .PHONY: build clean migrate redis-cli run secret shell stop up
 
+
 help:
 	@echo "Welcome to the Telemetry Airflow\n"
 	@echo "The list of commands for local development:\n"
-	@echo "  build      Builds the docker images for the docker-compose setup"
-	@echo "  clean      Stops and removes all docker containers"
-	@echo "  migrate    Runs the Django database migrations"
-	@echo "  redis-cli  Opens a Redis CLI"
-	@echo "  run        Run a airflow command"
-	@echo "  secret     Create a secret to be used for a config variable"
-	@echo "  shell      Opens a Bash shell"
-	@echo "  up         Runs the whole stack, served under http://localhost:8000/"
-	@echo "  gke        Create a sandbox gke cluster for testing"
-	@echo "  clean-gke  Delete the sandbox gke cluster"
-	@echo "  stop       Stops the docker containers"
+	@echo "  build      	Builds the docker images for the docker-compose setup"
+	@echo "  build-linux	Builds the docker images using the current user ID and group ID"
+	@echo "  clean      	Stops and removes all docker containers"
+	@echo "  migrate    	Runs the Django database migrations"
+	@echo "  redis-cli  	Opens a Redis CLI"
+	@echo "  run        	Run a airflow command"
+	@echo "  secret     	Create a secret to be used for a config variable"
+	@echo "  shell      	Opens a Bash shell"
+	@echo "  up         	Runs the whole stack, served under http://localhost:8000/"
+	@echo "  gke        	Create a sandbox gke cluster for testing"
+	@echo "  clean-gke  	Delete the sandbox gke cluster"
+	@echo "  stop       	Stops the docker containers"
 
 build:
 	docker-compose build
+
+build-linux:
+	docker-compose build --build-arg AIRFLOW_UID="$$(id -u)" --build-arg AIRFLOW_GID="$$(id -g)"
 
 clean:	stop
 	docker-compose rm -f
@@ -50,7 +55,7 @@ clean-gke:
 	bin/stop_gke
 
 test:
-	tox
+	python -m pytest tests/
 
 compile-requirements:
 	venv/bin/pip-compile requirements.in --output-file requirements.txt

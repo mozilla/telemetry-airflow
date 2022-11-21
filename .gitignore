@@ -2,7 +2,8 @@
 *.retry
 *undo-tree~
 *.un~
-venv
+venv/
+.venv/
 
 logs
 unittests.cfg
@@ -18,3 +19,9 @@ airflow-worker.pid
 /dags/bigquery-etl-dags/*
 
 *~
+
+.cache
+
+# IDE
+.idea
+.vscode/

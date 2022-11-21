@@ -7,11 +7,15 @@ MAINTAINER Harold Woo <hwoo@mozilla.com>
 
 # Due to AIRFLOW-6854, Python 3.7 is chosen as the base python version.
 
+ARG AIRFLOW_UID=10001
+ARG AIRFLOW_GID=10001
+ARG PROJECT_DIR="/app"
+
 # add a non-privileged user for installing and running the application
-RUN mkdir /app && \
-    chown 10001:10001 /app && \
-    groupadd --gid 10001 app && \
-    useradd --no-create-home --uid 10001 --gid 10001 --home-dir /app app
+RUN mkdir $PROJECT_DIR && \
+    chown $AIRFLOW_UID:$AIRFLOW_GID $PROJECT_DIR && \
+    groupadd --gid $AIRFLOW_GID app && \
+    useradd --no-create-home --uid $AIRFLOW_UID --gid $AIRFLOW_GID --home-dir $PROJECT_DIR app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -36,21 +40,22 @@ RUN pip install --upgrade pip
 RUN export SLUGIFY_USES_TEXT_UNIDECODE=yes && pip install --no-cache-dir -r requirements.txt
 
 # Switch back to home directory
-WORKDIR /app
+WORKDIR $PROJECT_DIR
 
-COPY . /app
+COPY . $PROJECT_DIR
 
-RUN chown -R 10001:10001 /app
+RUN chown -R $AIRFLOW_UID:$AIRFLOW_GID $PROJECT_DIR
 
-USER 10001
+USER $AIRFLOW_UID
 
 ENV PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PORT=8000\
+    PYTHONPATH="$PYTHONPATH:$PROJECT_DIR"
     # AWS_ACCESS_KEY_ID= \
     # AWS_SECRET_ACCESS_KEY= \
     # DEPLOY_ENVIRONMENT =
 
-ENV AIRFLOW_HOME=/app \
+ENV AIRFLOW_HOME=$PROJECT_DIR \
     AIRFLOW_EMAIL_BACKEND="airflow.utils.email.send_email_smtp"
     # AIRFLOW_AUTHENTICATE= \
     # AIRFLOW_AUTH_BACKEND= \

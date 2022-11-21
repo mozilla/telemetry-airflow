@@ -7,15 +7,17 @@ import json
 import logging
 import datetime
 import re
+from typing import List
 
 # Custom Imports
 import flask
 from flask import request
 from flask_admin import BaseView, expose
-from flask_appbuilder import expose as app_builder_expose, BaseView as AppBuilderBaseView,has_access
+from flask_appbuilder import expose as app_builder_expose, BaseView as AppBuilderBaseView, has_access
 from airflow import configuration
 
 from shelljob import proc
+from dags.utils.backfill import BackfillParams
 
 # Inspired from
 # https://mortoray.com/2014/03/04/http-streaming-of-command-output-in-python-flask/
@@ -36,6 +38,7 @@ FILE = airflow_home_path + '/logs/backfill_history.txt'
 # RE for remove ansi escape characters
 ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
 
+
 # Creating a flask admin BaseView
 def file_ops(mode, data=None):
     """ File operators - logging/writing and reading user request """
@@ -55,11 +58,12 @@ def file_ops(mode, data=None):
             f.write(file_data)
             return 1
 
+
 def get_baseview():
     return AppBuilderBaseView
 
-class Backfill(get_baseview()):
 
+class Backfill(get_baseview()):
     route_base = "/admin/backfill/"
 
     @app_builder_expose('/')
@@ -73,37 +77,21 @@ class Backfill(get_baseview()):
         dag_name = request.args.get("dag_name")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
-        clear = request.args.get("clear")
-        dry_run = request.args.get("dry_run")
-        task_regex = request.args.get("task_regex")
-        use_task_regex = request.args.get("use_task_regex")
+        clear = request.args.get("clear").lower() == "true"
+        dry_run = request.args.get("dry_run").lower() == "true"
+        use_task_regex = request.args.get("use_task_regex").lower() == "true"
+        task_regex = request.args.get("task_regex") if use_task_regex else None
 
         # Construct the airflow command
-        cmd = ['airflow']
+        backfill_params = BackfillParams(
+            clear=clear,
+            dry_run=dry_run,
+            task_regex=task_regex,
+            dag_name=dag_name,
+            start_date=start_date,
+            end_date=end_date)
 
-        if clear == 'true':
-            cmd.append('tasks')
-            cmd.append('clear')
-            if dry_run == 'true':
-                # For dryruns we simply timeout to avoid zombie procs waiting on user input. The output is what we're interested in
-                timeout_list = ['timeout', '60']
-                cmd = timeout_list + cmd
-            elif dry_run == 'false':
-                cmd.append('-y')
-
-            if use_task_regex == 'true':
-                cmd.extend(['-t', str(task_regex)])
-        elif clear == 'false':
-            cmd.append('dags')
-            cmd.append('backfill')
-            cmd.append('--donot-pickle')
-            if dry_run == 'true':
-                cmd.append('--dry-run')
-
-            if use_task_regex == 'true':
-                cmd.extend(['-t', str(task_regex)])
-
-        cmd.extend(['-s', str(start_date), '-e', str(end_date), str(dag_name)])
+        cmd = backfill_params.generate_backfill_command()
 
         print('BACKFILL CMD:', cmd)
 
@@ -125,13 +113,12 @@ class Backfill(get_baseview()):
 
                     if result:
                         # Adhere to text/event-stream format
-                        line = line.replace('<','').replace('>','')
+                        line = line.replace('<', '').replace('>', '')
                     elif clear == 'true' and dry_run == 'false':
                         # Special case/hack, airflow tasks clear -y no longer outputs a termination string, so we put one
                         line = "Clear Done"
 
                     yield "data:" + line + "\n\n"
-
 
         return flask.Response(read_process(), mimetype='text/event-stream')
 
