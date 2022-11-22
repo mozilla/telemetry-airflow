@@ -27,19 +27,25 @@ This app is built and deployed with
 
 You'll also need to install MySQL to build the database container.
 
-### Updating Python dependencies
+### Installing dependencies locally
+**_⚠ Make sure you use the right Python version. Refer to Dockerfile for current supported Python Version ⚠_**
 
-Add new Python dependencies into `requirements.txt`. Run the following commands with the same Python
-version specified by the Dockerfile.
+You can install the project dependencies locally to run tests with Pytest. We use the 
+[official Airflow constraints](https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files) file to simplify 
+Airflow dependency management. Install dependencies locally using the following command:
 
 ```bash
-# As of time of writing, python3.8.12
-make install
+make pip-install-local
 ```
 
-### Build Container
+### Updating Python dependencies
 
-An Airflow container can be built with
+Add new Python dependencies into `requirements.txt`. 
+
+### Build Container
+**_⚠ See [Local Deployment](###Local-Deployment) section below for Linux and macOS specific instructions ⚠_**
+
+Build Airflow image with
 
 ```bash
 make build
@@ -50,16 +56,6 @@ make build
 Airflow database migration is no longer a separate step for dev but is run by the web container if necessary on first run. That means, however, that you should run the web container (and the database container, of course) and wait for the database migrations to complete before running individual test commands per below. The easiest way to do this is to run `make up` and let it run until the migrations complete.
 
 ## Testing
-
-A single task, e.g. `spark`, of an Airflow dag, e.g. `example`, can be run with an execution date, e.g. `2018-01-01`, in the `dev` environment with:
-
-```bash
-make run COMMAND="tasks test example spark 20180101"
-```
-
-```bash
-docker logs -f telemetryairflow_scheduler_1
-```
 
 ### Adding dummy credentials
 
