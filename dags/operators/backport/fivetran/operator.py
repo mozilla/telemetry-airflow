@@ -12,6 +12,10 @@ class RegistryLink(BaseOperatorLink):
 
     name = "Astronomer Registry"
 
+    # Note that this may break, get_link no longer supports dttm as an arg in v2.3
+    # Instead it expects a ti_key. Looks like fivetran hasn't released a
+    # new airflow-provider-fivetran>1.1.2 yet.
+    # More details at https://github.com/apache/airflow/pull/21798
     def get_link(self, operator, dttm):
         """Get link to registry page."""
 
