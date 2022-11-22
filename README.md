@@ -43,7 +43,7 @@ make pip-install-local
 Add new Python dependencies into `requirements.txt`. 
 
 ### Build Container
-**_⚠ See [Local Deployment](###Local-Deployment) section below for Linux and macOS specific instructions ⚠_**
+**_⚠ See [Local Deployment](#local-deployment) section below for Linux and macOS specific instructions ⚠_**
 
 Build Airflow image with
 
