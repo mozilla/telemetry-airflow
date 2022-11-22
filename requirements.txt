@@ -2,7 +2,7 @@ apache-airflow[amazon,apache.hive,async,celery,cncf.kubernetes,crypto,datadog,gi
 apache-airflow-providers-google
 apache-airflow-providers-http
 apache-airflow-providers-slack
-airflow-provider-fivetran
+airflow-provider-fivetran==1.1.2
 mozlogging
 pytest
 
