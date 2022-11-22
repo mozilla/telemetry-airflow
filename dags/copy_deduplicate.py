@@ -6,8 +6,6 @@ from airflow.utils.task_group import TaskGroup
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
-    gke_command,
-    bigquery_xcom_query,
 )
 
 from utils.gcp import gke_command

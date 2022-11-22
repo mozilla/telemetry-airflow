@@ -1,10 +1,10 @@
+from datetime import timedelta, datetime
+
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from datetime import timedelta, datetime
-from utils.gcp import gke_command
-from utils.tags import Tag
-from operators.gcp_container_operator import GKEPodOperator
 
+from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 docs = """
 ### operational_monitoring
