@@ -6,7 +6,7 @@ See [jobs/update_orphaning_dashboard_etl.py](https://github.com/mozilla/telemetr
 
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.operators.subdag import SubDagOperator
 from datetime import datetime, timedelta
 
 from utils.constants import DS_WEEKLY

@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.http_operator import SimpleHttpOperator
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.branch_operator import BaseBranchOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.operators.python import PythonOperator
+from airflow.operators.branch import BaseBranchOperator
 from airflow.utils.weekday import WeekDay
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -81,7 +81,7 @@ with DAG('probe_scraper',
 
     # probe scraper used to be a single task, but it has beeen split up, and individual
     # failures do not block downstream tasks
-    probe_scraper = DummyOperator(
+    probe_scraper = EmptyOperator(
         task_id="probe_scraper",
         trigger_rule="all_done",
         dag=dag,
@@ -243,7 +243,7 @@ with DAG('probe_scraper',
         )
         for check_name in ("check-expiry", "check-fog-expiry")
     ]
-    dummy_branch = DummyOperator(
+    dummy_branch = EmptyOperator(
         task_id="dummy_branch",
         dag=dag,
     )
