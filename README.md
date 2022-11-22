@@ -29,13 +29,12 @@ You'll also need to install MySQL to build the database container.
 
 ### Updating Python dependencies
 
-Add new Python dependencies into `requirements.in`. Run the following commands with the same Python
+Add new Python dependencies into `requirements.txt`. Run the following commands with the same Python
 version specified by the Dockerfile.
 
 ```bash
-# As of time of writing, python3.7
-pip install pip-tools
-pip-compile
+# As of time of writing, python3.8.12
+make install
 ```
 
 ### Build Container
