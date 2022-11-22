@@ -12,11 +12,20 @@ All alerts related to this DAG can be ignored.
 (for more info on dim see: https://github.com/mozilla/dim)
 """
 
+# telemetry_derived for the same tables as in telemetry are needed as different tests are executed
+# for example, the views replace country values at runtime hence we can only verify its value
+# using the view, the tables have associated metadata around partition sizes which we use for
+# one of the checks.
+
 TARGET_DATASETS = (
     "moz-fx-data-shared-prod.telemetry.unified_metrics",
+    "moz-fx-data-shared-prod.telemetry_derived.unified_metrics_v1",
     "moz-fx-data-shared-prod.telemetry.cohort_daily_statistics",
+    "moz-fx-data-shared-prod.telemetry_derived.cohort_daily_statistics_v1",
     "moz-fx-data-shared-prod.telemetry.rolling_cohorts",
+    "moz-fx-data-shared-prod.telemetry_derived.rolling_cohorts_v1",
     "moz-fx-data-shared-prod.telemetry.active_users_aggregates",
+    "moz-fx-data-shared-prod.telemetry_derived.active_users_aggregates_v1",
     "moz-fx-data-shared-prod.internet_outages.global_outages_v1",
     "moz-fx-data-shared-prod.org_mozilla_fenix_nightly.baseline_clients_last_seen",
 )
