@@ -7,6 +7,7 @@ help:
 	@echo "  build      	Builds the docker images for the docker-compose setup"
 	@echo "  build-linux	Builds the docker images using the current user ID and group ID"
 	@echo "  clean      	Stops and removes all docker containers"
+	@echo "  install      	Install project requirements locally"
 	@echo "  migrate    	Runs the Django database migrations"
 	@echo "  redis-cli  	Opens a Redis CLI"
 	@echo "  run        	Run a airflow command"
@@ -27,6 +28,9 @@ clean:	stop
 	docker-compose rm -f
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
+
+install:
+	pip install -r requirements.txt --constraint constraints.txt
 
 shell:
 	docker-compose run web bash
