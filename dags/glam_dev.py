@@ -13,12 +13,9 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
-from airflow.models import Variable
-from airflow.operators.subdag_operator import SubDagOperator
 
-from glam_subdags.extract import extracts_subdag, extract_user_counts
+from airflow.operators.subdag import SubDagOperator
+
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query

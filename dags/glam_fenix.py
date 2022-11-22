@@ -10,7 +10,7 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
@@ -92,7 +92,7 @@ with DAG(
         email_on_retry=False,
     )
 
-    pre_import = DummyOperator(
+    pre_import = EmptyOperator(
         task_id='pre_import',
     )
 

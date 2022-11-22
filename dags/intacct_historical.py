@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator
 from operators.backport.fivetran.operator import FivetranOperator
 from operators.backport.fivetran.sensor import FivetranSensor
 from utils.tags import Tag
@@ -59,13 +59,13 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    fivetran_sensors_complete = DummyOperator(
+    fivetran_sensors_complete = EmptyOperator(
         task_id='intacct-fivetran-sensors-complete',
     )
 
     for index, (location, connector_id) in enumerate(list_of_connectors.items()):
 
-        fivetran_sync = DummyOperator(task_id=f'intacct-{location}')
+        fivetran_sync = EmptyOperator(task_id=f'intacct-{location}')
 
         # In order to avoid hitting DAG concurrency limits by sensor tasks below,
         # sync tasks here have variable priority weights

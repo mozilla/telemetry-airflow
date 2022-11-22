@@ -5,7 +5,7 @@ from enum import Enum
 
 from airflow.decorators import dag
 from airflow.operators.bash import BashOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.models import DagModel
@@ -107,8 +107,8 @@ def backfill_dag():
         trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
-    dry_run_task = DummyOperator(task_id=TaskId.dry_run.value)
-    real_deal_task = DummyOperator(task_id=TaskId.real_deal.value)
+    dry_run_task = EmptyOperator(task_id=TaskId.dry_run.value)
+    real_deal_task = EmptyOperator(task_id=TaskId.real_deal.value)
 
     clear_branch_task = BranchPythonOperator(
         task_id="clear_parameter",
@@ -117,8 +117,8 @@ def backfill_dag():
         trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
-    clear_tasks_task = DummyOperator(task_id=TaskId.clear_tasks.value)
-    do_not_clear_tasks_task = DummyOperator(task_id=TaskId.do_not_clear_tasks.value)
+    clear_tasks_task = EmptyOperator(task_id=TaskId.clear_tasks.value)
+    do_not_clear_tasks_task = EmptyOperator(task_id=TaskId.do_not_clear_tasks.value)
 
     generate_backfill_command_task = PythonOperator(
         task_id="generate_backfill_command",
