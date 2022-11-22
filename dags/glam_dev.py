@@ -57,7 +57,7 @@ dag = DAG(
 
 """ This isn't needed because the dev dag will only be triggered manually
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskCompletedSensor(
+wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
