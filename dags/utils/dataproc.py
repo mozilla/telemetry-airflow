@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from airflow import models
 from airflow.exceptions import AirflowException
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash import BashOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 # When google deprecates dataproc_v1beta2 in DataprocHook/Operator classes

@@ -526,7 +526,7 @@ def main(
     )
 
     if num_donors < 100:
-        logger.warn(
+        logger.warning(
             "Less than 100 donors were requested.", extra={"donors": num_donors}
         )
         num_donors = 100

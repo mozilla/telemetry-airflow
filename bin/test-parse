@@ -77,7 +77,7 @@ function main() {
 
     if [[ $num_errors -ne 0 && $TESTING -eq 0 ]]; then
         # Print full error output
-        docker-compose exec web airflow dags list -v
+        docker-compose exec web airflow dags list-import-errors
         echo "Failure!"
         exit 1
     elif [[ $TESTING -eq 1 ]]; then

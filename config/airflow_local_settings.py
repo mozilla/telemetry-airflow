@@ -1,5 +1,4 @@
-import gevent
-from gevent import monkey, pool
+from gevent import monkey
 
 monkey.patch_all()
 
