@@ -12,3 +12,10 @@ shelljob==0.5.6
 
 # Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
 xmltodict
+
+# TODO: Are these still needed
+# were added in https://github.com/mozilla/telemetry-airflow/pull/1008
+# retrying
+# Flask-OAuthlib
+# ipaddress
+
