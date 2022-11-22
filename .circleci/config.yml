@@ -24,7 +24,7 @@ jobs:
 
   test:
     docker:
-      - image: python:3.7
+      - image: python:3.8.12
     working_directory: ~/mozilla/telemetry-airflow
     steps:
       - checkout
@@ -35,7 +35,7 @@ jobs:
 
   verify-requirements:
     docker:
-      - image: python:3.7
+      - image: python:3.8.12
     steps:
       - checkout
       - run:
