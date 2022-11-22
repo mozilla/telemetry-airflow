@@ -12,7 +12,7 @@ import datetime
 import os
 
 from airflow import DAG
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.operators.subdag import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 

@@ -5,13 +5,12 @@ Aggregates that power the legacy telemetry
 See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
 """
 
-import json
 import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.operators.subdag import SubDagOperator
 from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
 from utils.gcp import gke_command
 from utils.tags import Tag
