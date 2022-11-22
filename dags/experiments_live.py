@@ -6,13 +6,11 @@ This DAG exports views related to experiment monitoring to GCS as JSON
 every 5 minutes to power the Experimenter console.
 """
 
+from datetime import datetime
+
 from airflow import DAG
-from datetime import datetime, timedelta
 
-from utils.gcp import bigquery_etl_query, gke_command
-
-from airflow.sensors.external_task import ExternalTaskSensor
-from operators.gcp_container_operator import GKEPodOperator
+from utils.gcp import gke_command
 from utils.tags import Tag
 
 default_args = {
