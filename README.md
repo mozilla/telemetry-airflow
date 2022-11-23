@@ -24,6 +24,8 @@ Some links relevant to users and developers of WTMO:
 This app is built and deployed with
 [docker](https://docs.docker.com/) and
 [docker-compose](https://docs.docker.com/compose/).
+Dependencies are managed with
+[pip-tools](https://pypi.org/project/pip-tools/) `pip-compile`.
 
 You'll also need to install MySQL to build the database container.
 
@@ -40,7 +42,7 @@ make pip-install-local
 
 ### Updating Python dependencies
 
-Add new Python dependencies into `requirements.txt`. 
+Add new Python dependencies into `requirements.in` and execute `make pip-install-local`
 
 ### Build Container
 **_⚠ See [Local Deployment](#local-deployment) section below for Linux and macOS specific instructions ⚠_**
