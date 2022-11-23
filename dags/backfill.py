@@ -1,15 +1,13 @@
-import ast
 import datetime
-from typing import Optional
 from enum import Enum
 
 from airflow.decorators import dag
+from airflow.models import DagModel
+from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
 from airflow.utils.trigger_rule import TriggerRule
-from airflow.models import DagModel
-
 
 from utils.backfill import BackfillParams
 from utils.tags import Tag
@@ -22,29 +20,18 @@ class TaskId(Enum):
     do_not_clear_tasks = "do_not_clear_tasks"
 
 
-def __parse_string_params(string_params: str) -> Optional[BackfillParams]:
-    """
-    dag_run.conf is string representation of a Python dictionary in Airflow 2.1
-    ast.literal_eval() is used to convert from string to dictionary as a workaround
-    this workaround will no longer be required in Airflow >=2.2, see link below for future implementation
-    https://airflow.apache.org/docs/apache-airflow/stable/concepts/params.html
-    """
-    params_parsed = ast.literal_eval(string_params)
-    return BackfillParams(**params_parsed)
-
-
-def dry_run_branch_callable(params: str) -> str:
-    backfill_params = __parse_string_params(params)
+def dry_run_branch_callable(params: dict) -> str:
+    backfill_params = BackfillParams(**params)
     return TaskId.dry_run.value if backfill_params.dry_run else TaskId.real_deal.value
 
 
-def clear_branch_callable(params: str) -> str:
-    backfill_params = __parse_string_params(params)
+def clear_branch_callable(params: dict) -> str:
+    backfill_params = BackfillParams(**params)
     return TaskId.clear_tasks.value if backfill_params.clear else TaskId.do_not_clear_tasks.value
 
 
-def param_validation(params: str) -> bool:
-    backfill_params = __parse_string_params(params)
+def param_validation(params: dict) -> bool:
+    backfill_params = BackfillParams(**params)
     backfill_params.validate_date_range()
     validate_dag_exists(dag_name=backfill_params.dag_name)
     backfill_params.validate_regex_pattern()
@@ -57,8 +44,8 @@ def validate_dag_exists(dag_name: str) -> None:
         raise ValueError(f"`dag_name`={dag_name} does not exist")
 
 
-def generate_bash_command(params: str) -> str:
-    backfill_params = __parse_string_params(params)
+def generate_bash_command(params: dict) -> str:
+    backfill_params = BackfillParams(**params)
     return " ".join(backfill_params.generate_backfill_command())
 
 
@@ -85,12 +72,17 @@ doc_md = """
     start_date=datetime.datetime(2022, 11, 1),
     dagrun_timeout=datetime.timedelta(days=1),
     tags=[Tag.ImpactTier.tier_3],
-    params={"dag_name": "dag_name",
-            "start_date": (datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
-            "end_date": datetime.date.today().isoformat(),
-            "clear": False,
-            "dry_run": True,
-            "task_regex": None,
+    render_template_as_native_obj=True,
+    params={"dag_name": Param("dag_name", type="string"),
+            "start_date": Param((datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
+                                type="string",
+                                format="date-time"),
+            "end_date": Param(datetime.date.today().isoformat(),
+                              type="string",
+                              format="date-time"),
+            "clear": Param(False, type="boolean"),
+            "dry_run": Param(True, type="boolean"),
+            "task_regex": Param(None, type=["string", "null"]),
             }
 )
 def backfill_dag():
