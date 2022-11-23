@@ -1,0 +1,22 @@
+# Official Airflow constraints file
+# Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
+# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.3.3/constraints-3.8.txt
+--constraint ./constraints.txt
+
+# Airflow dependencies
+apache-airflow[amazon,apache.hive,async,celery,cncf.kubernetes,crypto,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.3.3
+apache-airflow-providers-google
+apache-airflow-providers-http
+apache-airflow-providers-slack
+airflow-provider-fivetran==1.1.2
+
+# Misc
+mozlogging
+pytest
+
+# Required for backfill UI
+flask-admin
+shelljob==0.5.6
+
+# Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
+xmltodict
