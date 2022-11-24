@@ -40,7 +40,7 @@ default_args = {
 }
 
 TAGS = ["repo/telemetry-airflow", "impact/tier_3",]
-IMAGE = "gcr.io/data-monitoring-dev/dim:latest-app"
+IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 
 with DAG(
     "data_monitoring",
