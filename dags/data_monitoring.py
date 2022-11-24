@@ -65,8 +65,8 @@ with DAG(
                 "--fail_process_on_failure",
                 f"--project_id={project_id}",
                 f"--dataset={dataset}",
-                f"--table={table}"
-                "--date={{ macros.ds_add(ds, -1) }}"
+                f"--table={table}",
+                "--date={{ macros.ds_add(ds, -1) }}",
             ],
             env_vars=dict(
                 SLACK_BOT_TOKEN="{{ var.value.dim_slack_secret_token }}"),
