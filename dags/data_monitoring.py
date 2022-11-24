@@ -43,7 +43,7 @@ TAGS = ["repo/telemetry-airflow", "impact/tier_3",]
 IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 
 with DAG(
-    "data_monitoring",
+    "data_monitoring_v2",
     default_args=default_args,
     schedule_interval="0 7 * * *",  # all bqetl jobs should have finished by 7am UTC
     doc_md=DOCS,
