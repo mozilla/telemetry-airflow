@@ -2,7 +2,7 @@
 Overwatch
 Runs daily at 0700 UTC
 
-Source code is [overwatch repository](https://github.com/mozilla/overwatch/).
+Source code is [overwatch repository](https://github.com/mozilla/overwatch-mvp/).
 """
 
 from datetime import datetime, timedelta
