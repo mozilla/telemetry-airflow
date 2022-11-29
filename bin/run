@@ -182,9 +182,6 @@ init_variables() {
     airflow variables set "Prod_glam_secret__django_secret_key" "Prod_glam_secret__django_secret_key"
     airflow variables set "Dev_glam_project" "Dev_glam_project"
     airflow variables set "Prod_glam_project" "Prod_glam_project"
-    
-    airflow variables set "overwatch_image_version" "overwatch_image_version"
-    airflow variables set "overwatch_slack_token" "overwatch_slack_token"
 }
 
 [ $# -lt 1 ] && usage
