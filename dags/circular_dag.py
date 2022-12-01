@@ -5,8 +5,6 @@ from airflow.operators.empty import EmptyOperator
 
 with DAG(
     'circular_dag',
-    # These args will get passed on to each operator
-    # You can override them on a per-task basis during operator initialization
     default_args={
         'depends_on_past': False,
         'email': ['airflow@example.com'],
@@ -21,12 +19,8 @@ with DAG(
     catchup=False,
     tags=['example'],
 ) as dag:
-
-    # t1, t2 and t3 are examples of tasks created by instantiating operators
-    t1 = EmptyOperator()
-
-    t2 = EmptyOperator()
-
-    t3 = EmptyOperator()
+    t1 = EmptyOperator(task_id="task1")
+    t2 = EmptyOperator(task_id="task2")
+    t3 = EmptyOperator(task_id="task3")
 
     t1 >> [t2, t3] >> t1
