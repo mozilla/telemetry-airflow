@@ -71,19 +71,6 @@ with DAG(
         dag=dag,
     )
 
-    wait_for_main_summary_export = ExternalTaskSensor(
-        task_id="wait_for_main_summary",
-        external_dag_id="bqetl_main_summary",
-        external_task_id="telemetry_derived__main_summary__v4",
-        execution_delta=timedelta(hours=2),
-        mode="reschedule",
-        allowed_states=['success'],
-        failed_states=['failed', 'upstream_failed', 'skipped'],
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
-        email_on_retry=False,
-        dag=dag,
-    )
-
     wait_for_search_clients_daily = ExternalTaskSensor(
         task_id="wait_for_search_clients_daily",
         external_dag_id="bqetl_search",
@@ -100,7 +87,6 @@ with DAG(
     opmon_run.set_upstream(
         [
             wait_for_clients_daily_export,
-            wait_for_main_summary_export,
             wait_for_search_clients_daily,
         ]
     )
