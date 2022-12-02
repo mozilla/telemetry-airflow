@@ -19,6 +19,7 @@ from airflow.operators.subdag import SubDagOperator
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
+from glam_subdags.probe_hotlist import update_hotlist
 from utils.gcp import bigquery_etl_query, gke_command
 from utils.tags import Tag
 
@@ -77,6 +78,15 @@ latest_versions = bigquery_etl_query(
     owner="efilho@mozilla.com",
     date_partition_parameter=None,
     arguments=("--replace",),
+    dag=dag,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+)
+
+update_probe_hotlist = update_hotlist(
+    task_id="update_probe_hotlist",
+    project_id=prod_project_id,
+    source_dataset_id=dev_dataset_id,
+    destination_dataset_id=dev_dataset_id,
     dag=dag,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
 )
@@ -401,7 +411,8 @@ glam_import_probes = GKENatPodOperator(
 
 ##wait_for_main_ping >> latest_versions
 
-latest_versions >> clients_daily_scalar_aggregates
+latest_versions >> update_probe_hotlist
+update_probe_hotlist >> clients_daily_scalar_aggregates
 clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
 clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
 clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
@@ -411,7 +422,9 @@ clients_scalar_aggregates >> scalar_percentiles
 # client_scalar_probe_counts is not dependent on scalar_percentiles
 scalar_percentiles >> client_scalar_probe_counts
 
-latest_versions >> clients_daily_histogram_aggregates_parent
+
+latest_versions >> update_probe_hotlist
+update_probe_hotlist >> clients_daily_histogram_aggregates_parent
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_gpu
 clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
