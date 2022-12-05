@@ -195,7 +195,7 @@ case $1 in
     exec airflow celery flower
     ;;
   web)
-#    airflow db init
+    airflow db init
     airflow db upgrade
 
     # Only init connections in dev
