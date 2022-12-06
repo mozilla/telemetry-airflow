@@ -283,27 +283,42 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
+# Testing without SubDag because it keeps getting stuck on "running"
+# and not actually executing anything. Also, they're known for causing deadlocks in 
+# Celelery (might be our case) thus are discouraged. 
+clients_histogram_bucket_counts = bigquery_etl_query(
+    task_id="clients_histogram_bucket_counts",
+    destination_table="clients_histogram_bucket_counts_v1",
+    dataset_id=dev_dataset_id,
+    project_id=prod_project_id,
+    owner="efilho@mozilla.com",
+    parameters=("submission_date:DATE:{{ds}}",),
+    arguments=("--replace",),
+    dag=dag,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+)
+
 # SubdagOperator uses a SequentialExecutor by default
 # so its tasks will run sequentially.
 # Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
 # backfill to schedule tasks in the subdag. User no longer need to specify
 # the executor in SubDagOperator. (We don't but the assumption that Sequential
 # Executor is used is now wrong)
-clients_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        25,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
-    ),
-    task_id="clients_histogram_bucket_counts",
-    dag=dag,
-)
+#clients_histogram_bucket_counts = SubDagOperator(
+#    subdag=repeated_subdag(
+#        GLAM_DAG,
+#        "clients_histogram_bucket_counts",
+#        default_args,
+#        dag.schedule_interval,
+#        dev_dataset_id,
+#        ("submission_date:DATE:{{ds}}",),
+#        25,
+#        None,
+#        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+#    ),
+#    task_id="clients_histogram_bucket_counts",
+#    dag=dag,
+#)
 
 clients_histogram_probe_counts = bigquery_etl_query(
     task_id="clients_histogram_probe_counts",
