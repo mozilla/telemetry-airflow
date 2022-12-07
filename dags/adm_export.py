@@ -1,7 +1,8 @@
 import datetime
 
 from airflow import DAG
-from airflow.hooks.base import BaseHook
+from airflow.hooks.base_hook import BaseHook
+from airflow.contrib.hooks.gcp_api_base_hook import GoogleCloudBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from operators.gcp_container_operator import GKEPodOperator

@@ -12,8 +12,9 @@ This DAG is low priority.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-
 from utils.gcp import gke_command
+from airflow.sensors.external_task import ExternalTaskSensor
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {

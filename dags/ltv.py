@@ -6,11 +6,19 @@ Kicks off jobs to run on a Dataproc cluster. The job code lives in
 
 See [client_ltv docs on DTMO](https://docs.telemetry.mozilla.org/datasets/search/client_ltv/reference.html).
 """
+
+import json
+import os
+
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag import SubDagOperator
+from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 
+from airflow.providers.google.cloud.operators.bigquery import (
+    BigQueryExecuteQueryOperator
+)
+from six.moves.urllib.request import urlopen
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     copy_artifacts_dev,

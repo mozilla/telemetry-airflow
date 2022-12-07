@@ -8,7 +8,7 @@ Source code is in the [firefox-public-data-report-etl repository]
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag import SubDagOperator
+from airflow.operators.subdag_operator import SubDagOperator
 from datetime import datetime, timedelta
 from operators.gcp_container_operator import GKEPodOperator
 

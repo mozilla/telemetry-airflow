@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.empty import EmptyOperator
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
@@ -75,7 +75,7 @@ with DAG(
         email_on_retry=False,
     )
 
-    pre_import = EmptyOperator(
+    pre_import = DummyOperator(
         task_id=f'pre_import',
     )
 

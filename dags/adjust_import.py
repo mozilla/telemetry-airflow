@@ -1,7 +1,10 @@
+import json
+import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.operators.subdag_operator import SubDagOperator
 from utils.dataproc import (
     moz_dataproc_pyspark_runner,
     copy_artifacts_dev,

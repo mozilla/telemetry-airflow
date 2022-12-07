@@ -1,8 +1,9 @@
-from datetime import datetime
-
 from airflow import DAG
+from datetime import datetime, timedelta
+from airflow.models import Variable
 
 from operators.gcp_container_operator import GKEPodOperator
+from utils.gcp import bigquery_etl_query, gke_command
 
 DOCS = """\
 This DAG is related to data monitoring project it is still under development.

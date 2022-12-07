@@ -13,9 +13,12 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from operators.gcp_container_operator import GKENatPodOperator
+from operators.task_sensor import ExternalTaskCompletedSensor
+from airflow.models import Variable
+from airflow.operators.subdag_operator import SubDagOperator
 
-from airflow.operators.subdag import SubDagOperator
-
+from glam_subdags.extract import extracts_subdag, extract_user_counts
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
@@ -57,7 +60,7 @@ dag = DAG(
 
 """ This isn't needed because the dev dag will only be triggered manually
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskSensor(
+wait_for_main_ping = ExternalTaskCompletedSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",

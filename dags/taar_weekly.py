@@ -6,7 +6,7 @@ For context, see https://github.com/mozilla/taar
 
 from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.operators.subdag import SubDagOperator
+from airflow.operators.subdag_operator import SubDagOperator
 from airflow.models import Variable
 
 from operators.gcp_container_operator import GKEPodOperator  # noqa
