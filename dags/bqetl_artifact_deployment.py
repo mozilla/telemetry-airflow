@@ -48,8 +48,8 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         cmds=["bash", "-c"],
         command=[
             "script/bqetl generate all && "
-            "script/bqetl query schema update '*' &&"
-            "script/bqetl query schema deploy '*' --skip-existing"
+            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip &&"
+            "script/bqetl query schema deploy '*' --skip-existing --use-cloud-function=false --force --ignore-dryrun-skip"
         ],
         docker_image=docker_image,
     )
