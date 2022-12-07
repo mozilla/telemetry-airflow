@@ -66,4 +66,5 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
     )
 
     publish_views.set_upstream(publish_public_udfs)
+    publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
