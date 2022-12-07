@@ -33,8 +33,8 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         docker_image=docker_image
     )
 
-    publish_persisten_udfs = gke_command(
-        task_id="publish_persisten_udfs",
+    publish_persistent_udfs = gke_command(
+        task_id="publish_persistent_udfs",
         cmds=["bash", "-c"],
         command=[
             "script/bqetl generate all && "
