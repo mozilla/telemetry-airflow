@@ -151,6 +151,8 @@ with DAG('probe_scraper',
                     "--glean",
                     f"--glean-url={url}",
                     "--glean-limit-date={{ds}}",
+                    # don't send emails from these jobs, just print their contents
+                    "--dry-run",
                 ]
                 + (
                     [
