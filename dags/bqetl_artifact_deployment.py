@@ -47,7 +47,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         task_id="publish_views",
         cmds=["bash", "-c"],
         command=[
-            "script/bqetl generate all && "
+            "script/generate_all_views --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view publish --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view publish --target-project=mozdata --user-facing-only && "
             "script/publish_public_data_views --target-project=moz-fx-data-shared-prod && "
