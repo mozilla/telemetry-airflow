@@ -388,7 +388,7 @@ networkx==2.8.4
 nodeenv==1.7.0
 ntlm-auth==1.5.0
 numpy==1.22.4
-oauthlib==3.2.0
+oauthlib==3.2.1
 openapi-schema-validator==0.2.3
 openapi-spec-validator==0.4.0
 opsgenie-sdk==2.1.5
