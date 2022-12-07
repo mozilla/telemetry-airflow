@@ -11,7 +11,9 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
+from operators.gcp_container_operator import GKENatPodOperator
+from airflow.models import Variable
+from airflow.operators.subdag_operator import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup

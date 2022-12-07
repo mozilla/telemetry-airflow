@@ -1,10 +1,12 @@
-from datetime import datetime, timedelta
-
 from airflow import DAG
+from airflow.models import Variable
+from datetime import datetime, timedelta
+from utils.tags import Tag
+
+from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from airflow.operators.bash import BashOperator
 
 from utils.slack import if_task_fails_alert_slack
-from utils.tags import Tag
 
 """
 If getting "channel_not_found" errors, you need to open the slack channel settings, navigate to Integrations,

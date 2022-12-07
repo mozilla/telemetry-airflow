@@ -6,11 +6,13 @@ This DAG exports views related to experiment monitoring to GCS as JSON
 every 5 minutes to power the Experimenter console.
 """
 
-from datetime import datetime
-
 from airflow import DAG
+from datetime import datetime, timedelta
 
-from utils.gcp import gke_command
+from utils.gcp import bigquery_etl_query, gke_command
+
+from airflow.sensors.external_task import ExternalTaskSensor
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
@@ -27,7 +29,9 @@ tags = [Tag.ImpactTier.tier_2]
 with DAG(
     'experiments_live',
     default_args=default_args,
-    max_active_tasks=4,
+    # Will be renamed to max_active_tasks sometime later as main upstream branch states
+    # max_active_tasks=4,
+    concurrency=4,
     max_active_runs=1,
     schedule_interval="*/5 * * * *",
     doc_md=__doc__,

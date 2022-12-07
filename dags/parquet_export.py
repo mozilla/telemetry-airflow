@@ -8,14 +8,17 @@ which would allow us to tear down this DAG.
 
 from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.operators.subdag import SubDagOperator
+from airflow.operators.subdag_operator import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import (
+    bigquery_etl_query,
+    bigquery_etl_copy_deduplicate,
     export_to_parquet,
+    gke_command,
 )
 from utils.tags import Tag
 
