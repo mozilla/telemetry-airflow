@@ -37,8 +37,8 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         task_id="publish_persistent_udfs",
         cmds=["bash", "-c"],
         command=[
-            "script/publish_persistent_udfs --target=moz-fx-data-shared-prod && "
-            "script/publish_persistent_udfs --target=mozdata"
+            "script/publish_persistent_udfs --project-id=moz-fx-data-shared-prod && "
+            "script/publish_persistent_udfs --project-id=mozdata"
         ],
         docker_image=docker_image,
     )
