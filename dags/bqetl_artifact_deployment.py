@@ -39,3 +39,12 @@ with DAG("bqetl_views", default_args=default_args, schedule_interval="@daily", d
         ],
         docker_image=docker_image,
     )
+
+    publish_new_tables = gke_command(
+        task_id="publish_new_tables",
+        command=[
+            "script/bqetl generate all && "
+            "script/bqetl query schema update '*' &&",
+            "script/bqetl query schema deploy '*' --skip-existing",
+        ],
+    )
