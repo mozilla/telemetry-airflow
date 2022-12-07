@@ -33,6 +33,16 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         docker_image=docker_image
     )
 
+    publish_persisten_udfs = gke_command(
+        task_id="publish_persisten_udfs",
+        cmds=["bash", "-c"],
+        command=[
+            "script/bqetl generate all && "
+            "script/publish_persistent_udfs --target-project=moz-fx-data-shared-prod && "
+            "script/publish_persistent_udfs --target-project=mozdata"
+        ],
+    )
+
     publish_new_tables = gke_command(
         task_id="publish_new_tables",
         cmds=["bash", "-c"],
