@@ -302,6 +302,7 @@ clients_histogram_bucket_counts = bigquery_etl_query(
     dataset_id=dev_dataset_id,
     project_id=prod_project_id,
     owner="efilho@mozilla.com",
+    date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
