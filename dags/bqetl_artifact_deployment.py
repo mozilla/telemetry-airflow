@@ -35,7 +35,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
 
     publish_persistent_udfs = gke_command(
         task_id="publish_persistent_udfs",
-        cmds=["bash", "-c"],
+        cmds=["bash", "-x", "-c"],
         command=[
             "script/publish_persistent_udfs --project-id=moz-fx-data-shared-prod && "
             "script/publish_persistent_udfs --project-id=mozdata"
@@ -45,7 +45,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
 
     publish_new_tables = gke_command(
         task_id="publish_new_tables",
-        cmds=["bash", "-c"],
+        cmds=["bash", "-x", "-c"],
         command=[
             "script/bqetl generate all && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip &&"
@@ -56,7 +56,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
 
     publish_views = gke_command(
         task_id="publish_views",
-        cmds=["bash", "-c"],
+        cmds=["bash", "-x", "-c"],
         command=[
             "script/bqetl generate all && "
             "script/bqetl view publish --skip-authorized --target-project=moz-fx-data-shared-prod && "
