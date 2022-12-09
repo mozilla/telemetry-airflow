@@ -67,6 +67,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
             "script/publish_public_data_views --target-project=mozdata"
         ],
         docker_image=docker_image,
+        get_logs=False,
     )
 
     publish_views.set_upstream(publish_public_udfs)
