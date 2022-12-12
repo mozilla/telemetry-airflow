@@ -35,7 +35,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
 
     publish_persistent_udfs = gke_command(
         task_id="publish_persistent_udfs",
-        cmds=["bash", "-c"],
+        cmds=["bash", "-x", "-c"],
         command=[
             "script/publish_persistent_udfs --project-id=moz-fx-data-shared-prod && "
             "script/publish_persistent_udfs --project-id=mozdata"
@@ -45,7 +45,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
 
     publish_new_tables = gke_command(
         task_id="publish_new_tables",
-        cmds=["bash", "-c"],
+        cmds=["bash", "-x", "-c"],
         command=[
             "script/bqetl generate all && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip &&"
@@ -56,15 +56,18 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
 
     publish_views = gke_command(
         task_id="publish_views",
-        cmds=["bash", "-c"],
+        cmds=["bash", "-x", "-c"],
         command=[
             "script/bqetl generate all && "
-            "script/bqetl view publish --target-project=moz-fx-data-shared-prod && "
-            "script/bqetl view publish --target-project=mozdata --user-facing-only && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-shared-prod && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --target-project=mozdata --user-facing-only && "
+            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
+            "script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only && "
             "script/publish_public_data_views --target-project=moz-fx-data-shared-prod && "
             "script/publish_public_data_views --target-project=mozdata"
         ],
         docker_image=docker_image,
+        get_logs=False,
     )
 
     publish_views.set_upstream(publish_public_udfs)
