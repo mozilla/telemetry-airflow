@@ -3,6 +3,7 @@ Nightly deploy of bigquery etl views.
 """
 
 from airflow import DAG
+from airflow.utils.trigger_rule import TriggerRule
 from datetime import timedelta, datetime
 from utils.gcp import gke_command
 from utils.tags import Tag
@@ -68,6 +69,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         ],
         docker_image=docker_image,
         get_logs=False,
+        trigger_rule=TriggerRule.ALL_DONE,
     )
 
     publish_views.set_upstream(publish_public_udfs)
