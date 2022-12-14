@@ -7,43 +7,54 @@
 # GCLOUD_SERVICE_KEY - key for gsutil rsync bootstrap and jobs with gcs
 # GOOGLE_PROJECT_ID - airflow-dataproc
 # GOOGLE_COMPUTE_ZONE - us-west1-b
-#
 
-version: 2
+version: 2.1
+orbs:
+  docker: circleci/docker@2.2.0
+  python: circleci/python@2.1.1
+
 jobs:
-  build:
-    docker:
-      - image: docker:18.02.0-ce
-    working_directory: ~/mozilla/telemetry-airflow
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run: |
-          printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" > version.json
-      - run: docker build -t app:build .
+#  generate_version_file:
+#    docker:
+#      - image: cimg/python:3.8.12
+#    steps:
+#      - checkout
+#      - run:
+#          name: Generate build version.json artifact
+#          command: >
+#            jq -n
+#            --arg commit "$CIRCLE_SHA1"
+#            --arg version "$CIRCLE_TAG"
+#            --arg source "$CIRCLE_REPOSITORY_URL"
+#            --arg build "$CIRCLE_BUILD_URL"
+#            '{commit:$commit, version:$version, source:$source, build:$build}'
+#            > version_jq.json
 
-  test:
-    docker:
-      - image: python:3.8.12
-    working_directory: ~/mozilla/telemetry-airflow
+  tests:
+    executor:
+      name: python/default
+      tag: 3.8.12
     steps:
       - checkout
-      - run: python -m pip install pip --upgrade && python -m pip install pytest
-      - run: python -m pytest tests/
-      - run: python -m py_compile dags/*.py
-      - run: find . -name *.pyc -delete
-
-  verify-requirements:
-    docker:
-      - image: python:3.8.12
-    steps:
-      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
+          pre-install-steps:
       - run:
-          name: Verify that requirements.txt contains the right dependencies for this python version
+          name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
             pip install pip-tools
             pip-compile --quiet
             git diff --exit-code requirements.txt
+      - run:
+          name: 🧪 Pytest
+          command: python -m pytest
+      - run:
+          name: 🧪 Compile DAGs
+          command: python -m py_compile dags/*.py
+      - run:
+          name: 🧹 Clean up
+          command: find . -name *.pyc -delete
 
   test-environment:
     machine:
@@ -52,15 +63,11 @@ jobs:
     working_directory: ~/mozilla/telemetry-airflow
     steps:
       - checkout
+      - run: docker-compose pull
+      - run: docker-compose build
+      - run: sudo chown -R 10001:10001 .
       - run:
-          command: |
-            docker-compose pull
-            docker-compose build
-            # now take ownership of the folder
-            sudo chown -R 10001:10001 .
-
-      - run:
-          name: Test if dag scripts can be parsed by Airflow and that tags have been correctly set
+          name: Check DAGs can be parsed and are correctly tagged
           #  Valid DAG tags are defined in: `bin/test-dag-tags.py`
           command: bash bin/test-parse
 
@@ -106,15 +113,18 @@ jobs:
 
 
 workflows:
-  version: 2
   build-test-deploy:
     jobs:
-      - build:
+      - docker/publish:
+          name: build
+          deploy: false
+          image: $CIRCLE_PROJECT_REPONAME
+          tag: ${CIRCLE_SHA1:0:9}
           filters:
             tags:
               only: /.*/
 
-      - test:
+      - tests:
           filters:
             tags:
               only: /.*/
@@ -126,7 +136,7 @@ workflows:
 
       - deploy:
           requires:
-            - test
+            - tests
           filters:
             tags:
               only: /.*/
@@ -135,7 +145,7 @@ workflows:
 
       - sync_gcs:
           requires:
-            - test
+            - tests
           filters:
             tags:
               only: /.*/
