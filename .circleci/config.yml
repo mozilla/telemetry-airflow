@@ -14,22 +14,6 @@ orbs:
   python: circleci/python@2.1.1
 
 jobs:
-#  generate_version_file:
-#    docker:
-#      - image: cimg/python:3.8.12
-#    steps:
-#      - checkout
-#      - run:
-#          name: Generate build version.json artifact
-#          command: >
-#            jq -n
-#            --arg commit "$CIRCLE_SHA1"
-#            --arg version "$CIRCLE_TAG"
-#            --arg source "$CIRCLE_REPOSITORY_URL"
-#            --arg build "$CIRCLE_BUILD_URL"
-#            '{commit:$commit, version:$version, source:$source, build:$build}'
-#            > version_jq.json
-
   tests:
     executor:
       name: python/default
@@ -71,33 +55,6 @@ jobs:
           #  Valid DAG tags are defined in: `bin/test-dag-tags.py`
           command: bash bin/test-parse
 
-  deploy:
-    docker:
-      - image: docker:18.02.0-ce
-    working_directory: ~/mozilla/telemetry-airflow
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run: |
-          printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" > version.json
-      - run: docker build -t app:build .
-      - run:
-          name: Deploy to Dockerhub
-          command: |
-            # Deploy main
-            if [ "${CIRCLE_BRANCH}" == "main" ]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag app:build ${DOCKERHUB_REPO}:latest
-              docker push ${DOCKERHUB_REPO}:latest
-            elif  [ ! -z "${CIRCLE_TAG}" ]; then
-            # Deploy a release tag...
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
-              echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-              docker tag app:build "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-              docker images
-              docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-            fi
-
   sync_gcs:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:323.0.0
@@ -134,14 +91,30 @@ workflows:
             tags:
               only: /.*/
 
-      - deploy:
+      - docker/publish:
+          name: push-latest
+          docker-password: $DOCKER_PASS
+          docker-username: $DOCKER_USER
+          image: $DOCKERHUB_REPO
+          tag: latest
+          requires:
+            - tests
+          filters:
+            branches:
+              only: main
+
+      - docker/publish:
+          name: push-tag
+          docker-password: $DOCKER_PASS
+          docker-username: $DOCKER_USER
+          image: $DOCKERHUB_REPO
+          tag: $CIRCLE_TAG
           requires:
             - tests
           filters:
             tags:
               only: /.*/
-            branches:
-              only: main
+
 
       - sync_gcs:
           requires:
