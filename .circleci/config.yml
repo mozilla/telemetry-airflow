@@ -14,7 +14,7 @@ orbs:
   python: circleci/python@2.1.1
 
 jobs:
-  tests:
+  unit-tests:
     executor:
       name: python/default
       tag: 3.8.12
@@ -23,7 +23,6 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
-          pre-install-steps:
       - run:
           name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
@@ -69,10 +68,10 @@ jobs:
 
 
 workflows:
-  build-test-deploy:
+  ci:
     jobs:
       - docker/publish:
-          name: build
+          name: validate-docker-build
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
@@ -80,7 +79,7 @@ workflows:
             tags:
               only: /.*/
 
-      - tests:
+      - unit-tests:
           filters:
             tags:
               only: /.*/
@@ -90,14 +89,14 @@ workflows:
             tags:
               only: /.*/
 
+  publish:
+    jobs:
       - docker/publish:
           name: push-latest
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
           tag: latest
-          requires:
-            - tests
           filters:
             branches:
               only: main
@@ -108,18 +107,13 @@ workflows:
           docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
           tag: $CIRCLE_TAG
-          requires:
-            - tests
           filters:
             tags:
               only: /.*/
             branches:
               ignore: /.*/
 
-
       - sync_gcs:
-          requires:
-            - tests
           filters:
             tags:
               only: /.*/
