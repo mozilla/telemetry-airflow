@@ -41,10 +41,9 @@ jobs:
           command: find . -name *.pyc -delete
 
   test-environment:
-    machine:
-      image: ubuntu-2004:202111-01
-      docker_layer_caching: true
-    working_directory: ~/mozilla/telemetry-airflow
+    executor:
+      name: docker/machine
+      dlc: true
     steps:
       - checkout
       - run: docker-compose pull
@@ -52,7 +51,7 @@ jobs:
       - run: sudo chown -R 10001:10001 .
       - run:
           name: Check DAGs can be parsed and are correctly tagged
-          #  Valid DAG tags are defined in: `bin/test-dag-tags.py`
+          # Valid DAG tags are defined in: `bin/test-dag-tags.py`
           command: bash bin/test-parse
 
   sync_gcs:
