@@ -114,6 +114,8 @@ workflows:
           filters:
             tags:
               only: /.*/
+            branches:
+              ignore: /.*/
 
 
       - sync_gcs:
