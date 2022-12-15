@@ -93,8 +93,8 @@ workflows:
 
       - docker/publish:
           name: push-latest
-          docker-password: $DOCKER_PASS
-          docker-username: $DOCKER_USER
+          docker-password: DOCKER_PASS
+          docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
           tag: latest
           requires:
@@ -105,8 +105,8 @@ workflows:
 
       - docker/publish:
           name: push-tag
-          docker-password: $DOCKER_PASS
-          docker-username: $DOCKER_USER
+          docker-password: DOCKER_PASS
+          docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
           tag: $CIRCLE_TAG
           requires:
