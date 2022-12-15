@@ -39,7 +39,7 @@ jobs:
           name: 🧹 Clean up
           command: find . -name *.pyc -delete
 
-  test-environment:
+  integration-tests:
     executor:
       name: docker/machine
       dlc: true
@@ -71,7 +71,7 @@ workflows:
   ci:
     jobs:
       - docker/publish:
-          name: validate-docker-build
+          name: Docker build test
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
@@ -80,11 +80,13 @@ workflows:
               only: /.*/
 
       - unit-tests:
+          name: Unit tests
           filters:
             tags:
               only: /.*/
 
-      - test-environment:
+      - integration-tests:
+          name: Integration tests
           filters:
             tags:
               only: /.*/
@@ -92,7 +94,7 @@ workflows:
   publish:
     jobs:
       - docker/publish:
-          name: push-latest
+          name: Push latest
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
@@ -102,7 +104,7 @@ workflows:
               only: main
 
       - docker/publish:
-          name: push-tag
+          name: Push tag
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
