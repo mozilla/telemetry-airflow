@@ -35,8 +35,6 @@ taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 taar_gcpdataproc_project_id = "airflow-dataproc"
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
-taar_aws_access_key, taar_aws_secret_key, session = AwsBaseHook(
-    aws_conn_id=taar_aws_conn_id, client_type='s3').get_credentials()
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
 taar_similarity_cluster_name = "dataproc-taar-similarity"
