@@ -108,7 +108,6 @@ init_connections() {
     aws_conn=(
       "airflow_taar_rw_s3"
       "aws_dev_iam_s3"
-      "aws_data_iam_s3"
       "aws_data_iam_ses"
       "aws_dev_socorro_telemetry_parquet_s3"
       "aws_dev_telemetry_public_analysis_2_rw"
