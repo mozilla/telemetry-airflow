@@ -110,7 +110,6 @@ init_connections() {
       "aws_dev_iam_s3"
       "aws_data_iam_ses"
       "aws_dev_telemetry_public_analysis_2_rw"
-      "aws_prod_fx_usage_report"
       "aws_prod_probe_scraper"
       "aws_socorro_readonly_s3"
     )
