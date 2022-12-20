@@ -191,7 +191,7 @@ with DAG('probe_scraper',
             probe_scraper_base_arguments
             + [
                 # when --update is specified without --glean-repo or --glean-url,
-                # this only writes metadata files that are not per glean repo.
+                # this only writes metadata changes.
                 "--update",
                 "--glean",
             ]
@@ -207,7 +207,7 @@ with DAG('probe_scraper',
         **airflow_gke_prod_kwargs,
     )
 
-    probe_scraper_glean_repositories >> probe_scraper
+    probe_scraper_glean_repositories >> probe_scraper_glean
 
     probe_scraper_checks = [
         GKEPodOperator(
