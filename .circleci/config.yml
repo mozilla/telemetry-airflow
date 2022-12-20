@@ -88,21 +88,19 @@ workflows:
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
-          filters:
+          filters: &ci-filter
+            branches:
+              ignore: main
             tags:
-              only: /.*/
+              ignore: /.*/
 
       - unit-tests:
           name: Unit tests
-          filters:
-            tags:
-              only: /.*/
+          filters: *ci-filter
 
       - integration-tests:
           name: Integration tests
-          filters:
-            tags:
-              only: /.*/
+          filters: *ci-filter
 
   publish:
     jobs:
@@ -111,7 +109,7 @@ workflows:
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
-          image: $DOCKERHUB_REPO
+          image: mozilla/telemetry-airflow
           tag: latest
           filters:
             branches:
@@ -122,7 +120,7 @@ workflows:
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
-          image: $DOCKERHUB_REPO
+          image: mozilla/telemetry-airflow
           tag: $CIRCLE_TAG
           filters:
             tags:
