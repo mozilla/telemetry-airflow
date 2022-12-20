@@ -151,50 +151,7 @@ trim_database = gke_command(
     dag=dag,
 )
 
-mozaggregator2bq_extract = gke_command(
-    task_id="mozaggregator2bq_extract",
-    name="mozaggregator2bq_extract",
-    command=["bin/backfill"],
-    env_vars=dict(
-        POSTGRES_HOST="{{ var.value.mozaggregator_postgres_host }}",
-        POSTGRES_DB="telemetry",
-        POSTGRES_USER="root",
-        POSTGRES_PASS="{{ var.value.mozaggregator_postgres_pass }}",
-        START_DS="{{ ds }}",
-        END_DS="{{ next_ds }}",
-        SPARK_LOCAL_HOSTNAME="localhost",
-    ),
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
-    dag=dag,
-)
-
-mozaggregator2bq_load_build = gke_command(
-    task_id="mozaggregator2bq_load_build",
-    name="mozaggregator2bq_load_build",
-    command=["bin/load_bq", "build_id"],
-    env_vars=dict(
-        REPLACE="true",
-    ),
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
-    dag=dag,
-)
-
-mozaggregator2bq_load_submission = gke_command(
-    task_id="mozaggregator2bq_load_submission",
-    name="mozaggregator2bq_load_submission",
-    command=["bin/load_bq", "submission_date"],
-    env_vars=dict(
-        REPLACE="true",
-    ),
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
-    dag=dag,
-)
-
-
 prerelease_telemetry_aggregate_view_dataproc >> trim_database
-prerelease_telemetry_aggregate_view_dataproc >> mozaggregator2bq_extract
-mozaggregator2bq_extract >> mozaggregator2bq_load_build
-mozaggregator2bq_extract >> mozaggregator2bq_load_submission
 
 # export to avro, if necessary
 if EXPORT_TO_AVRO:
