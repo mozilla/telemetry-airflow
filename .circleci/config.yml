@@ -13,6 +13,7 @@ orbs:
   docker: circleci/docker@2.2.0
   python: circleci/python@2.1.1
 
+
 jobs:
   unit-tests:
     executor:
@@ -72,6 +73,18 @@ workflows:
     jobs:
       - docker/publish:
           name: Docker build test
+          before_build: &version
+            - run:
+                name: Generate build version.json artifact
+                command: >
+                  printf 
+                  '{"commit":"%s","version":"%s", "source":"https://github.com/%s/%s","build":"%s"}\n' 
+                  "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" 
+                  "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
+                  > version.json
+            - run:
+                name: Echo version.json artifact
+                command: cat version.json
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
@@ -95,6 +108,7 @@ workflows:
     jobs:
       - docker/publish:
           name: Push latest
+          before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
@@ -105,6 +119,7 @@ workflows:
 
       - docker/publish:
           name: Push tag
+          before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: $DOCKERHUB_REPO
