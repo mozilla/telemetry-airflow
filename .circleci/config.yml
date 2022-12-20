@@ -7,89 +7,52 @@
 # GCLOUD_SERVICE_KEY - key for gsutil rsync bootstrap and jobs with gcs
 # GOOGLE_PROJECT_ID - airflow-dataproc
 # GOOGLE_COMPUTE_ZONE - us-west1-b
-#
 
-version: 2
+version: 2.1
+orbs:
+  docker: circleci/docker@2.2.0
+  python: circleci/python@2.1.1
+
+
 jobs:
-  build:
-    docker:
-      - image: docker:18.02.0-ce
-    working_directory: ~/mozilla/telemetry-airflow
+  unit-tests:
+    executor:
+      name: python/default
+      tag: 3.8.12
     steps:
       - checkout
-      - setup_remote_docker
-      - run: |
-          printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" > version.json
-      - run: docker build -t app:build .
-
-  test:
-    docker:
-      - image: python:3.8.12
-    working_directory: ~/mozilla/telemetry-airflow
-    steps:
-      - checkout
-      - run: python -m pip install pip --upgrade && python -m pip install pytest
-      - run: python -m pytest tests/
-      - run: python -m py_compile dags/*.py
-      - run: find . -name *.pyc -delete
-
-  verify-requirements:
-    docker:
-      - image: python:3.8.12
-    steps:
-      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
       - run:
-          name: Verify that requirements.txt contains the right dependencies for this python version
+          name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
             pip install pip-tools
             pip-compile --quiet
             git diff --exit-code requirements.txt
+      - run:
+          name: 🧪 Pytest
+          command: python -m pytest
+      - run:
+          name: 🧪 Compile DAGs
+          command: python -m py_compile dags/*.py
+      - run:
+          name: 🧹 Clean up
+          command: find . -name *.pyc -delete
 
-  test-environment:
-    machine:
-      image: ubuntu-2004:202111-01
-      docker_layer_caching: true
-    working_directory: ~/mozilla/telemetry-airflow
+  integration-tests:
+    executor:
+      name: docker/machine
+      dlc: true
     steps:
       - checkout
+      - run: docker-compose pull
+      - run: docker-compose build
+      - run: sudo chown -R 10001:10001 .
       - run:
-          command: |
-            docker-compose pull
-            docker-compose build
-            # now take ownership of the folder
-            sudo chown -R 10001:10001 .
-
-      - run:
-          name: Test if dag scripts can be parsed by Airflow and that tags have been correctly set
-          #  Valid DAG tags are defined in: `bin/test-dag-tags.py`
+          name: Check DAGs can be parsed and are correctly tagged
+          # Valid DAG tags are defined in: `bin/test-dag-tags.py`
           command: bash bin/test-parse
-
-  deploy:
-    docker:
-      - image: docker:18.02.0-ce
-    working_directory: ~/mozilla/telemetry-airflow
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run: |
-          printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" > version.json
-      - run: docker build -t app:build .
-      - run:
-          name: Deploy to Dockerhub
-          command: |
-            # Deploy main
-            if [ "${CIRCLE_BRANCH}" == "main" ]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag app:build ${DOCKERHUB_REPO}:latest
-              docker push ${DOCKERHUB_REPO}:latest
-            elif  [ ! -z "${CIRCLE_TAG}" ]; then
-            # Deploy a release tag...
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
-              echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-              docker tag app:build "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-              docker images
-              docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-            fi
 
   sync_gcs:
     docker:
@@ -106,36 +69,68 @@ jobs:
 
 
 workflows:
-  version: 2
-  build-test-deploy:
+  ci:
     jobs:
-      - build:
+      - docker/publish:
+          name: Docker build test
+          before_build: &version
+            - run:
+                name: Generate build version.json
+                command: >
+                  printf 
+                  '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' 
+                  "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" 
+                  "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
+                  > version.json
+            - run:
+                name: Output version.json
+                command: cat version.json
+          deploy: false
+          image: $CIRCLE_PROJECT_REPONAME
+          tag: ${CIRCLE_SHA1:0:9}
           filters:
             tags:
               only: /.*/
 
-      - test:
+      - unit-tests:
+          name: Unit tests
           filters:
             tags:
               only: /.*/
 
-      - test-environment:
+      - integration-tests:
+          name: Integration tests
           filters:
             tags:
               only: /.*/
 
-      - deploy:
-          requires:
-            - test
+  publish:
+    jobs:
+      - docker/publish:
+          name: Push latest
+          before_build: *version
+          docker-password: DOCKER_PASS
+          docker-username: DOCKER_USER
+          image: $DOCKERHUB_REPO
+          tag: latest
+          filters:
+            branches:
+              only: main
+
+      - docker/publish:
+          name: Push tag
+          before_build: *version
+          docker-password: DOCKER_PASS
+          docker-username: DOCKER_USER
+          image: $DOCKERHUB_REPO
+          tag: $CIRCLE_TAG
           filters:
             tags:
               only: /.*/
             branches:
-              only: main
+              ignore: /.*/
 
       - sync_gcs:
-          requires:
-            - test
           filters:
             tags:
               only: /.*/
