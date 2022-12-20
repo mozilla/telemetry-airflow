@@ -84,25 +84,21 @@ workflows:
                   > version.json
             - run:
                 name: Output version.json
-                command: cat version.json
+                command: cat version.json && echo ${DOCKERHUB_REPO:1:-2}
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
-          filters:
-            tags:
-              only: /.*/
+          filters: &ci-filter
+            branches:
+              ignore: main
 
       - unit-tests:
           name: Unit tests
-          filters:
-            tags:
-              only: /.*/
+          filters: *ci-filter
 
       - integration-tests:
           name: Integration tests
-          filters:
-            tags:
-              only: /.*/
+          filters: *ci-filter
 
   publish:
     jobs:
