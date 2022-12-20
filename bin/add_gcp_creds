@@ -4,7 +4,7 @@ set -eou pipefail
 
 keyfile_path=${1?"Must specify keyfile path"}
 
-connection=${2:-"google_cloud_derived_datasets"}
+connection=${2:-"google_cloud_airflow_gke"}
 
 # Wait for full display until after checks
 set -x
