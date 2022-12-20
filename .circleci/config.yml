@@ -91,6 +91,8 @@ workflows:
           filters: &ci-filter
             branches:
               ignore: main
+            tags:
+              ignore: /.*/
 
       - unit-tests:
           name: Unit tests
