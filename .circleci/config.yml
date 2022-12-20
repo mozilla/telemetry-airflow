@@ -75,7 +75,7 @@ workflows:
           name: Docker build test
           before_build: &version
             - run:
-                name: Generate build version.json artifact with printf
+                name: Generate build version.json
                 command: >
                   printf 
                   '{"commit":"%s","version":"%s", "source":"https://github.com/%s/%s","build":"%s"}\n' 
@@ -83,21 +83,8 @@ workflows:
                   "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
                   > version.json
             - run:
-                name: Echo version.json artifact
+                name: Output version.json
                 command: cat version.json
-            - run:
-                name: Generate build version.json artifact with jq
-                command: >
-                  jq -n -c
-                  --arg commit "$CIRCLE_SHA1"
-                  --arg version "$CIRCLE_TAG"
-                  --arg source "$CIRCLE_REPOSITORY_URL"
-                  --arg build "$CIRCLE_BUILD_URL"
-                  '{commit:$commit, version:$version, source:$source, build:$build}'
-                  > version_jq.json
-            - run:
-                name: Echo version.json artifact
-                command: cat version_jq.json
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
