@@ -84,7 +84,7 @@ workflows:
                   > version.json
             - run:
                 name: Output version.json
-                command: cat version.json && echo ${DOCKERHUB_REPO:1:-2}
+                command: cat version.json
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
@@ -107,7 +107,7 @@ workflows:
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
-          image: $DOCKERHUB_REPO
+          image: mozilla/telemetry-airflow
           tag: latest
           filters:
             branches:
@@ -118,7 +118,7 @@ workflows:
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
-          image: $DOCKERHUB_REPO
+          image: mozilla/telemetry-airflow
           tag: $CIRCLE_TAG
           filters:
             tags:
