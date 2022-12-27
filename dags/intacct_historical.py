@@ -85,7 +85,7 @@ with DAG(
             fivetran_conn_id='fivetran',
             connector_id=connector_id,
             poke_interval=30,
-            execution_timeout=timedelta(hours=3),
+            execution_timeout=timedelta(hours=6),
             retries=0,
             priority_weight=fivetran_sync_start.priority_weight + 1,
         )
