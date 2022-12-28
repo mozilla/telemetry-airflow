@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from operators.backport.fivetran.operator import FivetranOperator
-from operators.backport.fivetran.sensor import FivetranSensor
+from fivetran_provider.operators.fivetran import FivetranOperator
+from fivetran_provider.sensors.fivetran import FivetranSensor
 from utils.tags import Tag
 
 docs = """
@@ -50,7 +50,8 @@ with DAG(
             task_id='bugzilla-sensor',
             fivetran_conn_id='fivetran',
             connector_id='duel_salutation',
-            poke_interval=5
+            poke_interval=5,
+            xcom="{{ task_instance.xcom_pull('bugzilla-task') }}"
     )
 
     bugzilla_sync_start >> bugzilla_sync_wait

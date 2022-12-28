@@ -9,9 +9,9 @@ kubernetes_pod_operator, and the 1.10.2 kube_client
 
 
 ### Fivetran operator backported from 2.0+
-Fivetran provides and [operator, sensor and hook](https://github.com/fivetran/airflow-provider-fivetran)
-for integrating with the Fivetran API for Airflow version 2.0+. Backported to
-make it usable in Airflow 1.10.15.
+Fivetran provides an [operator and sensor](https://github.com/fivetran/airflow-provider-fivetran)
+for integrating with the Fivetran API for Airflow version 2.0+. This was backported for
+Airflow 1.10.15, and then our backport was removed after upgrading to Airflow 2.3.3.
 
 ### For 2.1.0 I've removed bigquery_operator_1_10_2.py, in favor of the new
 google provider code.
