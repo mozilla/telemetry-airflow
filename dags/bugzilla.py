@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from fivetran_provider.operators.fivetran import FivetranOperator
 from fivetran_provider.sensors.fivetran import FivetranSensor
+from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 
 docs = """
@@ -51,7 +52,9 @@ with DAG(
             fivetran_conn_id='fivetran',
             connector_id='duel_salutation',
             poke_interval=5,
-            xcom="{{ task_instance.xcom_pull('bugzilla-task') }}"
+            xcom="{{ task_instance.xcom_pull('bugzilla-task') }}",
+            on_retry_callback=retry_tasks_callback,
+            params={'retry_tasks': ['bugzilla-task']},
     )
 
     bugzilla_sync_start >> bugzilla_sync_wait

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from fivetran_provider.operators.fivetran import FivetranOperator
 from fivetran_provider.sensors.fivetran import FivetranSensor
+from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 
 DOCS = """
@@ -48,7 +49,9 @@ with DAG(
         connector_id='{{ var.value.fivetran_casa_connector_id }}',
         task_id='casa-sensor',
         poke_interval=5,
-        xcom="{{ task_instance.xcom_pull('casa-task') }}"
+        xcom="{{ task_instance.xcom_pull('casa-task') }}",
+        on_retry_callback=retry_tasks_callback,
+        params={'retry_tasks': ['casa-task']},
     )
 
     casa_sync_start >> casa_sync_wait
