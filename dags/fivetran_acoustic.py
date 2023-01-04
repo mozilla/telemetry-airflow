@@ -7,6 +7,7 @@ from airflow.operators.python import PythonOperator
 from airflow.hooks.base import BaseHook
 from fivetran_provider.operators.fivetran import FivetranOperator
 from fivetran_provider.sensors.fivetran import FivetranSensor
+from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 from utils.acoustic.acoustic_client import AcousticClient
 
@@ -196,7 +197,9 @@ for report_type, _config in REPORTS_CONFIG.items():
             task_id='wait_for_fivetran_connector_completion',
             connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
             poke_interval=30,
-            xcom="{{ task_instance.xcom_pull('trigger_fivetran_connector') }}"
+            xcom="{{ task_instance.xcom_pull('trigger_fivetran_connector') }}",
+            on_retry_callback=retry_tasks_callback,
+            params={'retry_tasks': ['trigger_fivetran_connector']},
         )
 
         load_completed = EmptyOperator(

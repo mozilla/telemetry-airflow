@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from fivetran_provider.operators.fivetran import FivetranOperator
 from fivetran_provider.sensors.fivetran import FivetranSensor
+from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 
 docs = """
@@ -75,7 +76,8 @@ with DAG(
             connector_id=connector_id,
             poke_interval=30,
             execution_timeout=timedelta(hours=6),
-            retries=0,
             xcom=f"{{{{ task_instance.xcom_pull('intacct-task-{location}') }}}}",
+            on_retry_callback=retry_tasks_callback,
+            params={'retry_tasks': [f'intacct-task-{location}']},
         )
         fivetran_sync_start >> fivetran_sync_wait >> fivetran_sensors_complete
