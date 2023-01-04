@@ -51,7 +51,7 @@ with DAG(
             task_id='bugzilla-sensor',
             fivetran_conn_id='fivetran',
             connector_id='duel_salutation',
-            poke_interval=5,
+            poke_interval=30,
             xcom="{{ task_instance.xcom_pull('bugzilla-task') }}",
             on_retry_callback=retry_tasks_callback,
             params={'retry_tasks': ['bugzilla-task']},
