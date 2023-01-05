@@ -4,7 +4,7 @@
 --constraint ./constraints.txt
 
 # Airflow dependencies
-apache-airflow[amazon,apache.hive,async,celery,cncf.kubernetes,crypto,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.3.3
+apache-airflow[amazon,async,celery,cncf.kubernetes,crypto,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.3.3
 apache-airflow-providers-google
 apache-airflow-providers-http
 apache-airflow-providers-slack

@@ -21,9 +21,9 @@ For more context, see https://bugzilla.mozilla.org/show_bug.cgi?id=1729524
 """
 
 default_args = {
-    "owner": "jklukas@mozilla.com",
+    "owner": "wstuckey@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
-    "email": ["telemetry-alerts@mozilla.com", "jklukas@mozilla.com"],
+    "email": ["telemetry-alerts@mozilla.com", "wstuckey@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
