@@ -15,3 +15,4 @@ workflows:
   my-workflow:
     jobs:
       - hello-job
+    context: data-eng-circleci-tests
