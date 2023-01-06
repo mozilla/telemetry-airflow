@@ -1,136 +1,17 @@
-# These environment variables must be set in CircleCI UI
-#
-# DOCKERHUB_REPO - docker hub repo, format: <username>/<repo>
-# DOCKER_USER
-# DOCKER_PASS
-#
-# GCLOUD_SERVICE_KEY - key for gsutil rsync bootstrap and jobs with gcs
-# GOOGLE_PROJECT_ID - airflow-dataproc
-# GOOGLE_COMPUTE_ZONE - us-west1-b
-
 version: 2.1
-orbs:
-  docker: circleci/docker@2.2.0
-  python: circleci/python@2.1.1
-
 
 jobs:
-  unit-tests:
-    executor:
-      name: python/default
-      tag: 3.8.12
-    steps:
-      - checkout
-      - python/install-packages:
-          pip-dependency-file: requirements.txt
-          pkg-manager: pip
-      - run:
-          name: 🧪 Verify requirements.txt is sync'ed with requirements.in
-          command: |
-            pip install pip-tools
-            pip-compile --quiet
-            git diff --exit-code requirements.txt
-      - run:
-          name: 🧪 Pytest
-          command: python -m pytest
-      - run:
-          name: 🧪 Compile DAGs
-          command: python -m py_compile dags/*.py
-      - run:
-          name: 🧹 Clean up
-          command: find . -name *.pyc -delete
-
-  integration-tests:
-    executor:
-      name: docker/machine
-      dlc: true
-    steps:
-      - checkout
-      - run: docker-compose pull
-      - run: docker-compose build
-      - run: sudo chown -R 10001:10001 .
-      - run:
-          name: Check DAGs can be parsed and are correctly tagged
-          # Valid DAG tags are defined in: `bin/test-dag-tags.py`
-          command: bash bin/test-parse
-
-  sync_gcs:
+  hello-job:
     docker:
-      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:323.0.0
-    working_directory: ~/mozilla/telemetry-airflow
+      - image: cimg/node:17.2.0 # the primary container, where your job's commands are run
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
     steps:
-      - checkout
-      - run: |
-          echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
-          gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
-          gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
-          gsutil rsync -d -r dataproc_bootstrap gs://moz-fx-data-prod-airflow-dataproc-artifacts/bootstrap
-          gsutil rsync -d -r jobs gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs
-
+      - checkout # check out the code in the project directory
+      - run: echo "hello world" # run the `echo` command
 
 workflows:
-  ci:
+  my-workflow:
     jobs:
-      - docker/publish:
-          name: Docker build test
-          before_build: &version
-            - run:
-                name: Generate build version.json
-                command: >
-                  printf 
-                  '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' 
-                  "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" 
-                  "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
-                  > version.json
-            - run:
-                name: Output version.json
-                command: cat version.json
-          deploy: false
-          image: $CIRCLE_PROJECT_REPONAME
-          tag: ${CIRCLE_SHA1:0:9}
-          filters: &ci-filter
-            branches:
-              ignore: main
-            tags:
-              ignore: /.*/
-
-      - unit-tests:
-          name: Unit tests
-          filters: *ci-filter
-
-      - integration-tests:
-          name: Integration tests
-          filters: *ci-filter
-
-  publish:
-    jobs:
-      - docker/publish:
-          name: Push latest
-          before_build: *version
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-          image: mozilla/telemetry-airflow
-          tag: latest
-          filters:
-            branches:
-              only: main
-
-      - docker/publish:
-          name: Push tag
-          before_build: *version
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-          image: mozilla/telemetry-airflow
-          tag: $CIRCLE_TAG
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
-
-      - sync_gcs:
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              only: main
+      - hello-job
