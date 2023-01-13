@@ -16,6 +16,12 @@ from utils.tags import Tag
 DOCS = """\
 # Probe Scraper
 
+*Triage notes*
+
+As long as the most recent DAG run is successful this job can be considered healthy.
+In such case, past DAG failures can be ignored.
+
+
 ## Debugging failures
 
 probe_scraper and probe_scraper_moz_central task logs aren't available via the Airflow web console. In
