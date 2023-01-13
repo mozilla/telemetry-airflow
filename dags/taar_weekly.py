@@ -2,6 +2,12 @@
 This configures a weekly DAG to run the TAAR Ensemble job off.
 
 For context, see https://github.com/mozilla/taar
+
+*Triage notes*
+
+Each run of this jobs overwrites existing data, as long as the most recent DAG run
+is successful then this job can be considered healthy and there is not need to take
+any actions for the past failed DAG runs.
 """
 
 from airflow import DAG

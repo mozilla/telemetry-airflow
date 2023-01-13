@@ -4,6 +4,15 @@ Malicious Addons Detection
 This runs once a week to emit a trained model to GCS.
 
 Source code is in the private [mad-server repository](https://github.com/mozilla/mad-server/).
+
+*Triage notes*
+
+The way the app was designed it is decoupled from Airflow and will pull all data since the last
+successful data pull. What this means if we have a failed DAG run followed by
+a successful DAG run it will cover the data from the previous run.
+
+So as long as the most recent DAG run is successful the job can be considered healthy
+and not action is required for failed DAG runs.
 """
 
 from airflow import DAG
