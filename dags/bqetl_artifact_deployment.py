@@ -1,5 +1,11 @@
 """
 Nightly deploy of bigquery etl views.
+
+*Triage notes*
+
+The DAG always re-deploys all bqetl views. So as long as the most recent DAG run
+is successful the job can be considered healthy. This means previous failed DAG runs
+can be ignored or marked as successful.
 """
 
 from airflow import DAG

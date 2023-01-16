@@ -4,6 +4,13 @@ Daily data exports used by TAAR.
 Source code is in [mozilla/telemetry-batch-view](https://github.com/mozilla/telemetry-batch-view/blob/main/src/main/scala/com/mozilla/telemetry/ml/AddonRecommender.scala).
 
 For context, see https://github.com/mozilla/taar
+
+
+*Triage notes*
+
+Each run of this jobs overwrites existing data, as long as the most recent DAG run
+is successful then this job can be considered healthy and there is not need to take
+any actions for the past failed DAG runs.
 """
 
 
