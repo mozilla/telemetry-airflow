@@ -92,7 +92,6 @@ init_connections() {
       "google_cloud_airflow_dataproc"
       "google_cloud_airflow_gke"
       "google_cloud_airflow_pubsub"
-      "google_cloud_derived_datasets"
       "google_cloud_glam_fenix_dev"
       "google_cloud_shared_prod"
       "google_cloud_gke_sandbox"
@@ -108,12 +107,8 @@ init_connections() {
     aws_conn=(
       "airflow_taar_rw_s3"
       "aws_dev_iam_s3"
-      "aws_dev_mad_resources_training"
-      "aws_data_iam_s3"
       "aws_data_iam_ses"
-      "aws_dev_socorro_telemetry_parquet_s3"
       "aws_dev_telemetry_public_analysis_2_rw"
-      "aws_prod_fx_usage_report"
       "aws_prod_probe_scraper"
       "aws_socorro_readonly_s3"
     )

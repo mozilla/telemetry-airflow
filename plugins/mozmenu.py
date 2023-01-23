@@ -16,7 +16,7 @@ telemetry_airflow = {
 wtmo_dev = {
     "name": "WTMO Developer Guide",
     "category": "Mozilla",
-    "href": "https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide"
+    "href": "https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide"
 }
 
 airflow_triage_guide = {

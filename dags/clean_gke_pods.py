@@ -45,7 +45,6 @@ project_id = 'moz-fx-data-airflow-gke-prod'
 docker_args = [
     '--project', project_id,
     '--gke-cluster', gke_cluster_name,
-    '-n', 'default',
     '--region', gke_location,
     '--retention-days', '4'
 ]

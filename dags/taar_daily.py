@@ -4,6 +4,13 @@ Daily data exports used by TAAR.
 Source code is in [mozilla/telemetry-batch-view](https://github.com/mozilla/telemetry-batch-view/blob/main/src/main/scala/com/mozilla/telemetry/ml/AddonRecommender.scala).
 
 For context, see https://github.com/mozilla/taar
+
+
+*Triage notes*
+
+Each run of this jobs overwrites existing data, as long as the most recent DAG run
+is successful then this job can be considered healthy and there is not need to take
+any actions for the past failed DAG runs.
 """
 
 
@@ -12,9 +19,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag_operator import SubDagOperator
+from airflow.operators.subdag import SubDagOperator
 from airflow.models import Variable
-from itertools import chain
 
 from operators.gcp_container_operator import GKEPodOperator  # noqa
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -36,8 +42,6 @@ taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
 taar_gcpdataproc_project_id = "airflow-dataproc"
 
 taar_aws_conn_id = "airflow_taar_rw_s3"
-taar_aws_access_key, taar_aws_secret_key, session = AwsBaseHook(
-    aws_conn_id=taar_aws_conn_id, client_type='s3').get_credentials()
 taarlite_cluster_name = "dataproc-taarlite-guidguid"
 taar_locale_cluster_name = "dataproc-taar-locale"
 taar_similarity_cluster_name = "dataproc-taar-similarity"

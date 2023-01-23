@@ -2,10 +2,8 @@
 # linux kernel than provided by CircleCI, per
 # https://forums.docker.com/t/multiple-projects-stopped-building-on-docker-hub-operation-not-permitted/92570/6
 # and https://forums.docker.com/t/multiple-projects-stopped-building-on-docker-hub-operation-not-permitted/92570/11
-FROM python:3.7-slim-buster
+FROM python:3.8.12-slim-buster
 MAINTAINER Harold Woo <hwoo@mozilla.com>
-
-# Due to AIRFLOW-6854, Python 3.7 is chosen as the base python version.
 
 ARG AIRFLOW_UID=10001
 ARG AIRFLOW_GID=10001
@@ -20,7 +18,7 @@ RUN mkdir $PROJECT_DIR && \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-transport-https build-essential curl git libpq-dev python-dev \
-        default-libmysqlclient-dev gettext sqlite3 libffi-dev libsasl2-dev \
+        default-libmysqlclient-dev gettext sqlite3 libffi-dev \
         lsb-release gnupg vim screen procps default-mysql-client && \
     CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
     echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \

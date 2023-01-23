@@ -121,5 +121,18 @@ flat_rate = gke_command(
     docker_image=docker_image,
     is_delete_operator_pod=True,
     reattach_on_restart=True,
+    # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
+    # works on pod resource requests, instead of usage
+    resources={
+        "request_memory": "13312Mi",
+        "request_cpu": None,
+        "limit_memory": "20480Mi",
+        "limit_cpu": None,
+        "limit_gpu": None,
+    },
+    # This job was being killed by Kubernetes for using too much memory, thus the highmem node pool
+    node_selectors={"nodepool": "highmem"},
+    # Give additional time since we may need to scale up when running this job
+    startup_timeout_seconds=360,
     dag=dag,
 )

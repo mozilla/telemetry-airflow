@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.dummy import DummyOperator
-from operators.backport.fivetran.operator import FivetranOperator
-from operators.backport.fivetran.sensor import FivetranSensor
+from airflow.operators.empty import EmptyOperator
+from fivetran_provider.operators.fivetran import FivetranOperator
+from fivetran_provider.sensors.fivetran import FivetranSensor
+from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 
 docs = """
@@ -59,34 +60,24 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    fivetran_sensors_complete = DummyOperator(
+    fivetran_sensors_complete = EmptyOperator(
         task_id='intacct-fivetran-sensors-complete',
     )
 
-    for index, (location, connector_id) in enumerate(list_of_connectors.items()):
-
-        fivetran_sync = DummyOperator(task_id=f'intacct-{location}')
-
-        # In order to avoid hitting DAG concurrency limits by sensor tasks below,
-        # sync tasks here have variable priority weights
+    for location, connector_id in list_of_connectors.items():
         fivetran_sync_start = FivetranOperator(
             task_id=f'intacct-task-{location}',
             fivetran_conn_id='fivetran',
             connector_id=connector_id,
-            priority_weight=(index * 2) + 1,
         )
-        fivetran_sync >> fivetran_sync_start
-
-        # It's best if the sensor starts before the Fivetran sync is triggered to avoid any
-        # chance of it missing the Fivetran sync happening, so we give it a higher priority and
-        # don't set it as downstream of the sync start operator.
         fivetran_sync_wait = FivetranSensor(
             task_id=f'intacct-sensor-{location}',
             fivetran_conn_id='fivetran',
             connector_id=connector_id,
             poke_interval=30,
-            execution_timeout=timedelta(hours=3),
-            retries=0,
-            priority_weight=fivetran_sync_start.priority_weight + 1,
+            execution_timeout=timedelta(hours=6),
+            xcom=f"{{{{ task_instance.xcom_pull('intacct-task-{location}') }}}}",
+            on_retry_callback=retry_tasks_callback,
+            params={'retry_tasks': [f'intacct-task-{location}']},
         )
-        fivetran_sync >> fivetran_sync_wait >> fivetran_sensors_complete
+        fivetran_sync_start >> fivetran_sync_wait >> fivetran_sensors_complete

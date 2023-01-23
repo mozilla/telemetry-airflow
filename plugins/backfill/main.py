@@ -114,7 +114,7 @@ class Backfill(get_baseview()):
                     if result:
                         # Adhere to text/event-stream format
                         line = line.replace('<', '').replace('>', '')
-                    elif clear == 'true' and dry_run == 'false':
+                    elif clear and not dry_run:
                         # Special case/hack, airflow tasks clear -y no longer outputs a termination string, so we put one
                         line = "Clear Done"
 

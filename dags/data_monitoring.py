@@ -1,15 +1,21 @@
+from datetime import datetime
+
 from airflow import DAG
-from datetime import datetime, timedelta
-from airflow.models import Variable
 
 from operators.gcp_container_operator import GKEPodOperator
-from utils.gcp import bigquery_etl_query, gke_command
 
 DOCS = """\
 This DAG is related to data monitoring project it is still under development.
 All alerts related to this DAG can be ignored.
 
 (for more info on dim see: https://github.com/mozilla/dim)
+
+*Triage notes*
+
+This process is WIP and the DAG is currently set up on purpose to fail unless
+all data checks pass. Please *ignore all failures* for this DAG and do not change
+their status. Once we have a proper dashboard build to track and observe when
+things fail we will update the DAG.
 """
 
 # telemetry_derived for the same tables as in telemetry are needed as different tests are executed

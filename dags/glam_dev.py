@@ -13,12 +13,9 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from operators.gcp_container_operator import GKENatPodOperator
-from operators.task_sensor import ExternalTaskCompletedSensor
-from airflow.models import Variable
-from airflow.operators.subdag_operator import SubDagOperator
 
-from glam_subdags.extract import extracts_subdag, extract_user_counts
+from airflow.operators.subdag import SubDagOperator
+
 from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
@@ -60,7 +57,7 @@ dag = DAG(
 
 """ This isn't needed because the dev dag will only be triggered manually
 # Make sure all the data for the given day has arrived before running.
-wait_for_main_ping = ExternalTaskCompletedSensor(
+wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
@@ -293,27 +290,43 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
+# Testing without SubDag because it keeps getting stuck on "running"
+# and not actually executing anything. Also, they're known for causing deadlocks in 
+# Celelery (might be our case) thus are discouraged. 
+clients_histogram_bucket_counts = bigquery_etl_query(
+    task_id="clients_histogram_bucket_counts",
+    destination_table="clients_histogram_bucket_counts_v1",
+    dataset_id=dev_dataset_id,
+    project_id=prod_project_id,
+    owner="efilho@mozilla.com",
+    date_partition_parameter=None,
+    parameters=("submission_date:DATE:{{ds}}",),
+    arguments=("--replace",),
+    dag=dag,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+)
+
 # SubdagOperator uses a SequentialExecutor by default
 # so its tasks will run sequentially.
 # Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
 # backfill to schedule tasks in the subdag. User no longer need to specify
 # the executor in SubDagOperator. (We don't but the assumption that Sequential
 # Executor is used is now wrong)
-clients_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        25,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
-    ),
-    task_id="clients_histogram_bucket_counts",
-    dag=dag,
-)
+#clients_histogram_bucket_counts = SubDagOperator(
+#    subdag=repeated_subdag(
+#        GLAM_DAG,
+#        "clients_histogram_bucket_counts",
+#        default_args,
+#        dag.schedule_interval,
+#        dev_dataset_id,
+#        ("submission_date:DATE:{{ds}}",),
+#        25,
+#        None,
+#        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+#    ),
+#    task_id="clients_histogram_bucket_counts",
+#    dag=dag,
+#)
 
 clients_histogram_probe_counts = bigquery_etl_query(
     task_id="clients_histogram_probe_counts",

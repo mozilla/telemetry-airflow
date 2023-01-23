@@ -1,8 +1,6 @@
 from airflow import models
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.subdag_operator import SubDagOperator
 
-from operators.gcp_container_operator import GKEPodOperator
+from dags.operators.gcp_container_operator import GKEPodOperator
 
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
@@ -17,7 +15,7 @@ from airflow.providers.google.cloud.transfers.bigquery_to_gcs import BigQueryToG
 
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 
-from utils.dataproc import get_dataproc_parameters
+from dags.utils.dataproc import get_dataproc_parameters
 
 import json
 import re

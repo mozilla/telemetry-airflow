@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.http_operator import SimpleHttpOperator
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.branch_operator import BaseBranchOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.operators.python import PythonOperator
+from airflow.operators.branch import BaseBranchOperator
 from airflow.utils.weekday import WeekDay
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -15,6 +15,12 @@ from utils.tags import Tag
 
 DOCS = """\
 # Probe Scraper
+
+*Triage notes*
+
+As long as the most recent DAG run is successful this job can be considered healthy.
+In such case, past DAG failures can be ignored.
+
 
 ## Debugging failures
 
@@ -81,7 +87,7 @@ with DAG('probe_scraper',
 
     # probe scraper used to be a single task, but it has beeen split up, and individual
     # failures do not block downstream tasks
-    probe_scraper = DummyOperator(
+    probe_scraper = EmptyOperator(
         task_id="probe_scraper",
         trigger_rule="all_done",
         dag=dag,
@@ -191,7 +197,7 @@ with DAG('probe_scraper',
             probe_scraper_base_arguments
             + [
                 # when --update is specified without --glean-repo or --glean-url,
-                # this only writes metadata files that are not per glean repo.
+                # this only writes metadata changes.
                 "--update",
                 "--glean",
             ]
@@ -207,7 +213,7 @@ with DAG('probe_scraper',
         **airflow_gke_prod_kwargs,
     )
 
-    probe_scraper_glean_repositories >> probe_scraper
+    probe_scraper_glean_repositories >> probe_scraper_glean
 
     probe_scraper_checks = [
         GKEPodOperator(
@@ -243,7 +249,7 @@ with DAG('probe_scraper',
         )
         for check_name in ("check-expiry", "check-fog-expiry")
     ]
-    dummy_branch = DummyOperator(
+    dummy_branch = EmptyOperator(
         task_id="dummy_branch",
         dag=dag,
     )

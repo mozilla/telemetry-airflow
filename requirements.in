@@ -1,45 +1,22 @@
-boto3==1.15.18
-botocore<1.19.0,>=1.18.0
-kombu==4.6.10 # CeleryExecutor issues with 1.10.2 supposedly fixed in 1.10.5 airflow, but still observed issues on 1.10.7
-importlib-metadata>=1.7
-argcomplete==1.12.2
-pandas-gbq==0.14.1
-# removed hdfs
-apache-airflow[amazon,celery,postgres,apache.hive,jdbc,async,password,crypto,github_enterprise,datadog,statsd,mysql,google_auth,cncf.kubernetes]==2.1.4
-cryptography>=3.2
-mozlogging
-retrying
-newrelic
-redis
-hiredis
-requests
-jsonschema
-flask-admin
-Flask-OAuthlib
-Authlib~=0.15.3
-Flask-AppBuilder>=3.3.0
-pytz
-pytest
-werkzeug>=1.0.1,~=1.0
-# The next requirements are for kubernetes-client/python
-urllib3>=1.24.2  # MIT
-ipaddress>=1.0.17;python_version=="2.7"  # PSF
-websocket-client>=0.32.0,!=0.40.0,!=0.41.*,!=0.42.* # LGPLv2+
-# Pin to older version, newer version has issues
-JPype1==0.7.1
-shelljob==0.5.6
-# Fix no inspection available issue
-# https://github.com/apache/airflow/issues/8211
-SQLAlchemy>=1.3.18
-# Airflow 2 no longer installs http provider by default, until chardet becomes an optional dependency of requests
+# Official Airflow constraints file
+# Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
+# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.3.3/constraints-3.8.txt
+--constraint ./constraints.txt
+
+# Airflow dependencies
+apache-airflow[amazon,async,celery,cncf.kubernetes,crypto,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.3.3
+apache-airflow-providers-google
 apache-airflow-providers-http
-airflow-provider-fivetran
 apache-airflow-providers-slack
-# Upgrade google dataproc provider to fix beta client clusterConfig and mismatch issues
-apache-airflow-providers-google==5.0.0
-# 2.4.0 is broken for dataproc cluster create/delete
-# 2.6.0 and 3.0.0 are newer but not compatible with apache-airflow-providers-google
-# yet until maybe v7.0.0 bc 'google.cloud.dataproc_v1beta2' is deprecated
-google-cloud-dataproc==2.5.0
-xmltodict==0.12.0
-google-cloud-pubsub==2.11.0
+airflow-provider-fivetran==1.1.2
+
+# Misc
+mozlogging
+pytest
+
+# Required for backfill UI
+flask-admin
+shelljob==0.5.6
+
+# Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
+xmltodict
