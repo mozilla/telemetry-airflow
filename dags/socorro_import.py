@@ -31,12 +31,13 @@ conn - aws_socorro_readonly_s3
 """
 
 default_args = {
-    "owner": "wkahngreene@mozilla.com",
+    "owner": "srose@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 9, 10),
     "email": [
+        "anicholson@mozilla.com",
+        "srose@mozilla.com",
         "telemetry-alerts@mozilla.com",
-        "wkahngreene@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,

@@ -18,13 +18,14 @@ from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
 from utils.tags import Tag
 
 default_args = {
-    "owner": "wkahngreene@mozilla.com",
+    "owner": "anicholson@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
-        "telemetry-alerts@mozilla.com",
-        "wkahngreene@mozilla.com",
+        "anicholson@mozilla.com",
         "mcastelluccio@mozilla.com",
+        "srose@mozilla.com",
+        "telemetry-alerts@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
