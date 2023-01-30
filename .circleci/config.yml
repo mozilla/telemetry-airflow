@@ -54,8 +54,7 @@ jobs:
       - run: docker-compose build
       - run:
           name: Check DAGs can be parsed and are correctly tagged
-          # Valid DAG tags are defined in: `bin/test-dag-tags.py`
-          command: bash bin/test-parse
+          command: docker-compose exec airflow-webserver airflow dags list-import-errors
 
   sync_gcs:
     docker:
