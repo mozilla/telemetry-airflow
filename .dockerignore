@@ -20,6 +20,10 @@ logs/
 .venv/
 venv/
 
+# Airflow dev resources
+resources/
+
+
 # IDE
 .idea
 .vscode/
