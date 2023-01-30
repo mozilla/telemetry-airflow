@@ -46,6 +46,7 @@ jobs:
       dlc: true
     steps:
       - checkout
+      - docker/install-docker-tools
       - run: docker-compose up
       - run:
           name: Check DAGs can be parsed and are correctly tagged
