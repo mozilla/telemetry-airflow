@@ -47,7 +47,11 @@ jobs:
     steps:
       - checkout
       - docker/install-docker-tools
-      - run: docker-compose up
+      - run:
+          name: Add current user ID to environment variables
+          command: echo 'export AIRFLOW_UID="$(id -u)"' >> "$BASH_ENV"
+      - run: docker-compose pull
+      - run: docker-compose build
       - run:
           name: Check DAGs can be parsed and are correctly tagged
           # Valid DAG tags are defined in: `bin/test-dag-tags.py`
