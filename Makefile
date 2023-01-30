@@ -5,7 +5,6 @@ help:
 	@echo "Welcome to the Telemetry Airflow\n"
 	@echo "The list of commands for local development:\n"
 	@echo "  build      		Builds the docker images for the docker-compose setup"
-	@echo "  build-linux		Builds the docker images using the current user ID and group ID"
 	@echo "  clean      		Stops and removes all docker containers"
 	@echo "  pip-compile      	Compile dependencies from 'requirements.in' into 'requirements.txt'"
 	@echo "  pip-install-local	Install pip project requirements to your local environment"
@@ -20,13 +19,10 @@ help:
 build:
 	docker-compose build
 
-build-linux:
-	docker-compose build --build-arg AIRFLOW_UID="$$(id -u)" --build-arg AIRFLOW_GID="$$(id -g)"
-
 pip-compile:
 	pip-compile
 
-clean:	stop
+clean:
 	docker-compose rm -f
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
@@ -45,6 +41,8 @@ stop:
 	docker-compose stop
 
 up:
+	grep -qF 'AIRFLOW_UID=' .env || echo "AIRFLOW_UID=$$(id -u)" >> .env
+	grep -qF 'AIRFLOW__CORE__FERNET_KEY=' .env || echo "AIRFLOW__CORE__FERNET_KEY=$$(python -c "from cryptography.fernet import Fernet; fernet_key = Fernet.generate_key(); print(fernet_key.decode())")" >> .env
 	docker-compose up
 
 gke:
