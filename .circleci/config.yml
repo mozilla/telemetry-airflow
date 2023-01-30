@@ -46,9 +46,7 @@ jobs:
       dlc: true
     steps:
       - checkout
-      - run: docker-compose pull
-      - run: docker-compose build
-      - run: sudo chown -R 10001:10001 .
+      - run: docker-compose up
       - run:
           name: Check DAGs can be parsed and are correctly tagged
           # Valid DAG tags are defined in: `bin/test-dag-tags.py`
