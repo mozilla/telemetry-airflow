@@ -311,40 +311,40 @@ with dag as dag:
         extracts_per_channel >> glam_external
 
 
-    wait_for_main_ping >> latest_versions
+wait_for_main_ping >> latest_versions
 
-    latest_versions >> clients_daily_scalar_aggregates
-    clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
-    clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
-    clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
-    clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
-    clients_scalar_aggregates >> scalar_percentiles
-    # workaround resources exceeded exception
-    # client_scalar_probe_counts is not dependent on scalar_percentiles
-    scalar_percentiles >> client_scalar_probe_counts
+latest_versions >> clients_daily_scalar_aggregates
+clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
+clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
+clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
+clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
+clients_scalar_aggregates >> scalar_percentiles
+# workaround resources exceeded exception
+# client_scalar_probe_counts is not dependent on scalar_percentiles
+scalar_percentiles >> client_scalar_probe_counts
 
-    latest_versions >> clients_daily_histogram_aggregates_parent
-    clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
-    clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_gpu
-    clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
-    clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
-    clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
-    clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
+latest_versions >> clients_daily_histogram_aggregates_parent
+clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
+clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_gpu
+clients_daily_histogram_aggregates_parent >> clients_daily_keyed_histogram_aggregates
+clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
+clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
+clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
-    clients_histogram_aggregates >> clients_histogram_bucket_counts
-    clients_histogram_aggregates >> glam_user_counts
-    clients_histogram_aggregates >> glam_sample_counts
-
-
-    clients_histogram_bucket_counts >> clients_histogram_probe_counts
-    clients_histogram_probe_counts >> histogram_percentiles
-
-    clients_scalar_aggregates >> glam_user_counts
-    glam_user_counts >> extract_counts
+clients_histogram_aggregates >> clients_histogram_bucket_counts
+clients_histogram_aggregates >> glam_user_counts
+clients_histogram_aggregates >> glam_sample_counts
 
 
-    extract_counts >> extracts_per_channel
-    client_scalar_probe_counts >> extracts_per_channel
-    scalar_percentiles >> extracts_per_channel
-    histogram_percentiles >> extracts_per_channel
-    glam_sample_counts >> extracts_per_channel
+clients_histogram_bucket_counts >> clients_histogram_probe_counts
+clients_histogram_probe_counts >> histogram_percentiles
+
+clients_scalar_aggregates >> glam_user_counts
+glam_user_counts >> extract_counts
+
+
+extract_counts >> extracts_per_channel
+client_scalar_probe_counts >> extracts_per_channel
+scalar_percentiles >> extracts_per_channel
+histogram_percentiles >> extracts_per_channel
+glam_sample_counts >> extracts_per_channel
