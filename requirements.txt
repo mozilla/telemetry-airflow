@@ -1025,6 +1025,8 @@ python-dateutil==2.8.2
     #   kubernetes
     #   pandas
     #   pendulum
+python-dotenv==0.21.1
+    # via -r requirements.in
 python-nvd3==0.15.0
     # via
     #   -c ./constraints.txt
