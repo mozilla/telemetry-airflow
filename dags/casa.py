@@ -30,7 +30,6 @@ default_args = {
 }
 
 tags = [Tag.ImpactTier.tier_1]
-import error
 with DAG(
     'fivetran_casa',
     default_args=default_args,
