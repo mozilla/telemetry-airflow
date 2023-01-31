@@ -57,12 +57,12 @@ jobs:
             docker-compose up -d --wait
       - run:
           name: 🧪 Parse DAGs Test
-          command: docker-compose exec airflow-webserver airflow dags list-import-errors
-#            local num_errors=$(docker-compose exec airflow-webserver airflow dags list -v | grep -c "ERROR")
-#            if [[ $num_errors -ne 0 ]]; then
-#              docker-compose exec airflow-webserver airflow dags list-import-errors
-#              exit 1
-#            fi
+          command:
+            num_errors=$(docker-compose exec airflow-webserver airflow dags list -v | grep -c "ERROR")
+            if [[ $num_errors -ne 0 ]]; then
+              docker-compose exec airflow-webserver airflow dags list-import-errors
+              exit 1
+            fi
 
 
   sync_gcs:
