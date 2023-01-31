@@ -50,12 +50,17 @@ jobs:
       - run:
           name: Add current user ID to environment variables
           command: echo 'export AIRFLOW_UID="$(id -u)"' >> "$BASH_ENV"
-      - run: docker-compose pull
-      - run: docker-compose build
-      - run: docker-compose up -d --wait
       - run:
-          name: Check DAGs can be parsed and are correctly tagged
-          command: docker-compose exec airflow-webserver airflow dags list-import-errors
+          name: Set up integration tests environment
+          command: |
+            docker-compose build
+            docker-compose up -d --wait
+      - run:
+          name: 🧪 Parse DAGs Test
+          command: |
+            echo $(docker-compose exec airflow-webserver airflow dags list-import-errors) > results.txt
+            echo results.txt
+            cat results.txt | grep -c "No data found"
 
   sync_gcs:
     docker:
