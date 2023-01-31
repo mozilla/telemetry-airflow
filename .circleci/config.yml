@@ -48,9 +48,11 @@ jobs:
       - checkout
       - docker/install-docker-tools
       - run:
+          name: Add current user ID to environment variables
+          command: echo 'export AIRFLOW_UID="$(id -u)"' >> "$BASH_ENV"
+      - run:
           name: Set up integration tests environment
           command: |
-            echo 'export AIRFLOW_UID="$(id -u)"' >> "$BASH_ENV"
             docker-compose build
             docker-compose up -d --wait
       - run:
