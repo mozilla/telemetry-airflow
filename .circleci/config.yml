@@ -58,6 +58,7 @@ jobs:
       - run:
           name: 🧪 Parse DAGs Test
           command: |
+            set +e
             num_errors=$(docker-compose exec airflow-webserver airflow dags list -v | grep -c "ERROR")
             if [ $num_errors -ne 0 ]
             then
