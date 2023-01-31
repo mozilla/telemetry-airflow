@@ -39,6 +39,10 @@ def test_dag_tags_required(get_dag_bag):
     dagbag = get_dag_bag
 
     for dag_name, dag in dagbag.dags.items():
+        # don't check tags on subdags
+        if dag.is_subdag:
+            continue
+
         assert [tag for tag in dag.tags if
                 required_tag_type in tag], f"DAG: {dag_name}: Missing required tag " \
                                            f"type `{required_tag_type}`"
