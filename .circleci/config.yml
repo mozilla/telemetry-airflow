@@ -59,12 +59,15 @@ jobs:
           name: 🧪 Parse DAGs Test
           command: |
             num_errors=$(docker-compose exec airflow-webserver airflow dags list -v | grep -c "ERROR")
-            if [[ $num_errors -ne 0 ]]; then
-              echo 'Found DAG parsing errors!'
+            if [ $num_errors -ne 0 ]
+            then
+              echo "Found DAG parsing errors!"
               docker-compose exec airflow-webserver airflow dags list-import-errors
               exit 1
+            else
+              echo "DAGs parsed successfully!"
             fi
-            echo 'DAGs parsed successfully!'
+
 
   sync_gcs:
     docker:
