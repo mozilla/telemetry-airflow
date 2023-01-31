@@ -18,6 +18,7 @@ This DAG triggers Fivetran to import data from CASA using the
 
 anicholson@mozilla.com
 """
+
 default_args = {
     "owner": "anicholson@mozilla.com",
     "email": ["anicholson@mozilla.com"],
@@ -30,6 +31,7 @@ default_args = {
 }
 
 tags = [Tag.ImpactTier.tier_1]
+
 with DAG(
     'fivetran_casa',
     default_args=default_args,
