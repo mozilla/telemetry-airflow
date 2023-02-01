@@ -1,4 +1,4 @@
-.PHONY: build clean migrate redis-cli run secret shell stop up
+.PHONY: build clean migrate redis-cli run shell stop up
 
 
 help:
