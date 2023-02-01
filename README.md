@@ -45,17 +45,23 @@ make pip-install-local
 Add new Python dependencies into `requirements.in` and execute `make pip-install-local`
 
 ### Build Container
-**_⚠ See [Local Deployment](#local-deployment) section below for Linux and macOS specific instructions ⚠_**
 
 Build Airflow image with
 
 ```bash
 make build
 ```
+### Local Deployment
+To deploy the Airflow container on the docker engine, with its required dependencies, run:
 
-### Migrate Database
-
-Airflow database migration is no longer a separate step for dev but is run by the web container if necessary on first run. That means, however, that you should run the web container (and the database container, of course) and wait for the database migrations to complete before running individual test commands per below. The easiest way to do this is to run `make up` and let it run until the migrations complete.
+```bash
+make build
+make up
+```
+#### macOS
+Assuming you're using Docker for Docker Desktop for macOS, start the docker service,
+click the docker icon in the menu bar, click on preferences and change the
+available memory to 4GB.
 
 ## Testing
 
@@ -66,41 +72,14 @@ API keys in an Airflow connection or variable. These variables are sure to exist
 are often not mirrored locally for logistical reasons. Providing a dummy variable is the preferred
 way to keep the local development environment up to date.
 
-In `bin/run`, please update the `init_connections` and `init_variables` with appropriate strings to
-prevent broken workflows. To test this, run `bin/test-parse` to check for errors. You may manually
-test this by restarting the orchestrated containers and checking for error messages within the main
-administration UI at `localhost:8000`.
+Update the `resources/dev_variables.env` and `resources/dev_connections.env` with appropriate strings to
+prevent broken workflows.
 
-### Local Deployment
-#### macOS
-Assuming you're using Docker for Docker Desktop for macOS, start the docker service,
-click the docker icon in the menu bar, click on preferences and change the
-available memory to 4GB.
-
-To deploy the Airflow container on the docker engine, with its required dependencies, run:
-
-```bash
-make build
-make up
-```
-
-#### Linux
-
-Users on Linux distributions will encounter permission issues with `docker-compose`.
-This is because the local application folder is mounted as a volume into the running container.
-The Airflow user and group in the container is set to `10001`.
-
-To work around this, use `build-linux` Make command.
-
-```bash
-make build-linux
-make up
-```
 
 ### Usage
 
 You can now connect to your local Airflow web console at
-`http://localhost:8000/`.
+`http://localhost:8080/`.
 
 All DAGs are paused by default for local instances and our staging instance of Airflow.
 In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to "On".
@@ -145,12 +124,13 @@ make build && make up
 You can then connect to Airflow [locally](localhost:8000). Enable your DAG and see that it runs correctly.
 
 ### Production Setup
+TODO: review when production setup is finalized
 
-Note: the canonical reference for production environment variables lives
-in [a private repository](https://github.com/mozilla-services/cloudops-deployment/blob/master/projects/data/puppet/yaml/app/data.prod.wtmo.yaml).
+~~Note: the canonical reference for production environment variables lives
+in [a private repository](https://github.com/mozilla-services/cloudops-deployment/blob/master/projects/data/puppet/yaml/app/data.prod.wtmo.yaml).~~
 
-When deploying to production make sure to set up the following environment
-variables:
+~~When deploying to production make sure to set up the following environment
+variables:~~
 
 - `AWS_ACCESS_KEY_ID` -- The AWS access key ID to spin up the Spark clusters
 - `AWS_SECRET_ACCESS_KEY` -- The AWS secret access key
@@ -178,19 +158,13 @@ variables:
   `stage` or `prod`
 
 
-Also, please set
+~~Also, please set~~
 
 - `AIRFLOW_SECRET_KEY` -- A secret key for Airflow's Flask based webserver
 - `AIRFLOW__CORE__FERNET_KEY` -- A secret key to saving connection passwords in the DB
 
-Both values should be set by using the cryptography module's fernet tool that
-we've wrapped in a docker-compose call:
-
-```bash
-make secret
-```
-
-Run this for each key config variable, and **don't use the same for both!**
+~~Both values should be set by using the cryptography module's fernet tool that
+we've wrapped in a docker-compose call:~~
 
 ### Debugging
 
@@ -206,19 +180,6 @@ docker volume rm $(docker volume ls -qf dangling=true)
 # Purge docker volumes (helps with mysql container failing to start)
 # Careful as this will purge all local volumes not used by at least one container.
 docker volume prune
-```
-
-Failing CircleCI 'test-environment' check:
-
-```bash
-# These commands are from the bin/test-parse script (get_errors_in_listing)
-# If --detach is unavailable,  make sure you are running the latest version of docker-compose
-docker-compose up --detach
-
-docker-compose logs --follow --tail 0 | sed -n '/\[testing_stage_0\]/q'
-
-# Don't pipe to grep to see the full output including your errors
-docker-compose exec web airflow list_dags
 ```
 
 ### Triggering a task to re-run within the Airflow UI
@@ -248,8 +209,3 @@ docker-compose exec web airflow list_dags
   - Click the "Clear" button
   - Confirm that you want to clear it
   - The task should be scheduled to run again straight away.
-
-### CircleCI
-
-- Commits to forked repo PRs will trigger CircleCI builds that build the docker container and test python dag compilation. This should pass prior to merging.
-- Every commit to main or tag will trigger a CircleCI build that will build and push the container to dockerhub
