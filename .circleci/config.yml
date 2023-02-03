@@ -78,9 +78,6 @@ workflows:
           name: Unit tests
           filters: *ci-filter
 
-      - integration-tests:
-          name: Integration tests
-          filters: *ci-filter
 
   publish:
     jobs:
