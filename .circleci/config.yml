@@ -32,7 +32,9 @@ jobs:
             git diff --exit-code requirements.txt
       - run:
           name: 🧪 Pytest
-          command: python -m pytest
+          command: python -m pytest --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
 
   sync_gcs:
     docker:
