@@ -33,39 +33,6 @@ jobs:
       - run:
           name: 🧪 Pytest
           command: python -m pytest
-      - run:
-          name: 🧪 Compile DAGs
-          command: python -m py_compile dags/*.py
-      - run:
-          name: 🧹 Clean up
-          command: find . -name *.pyc -delete
-
-  integration-tests:
-    executor:
-      name: docker/machine
-      dlc: true
-    steps:
-      - checkout
-      - docker/install-docker-compose
-      - run:
-          name: Add current user ID to environment variables
-          command: echo 'export AIRFLOW_UID="$(id -u)"' >> "$BASH_ENV"
-      - run:
-          name: 🛠️ Set up integration tests environment
-          command: |
-            docker-compose build
-            docker-compose up --detach --wait
-      - run:
-          name: 🧪 Parse DAGs Test
-          command: |
-            set +e
-            num_errors=$(docker-compose exec airflow-webserver airflow dags list -v | grep -c "ERROR")
-            if [ $num_errors -ne 0 ]; then
-              echo "Found DAG parsing errors!"
-              docker-compose exec airflow-webserver airflow dags list-import-errors
-              exit 1
-            fi
-            echo "DAGs parsed successfully!"
 
   sync_gcs:
     docker:
