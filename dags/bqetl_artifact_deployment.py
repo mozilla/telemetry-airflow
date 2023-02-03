@@ -54,7 +54,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
         command=[
-            "script/bqetl generate all && "
+            "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip &&"
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip"
         ],
@@ -65,7 +65,7 @@ with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interv
         task_id="publish_views",
         cmds=["bash", "-x", "-c"],
         command=[
-            "script/bqetl generate all && "
+            "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
