@@ -98,7 +98,7 @@ When done:
 make clean-gke
 ```
 
-From there, [connect to Airflow](localhost:8000) and enable your job.
+From there, [connect to Airflow](localhost:8080) and enable your job.
 
 ### Testing Dataproc Jobs
 
@@ -121,7 +121,7 @@ make build && make up
 ./bin/add_gcp_creds $GOOGLE_APPLICATION_CREDENTIALS google_cloud_airflow_dataproc
 ```
 
-You can then connect to Airflow [locally](localhost:8000). Enable your DAG and see that it runs correctly.
+You can then connect to Airflow [locally](localhost:8080). Enable your DAG and see that it runs correctly.
 
 ### Production Setup
 TODO: review when production setup is finalized

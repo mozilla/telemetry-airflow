@@ -11,7 +11,7 @@ help:
 	@echo "  migrate    		Runs the Django database migrations"
 	@echo "  redis-cli  		Opens a Redis CLI"
 	@echo "  shell      		Opens a Bash shell"
-	@echo "  up         		Runs the whole stack, served under http://localhost:8000/"
+	@echo "  up         		Runs the whole stack, served under http://localhost:8080/"
 	@echo "  gke        		Create a sandbox gke cluster for testing"
 	@echo "  clean-gke  		Delete the sandbox gke cluster"
 	@echo "  stop       		Stops the docker containers"
