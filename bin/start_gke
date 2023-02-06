@@ -6,7 +6,7 @@ set -eo pipefail
 
 # Set Env var MY_LOCAL_IP or use icanhazip.com to fetch it
 # https://major.io/icanhazip-com-faq/#what-about-my-privacy
-MY_IP=${MY_LOCAL_IP:-$(curl icanhazip.com)}
+MY_IP=${MY_LOCAL_IP:-$(curl icanhazip.com -4)}
 echo "local ip is $MY_IP"
 
 
@@ -38,11 +38,11 @@ JSON_CREDS=$(gcloud secrets versions access latest --secret="gke-sandbox-creds" 
 # Upload secret to local wtmo
 GCP_CONN_ID="google_cloud_gke_sandbox"
 
-if ! docker ps | grep _web; then
+if ! docker ps | grep "airflow-webserver"; then
     echo "ERROR: Airflow container is likely not running (or docker). Run 'make up' to start airflow containers"
 fi
 
-CONTAINER_ID=$(docker ps | grep webserver | cut -d' ' -f1)
+CONTAINER_ID=$(docker ps | grep "airflow-webserver" | cut -d' ' -f1)
 
 echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
 docker exec $CONTAINER_ID airflow connections delete $GCP_CONN_ID
