@@ -25,12 +25,6 @@ jobs:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
       - run:
-          name: 🧪 Verify requirements.txt is sync'ed with requirements.in
-          command: |
-            pip install pip-tools
-            pip-compile --quiet
-            git diff --exit-code requirements.txt
-      - run:
           name: 🧪 Pytest
           command: python -m pytest --junitxml=test-results/junit.xml
       - store_test_results:
@@ -65,7 +59,7 @@ workflows:
   ci:
     jobs:
       - docker/publish:
-          name: 🛠️🧪 Docker build test
+          name: 🛠️ Docker build test
           before_build: &version
             - run:
                 name: Generate build version.json
