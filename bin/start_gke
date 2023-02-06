@@ -9,6 +9,7 @@ set -eo pipefail
 MY_IP=${MY_LOCAL_IP:-$(curl icanhazip.com)}
 echo "local ip is $MY_IP"
 
+
 USERNAME=$(gcloud config get-value account | awk -F"@" '{print $1}')
 CLUSTERNAME=$USERNAME-gke-sandbox
 
@@ -41,7 +42,7 @@ if ! docker ps | grep _web; then
     echo "ERROR: Airflow container is likely not running (or docker). Run 'make up' to start airflow containers"
 fi
 
-CONTAINER_ID=$(docker ps | grep _web | cut -d' ' -f1)
+CONTAINER_ID=$(docker ps | grep webserver | cut -d' ' -f1)
 
 echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
 docker exec $CONTAINER_ID airflow connections delete $GCP_CONN_ID

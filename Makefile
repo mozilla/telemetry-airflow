@@ -1,4 +1,4 @@
-.PHONY: build clean migrate redis-cli run shell stop up
+.PHONY: build clean redis-cli run shell stop up
 
 
 help:
@@ -8,7 +8,6 @@ help:
 	@echo "  clean      		Stops and removes all docker containers"
 	@echo "  pip-compile      	Compile dependencies from 'requirements.in' into 'requirements.txt'"
 	@echo "  pip-install-local	Install pip project requirements to your local environment"
-	@echo "  migrate    		Runs the Django database migrations"
 	@echo "  redis-cli  		Opens a Redis CLI"
 	@echo "  shell      		Opens a Bash shell"
 	@echo "  up         		Runs the whole stack, served under http://localhost:8080/"
@@ -22,7 +21,7 @@ build:
 pip-compile:
 	pip-compile
 
-clean:
+clean: stop
 	docker-compose rm -f
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
@@ -31,7 +30,7 @@ pip-install-local: pip-compile
 	pip install -r requirements.txt
 
 shell:
-	docker-compose run web bash
+	docker-compose run airflow-webserver bash
 
 redis-cli:
 	docker-compose run redis redis-cli -h redis
