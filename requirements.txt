@@ -1010,6 +1010,9 @@ pytest==6.2.5
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
+    #   pytest-mock
+pytest-mock==3.10.0
+    # via -r requirements.in
 python-daemon==2.3.0
     # via
     #   -c ./constraints.txt

@@ -13,6 +13,7 @@ airflow-provider-fivetran==1.1.2
 # Misc
 mozlogging
 pytest
+pytest-mock
 
 # Required for backfill UI
 flask-admin

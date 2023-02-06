@@ -10,10 +10,6 @@ def test_dag_validity(get_dag_bag):
 
     data = []
     for filename, errors in dagbag.import_errors.items():
-        # TODO glam.py is full of subdag abstractions, investigate why this causes
-        # database error
-        if "sqlite3.OperationalError: no such table: slot_pool" in errors:
-            continue
         data.append({"filepath": filename, "error": errors})
     if data:
         print(data)

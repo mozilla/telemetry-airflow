@@ -11,7 +11,15 @@ PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture(scope="session")
-def get_dag_bag() -> DagBag:
+def get_dag_bag(session_mocker) -> DagBag:
+    from airflow.operators.subdag import SubDagOperator
+
+    session_mocker.patch.object(
+        SubDagOperator,
+        "_validate_pool",
+        return_value=None,
+    )
+
     # load dev connection and variables
     assert load_dotenv(PROJECT_DIR / "resources" / "dev_connections.env")
     assert load_dotenv(PROJECT_DIR / "resources" / "dev_variables.env")
