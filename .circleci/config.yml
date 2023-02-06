@@ -16,7 +16,7 @@ orbs:
 
 jobs:
   unit-tests:
-    executor:
+    executor: &python-executor
       name: python/default
       tag: 3.8.12
     steps:
@@ -36,6 +36,17 @@ jobs:
       - store_test_results:
           path: test-results
 
+  validate-requirements:
+    executor: *python-executor
+    steps:
+      - checkout
+      - run:
+          name: 🧪 Verify requirements.txt is sync'ed with requirements.in
+          command: |
+            pip install pip-tools
+            pip-compile --quiet
+            git diff --exit-code requirements.txt
+
   sync_gcs:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:323.0.0
@@ -54,7 +65,7 @@ workflows:
   ci:
     jobs:
       - docker/publish:
-          name: Docker build test
+          name: 🛠️🧪 Docker build test
           before_build: &version
             - run:
                 name: Generate build version.json
@@ -77,7 +88,11 @@ workflows:
               ignore: /.*/
 
       - unit-tests:
-          name: Unit tests
+          name: 🧪 Unit tests
+          filters: *ci-filter
+
+      - validate-requirements:
+          name: 🧪 Validate requirements
           filters: *ci-filter
 
 
