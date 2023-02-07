@@ -32,7 +32,7 @@ function update_gcp() {
 
     container_id=$(docker ps | grep "airflow-webserver" | cut -d' ' -f1)
 
-    docker exec $container_id airflow connections delete $conn_id || true
+    docker exec $container_id airflow connections delete $conn_id
 
     docker exec $container_id airflow connections add $conn_id \
             --conn-type google_cloud_platform \

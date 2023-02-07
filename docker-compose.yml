@@ -16,9 +16,6 @@ version: '3'
 x-airflow-common:
   &airflow-common
   build: .
-  env_file:
-    - ./resources/dev_variables.env
-    - ./resources/dev_connections.env
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -34,6 +31,8 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./resources/dev_webserver_config.py:/opt/airflow/webserver_config.py
+    - ./resources/dev_connections.json:/opt/airflow/dev_connections.json
+    - ./resources/dev_variables.json:/opt/airflow/dev_variables.json
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
