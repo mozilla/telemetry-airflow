@@ -30,13 +30,11 @@ function update_gcp() {
     local conn_id=$1
     local keyfile=$2
 
-    container_id=$(docker ps --filter name=web -q)
+    container_id=$(docker ps | grep "airflow-webserver" | cut -d' ' -f1)
 
-    docker exec $container_id \
-        airflow connections delete $conn_id
+    docker exec $container_id airflow connections delete $conn_id || true
 
-    docker exec $container_id \
-        airflow connections add $conn_id \
+    docker exec $container_id airflow connections add $conn_id \
             --conn-type google_cloud_platform \
             --conn-extra "$(format_gcp $keyfile)"
 }
