@@ -41,7 +41,7 @@ stop:
 
 up:
 	grep -qF 'AIRFLOW_UID=' .env || echo "AIRFLOW_UID=$$(id -u)" >> .env
-	grep -qF 'AIRFLOW__CORE__FERNET_KEY=' .env || echo "AIRFLOW__CORE__FERNET_KEY=$$(python -c "from cryptography.fernet import Fernet; fernet_key = Fernet.generate_key(); print(fernet_key.decode())")" >> .env
+	grep -qF 'FERNET_KEY=' .env || echo "FERNET_KEY=$$(python -c "from cryptography.fernet import Fernet; fernet_key = Fernet.generate_key(); print(fernet_key.decode())")" >> .env
 	docker-compose up --wait
 	docker-compose exec airflow-webserver airflow variables import dev_variables.json
 	docker-compose exec airflow-webserver airflow connections import dev_connections.json
