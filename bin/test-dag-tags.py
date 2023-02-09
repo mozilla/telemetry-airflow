@@ -4,7 +4,7 @@ import subprocess
 from typing import Dict
 
 
-VALID_TAGS = ("impact/tier_1", "impact/tier_2", "impact/tier_3", "repo/bigquery-etl", "repo/telemetry-airflow", "repo/private-bigquery-etl",)
+VALID_TAGS = ("impact/tier_1", "impact/tier_2", "impact/tier_3", "repo/bigquery-etl", "repo/telemetry-airflow", "repo/private-bigquery-etl", "triage/record_only",)
 REQUIRED_TAG_TYPES = ("impact",)
 
 
