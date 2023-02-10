@@ -49,3 +49,4 @@ class Tag(Enum):
         """
 
         record_only: str = "triage/record_only"
+        no_triage: str = "triage/no_triage"
