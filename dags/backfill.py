@@ -71,7 +71,7 @@ doc_md = """
     catchup=False,
     start_date=datetime.datetime(2022, 11, 1),
     dagrun_timeout=datetime.timedelta(days=1),
-    tags=[Tag.ImpactTier.tier_3],
+    tags=[Tag.ImpactTier.tier_3, Tag.Triage.record_only],
     render_template_as_native_obj=True,
     params={"dag_name": Param("dag_name", type="string"),
             "start_date": Param((datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
