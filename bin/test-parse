@@ -49,7 +49,7 @@ function get_errors_in_listing {
 
 
 function main() {
-    if [[ -n $(docker-compose ps -q web) ]]; then
+    if [[ -n $(docker-compose ps --status running -q web) ]]; then
         echo "Existing container is up, please bring it down and re-run."
         exit 1
     fi
