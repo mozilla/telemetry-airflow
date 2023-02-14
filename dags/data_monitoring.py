@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from airflow import DAG
+from utils.tags import Tag
 
 from operators.gcp_container_operator import GKEPodOperator
 
@@ -45,7 +46,7 @@ default_args = {
     "retries": 0,
 }
 
-TAGS = ["repo/telemetry-airflow", "impact/tier_3",]
+TAGS = ["repo/telemetry-airflow", Tag.ImpactTier.tier_1, Tag.Triage.no_triage]
 IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 
 with DAG(

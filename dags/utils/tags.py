@@ -41,3 +41,12 @@ class Tag(Enum):
         tier_1: str = "impact/tier_1"
         tier_2: str = "impact/tier_2"
         tier_3: str = "impact/tier_3"
+
+    class Triage(Enum):
+        """
+        Tag for representing that an engineer on triage
+        should attempt to resolve the problem themselves
+        """
+
+        record_only: str = "triage/record_only"
+        no_triage: str = "triage/no_triage"
