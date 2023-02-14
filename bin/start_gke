@@ -6,7 +6,7 @@ set -eo pipefail
 
 # Set Env var MY_LOCAL_IP or use icanhazip.com to fetch it
 # https://major.io/icanhazip-com-faq/#what-about-my-privacy
-MY_IP=${MY_LOCAL_IP:-$(curl icanhazip.com)}
+MY_IP=${MY_LOCAL_IP:-$(curl -s icanhazip.com)}
 echo "local ip is $MY_IP"
 
 USERNAME=$(gcloud config get-value account | awk -F"@" '{print $1}')
@@ -37,17 +37,16 @@ JSON_CREDS=$(gcloud secrets versions access latest --secret="gke-sandbox-creds" 
 # Upload secret to local wtmo
 GCP_CONN_ID="google_cloud_gke_sandbox"
 
-if ! docker ps | grep _web; then
+CONTAINER_ID=$(docker ps --filter name=web -q)
+if [ -z "$CONTAINER_ID" ]; then
     echo "ERROR: Airflow container is likely not running (or docker). Run 'make up' to start airflow containers"
+else
+  echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
+  docker exec $CONTAINER_ID airflow connections delete $GCP_CONN_ID
+
+  docker exec $CONTAINER_ID airflow connections add $GCP_CONN_ID \
+         --conn-type google_cloud_platform \
+         --conn-extra "$JSON_CREDS"
 fi
-
-CONTAINER_ID=$(docker ps | grep _web | cut -d' ' -f1)
-
-echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
-docker exec $CONTAINER_ID airflow connections delete $GCP_CONN_ID
-
-docker exec $CONTAINER_ID airflow connections add $GCP_CONN_ID \
-       --conn-type google_cloud_platform \
-       --conn-extra "$JSON_CREDS"
 
 echo "visit https://go.corp.mozilla.com/wtmodev for more info"
