@@ -135,6 +135,16 @@ init_connections() {
       --conn-password "" \
       --conn-description "Used to authenticate into Acoustic to generate data which then gets consumed by Fivetran" \
       --conn-extra "$(acoustic_default_extras)"
+
+    airflow connections delete "merino_elasticsearch"
+
+    airflow connections add "merino_elasticsearch" \
+      --conn-type http \
+      --conn-host "" \
+      --conn-login "" \
+      --conn-password "" \
+      --conn-description "Used to authenticate into Merino Elasticsearch cluster" \
+      --conn-extra "$(acoustic_default_extras)"
 }
 
 init_variables() {
