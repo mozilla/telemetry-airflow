@@ -3,6 +3,13 @@ Powers the [jetstream](https://experimenter.info/jetstream/jetstream/)
 analysis framework for experiments.
 
 See the [jetstream repository](https://github.com/mozilla/jetstream).
+
+*Triage notes*
+
+In case jetstream configuration is modified it is perfectly normal for the task
+`jetstream_run_config_changed` to take significantly longer to complete (hours instead of minutes).
+In these cases we expect anything below 12 hours, only after that amount of time should
+this task be considered potentially faulty and subject to the triage process.
 """
 
 from airflow import DAG
