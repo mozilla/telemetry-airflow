@@ -10,7 +10,7 @@ from dags.utils.tags import Tag
 DOCS = """\
     Merino Jobs
 
-    Dag for orchestrating jobs that build datasets that are used in merino.
+    Dag for orchestrating jobs that build datasets that are used in Merino.
     The jobs are run via the GKEPodOperator 
 """
 
