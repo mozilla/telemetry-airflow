@@ -34,7 +34,7 @@ def merino_job(name: str, arguments: List[str], env_vars: Dict[str, Any]):
 
 default_args = {
     "owner": "wstuckey@mozilla.com",
-    "start_date": datetime.datetime(2019, 7, 25),
+    "start_date": datetime.datetime(2023, 2, 1),
     "email": ["wstuckey@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -57,8 +57,8 @@ with DAG(
         "wikipedia_indexer_copy_export",
         arguments=["wikipedia-indexer", "copy-export"],
         env_vars=dict(
-            MERINO_JOBS__WIKIPEDIA_INDEXER__GCP_PATH="merino-jobs-dev/wikipedia-exports",
-            MERINO_JOBS__WIKIPEDIA_INDEXER__GCP_PROJECT="contextual-services-dev",
+            MERINO_JOBS__WIKIPEDIA_INDEXER__GCP_PATH="contextual-services/merino-jobs/wikipedia-exports",
+            MERINO_JOBS__WIKIPEDIA_INDEXER__GCP_PROJECT="moz-fx-data-prod-external-data",
         ),
     )
 
