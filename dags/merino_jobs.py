@@ -46,7 +46,7 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_3.__str__()]
 
-# Run weekly on mondays at 5am UTC
+# Run weekly on Mondays at 5am UTC
 with DAG(
     "merino_jobs", schedule_interval="0 5 * * 1", doc_md=DOCS, default_args=default_args, tags=tags,
 ) as dag:
