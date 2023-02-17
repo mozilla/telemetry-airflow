@@ -46,8 +46,8 @@ default_args = {
 
 # Low priority, no triage
 tags = [
-    Tag.ImpactTier.tier_3.__str__(),
-    Tag.Triage.no_triage.__str__(),
+    Tag.ImpactTier.tier_3,
+    Tag.Triage.no_triage,
 ]
 
 # Run weekly on Mondays at 5am UTC
