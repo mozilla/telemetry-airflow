@@ -124,13 +124,8 @@ make build && make up
 You can then connect to Airflow [locally](localhost:8080). Enable your DAG and see that it runs correctly.
 
 ### Production Setup
-TODO: review when production setup is finalized
-
-~~Note: the canonical reference for production environment variables lives
-in [a private repository](https://github.com/mozilla-services/cloudops-deployment/blob/master/projects/data/puppet/yaml/app/data.prod.wtmo.yaml).~~
-
-~~When deploying to production make sure to set up the following environment
-variables:~~
+When deploying to production make sure to set up the following environment
+variables:
 
 - `AWS_ACCESS_KEY_ID` -- The AWS access key ID to spin up the Spark clusters
 - `AWS_SECRET_ACCESS_KEY` -- The AWS secret access key
@@ -158,13 +153,10 @@ variables:~~
   `stage` or `prod`
 
 
-~~Also, please set~~
+Also, please set
 
 - `AIRFLOW_SECRET_KEY` -- A secret key for Airflow's Flask based webserver
 - `AIRFLOW__CORE__FERNET_KEY` -- A secret key to saving connection passwords in the DB
-
-~~Both values should be set by using the cryptography module's fernet tool that
-we've wrapped in a docker-compose call:~~
 
 ### Debugging
 
