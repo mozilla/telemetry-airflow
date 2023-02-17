@@ -14,7 +14,7 @@ DOCS = """\
     The jobs are run via the GKEPodOperator 
 """
 
-def merino_job(name: str, arguments: List[str], env_vars: Dict[str, Any]):
+def merino_job(name: str, arguments: List[str], env_vars: Dict[str, Any] = {}):
     return GKEPodOperator(
         task_id=name,
         name=name,
@@ -44,29 +44,41 @@ default_args = {
     "retry_delay": datetime.timedelta(minutes=5),
 }
 
-tags = [Tag.ImpactTier.tier_3.__str__()]
+# Low priority, no triage
+tags = [
+    Tag.ImpactTier.tier_3.__str__(),
+    Tag.Triage.no_triage.__str__(),
+]
 
 # Run weekly on Mondays at 5am UTC
 with DAG(
-    "merino_jobs", schedule_interval="0 5 * * 1", doc_md=DOCS, default_args=default_args, tags=tags,
+    "merino_jobs",
+    schedule_interval="0 5 * * 1",
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
 ) as dag:
 
     conn = BaseHook.get_connection("merino_elasticsearch")
 
     wikipedia_indexer_copy_export = merino_job(
         "wikipedia_indexer_copy_export",
-        arguments=["wikipedia-indexer", "copy-export"],
-        env_vars=dict(
-            MERINO_JOBS__WIKIPEDIA_INDEXER__GCP_PATH="contextual-services/merino-jobs/wikipedia-exports",
-            MERINO_JOBS__WIKIPEDIA_INDEXER__GCP_PROJECT="moz-fx-data-prod-external-data",
-        ),
+        arguments=[
+            "wikipedia-indexer",
+            "copy-export",
+            "--gcs-path", "contextual-services/merino-jobs/wikipedia-exports",
+            "--gcp-project", "moz-fx-data-prod-external-data",
+        ],
     )
 
     wikipedia_indexer_build_index = merino_job(
         "wikipedia_indexer_build_index",
-        arguments=["wikipedia-indexer", "index"],
+        arguments=[
+            "wikipedia-indexer",
+            "index",
+            "--es-cloud-id", str(conn.host),
+        ],
         env_vars=dict(
-            MERINO_JOBS__WIKIPEDIA_INDEXER__ES_CLOUD_ID=conn.host,
             MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY=conn.password,
         ),
     )
