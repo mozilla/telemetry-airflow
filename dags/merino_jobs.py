@@ -66,8 +66,8 @@ with DAG(
         arguments=[
             "wikipedia-indexer",
             "copy-export",
-            "--gcs-path", "contextual-services/merino-jobs/wikipedia-exports",
-            "--gcp-project", "moz-fx-data-prod-external-data",
+            "--gcs-path", "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+            "--gcp-project", "moz-fx-data-shared-prod",
         ],
     )
 
