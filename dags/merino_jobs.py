@@ -4,8 +4,8 @@ from typing import Any, Dict, List
 from airflow import DAG
 from airflow.hooks.base import BaseHook
 
-from dags.operators.gcp_container_operator import GKEPodOperator
-from dags.utils.tags import Tag
+from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 DOCS = """\
     Merino Jobs
