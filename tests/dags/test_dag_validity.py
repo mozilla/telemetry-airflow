@@ -21,7 +21,9 @@ def test_dag_tags(get_dag_bag):
 
     valid_tags = {
         "impact/tier_1", "impact/tier_2", "impact/tier_3", "repo/bigquery-etl",
-        "repo/telemetry-airflow", "repo/private-bigquery-etl"}
+        "repo/telemetry-airflow", "repo/private-bigquery-etl",
+        "triage/no_triage", "triage/record_only"
+    }
     dagbag = get_dag_bag
 
     for dag_name, dag in dagbag.dags.items():
