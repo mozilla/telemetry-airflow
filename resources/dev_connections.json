@@ -148,5 +148,15 @@
     "port": null,
     "schema": null,
     "extra": null
+  },
+  "merino_elasticsearch": {
+    "conn_type": "http",
+    "description": "Used to authenticate into Merino Elasticsearch cluster",
+    "login": "",
+    "password": null,
+    "host": "",
+    "port": null,
+    "schema": null,
+    "extra": "{\"refresh_token\": \"dummy_refresh_token\"}"
   }
 }

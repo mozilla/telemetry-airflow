@@ -18,6 +18,11 @@ x-airflow-common:
   build: .
   environment:
     &airflow-common-env
+    # Compatibility with legacy airflow.cfg
+    AIRFLOW__WEBSERVER__WEB_SERVER_PORT: '8080'
+    AIRFLOW__WEBSERVER__BASE_URL: 'http://localhost:8080'
+    AIRFLOW__CELERY__FLOWER_PORT: '5555'
+
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql://root:secret@db:3306/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: redis://:@redis:6379/0
@@ -74,7 +79,7 @@ services:
     <<: *airflow-common
     command: webserver
     ports:
-      - 8080:8080
+      - '8080:8080'
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s
@@ -235,7 +240,7 @@ services:
     profiles:
       - flower
     ports:
-      - 5555:5555
+      - '5555:5555'
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 10s
