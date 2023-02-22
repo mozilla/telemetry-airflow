@@ -69,6 +69,9 @@ with DAG(
             "--gcs-path", "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project", "moz-fx-data-shared-prod",
         ],
+        env_vars=dict(
+            MERINO_ENV="production",
+        ),
     )
 
     wikipedia_indexer_build_index = merino_job(
@@ -76,10 +79,11 @@ with DAG(
         arguments=[
             "wikipedia-indexer",
             "index",
-            "--es-cloud-id", str(conn.host),
+            "--elasticsearch-cloud-id", str(conn.host),
+            "--elasticsearch-api-key", conn.password,
         ],
         env_vars=dict(
-            MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY=conn.password,
+            MERINO_ENV="production",
         ),
     )
 
