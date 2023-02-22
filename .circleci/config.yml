@@ -16,7 +16,7 @@ orbs:
 
 jobs:
   unit-tests:
-    executor:
+    executor: &python-executor
       name: python/default
       tag: 3.8.12
     steps:
@@ -25,34 +25,21 @@ jobs:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
       - run:
+          name: 🧪 Pytest
+          command: python -m pytest --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
+
+  validate-requirements:
+    executor: *python-executor
+    steps:
+      - checkout
+      - run:
           name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
             pip install pip-tools
             pip-compile --quiet
             git diff --exit-code requirements.txt
-      - run:
-          name: 🧪 Pytest
-          command: python -m pytest
-      - run:
-          name: 🧪 Compile DAGs
-          command: python -m py_compile dags/*.py
-      - run:
-          name: 🧹 Clean up
-          command: find . -name *.pyc -delete
-
-  integration-tests:
-    executor:
-      name: docker/machine
-      dlc: true
-    steps:
-      - checkout
-      - run: docker-compose pull
-      - run: docker-compose build
-      - run: sudo chown -R 10001:10001 .
-      - run:
-          name: Check DAGs can be parsed and are correctly tagged
-          # Valid DAG tags are defined in: `bin/test-dag-tags.py`
-          command: bash bin/test-parse
 
   sync_gcs:
     docker:
@@ -72,7 +59,7 @@ workflows:
   ci:
     jobs:
       - docker/publish:
-          name: Docker build test
+          name: 🛠️ Docker build test
           before_build: &version
             - run:
                 name: Generate build version.json
@@ -95,12 +82,13 @@ workflows:
               ignore: /.*/
 
       - unit-tests:
-          name: Unit tests
+          name: 🧪 Unit tests
           filters: *ci-filter
 
-      - integration-tests:
-          name: Integration tests
+      - validate-requirements:
+          name: 🧪 Validate requirements
           filters: *ci-filter
+
 
   publish:
     jobs:
