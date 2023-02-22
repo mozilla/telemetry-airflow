@@ -14,13 +14,14 @@ __pycache__/
 
 # Airflow stuff
 logs/
-{AIRFLOW_HOME}/
-examples/
 
 # Virtual environment
 .env/
 .venv/
 venv/
+
+# Airflow dev resources
+resources/
 
 # IDE
 .idea
