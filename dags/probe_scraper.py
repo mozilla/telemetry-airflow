@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
+from airflow.models.param import Param
 from airflow.operators.empty import EmptyOperator
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.operators.python import PythonOperator
@@ -69,6 +70,7 @@ tags = [Tag.ImpactTier.tier_1]
 with DAG('probe_scraper',
     doc_md=DOCS,
     default_args=default_args,
+    params={"update": Param(True, type="boolean")},
     schedule_interval='0 0 * * 1-5',
     tags=tags,
 ) as dag:
@@ -153,10 +155,13 @@ with DAG('probe_scraper',
             arguments=(
                 probe_scraper_base_arguments
                 + [
-                    "--update",
                     "--glean",
                     f"--glean-url={url}",
-                    "--glean-limit-date={{ds}}",
+                    # if dag param update has been manually set to False, use
+                    # "--glean-limit-date=", "--no-update", otherwise default to
+                    # "--glean-limit-date={{ds}}", "--update"
+                    "--glean-limit-date={{ds if dag_run.conf['update'] else ''}}",
+                    "--{{'' if dag_run.conf['update'] else 'no-'}}update",
                 ]
                 + (
                     [
