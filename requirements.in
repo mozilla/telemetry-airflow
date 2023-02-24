@@ -10,10 +10,13 @@ apache-airflow-providers-http
 apache-airflow-providers-slack
 airflow-provider-fivetran==1.1.2
 
+# Linting and code quality
+isort==5.12.0
+pytest==6.2.5
+pytest-mock==3.10.0
+
 # Misc
 mozlogging
-pytest
-pytest-mock
 
 # Required for backfill UI
 flask-admin

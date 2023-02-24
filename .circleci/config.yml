@@ -30,6 +30,31 @@ jobs:
       - store_test_results:
           path: test-results
 
+  isort:
+    executor: &python-executor
+      name: python/default
+      tag: 3.8.12
+    steps:
+      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
+      - run:
+          name: isort check
+          command: isort . --check &> isort_checks.txt
+      - run:
+          name: Python modified files
+          command: git diff --name-only --diff-filter=DAMR origin/main | grep  -E "(.py$)" > changed.txt
+      - run:
+          name: 🧹 isort
+          command: |
+            grep -Ff changed.txt isort_issues.txt > problematic_files.txt
+            if [ -s problematic_files.txt ]; then
+              printf 'run this \nisort git diff --name-only --diff-filter=DAMR origin/main | grep  -E "(.py$)"'
+              exit 1
+            fi
+
+
   validate-requirements:
     executor: *python-executor
     steps:
@@ -80,14 +105,19 @@ workflows:
               ignore: main
             tags:
               ignore: /.*/
-
+      - isort:
+          filters: *ci-filter
       - unit-tests:
           name: 🧪 Unit tests
           filters: *ci-filter
+          requires:
+            - isort
 
       - validate-requirements:
           name: 🧪 Validate requirements
           filters: *ci-filter
+          requires:
+            - isort
 
 
   publish:
