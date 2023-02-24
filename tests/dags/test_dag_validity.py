@@ -1,6 +1,5 @@
-from airflow import models
 
-import json
+
 
 def test_dag_validity(get_dag_bag):
     """Test all DAGs can be parsed.
@@ -18,7 +17,6 @@ def test_dag_validity(get_dag_bag):
     if data:
         print(data)
         raise AssertionError
-
 
 
 def test_dag_tags(get_dag_bag):
