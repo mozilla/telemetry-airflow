@@ -48,7 +48,7 @@ jobs:
       - run:
           name: 🧹 isort
           command: |
-            grep -Ff changed.txt isort_issues.txt > problematic_files.txt
+            grep -Ff changed.txt isort_checks.txt > problematic_files.txt
             if [ -f problematic_files.txt ]; then
               cat problematic_files.txt
               printf 'run this \nisort git diff --name-only --diff-filter=DAMR origin/main | grep  -E "(.py$)"'
