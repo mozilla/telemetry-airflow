@@ -127,6 +127,13 @@ jobs:
 workflows:
   ci:
     jobs:
+      - validate-requirements:
+          name: 🧪 Validate requirements
+          filters: &ci-filter
+            branches:
+              ignore: main
+            tags:
+              ignore: /.*/
       - docker/publish:
           name: 🛠️ Docker build test
           before_build: &version
@@ -144,20 +151,25 @@ workflows:
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
-          filters: &ci-filter
-            branches:
-              ignore: main
-            tags:
-              ignore: /.*/
+          filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
       - isort:
           name: 🧹 isort
           filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
       - black:
           name: ⚫ black
           filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
       - ruff:
           name: 🚓 ruff
           filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
+
       - unit-tests:
           name: 🧪 Unit tests
           filters: *ci-filter
@@ -165,14 +177,6 @@ workflows:
             - 🧹 isort
             - ⚫ black
             - 🚓 ruff
-      - validate-requirements:
-          name: 🧪 Validate requirements
-          filters: *ci-filter
-          requires:
-            - 🧹 isort
-            - ⚫ black
-            - 🚓 ruff
-
 
   publish:
     jobs:
