@@ -36,19 +36,19 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
-      - run:
+      - run: &git-diff-py-files
           name: List added, copied, modified, and renamed *py files
-          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > changed.txt || true
+          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > diff.txt || true
       - run:
           name: List isort errors
-          command: isort . --check &> isort_checks.txt || true
+          command: isort . --check &> lint_checks.txt || true
       - run:
           name: 🧹 Diff-based isort
-          command: |
-            grep -Ff changed.txt isort_checks.txt > problematic_files.txt || true
-            if [ -s problematic_files.txt ]; then
-              cat problematic_files.txt
-              printf 'Run the following command to fix your branch:\n isort $(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)")'
+          command: &display-lint-errors |
+            grep -Ff diff.txt lint_checks.txt > lint_errors.txt || true
+            if [ -s lint_errors.txt ]; then
+              cat lint_errors.txt
+              printf 'Run the following command to fix your branch:\n make fixes'
               exit 1
             fi
 
@@ -59,21 +59,13 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
-      - run:
-          name: List added, copied, modified, and renamed *py files
-          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > changed.txt || true
+      - run: *git-diff-py-files
       - run:
           name: List black errors
-          command: black . --check &> black_checks.txt || true
+          command: black . --check &> lint_checks.txt || true
       - run:
           name: 🧹 Diff-based black
-          command: |
-            grep -Ff changed.txt black_checks.txt > problematic_files.txt || true
-            if [ -s problematic_files.txt ]; then
-              cat problematic_files.txt
-              printf 'Run the following command to fix your branch:\n black $(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)")'
-              exit 1
-            fi
+          command: *display-lint-errors
 
   ruff:
     executor: *python-executor
@@ -82,21 +74,13 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
-      - run:
-          name: List added, copied, modified, and renamed *py files
-          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > changed.txt || true
+      - run: *git-diff-py-files
       - run:
           name: List ruff errors
-          command: ruff check . &> ruff_checks.txt || true
+          command: ruff check . &> lint_checks.txt || true
       - run:
           name: 🧹 Diff-based ruff
-          command: |
-            grep -Ff changed.txt ruff_checks.txt > problematic_files.txt || true
-            if [ -s problematic_files.txt ]; then
-              cat problematic_files.txt
-              printf 'Run the following command to fix your branch:\n ruff check $(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)") --fix'
-              exit 1
-            fi
+          command: *display-lint-errors
 
   validate-requirements:
     executor: *python-executor
