@@ -1,9 +1,0 @@
-# Official Airflow constraints file
-# Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
-# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.3.3/constraints-3.8.txt
---constraint ./constraints.txt
-
-# Linting
-isort==5.12.0
-black==22.6.0
-ruff==0.0.252
