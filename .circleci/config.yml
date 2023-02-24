@@ -31,30 +31,73 @@ jobs:
           path: test-results
 
   isort:
-    executor: &python-executor
-      name: python/default
-      tag: 3.8.12
+    executor: *python-executor
     steps:
       - checkout
       - python/install-packages:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
       - run:
-          name: isort check
+          name: List added, copied, modified, and renamed *py files
+          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > changed.txt || true
+      - run:
+          name: List isort errors
           command: isort . --check &> isort_checks.txt || true
       - run:
-          name: Python modified files
-          command: git diff --name-only --diff-filter=DAMR origin/main | grep  -E "(.py$)" > changed.txt
-      - run:
-          name: 🧹 isort
+          name: 🧹 Diff-based isort
           command: |
-            grep -Ff changed.txt isort_checks.txt > problematic_files.txt
-            if [ -f problematic_files.txt ]; then
+            grep -Ff changed.txt isort_checks.txt > problematic_files.txt || true
+            if [ -s problematic_files.txt ]; then
               cat problematic_files.txt
-              printf 'Run the following command to fix your branch: \n> isort git diff --name-only --diff-filter=DAMR origin/main | grep  -E "(.py$)"'
+              printf 'Run the following command to fix your branch:\n isort $(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)")'
               exit 1
             fi
 
+  black:
+    executor: *python-executor
+    steps:
+      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
+      - run:
+          name: List added, copied, modified, and renamed *py files
+          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > changed.txt || true
+      - run:
+          name: List black errors
+          command: black . --check &> black_checks.txt || true
+      - run:
+          name: 🧹 Diff-based black
+          command: |
+            grep -Ff changed.txt black_checks.txt > problematic_files.txt || true
+            if [ -s problematic_files.txt ]; then
+              cat problematic_files.txt
+              printf 'Run the following command to fix your branch:\n black $(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)")'
+              exit 1
+            fi
+
+  ruff:
+    executor: *python-executor
+    steps:
+      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
+      - run:
+          name: List added, copied, modified, and renamed *py files
+          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > changed.txt || true
+      - run:
+          name: List ruff errors
+          command: ruff check . &> ruff_checks.txt || true
+      - run:
+          name: 🧹 Diff-based ruff
+          command: |
+            grep -Ff changed.txt ruff_checks.txt > problematic_files.txt || true
+            if [ -s problematic_files.txt ]; then
+              cat problematic_files.txt
+              printf 'Run the following command to fix your branch:\n ruff check $(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)") --fix'
+              exit 1
+            fi
 
   validate-requirements:
     executor: *python-executor
@@ -107,18 +150,28 @@ workflows:
             tags:
               ignore: /.*/
       - isort:
+          name: 🧹 isort
+          filters: *ci-filter
+      - black:
+          name: ⚫ black
+          filters: *ci-filter
+      - ruff:
+          name: 🚓 ruff
           filters: *ci-filter
       - unit-tests:
           name: 🧪 Unit tests
           filters: *ci-filter
           requires:
-            - isort
-
+            - 🧹 isort
+            - ⚫ black
+            - 🚓 ruff
       - validate-requirements:
           name: 🧪 Validate requirements
           filters: *ci-filter
           requires:
-            - isort
+            - 🧹 isort
+            - ⚫ black
+            - 🚓 ruff
 
 
   publish:

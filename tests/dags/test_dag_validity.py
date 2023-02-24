@@ -20,9 +20,14 @@ def test_dag_tags(get_dag_bag):
     """Check tags in all DAGs are valid."""
 
     valid_tags = {
-        "impact/tier_1", "impact/tier_2", "impact/tier_3", "repo/bigquery-etl",
-        "repo/telemetry-airflow", "repo/private-bigquery-etl",
-        "triage/no_triage", "triage/record_only"
+        "impact/tier_1",
+        "impact/tier_2",
+        "impact/tier_3",
+        "repo/bigquery-etl",
+        "repo/telemetry-airflow",
+        "repo/private-bigquery-etl",
+        "triage/no_triage",
+        "triage/record_only",
     }
     dagbag = get_dag_bag
 
@@ -42,6 +47,6 @@ def test_dag_tags_required(get_dag_bag):
         if dag.is_subdag:
             continue
 
-        assert [tag for tag in dag.tags if
-                required_tag_type in tag], f"DAG: {dag_name}: Missing required tag " \
-                                           f"type `{required_tag_type}`"
+        assert [
+            tag for tag in dag.tags if required_tag_type in tag
+        ], f"DAG: {dag_name}: Missing required tag type `{required_tag_type}`"
