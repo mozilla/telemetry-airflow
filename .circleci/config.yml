@@ -41,7 +41,7 @@ jobs:
           pkg-manager: pip
       - run:
           name: isort check
-          command: isort . --check &> isort_checks.txt
+          command: isort . --check &> isort_checks.txt || true
       - run:
           name: Python modified files
           command: git diff --name-only --diff-filter=DAMR origin/main | grep  -E "(.py$)" > changed.txt
