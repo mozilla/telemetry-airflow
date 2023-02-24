@@ -26,7 +26,6 @@ fixes:
 	isort $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
 	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
 
-
 clean: stop
 	docker-compose rm -f
 	rm -rf logs/*

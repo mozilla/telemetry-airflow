@@ -1,6 +1,3 @@
-
-
-
 def test_dag_validity(get_dag_bag):
     """Test all DAGs can be parsed.
 

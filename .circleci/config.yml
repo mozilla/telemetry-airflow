@@ -13,7 +13,6 @@ orbs:
   docker: circleci/docker@2.2.0
   python: circleci/python@2.1.1
 
-
 jobs:
   unit-tests:
     executor: &python-executor
