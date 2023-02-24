@@ -33,8 +33,13 @@ jobs:
     executor: *python-executor
     steps:
       - checkout
+      - run:
+          name: Install lint requirements
+          command: |
+            pip install pip-tools
+            pip-compile lint-requirements.in --quiet
       - python/install-packages:
-          pip-dependency-file: requirements.txt
+          pip-dependency-file: lint-requirements.txt
           pkg-manager: pip
       - run: &git-diff-py-files
           name: List added, copied, modified, and renamed *py files
@@ -56,8 +61,13 @@ jobs:
     executor: *python-executor
     steps:
       - checkout
+      - run:
+          name: Install lint requirements
+          command: |
+            pip install pip-tools
+            pip-compile lint-requirements.in --quiet
       - python/install-packages:
-          pip-dependency-file: requirements.txt
+          pip-dependency-file: lint-requirements.txt
           pkg-manager: pip
       - run: *git-diff-py-files
       - run:
@@ -71,8 +81,13 @@ jobs:
     executor: *python-executor
     steps:
       - checkout
+      - run:
+          name: Install lint requirements
+          command: |
+            pip install pip-tools
+            pip-compile lint-requirements.in --quiet
       - python/install-packages:
-          pip-dependency-file: requirements.txt
+          pip-dependency-file: lint-requirements.txt
           pkg-manager: pip
       - run: *git-diff-py-files
       - run:
