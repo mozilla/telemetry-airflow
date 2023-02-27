@@ -68,7 +68,6 @@ Shamelessly stolen from backfill.py
         "dataset_id": None,
         "destination_table": None,
         "dry_run": True,
-        "dry_run": True,
         "end_date": datetime.date.today().isoformat(),
         "excludes": [],
         "no_partition": False,
