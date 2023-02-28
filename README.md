@@ -16,10 +16,31 @@ Some links relevant to users and developers of WTMO:
   instead generated from ETL task definitions in
   [bigquery-etl](https://github.com/mozilla/bigquery-etl)
 - The Data SRE team maintains a
-  [WTMO Developer Guide](https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide)
+  [WTMO Developer Guide](https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide)
   (behind SSO)
 
-## Prerequisites
+## Testing and Validating DAGs without Docker
+
+It is now possible to run tests locally without using Docker.
+
+First, you need the MySQL Client installed. On MacOS, run:
+```
+brew install mysql-client
+```
+
+Then instantiate your virtualenv:
+```
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.in
+```
+
+Now you can run tests and validate dags:
+```
+python -m pytest
+```
+
+## Prerequisites for Local Deployment (using Docker)
 
 This app is built and deployed with
 [docker](https://docs.docker.com/) and
