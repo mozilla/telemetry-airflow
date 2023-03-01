@@ -6,9 +6,8 @@ from airflow.models import DagModel
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
-
 from utils.backfill import BackfillParams
 from utils.tags import Tag
 
@@ -65,7 +64,7 @@ doc_md = """
 
 
 @dag(
-    dag_id='backfill',
+    dag_id="backfill",
     schedule_interval=None,
     doc_md=doc_md,
     catchup=False,
@@ -120,7 +119,7 @@ def backfill_dag():
     )
 
     backfill_task = BashOperator(
-        task_id='execute_backfill',
+        task_id="execute_backfill",
         bash_command="{{ ti.xcom_pull(task_ids='generate_backfill_command') }}",
     )
 

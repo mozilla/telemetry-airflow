@@ -1,20 +1,38 @@
-[tool.isort]
-profile = "black"
-lines_between_sections = 1
-multi_line_output = 3
-include_trailing_comma = "True"
-line_length = 88
-src_paths = ["dags", "tests", "plugins"]
-known_third_party = ["airflow"]
+[tool.ruff.isort]
+known-third-party = ["airflow"]
 
 [tool.ruff]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
+    "E", # pycodestyle
+    "W", # pycodestyle
+    "F", # Pyflakes
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "D", # flake8-docstrings
+    "I", # isort
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "Q", # flake8-quotes
+    "UP", # pyupgrade
+    "PT", # flake8-pytest-style
+    "RUF", # Ruff-specific rules
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501", # line too long, handled by black
+    # Docstring linting
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D104", # Missing docstring in public package
+    "D105", # Missing docstring in magic method
+    "D107", # Missing docstring in __init__
+    "D202", # No blank lines allowed after function docstring -> clashes with Black
+    "D203", # 1 blank line required before class docstring
+    "D212", # Multi-line docstring summary should start at the first line
+    "D415", # First line should end with a period, question mark, or exclamation point
+    "D416", #Section name should end with a colon ("{name}")
+    # flake8-pytest-style:
+    "PT011", # pytest.raises({exception}) is too broad, set the match parameter or use a more specific exception
 ]

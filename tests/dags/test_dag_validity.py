@@ -1,5 +1,6 @@
 def test_dag_validity(get_dag_bag):
-    """Test all DAGs can be parsed.
+    """
+    Test all DAGs can be parsed.
 
     This test should be equivalent to the integration test using airflow CLI.
     At the moment, there is a discrepancy between this unit test and the integration
@@ -37,7 +38,7 @@ def test_dag_tags(get_dag_bag):
 
 
 def test_dag_tags_required(get_dag_bag):
-    """Check at least one tag per DAG is of the required type"""
+    """Check at least one tag per DAG is of the required type."""
 
     required_tag_type = "impact"
     dagbag = get_dag_bag

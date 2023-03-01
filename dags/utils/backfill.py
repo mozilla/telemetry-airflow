@@ -1,7 +1,6 @@
 import dataclasses
 import datetime
 import re
-from typing import List, Optional
 
 
 @dataclasses.dataclass
@@ -11,7 +10,7 @@ class BackfillParams:
     end_date: str
     clear: bool
     dry_run: bool
-    task_regex: Optional[str]
+    task_regex: str | None
 
     def validate_date_range(self) -> None:
         start_date = datetime.datetime.fromisoformat(self.start_date)
@@ -30,8 +29,9 @@ class BackfillParams:
                     f"Invalid regex pattern for `task_regex`={self.task_regex}"
                 ) from None
 
-    def generate_backfill_command(self) -> List[str]:
-        """Backfill command based off the Airflow plugin implemented by hwoo
+    def generate_backfill_command(self) -> list[str]:
+        """
+        Backfill command based off the Airflow plugin implemented by hwoo.
 
         Original implementation in plugins/backfill/main.py
 

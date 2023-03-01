@@ -23,7 +23,6 @@ pip-compile:
 
 fixes:
 	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
-	isort $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
 	black $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
 
 clean: stop

@@ -29,7 +29,7 @@ jobs:
       - store_test_results:
           path: test-results
 
-  isort:
+  black:
     executor: *python-executor
     steps:
       - checkout
@@ -40,10 +40,10 @@ jobs:
           name: List added, copied, modified, and renamed *py files
           command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > diff.txt || true
       - run:
-          name: List isort errors
-          command: isort . --check &> lint_checks.txt || true
+          name: List black errors
+          command: black . --check &> lint_checks.txt || true
       - run:
-          name: 🧹 Diff-based isort
+          name: 🧹 Diff-based black
           command: &display-lint-errors |
             grep -Ff diff.txt lint_checks.txt > lint_errors.txt || true
             if [ -s lint_errors.txt ]; then
@@ -51,21 +51,6 @@ jobs:
               printf 'Run the following command to fix your branch:\n make fixes'
               exit 1
             fi
-
-  black:
-    executor: *python-executor
-    steps:
-      - checkout
-      - python/install-packages:
-          pip-dependency-file: requirements.txt
-          pkg-manager: pip
-      - run: *git-diff-py-files
-      - run:
-          name: List black errors
-          command: black . --check &> lint_checks.txt || true
-      - run:
-          name: 🧹 Diff-based black
-          command: *display-lint-errors
 
   ruff:
     executor: *python-executor
@@ -137,11 +122,6 @@ workflows:
           filters: *ci-filter
           requires:
             - 🧪 Validate requirements
-      - isort:
-          name: 🧹 isort
-          filters: *ci-filter
-          requires:
-            - 🧪 Validate requirements
       - black:
           name: ⚫ black
           filters: *ci-filter
@@ -157,7 +137,6 @@ workflows:
           name: 🧪 Unit tests
           filters: *ci-filter
           requires:
-            - 🧹 isort
             - ⚫ black
             - 🚓 ruff
 
