@@ -21,6 +21,10 @@ build:
 pip-compile:
 	pip-compile
 
+fixes:
+	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
+	black $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
+
 clean: stop
 	docker-compose rm -f
 	rm -rf logs/*

@@ -6,9 +6,8 @@ from airflow.models import DagModel
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
-
 from utils.backfill import BackfillParams
 from utils.tags import Tag
 
@@ -27,7 +26,11 @@ def dry_run_branch_callable(params: dict) -> str:
 
 def clear_branch_callable(params: dict) -> str:
     backfill_params = BackfillParams(**params)
-    return TaskId.clear_tasks.value if backfill_params.clear else TaskId.do_not_clear_tasks.value
+    return (
+        TaskId.clear_tasks.value
+        if backfill_params.clear
+        else TaskId.do_not_clear_tasks.value
+    )
 
 
 def param_validation(params: dict) -> bool:
@@ -65,7 +68,7 @@ doc_md = """
 
 
 @dag(
-    dag_id='backfill',
+    dag_id="backfill",
     schedule_interval=None,
     doc_md=doc_md,
     catchup=False,
@@ -73,17 +76,20 @@ doc_md = """
     dagrun_timeout=datetime.timedelta(days=1),
     tags=[Tag.ImpactTier.tier_3, Tag.Triage.record_only],
     render_template_as_native_obj=True,
-    params={"dag_name": Param("dag_name", type="string"),
-            "start_date": Param((datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
-                                type="string",
-                                format="date-time"),
-            "end_date": Param(datetime.date.today().isoformat(),
-                              type="string",
-                              format="date-time"),
-            "clear": Param(False, type="boolean"),
-            "dry_run": Param(True, type="boolean"),
-            "task_regex": Param(None, type=["string", "null"]),
-            }
+    params={
+        "dag_name": Param("dag_name", type="string"),
+        "start_date": Param(
+            (datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
+            type="string",
+            format="date-time",
+        ),
+        "end_date": Param(
+            datetime.date.today().isoformat(), type="string", format="date-time"
+        ),
+        "clear": Param(False, type="boolean"),
+        "dry_run": Param(True, type="boolean"),
+        "task_regex": Param(None, type=["string", "null"]),
+    },
 )
 def backfill_dag():
     param_validation_task = PythonOperator(
@@ -120,12 +126,19 @@ def backfill_dag():
     )
 
     backfill_task = BashOperator(
-        task_id='execute_backfill',
+        task_id="execute_backfill",
         bash_command="{{ ti.xcom_pull(task_ids='generate_backfill_command') }}",
     )
 
-    param_validation_task >> dry_run_branch_task >> [dry_run_task, real_deal_task] >> clear_branch_task >> [
-        clear_tasks_task, do_not_clear_tasks_task] >> generate_backfill_command_task >> backfill_task
+    (
+        param_validation_task
+        >> dry_run_branch_task
+        >> [dry_run_task, real_deal_task]
+        >> clear_branch_task
+        >> [clear_tasks_task, do_not_clear_tasks_task]
+        >> generate_backfill_command_task
+        >> backfill_task
+    )
 
 
 dag = backfill_dag()

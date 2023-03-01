@@ -13,7 +13,6 @@ orbs:
   docker: circleci/docker@2.2.0
   python: circleci/python@2.1.1
 
-
 jobs:
   unit-tests:
     executor: &python-executor
@@ -29,6 +28,44 @@ jobs:
           command: python -m pytest --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
+
+  black:
+    executor: *python-executor
+    steps:
+      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
+      - run: &git-diff-py-files
+          name: List added, copied, modified, and renamed *py files
+          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > diff.txt || true
+      - run:
+          name: List black errors
+          command: black . --check &> lint_checks.txt || true
+      - run:
+          name: 🧹 Diff-based black
+          command: &display-lint-errors |
+            grep -Ff diff.txt lint_checks.txt > lint_errors.txt || true
+            if [ -s lint_errors.txt ]; then
+              cat lint_errors.txt
+              printf 'Run the following command to fix your branch:\n make fixes'
+              exit 1
+            fi
+
+  ruff:
+    executor: *python-executor
+    steps:
+      - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements.txt
+          pkg-manager: pip
+      - run: *git-diff-py-files
+      - run:
+          name: List ruff errors
+          command: ruff check . &> lint_checks.txt || true
+      - run:
+          name: 🧹 Diff-based ruff
+          command: *display-lint-errors
 
   validate-requirements:
     executor: *python-executor
@@ -58,6 +95,13 @@ jobs:
 workflows:
   ci:
     jobs:
+      - validate-requirements:
+          name: 🧪 Validate requirements
+          filters: &ci-filter
+            branches:
+              ignore: main
+            tags:
+              ignore: /.*/
       - docker/publish:
           name: 🛠️ Docker build test
           before_build: &version
@@ -75,20 +119,26 @@ workflows:
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
-          filters: &ci-filter
-            branches:
-              ignore: main
-            tags:
-              ignore: /.*/
+          filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
+      - black:
+          name: ⚫ black
+          filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
+      - ruff:
+          name: 🚓 ruff
+          filters: *ci-filter
+          requires:
+            - 🧪 Validate requirements
 
       - unit-tests:
           name: 🧪 Unit tests
           filters: *ci-filter
-
-      - validate-requirements:
-          name: 🧪 Validate requirements
-          filters: *ci-filter
-
+          requires:
+            - ⚫ black
+            - 🚓 ruff
 
   publish:
     jobs:
