@@ -29,6 +29,16 @@ jobs:
       - store_test_results:
           path: test-results
 
+  test-local-environment:
+    executor: docker/machine
+    steps:
+      - checkout
+      - docker/install-docker-compose
+      - run:
+          name: Docker
+          command: |
+            docker-compose up --wait
+
   black:
     executor: *python-executor
     steps:
@@ -102,6 +112,7 @@ workflows:
               ignore: main
             tags:
               ignore: /.*/
+
       - docker/publish:
           name: 🛠️ Docker build test
           before_build: &version
@@ -122,6 +133,12 @@ workflows:
           filters: *ci-filter
           requires:
             - 🧪 Validate requirements
+      - test-local-environment:
+          name: 🧪 Validate local environment
+          filters: *ci-filter
+          requires:
+            - 🛠️ Docker build test
+
       - black:
           name: ⚫ black
           filters: *ci-filter
