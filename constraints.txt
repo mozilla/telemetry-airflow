@@ -353,7 +353,7 @@ locket==1.0.0
 lockfile==0.12.2
 looker-sdk==22.4.0
 lxml==4.9.1
-markdown-it-py==2.1.0
+markdown-it-py==2.2.0
 marshmallow-enum==1.5.1
 marshmallow-oneofschema==3.0.1
 marshmallow-sqlalchemy==0.26.1
