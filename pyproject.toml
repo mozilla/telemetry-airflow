@@ -35,4 +35,6 @@ ignore = [
     "D416", #Section name should end with a colon ("{name}")
     # flake8-pytest-style:
     "PT011", # pytest.raises({exception}) is too broad, set the match parameter or use a more specific exception
+    # To enable when we migrate to Python 3.10
+    "B905", # `zip()` without an explicit `strict=` parameter
 ]

@@ -162,6 +162,6 @@ def test_generate_backfill_command(base_backfill_params) -> None:
         ],
     ]
 
-    for params, result in zip(test_params, expected_results, strict=True):
+    for params, result in zip(test_params, expected_results):
         backfill_command = params.generate_backfill_command()
         assert backfill_command == result
