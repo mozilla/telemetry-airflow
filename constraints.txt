@@ -28,7 +28,7 @@ HeapDict==1.0.1
 JPype1==1.4.0
 JayDeBeApi==1.2.3
 Jinja2==3.1.2
-Mako==1.2.1
+Mako==1.2.2
 Markdown==3.3.7
 MarkupSafe==2.1.1
 PyGithub==1.55
