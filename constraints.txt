@@ -102,7 +102,7 @@ apache-airflow-providers-microsoft-mssql==3.0.0
 apache-airflow-providers-microsoft-psrp==2.0.0
 apache-airflow-providers-microsoft-winrm==3.0.0
 apache-airflow-providers-mongo==3.0.0
-apache-airflow-providers-mysql==3.0.0
+apache-airflow-providers-mysql==4.0.0
 apache-airflow-providers-neo4j==3.0.0
 apache-airflow-providers-odbc==3.0.0
 apache-airflow-providers-openfaas==3.0.0
