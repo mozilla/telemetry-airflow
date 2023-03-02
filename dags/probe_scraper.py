@@ -71,7 +71,7 @@ with DAG('probe_scraper',
     doc_md=DOCS,
     default_args=default_args,
     params={"update": Param(True, type="boolean")},
-    schedule_interval='0 0 * * 1-5',
+    schedule_interval='0 0 * * *',
     tags=tags,
 ) as dag:
 
