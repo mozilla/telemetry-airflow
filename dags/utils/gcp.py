@@ -263,9 +263,9 @@ def bigquery_etl_backfill(
         end_date: str = None,
         project_id: str = None,
         excludes: typing.List[str] = None,
-        dry_run: bool = True,
-        parallelism: int = 10,
-        no_partition: bool = False,
+        dry_run: str = None,
+        parallelism: str = "10",
+        no_partition: str = "False",
         gcp_conn_id: str = "google_cloud_airflow_gke",
         gke_project_id: str = GCP_PROJECT_ID,
         gke_location: str = "us-west1",
@@ -276,14 +276,18 @@ def bigquery_etl_backfill(
         **kwargs
 ):
     """ Generate.
+    All parameters here are strings, since we expect to use this via Airflow Params.
+
+    See:
+    https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/params.html
 
     :param str destination_table:                  [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
     :param str start_date:                         [Required] Start date for the backfill
     :param str end_date:                           End date for the backfill, defaults to current_date
     :param Optional[str] project_id:               BigQuery default project id
-    :param List[str] excludes:                      Dates to exclude from the backfill
-    :param bool dryrun:                            Dry run the backfill
+    :param List[str] excludes:                     Dates to exclude from the backfill
+    :param bool dry_run:                           Dry run the backfill
     :param int parallelism:                        Number of parallel queries to execute
     :param bool no_partition:                      Disable writing results to a partition.
                                                    Overwrites entire destination table.
@@ -300,8 +304,12 @@ def bigquery_etl_backfill(
                                                    GKEPodOperator
     :return: GKEPodOperator
     """
-    kwargs["task_id"] = kwargs.get("task_id", destination_table)
-    kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
+
+    # Task ID and Name are not templatable,
+    # so we use static names
+    kwargs["task_id"] = "bigquery_etl_backfill"
+    kwargs["name"] = "bigquery-etl-backfill"
+
     if not project_id:
         project_id = "moz-fx-data-shared-prod"
 
@@ -316,13 +324,13 @@ def bigquery_etl_backfill(
     if end_date:
         args += ["--end-date", end_date]
     if excludes:
-        for exclude in excludes:
+        for exclude in ",".split(excludes):
             args += ["--exclude", exclude]
-    if dryrun:
+    if dry_run in ("true", "True"):
         args += ["--dry-run"]
     if parallelism:
         args += ["--parallelism", parallelism]
-    if no_partition:
+    if no_partition in ("true", "True"):
         args += ["--no-partition"]
 
     return GKEPodOperator(
