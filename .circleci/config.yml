@@ -32,12 +32,25 @@ jobs:
   test-local-environment:
     executor: docker/machine
     steps:
+      - attach_workspace:
+          at: artifacts
       - checkout
       - docker/install-docker-compose
       - run:
-          name: Docker
+          name: Load Docker image artifact from previous job
+          command: docker load -i artifacts/telemetry-airflow.tar
+      - run:
+          name: Override docker-compose.yaml with artifact
           command: |
+            sed -i "s/  build: ./  image: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}/g" docker-compose.yml
+      - run:
+          name: Start up local environment
+          command: |
+            echo "AIRFLOW_UID=$(id -u)" >> .env
+            echo "FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; fernet_key = Fernet.generate_key(); print(fernet_key.decode())")" >> .env
             docker-compose up --wait
+            docker-compose exec airflow-webserver airflow variables import dev_variables.json
+            docker-compose exec airflow-webserver airflow connections import dev_connections.json
 
   black:
     executor: *python-executor
@@ -127,12 +140,23 @@ workflows:
             - run:
                 name: Output version.json
                 command: cat version.json
+          after_build:
+            - run:
+                name: Persist image
+                command: |
+                  mkdir -p artifacts
+                  docker save -o artifacts/telemetry-airflow.tar $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
+            - persist_to_workspace:
+                root: artifacts
+                paths:
+                  - telemetry-airflow.tar
           deploy: false
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
           filters: *ci-filter
           requires:
             - 🧪 Validate requirements
+
       - test-local-environment:
           name: 🧪 Validate local environment
           filters: *ci-filter
