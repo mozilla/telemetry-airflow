@@ -56,22 +56,23 @@ DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION = "v1.17.0"
 
 
 default_args = {
-    'owner': 'dthorn@mozilla.com',
-    'depends_on_past': False,
-    'start_date': datetime(2019, 10, 28),
-    'email_on_failure': True,
-    'email_on_retry': True,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=30),
+    "owner": "dthorn@mozilla.com",
+    "depends_on_past": False,
+    "start_date": datetime(2019, 10, 28),
+    "email_on_failure": True,
+    "email_on_retry": True,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=30),
 }
 
 tags = [Tag.ImpactTier.tier_1]
 
-with DAG('probe_scraper',
+with DAG(
+    "probe_scraper",
     doc_md=DOCS,
     default_args=default_args,
     params={"update": Param(True, type="boolean")},
-    schedule_interval='0 0 * * *',
+    schedule_interval="0 0 * * *",
     tags=tags,
 ) as dag:
 
@@ -81,11 +82,13 @@ with DAG('probe_scraper',
         location="us-west1",
         cluster_name="workloads-prod-v1",
     )
-    aws_conn_id='aws_prod_probe_scraper'
-    aws_access_key, aws_secret_key, session = AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials()
+    aws_conn_id = "aws_prod_probe_scraper"
+    aws_access_key, aws_secret_key, session = AwsBaseHook(
+        aws_conn_id=aws_conn_id, client_type="s3"
+    ).get_credentials()
 
     # Built from repo https://github.com/mozilla/probe-scraper
-    probe_scraper_image='gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest'
+    probe_scraper_image = "gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest"
 
     # probe scraper used to be a single task, but it has beeen split up, and individual
     # failures do not block downstream tasks
@@ -247,7 +250,7 @@ with DAG('probe_scraper',
             env_vars={
                 "BOTO_PATH": ".gce_boto",
                 "AWS_ACCESS_KEY_ID": aws_access_key,
-                "AWS_SECRET_ACCESS_KEY": aws_secret_key
+                "AWS_SECRET_ACCESS_KEY": aws_secret_key,
             },
             dag=dag,
             **airflow_gke_prod_kwargs,
@@ -258,7 +261,6 @@ with DAG('probe_scraper',
         task_id="dummy_branch",
         dag=dag,
     )
-
 
     class CheckBranchOperator(BaseBranchOperator):
         def choose_branch(self, context):
@@ -274,7 +276,6 @@ with DAG('probe_scraper',
             else:
                 return ["dummy_branch"]
 
-
     check_branch = CheckBranchOperator(
         task_id="probe_scraper_check_branch",
         # wait for upstream, but ignore upstream failures
@@ -285,17 +286,18 @@ with DAG('probe_scraper',
     probe_scraper >> check_branch
 
     schema_generator = GKEPodOperator(
-        email=['dthorn@mozilla.com', 'dataops+alerts@mozilla.com'],
-        task_id='mozilla_schema_generator',
-        name='schema-generator-1',
-        image='mozilla/mozilla-schema-generator:latest',
+        email=["dthorn@mozilla.com", "dataops+alerts@mozilla.com"],
+        task_id="mozilla_schema_generator",
+        name="schema-generator-1",
+        image="mozilla/mozilla-schema-generator:latest",
         env_vars={
             "MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}",
             "MPS_REPO_URL": "git@github.com:mozilla-services/mozilla-pipeline-schemas.git",
             "MPS_BRANCH_SOURCE": "main",
             "MPS_BRANCH_PUBLISH": "generated-schemas",
         },
-        dag=dag)
+        dag=dag,
+    )
 
     schema_generator.set_upstream(probe_scraper)
 
@@ -304,23 +306,27 @@ with DAG('probe_scraper',
         name="probe-expiry-alerts",
         image=probe_scraper_image,
         arguments=[
-            "python3", "-m", "probe_scraper.probe_expiry_alert",
-            "--date", "{{ ds }}",
-            "--bugzilla-api-key", "{{ var.value.bugzilla_probe_expiry_bot_api_key }}"
+            "python3",
+            "-m",
+            "probe_scraper.probe_expiry_alert",
+            "--date",
+            "{{ ds }}",
+            "--bugzilla-api-key",
+            "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
         ],
         email=["dthorn@mozilla.com", "telemetry-alerts@mozilla.com"],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_key
+            "AWS_SECRET_ACCESS_KEY": aws_secret_key,
         },
-        dag=dag)
+        dag=dag,
+    )
 
     probe_expiry_alerts.set_upstream(probe_scraper)
 
     delay_python_task = PythonOperator(
-        task_id="wait_for_1_hour",
-        dag=dag,
-        python_callable=lambda: time.sleep(60 * 60))
+        task_id="wait_for_1_hour", dag=dag, python_callable=lambda: time.sleep(60 * 60)
+    )
 
     probe_scraper >> delay_python_task
 
@@ -346,7 +352,9 @@ with DAG('probe_scraper',
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
             "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_prod"),
             "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
-            "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+            "GITHUB_ACCESS_TOKEN": Variable.get(
+                "dataops_looker_github_secret_access_token"
+            ),
             "UPDATE_SPOKE_BRANCHES": "true",
         },
         **airflow_gke_prod_kwargs,
@@ -370,8 +378,12 @@ with DAG('probe_scraper',
             "SPOKE_BRANCH_PUBLISH": "main-stage",
             "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
             "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
-            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_staging"),
-            "GITHUB_ACCESS_TOKEN": Variable.get("dataops_looker_github_secret_access_token"),
+            "LOOKER_API_CLIENT_SECRET": Variable.get(
+                "looker_api_client_secret_staging"
+            ),
+            "GITHUB_ACCESS_TOKEN": Variable.get(
+                "dataops_looker_github_secret_access_token"
+            ),
             "UPDATE_SPOKE_BRANCHES": "true",
         },
         **airflow_gke_prod_kwargs,
@@ -395,4 +407,3 @@ with DAG('probe_scraper',
     )
 
     probe_scraper >> glean_dictionary_netlify_build
-
