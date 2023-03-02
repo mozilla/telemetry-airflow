@@ -2,17 +2,16 @@ import time
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.models import Variable
 from airflow.models.param import Param
-from airflow.operators.empty import EmptyOperator
-from airflow.providers.http.operators.http import SimpleHttpOperator
-from airflow.operators.python import PythonOperator
 from airflow.operators.branch import BaseBranchOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import PythonOperator
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.utils.weekday import WeekDay
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
-
 
 DOCS = """\
 # Probe Scraper
@@ -76,12 +75,12 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    airflow_gke_prod_kwargs = dict(
-        gcp_conn_id="google_cloud_airflow_gke",
-        project_id="moz-fx-data-airflow-gke-prod",
-        location="us-west1",
-        cluster_name="workloads-prod-v1",
-    )
+    airflow_gke_prod_kwargs = {
+        "gcp_conn_id": "google_cloud_airflow_gke",
+        "project_id": "moz-fx-data-airflow-gke-prod",
+        "location": "us-west1",
+        "cluster_name": "workloads-prod-v1",
+    }
     aws_conn_id = "aws_prod_probe_scraper"
     aws_access_key, aws_secret_key, session = AwsBaseHook(
         aws_conn_id=aws_conn_id, client_type="s3"
@@ -131,8 +130,8 @@ with DAG(
         startup_timeout_seconds=360,
         image=probe_scraper_image,
         arguments=(
-            probe_scraper_base_arguments
-            + [
+            [
+                *probe_scraper_base_arguments,
                 "--cache-bucket=gs://probe-scraper-prod-cache/",
                 "--moz-central",
             ]
@@ -156,8 +155,8 @@ with DAG(
             name=f"probe-scraper-glean-{name}",
             image=probe_scraper_image,
             arguments=(
-                probe_scraper_base_arguments
-                + [
+                [
+                    *probe_scraper_base_arguments,
                     "--glean",
                     f"--glean-url={url}",
                     # if dag param update has been manually set to False, use
@@ -202,8 +201,8 @@ with DAG(
         name="probe-scraper-glean-repositories",
         image=probe_scraper_image,
         arguments=(
-            probe_scraper_base_arguments
-            + [
+            [
+                *probe_scraper_base_arguments,
                 # when --update is specified without --glean-repo or --glean-url,
                 # this only writes metadata changes.
                 "--update",
@@ -229,8 +228,8 @@ with DAG(
             name=f"probe-scraper-{check_name}",
             image=probe_scraper_image,
             arguments=(
-                probe_scraper_base_arguments
-                + [
+                [
+                    *probe_scraper_base_arguments,
                     f"--{check_name}",
                     "--bugzilla-api-key={{ var.value.bugzilla_probe_expiry_bot_api_key }}",
                     # don't write any generated files, this job is for emails only
@@ -265,8 +264,9 @@ with DAG(
     class CheckBranchOperator(BaseBranchOperator):
         def choose_branch(self, context):
             """
-            Return an array of task_ids to be executed. These tasks must be
-            downstream of the branch task.
+            Return an array of task_ids to be executed.
+
+            These tasks must be downstream of the branch task.
             """
             weekday = context["execution_date"].isoweekday()
             if weekday == WeekDay.MONDAY:
