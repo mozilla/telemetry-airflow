@@ -6,10 +6,10 @@ import re
 
 
 @dataclasses.dataclass
-class BackfillParams:
-    dag_name: str
+class AirflowBackfillParams:
     start_date: str
     end_date: str
+    dag_name: str
     clear: bool
     dry_run: bool
     task_regex: str | None
@@ -65,5 +65,54 @@ class BackfillParams:
         cmd.extend(
             ["-s", str(self.start_date), "-e", str(self.end_date), str(self.dag_name)]
         )
+
+        return cmd
+
+
+@dataclasses.dataclass
+class BigQueryETLBackfillParams:
+    start_date: str
+    destination_table: str
+    dataset_id: str
+    project_id: str
+    dry_run: bool
+    no_partition: bool
+    end_date: str | None = None
+    excludes: list[str] | None = None
+    parallelism: int | None = None
+
+    def validate_date_range(self) -> None:
+        start_date = datetime.datetime.fromisoformat(self.start_date)
+        end_date = datetime.datetime.fromisoformat(self.end_date)
+        if start_date > end_date:
+            raise ValueError(
+                f"`start_date`={self.start_date} is greater than `end_date`={self.end_date}"
+            )
+
+    def generate_backfill_command(self) -> list[str]:
+        """BigQuery-ETL backfill command."""
+        # Construct the airflow command
+        cmd = [
+            "script/bqetl",
+            "query",
+            "backfill",
+            f"{self.dataset_id}.{self.destination_table}",
+            f"--start-date={self.start_date}",
+        ]
+
+        if self.end_date:
+            cmd.append(f"--end-date={self.end_date}")
+
+        if self.excludes:
+            cmd.append(f"--exclude={','.join(self.excludes)}")
+
+        if self.dry_run:
+            cmd.append("--dry-run")
+
+        if self.parallelism:
+            cmd.append(f"--parallelism={self.parallelism}")
+
+        if self.no_partition:
+            cmd.append("--no-partition")
 
         return cmd

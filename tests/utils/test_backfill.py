@@ -1,6 +1,6 @@
 import pytest
 
-from dags.utils.backfill import BackfillParams
+from dags.utils.backfill import AirflowBackfillParams, BigQueryETLBackfillParams
 
 
 @pytest.fixture()
@@ -16,8 +16,23 @@ def base_params() -> dict:
 
 
 @pytest.fixture()
-def base_backfill_params(base_params: dict) -> BackfillParams:
-    return BackfillParams(**base_params)
+def base_bqetl_params() -> dict:
+    return {
+        "dataset_id": "google_ads_derived",
+        "destination_table": "campaign_conversions_by_date_v1",
+        "dry_run": False,
+        "end_date": "2023-02-28",
+        "excludes": None,
+        "no_partition": False,
+        "parallelism": 1,
+        "project_id": "moz-fx-data-shared-prod",
+        "start_date": "2023-02-27",
+    }
+
+
+@pytest.fixture()
+def base_backfill_params(base_params: dict) -> AirflowBackfillParams:
+    return AirflowBackfillParams(**base_params)
 
 
 def test_date_validation(base_backfill_params) -> None:
@@ -57,8 +72,8 @@ def test_generate_backfill_command(base_backfill_params) -> None:
     test_start_date = "2022-01-01"
     test_end_date = "2022-01-10"
 
-    test_params: list[BackfillParams] = [
-        BackfillParams(
+    test_params: list[AirflowBackfillParams] = [
+        AirflowBackfillParams(
             clear=True,
             dry_run=True,
             task_regex=None,
@@ -66,7 +81,7 @@ def test_generate_backfill_command(base_backfill_params) -> None:
             start_date=test_start_date,
             end_date=test_end_date,
         ),
-        BackfillParams(
+        AirflowBackfillParams(
             clear=False,
             dry_run=True,
             task_regex=None,
@@ -74,7 +89,7 @@ def test_generate_backfill_command(base_backfill_params) -> None:
             start_date=test_start_date,
             end_date=test_end_date,
         ),
-        BackfillParams(
+        AirflowBackfillParams(
             clear=True,
             dry_run=False,
             task_regex=None,
@@ -82,7 +97,7 @@ def test_generate_backfill_command(base_backfill_params) -> None:
             start_date=test_start_date,
             end_date=test_end_date,
         ),
-        BackfillParams(
+        AirflowBackfillParams(
             clear=False,
             dry_run=False,
             task_regex=None,
@@ -90,7 +105,7 @@ def test_generate_backfill_command(base_backfill_params) -> None:
             start_date=test_start_date,
             end_date=test_end_date,
         ),
-        BackfillParams(
+        AirflowBackfillParams(
             clear=False,
             dry_run=False,
             task_regex="/ab+c/",
@@ -159,6 +174,52 @@ def test_generate_backfill_command(base_backfill_params) -> None:
             "-e",
             "2022-01-10",
             "test_value",
+        ],
+    ]
+
+    for params, result in zip(test_params, expected_results):
+        backfill_command = params.generate_backfill_command()
+        assert backfill_command == result
+
+
+def test_generate_bqetl_backfill_command(base_bqetl_params: dict) -> None:
+    """Assert Big Query ETL backfill commands are generated as expected."""
+    test_params: list[BigQueryETLBackfillParams] = [
+        BigQueryETLBackfillParams(**base_bqetl_params),
+        BigQueryETLBackfillParams(
+            start_date="2023-02-22",
+            destination_table="campaign_conversions_by_date_v1",
+            dataset_id="google_ads_derived",
+            project_id="moz-fx-data-shared-prod",
+            dry_run=True,
+            no_partition=True,
+            end_date="2023-02-28",
+            excludes=["2023-02-23", "2023-02-24", "2023-02-26"],
+            parallelism=4,
+        ),
+    ]
+
+    expected_results = [
+        [
+            "script/bqetl",
+            "query",
+            "backfill",
+            "google_ads_derived" ".campaign_conversions_by_date_v1",
+            "--start-date=2023-02-27",
+            "--end-date=2023-02-28",
+            "--parallelism=1",
+        ],
+        [
+            "script/bqetl",
+            "query",
+            "backfill",
+            "google_ads_derived.campaign_conversions_by_date_v1",
+            "--start-date=2023-02-22",
+            "--end-date=2023-02-28",
+            "--exclude=2023-02-23,2023-02-24,2023-02-26",
+            "--dry-run",
+            "--parallelism=4",
+            "--no-partition",
         ],
     ]
 

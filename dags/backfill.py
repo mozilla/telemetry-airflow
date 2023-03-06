@@ -8,7 +8,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
-from utils.backfill import BackfillParams
+from utils.backfill import AirflowBackfillParams
 from utils.tags import Tag
 
 
@@ -20,12 +20,12 @@ class TaskId(Enum):
 
 
 def dry_run_branch_callable(params: dict) -> str:
-    backfill_params = BackfillParams(**params)
+    backfill_params = AirflowBackfillParams(**params)
     return TaskId.dry_run.value if backfill_params.dry_run else TaskId.real_deal.value
 
 
 def clear_branch_callable(params: dict) -> str:
-    backfill_params = BackfillParams(**params)
+    backfill_params = AirflowBackfillParams(**params)
     return (
         TaskId.clear_tasks.value
         if backfill_params.clear
@@ -34,7 +34,7 @@ def clear_branch_callable(params: dict) -> str:
 
 
 def param_validation(params: dict) -> bool:
-    backfill_params = BackfillParams(**params)
+    backfill_params = AirflowBackfillParams(**params)
     backfill_params.validate_date_range()
     validate_dag_exists(dag_name=backfill_params.dag_name)
     backfill_params.validate_regex_pattern()
@@ -48,7 +48,7 @@ def validate_dag_exists(dag_name: str) -> None:
 
 
 def generate_bash_command(params: dict) -> str:
-    backfill_params = BackfillParams(**params)
+    backfill_params = AirflowBackfillParams(**params)
     return " ".join(backfill_params.generate_backfill_command())
 
 

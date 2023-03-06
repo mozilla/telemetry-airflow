@@ -19,7 +19,6 @@ from dags.utils.dataproc import get_dataproc_parameters
 
 import json
 import re
-import typing
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"
@@ -251,96 +250,6 @@ def bigquery_etl_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [sql_file_path],
-        is_delete_operator_pod=is_delete_operator_pod,
-        **kwargs
-    )
-
-
-def bigquery_etl_backfill(
-        destination_table: str,
-        dataset_id: str,
-        start_date: str,
-        end_date: str = None,
-        project_id: str = None,
-        excludes: typing.List[str] = None,
-        dry_run: str = None,
-        parallelism: str = "10",
-        no_partition: str = "False",
-        gcp_conn_id: str = "google_cloud_airflow_gke",
-        gke_project_id: str = GCP_PROJECT_ID,
-        gke_location: str = "us-west1",
-        gke_cluster_name: str = "workloads-prod-v1",
-        gke_namespace: str = "default",
-        docker_image:str  = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        is_delete_operator_pod: bool = False,
-        **kwargs
-):
-    """ Generate.
-    All parameters here are strings, since we expect to use this via Airflow Params.
-
-    See:
-    https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/params.html
-
-    :param str destination_table:                  [Required] BigQuery destination table
-    :param str dataset_id:                         [Required] BigQuery default dataset id
-    :param str start_date:                         [Required] Start date for the backfill
-    :param str end_date:                           End date for the backfill, defaults to current_date
-    :param Optional[str] project_id:               BigQuery default project id
-    :param List[str] excludes:                     Dates to exclude from the backfill
-    :param bool dry_run:                           Dry run the backfill
-    :param int parallelism:                        Number of parallel queries to execute
-    :param bool no_partition:                      Disable writing results to a partition.
-                                                   Overwrites entire destination table.
-    :param str gcp_conn_id:                        Airflow connection id for GCP access
-    :param str gke_project_id:                     GKE cluster project id
-    :param str gke_location:                       GKE cluster location
-    :param str gke_cluster_name:                   GKE cluster name
-    :param str gke_namespace:                      GKE cluster namespace
-    :param str docker_image:                       docker image to use
-    :param is_delete_operator_pod                  Optional, What to do when the pod reaches its final
-                                                   state, or the execution is interrupted.
-                                                   If False (default): do nothing, If True: delete the pod
-    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
-                                                   GKEPodOperator
-    :return: GKEPodOperator
-    """
-
-    # Task ID and Name are not templatable,
-    # so we use static names
-    kwargs["task_id"] = "bigquery_etl_backfill"
-    kwargs["name"] = "bigquery-etl-backfill"
-
-    if not project_id:
-        project_id = "moz-fx-data-shared-prod"
-
-    args = [
-        "script/bqetl",
-        "query",
-        "backfill",
-        f"{dataset_id}.{destination_table}",
-        "--start-date", start_date
-    ]
-
-    if end_date:
-        args += ["--end-date", end_date]
-    if excludes:
-        for exclude in ",".split(excludes):
-            args += ["--exclude", exclude]
-    if dry_run in ("true", "True"):
-        args += ["--dry-run"]
-    if parallelism:
-        args += ["--parallelism", parallelism]
-    if no_partition in ("true", "True"):
-        args += ["--no-partition"]
-
-    return GKEPodOperator(
-        gcp_conn_id=gcp_conn_id,
-        project_id=gke_project_id,
-        location=gke_location,
-        cluster_name=gke_cluster_name,
-        namespace=gke_namespace,
-        image=docker_image,
-        arguments=args,
         is_delete_operator_pod=is_delete_operator_pod,
         **kwargs
     )

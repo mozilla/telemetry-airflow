@@ -1,60 +1,54 @@
-# -*- coding: utf-8 -*-
 # Modified from https://github.com/AnkurChoraywal/airflow-backfill-util.git
 
 # Inbuilt Imports
-import os
-import json
-import logging
 import datetime
+import json
+import os
 import re
-from typing import List
 
 # Custom Imports
 import flask
 from flask import request
-from flask_admin import BaseView, expose
-from flask_appbuilder import expose as app_builder_expose, BaseView as AppBuilderBaseView, has_access
-from airflow import configuration
-
+from flask_admin import expose
+from flask_appbuilder import BaseView as AppBuilderBaseView
+from flask_appbuilder import expose as app_builder_expose
 from shelljob import proc
-from dags.utils.backfill import BackfillParams
+
+from dags.utils.backfill import AirflowBackfillParams
 
 # Inspired from
 # https://mortoray.com/2014/03/04/http-streaming-of-command-output-in-python-flask/
 # https://www.endpoint.com/blog/2015/01/28/getting-realtime-output-using-python
-# RBAC inspired from 
+# RBAC inspired from
 # https://github.com/teamclairvoyant/airflow-rest-api-plugin
 
 
 # Set your Airflow home path
-if 'AIRFLOW_HOME' in os.environ:
-    airflow_home_path = os.environ['AIRFLOW_HOME']
-else:
-    airflow_home_path = '/tmp'
+airflow_home_path = os.environ.get("AIRFLOW_HOME", "/tmp")
 
 # Local file where history will be stored
-FILE = airflow_home_path + '/logs/backfill_history.txt'
+FILE = airflow_home_path + "/logs/backfill_history.txt"
 
 # RE for remove ansi escape characters
-ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+ansi_escape = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
 
 
 # Creating a flask admin BaseView
 def file_ops(mode, data=None):
-    """ File operators - logging/writing and reading user request """
-    if mode == 'r':
+    """File operators - logging/writing and reading user request."""
+    if mode == "r":
         try:
-            with open(FILE, 'r') as f:
+            with open(FILE) as f:
                 return f.read()
-        except IOError:
-            with open(FILE, 'w') as f:
+        except OSError:
+            with open(FILE, "w") as f:
                 return f.close()
 
-    elif mode == 'w' and data:
+    elif mode == "w" and data:
         today = datetime.datetime.now()
         print(os.getcwd())
-        with open(FILE, 'a+') as f:
-            file_data = '{},{}\n'.format(data, today)
+        with open(FILE, "a+") as f:
+            file_data = f"{data},{today}\n"
             f.write(file_data)
             return 1
 
@@ -66,14 +60,14 @@ def get_baseview():
 class Backfill(get_baseview()):
     route_base = "/admin/backfill/"
 
-    @app_builder_expose('/')
+    @app_builder_expose("/")
     def list(self):
         return self.render_template("backfill_page.html")
 
-    @expose('/stream')
-    @app_builder_expose('/stream')
+    @expose("/stream")
+    @app_builder_expose("/stream")
     def stream(self):
-        """ Runs user request and outputs console stream to client"""
+        """Run user request and outputs console stream to client."""
         dag_name = request.args.get("dag_name")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
@@ -83,49 +77,50 @@ class Backfill(get_baseview()):
         task_regex = request.args.get("task_regex") if use_task_regex else None
 
         # Construct the airflow command
-        backfill_params = BackfillParams(
+        backfill_params = AirflowBackfillParams(
             clear=clear,
             dry_run=dry_run,
             task_regex=task_regex,
             dag_name=dag_name,
             start_date=start_date,
-            end_date=end_date)
+            end_date=end_date,
+        )
 
         cmd = backfill_params.generate_backfill_command()
 
-        print('BACKFILL CMD:', cmd)
+        print("BACKFILL CMD:", cmd)
 
         # updates command used in history
-        file_ops('w', ' '.join(cmd))
+        file_ops("w", " ".join(cmd))
 
         g = proc.Group()
         g.run(cmd)
 
         # To print out cleared dry run task instances
-        pattern = '^\<.*\>$'
+        pattern = "^\\<.*\\>$"
 
         def read_process():
             while g.is_pending():
                 lines = g.readlines()
-                for proc, line in lines:
+                for _proc, line in lines:
                     line = line.decode("utf-8")
                     result = re.match(pattern, line)
 
                     if result:
                         # Adhere to text/event-stream format
-                        line = line.replace('<', '').replace('>', '')
+                        line = line.replace("<", "").replace(">", "")
                     elif clear and not dry_run:
                         # Special case/hack, airflow tasks clear -y no longer outputs a termination string, so we put one
                         line = "Clear Done"
 
                     yield "data:" + line + "\n\n"
 
-        return flask.Response(read_process(), mimetype='text/event-stream')
+        return flask.Response(read_process(), mimetype="text/event-stream")
 
-    @expose('/background')
-    @app_builder_expose('/background')
+    @expose("/background")
+    @app_builder_expose("/background")
     def background(self):
-        """ Runs user request in background """
+        """Run user request in background."""
         dag_name = request.args.get("dag_name")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
@@ -134,32 +129,32 @@ class Backfill(get_baseview()):
         use_task_regex = request.args.get("use_task_regex")
 
         # create a screen id based on timestamp
-        screen_id = datetime.datetime.now().strftime('%s')
+        screen_id = datetime.datetime.now().strftime("%s")
 
         # Prepare the command and execute in background
-        background_cmd = "screen -dmS {} ".format(screen_id)
-        if clear == 'true':
-            background_cmd = background_cmd + 'airflow tasks clear -y '
-        elif clear == 'false':
-            background_cmd = background_cmd + 'airflow dags backfill '
+        background_cmd = f"screen -dmS {screen_id} "
+        if clear == "true":
+            background_cmd = background_cmd + "airflow tasks clear -y "
+        elif clear == "false":
+            background_cmd = background_cmd + "airflow dags backfill "
 
-        if use_task_regex == 'true':
-            background_cmd = background_cmd + "-t {} ".format(task_regex)
+        if use_task_regex == "true":
+            background_cmd = background_cmd + f"-t {task_regex} "
 
-        background_cmd = background_cmd + "-s {} -e {} {}".format(start_date, end_date, dag_name)
+        background_cmd = background_cmd + f"-s {start_date} -e {end_date} {dag_name}"
 
         # Update command in file
-        file_ops('w', background_cmd)
+        file_ops("w", background_cmd)
 
         print(background_cmd)
 
         os.system(background_cmd)
 
-        response = json.dumps({'submitted': True})
-        return flask.Response(response, mimetype='text/json')
+        response = json.dumps({"submitted": True})
+        return flask.Response(response, mimetype="text/json")
 
-    @expose('/history')
-    @app_builder_expose('/history')
+    @expose("/history")
+    @app_builder_expose("/history")
     def history(self):
-        """ Outputs recent user request history """
-        return flask.Response(file_ops('r'), mimetype='text/txt')
+        """Output recent user request history."""
+        return flask.Response(file_ops("r"), mimetype="text/txt")
