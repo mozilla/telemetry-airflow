@@ -8,9 +8,10 @@ is successful the job can be considered healthy. This means previous failed DAG 
 can be ignored or marked as successful.
 """
 
+from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.utils.trigger_rule import TriggerRule
-from datetime import timedelta, datetime
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -31,13 +32,19 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
-with DAG("bqetl_artifact_deployment", default_args=default_args, schedule_interval="@daily", doc_md=__doc__, tags=tags,) as dag:
+with DAG(
+    "bqetl_artifact_deployment",
+    default_args=default_args,
+    schedule_interval="30 5 * * *",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
     publish_public_udfs = gke_command(
         task_id="publish_public_udfs",
         command=["script/publish_public_udfs"],
-        docker_image=docker_image
+        docker_image=docker_image,
     )
 
     publish_persistent_udfs = gke_command(
