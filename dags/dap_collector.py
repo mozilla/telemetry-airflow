@@ -54,7 +54,7 @@ with DAG(
     schedule_interval="@daily",
     tags=tags,
 ) as dag:
-    play_store_export = gke_command(
+    dap_collector = gke_command(
         task_id="dap_collector",
         command=[
             "python",
