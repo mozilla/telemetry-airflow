@@ -1,9 +1,8 @@
 import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from airflow import DAG
 from airflow.hooks.base import BaseHook
-
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -11,10 +10,13 @@ DOCS = """\
     Merino Jobs
 
     Dag for orchestrating jobs that build datasets that are used in Merino.
-    The jobs are run via the GKEPodOperator 
+    The jobs are run via the GKEPodOperator
 """
 
-def merino_job(name: str, arguments: List[str], env_vars: Dict[str, Any] = {}):
+
+def merino_job(name: str, arguments: list[str], env_vars: dict[str, Any] | None = None):
+    if env_vars is None:
+        env_vars = {}
     return GKEPodOperator(
         task_id=name,
         name=name,
@@ -29,8 +31,8 @@ def merino_job(name: str, arguments: List[str], env_vars: Dict[str, Any] = {}):
         email=[
             "wstuckey@mozilla.com",
         ],
-
     )
+
 
 default_args = {
     "owner": "wstuckey@mozilla.com",
@@ -66,12 +68,14 @@ with DAG(
         arguments=[
             "wikipedia-indexer",
             "copy-export",
-            "--gcs-path", "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-            "--gcp-project", "moz-fx-data-shared-prod",
+            "--gcs-path",
+            "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+            "--gcp-project",
+            "moz-fx-data-shared-prod",
         ],
-        env_vars=dict(
-            MERINO_ENV="production",
-        ),
+        env_vars={
+            "MERINO_ENV": "production",
+        },
     )
 
     wikipedia_indexer_build_index = merino_job(
@@ -79,18 +83,22 @@ with DAG(
         arguments=[
             "wikipedia-indexer",
             "index",
-            "--version", "v1",
-            "--total-docs", "6600000", # Estimate of the total number of documents in wikipedia index
-            "--elasticsearch-cloud-id", str(conn.host),
-            "--elasticsearch-api-key", conn.password,
-            "--gcs-path", "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-            "--gcp-project", "moz-fx-data-shared-prod",
+            "--version",
+            "v1",
+            "--total-docs",
+            "6600000",  # Estimate of the total number of documents in wikipedia index
+            "--elasticsearch-cloud-id",
+            str(conn.host),
+            "--elasticsearch-api-key",
+            conn.password,
+            "--gcs-path",
+            "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+            "--gcp-project",
+            "moz-fx-data-shared-prod",
         ],
-        env_vars=dict(
-            MERINO_ENV="production",
-        ),
+        env_vars={
+            "MERINO_ENV": "production",
+        },
     )
-
-
 
     wikipedia_indexer_copy_export >> wikipedia_indexer_build_index
