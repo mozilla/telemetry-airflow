@@ -1,5 +1,5 @@
 import datetime
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from airflow import DAG
 from airflow.hooks.base import BaseHook
@@ -14,7 +14,9 @@ DOCS = """\
 """
 
 
-def merino_job(name: str, arguments: list[str], env_vars: dict[str, Any] | None = None):
+def merino_job(
+    name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None
+):
     if env_vars is None:
         env_vars = {}
     return GKEPodOperator(
@@ -60,7 +62,6 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-
     conn = BaseHook.get_connection("merino_elasticsearch")
 
     wikipedia_indexer_copy_export = merino_job(
