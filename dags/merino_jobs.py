@@ -88,10 +88,8 @@ with DAG(
             "v1",
             "--total-docs",
             "6600000",  # Estimate of the total number of documents in wikipedia index
-            "--elasticsearch-cloud-id",
+            "--elasticsearch-url",
             str(conn.host),
-            "--elasticsearch-api-key",
-            conn.password,
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
@@ -99,6 +97,8 @@ with DAG(
         ],
         env_vars={
             "MERINO_ENV": "production",
+            # Using the API key in the argument list leaks the sensitive data into the airflow UI.
+            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": conn.password,
         },
     )
 
