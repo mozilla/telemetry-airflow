@@ -178,9 +178,9 @@ jobs:
           command: docker load -i artifacts/telemetry-airflow.tar
       - run:
           name: Re-tag artifact
-          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>
+          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} mozilla/$CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>
       - docker/push:
-          image: $CIRCLE_PROJECT_REPONAME
+          image: mozilla/$CIRCLE_PROJECT_REPONAME
           tag: << parameters.image_tag >>
 
   sync_gcs:
