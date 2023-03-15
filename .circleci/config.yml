@@ -3,6 +3,7 @@
 # DOCKERHUB_REPO - docker hub repo, format: <username>/<repo>
 # DOCKER_USER
 # DOCKER_PASS
+# GAR_SERVICE_KEY
 #
 # GCLOUD_SERVICE_KEY - key for gsutil rsync bootstrap and jobs with gcs
 # GOOGLE_PROJECT_ID - airflow-dataproc
@@ -101,7 +102,6 @@ jobs:
             pip install pip-tools
             pip-compile --quiet
             git diff --exit-code requirements.txt
-            
 
   docker-build-artifact:
     executor: docker/machine
@@ -119,6 +119,7 @@ jobs:
           name: Output version.json
           command: cat version.json
       - docker/build:
+          cache_from: $CIRCLE_PROJECT_REPONAME:latest
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
       - run:
@@ -130,7 +131,6 @@ jobs:
           root: artifacts
           paths:
             - telemetry-airflow.tar
-
 
   publish-gar:
     executor: docker/machine
@@ -172,6 +172,7 @@ jobs:
       - docker/check:
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
+      - docker/configure-docker-credentials-store
       - attach_workspace:
           at: artifacts
       - run:
@@ -182,15 +183,8 @@ jobs:
           command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>
       - docker/push:
           image: $CIRCLE_PROJECT_REPONAME
+          registry: ~
           tag: << parameters.image_tag >>
-      - run:
-          name: Push image to GAR
-          command: |
-            echo $GAR_SERVICE_KEY | base64 -d > creds.json
-            gcloud auth activate-service-account --key-file creds.json
-            gcloud auth configure-docker us-docker.pkg.dev
-            docker push $IMAGE_NAME
-
 
   sync_gcs:
     docker:
