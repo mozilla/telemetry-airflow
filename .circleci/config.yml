@@ -132,12 +132,14 @@ jobs:
             - telemetry-airflow.tar
 
 
-  publish-gar:
+  publish-registry:
     executor: docker/machine
     parameters:
       image_tag:
         type: string
         default: latest
+      registry:
+        type: string
     steps:
       - checkout
       - attach_workspace:
@@ -146,10 +148,11 @@ jobs:
           name: Load Docker image artifact from previous job
           command: docker load -i artifacts/telemetry-airflow.tar
       - run:
+          name: Generate image name
+          command: echo 'export IMAGE_NAME="<< parameters.registry >>/telemetry-airflow:<< parameters.image_tag >>' >> "$BASH_ENV"
+      - run:
           name: Re-tag artifact
-          command: |
-            echo 'export IMAGE_NAME="us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod/telemetry-airflow:<< parameters.image_tag >>' >> "$BASH_ENV"
-            docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $IMAGE_NAME
+          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $IMAGE_NAME
       - run:
           name: Push image to GAR
           command: docker push $IMAGE_NAME
@@ -212,7 +215,7 @@ workflows:
   publish:
     jobs:
       - docker/publish:
-          name: Push latest to Dockerhub
+          name: Publish latest to Dockerhub
           before_build: &version
             - run:
                 name: Generate build version.json
@@ -234,7 +237,7 @@ workflows:
               only: main
 
       - docker/publish:
-          name: Push tag to Dockerhub
+          name: Publish tag to Dockerhub
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
@@ -254,8 +257,10 @@ workflows:
 #            branches:
 #              ignore: /.*/
 
-      - publish-gar:
-          name: Test
+      - publish-registry:
+          name: Publish tag to Dockerhub
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+#          image_tag: $CIRCLE_TAG
           requires:
             - 🛠️ Docker build and persist image
 #          name: Push tag to GAR
