@@ -213,9 +213,10 @@ workflows:
           before_build:
             - <<: *version
             - run: echo $GAR_SERVICE_KEY | docker login -u _json_key_base64 --password-stdin https://us-docker.pkg.dev
-          registry: us-docker.pkg.dev
-          image: moz-fx-telemetry-airflow-prod/telemetry-airflow-prod/telemetry-airflow
+          image: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod/telemetry-airflow
           tag: "latest"
+#          tag: $CIRCLE_TAG
+#          deploy: false
 #          filters:
 #            tags:
 #              only: /.*/
