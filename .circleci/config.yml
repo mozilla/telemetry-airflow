@@ -169,11 +169,20 @@ jobs:
         default: latest
     steps:
       - checkout
+      - docker/check:
+          docker-password: DOCKER_PASS
+          docker-username: DOCKER_USER
       - attach_workspace:
           at: artifacts
       - run:
           name: Load Docker image artifact from previous job
           command: docker load -i artifacts/telemetry-airflow.tar
+      - run:
+          name: Re-tag artifact
+          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>
+      - docker/push:
+          image: $CIRCLE_PROJECT_REPONAME
+          tag: << parameters.image_tag >>
       - run:
           name: Push image to GAR
           command: |
@@ -240,33 +249,18 @@ workflows:
 
   publish:
     jobs:
-      - docker/publish:
+      - publish-dockerhub:
           name: Publish latest to Dockerhub
-          before_build: &attach-artifact
-            - attach_workspace:
-                at: artifacts
-            - run:
-                name: Load Docker image artifact from previous job
-                command: docker load -i artifacts/telemetry-airflow.tar
-          cache_from: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-          image: mozilla/telemetry-airflow
-          tag: latest
+          image_tag: latest
           requires:
             - 🛠️ Docker build and persist image
 #          filters:
 #            branches:
 #              only: main
 
-      - docker/publish:
+      - publish-dockerhub:
           name: Publish tag to Dockerhub
-          before_build: *attach-artifact
-          cache_from: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-          image: mozilla/telemetry-airflow
-          tag: $CIRCLE_TAG
+          image_tag: $CIRCLE_TAG
           requires:
             - 🛠️ Docker build and persist image
           filters:
