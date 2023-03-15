@@ -161,6 +161,28 @@ jobs:
             gcloud auth configure-docker us-docker.pkg.dev
             docker push $IMAGE_NAME
 
+  publish-dockerhub:
+    executor: docker/machine
+    parameters:
+      image_tag:
+        type: string
+        default: latest
+    steps:
+      - checkout
+      - attach_workspace:
+          at: artifacts
+      - run:
+          name: Load Docker image artifact from previous job
+          command: docker load -i artifacts/telemetry-airflow.tar
+      - run:
+          name: Push image to GAR
+          command: |
+            echo $GAR_SERVICE_KEY | base64 -d > creds.json
+            gcloud auth activate-service-account --key-file creds.json
+            gcloud auth configure-docker us-docker.pkg.dev
+            docker push $IMAGE_NAME
+
+
   sync_gcs:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:323.0.0
@@ -220,33 +242,33 @@ workflows:
     jobs:
       - docker/publish:
           name: Publish latest to Dockerhub
-          before_build: &version
+          before_build: &attach-artifact
+            - attach_workspace:
+                at: artifacts
             - run:
-                name: Generate build version.json
-                command: >
-                  printf 
-                  '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' 
-                  "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" 
-                  "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
-                  > version.json
-            - run:
-                name: Output version.json
-                command: cat version.json
+                name: Load Docker image artifact from previous job
+                command: docker load -i artifacts/telemetry-airflow.tar
+          cache_from: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: mozilla/telemetry-airflow
           tag: latest
-          filters:
-            branches:
-              only: main
+          requires:
+            - 🛠️ Docker build and persist image
+#          filters:
+#            branches:
+#              only: main
 
       - docker/publish:
           name: Publish tag to Dockerhub
-          before_build: *version
+          before_build: *attach-artifact
+          cache_from: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
           image: mozilla/telemetry-airflow
           tag: $CIRCLE_TAG
+          requires:
+            - 🛠️ Docker build and persist image
           filters:
             tags:
               only: /.*/
