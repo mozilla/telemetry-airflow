@@ -156,7 +156,9 @@ jobs:
       - run:
           name: Push image to GAR
           command: |
-            echo $GAR_SERVICE_KEY | docker login -u _json_key_base64 --password-stdin https://us-docker.pkg.dev
+            echo $GAR_SERVICE_KEY | base64 -d > creds.json
+            gcloud auth activate-service-account --key-file creds.json
+            gcloud auth configure-docker us-docker.pkg.dev
             docker push $IMAGE_NAME
 
   sync_gcs:
