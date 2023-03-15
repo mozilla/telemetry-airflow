@@ -12,6 +12,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.2.0
   python: circleci/python@2.1.1
+  gcp-cli: circleci/gcp-cli@3.0.1
 
 jobs:
   unit-tests:
@@ -184,7 +185,7 @@ workflows:
   publish:
     jobs:
       - docker/publish:
-          name: Push latest
+          name: Push latest to Dockerhub
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
@@ -195,7 +196,7 @@ workflows:
               only: main
 
       - docker/publish:
-          name: Push tag
+          name: Push tag to Dockerhub
           before_build: *version
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
@@ -206,6 +207,21 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
+
+      - docker/publish:
+          name: Push tag to GAR
+          before_build:
+            - <<: *version
+            - run: echo $GAR_SERVICE_KEY | docker login -u _json_key_base64 --password-stdin https://us-docker.pkg.dev
+          image: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod/telemetry-airflow
+          tag: 123
+#          tag: $CIRCLE_TAG
+          deploy: false
+#          filters:
+#            tags:
+#              only: /.*/
+#            branches:
+#              ignore: /.*/
 
       - sync_gcs:
           filters:
