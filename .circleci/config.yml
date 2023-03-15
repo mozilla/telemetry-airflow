@@ -119,7 +119,6 @@ jobs:
           name: Output version.json
           command: cat version.json
       - docker/build:
-          cache_from: $CIRCLE_PROJECT_REPONAME:latest
           image: $CIRCLE_PROJECT_REPONAME
           tag: ${CIRCLE_SHA1:0:9}
       - run:
@@ -172,7 +171,6 @@ jobs:
       - docker/check:
           docker-password: DOCKER_PASS
           docker-username: DOCKER_USER
-      - docker/configure-docker-credentials-store
       - attach_workspace:
           at: artifacts
       - run:
@@ -183,7 +181,6 @@ jobs:
           command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>
       - docker/push:
           image: $CIRCLE_PROJECT_REPONAME
-          registry: ~
           tag: << parameters.image_tag >>
 
   sync_gcs:
