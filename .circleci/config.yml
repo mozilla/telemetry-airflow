@@ -13,7 +13,6 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.2.0
   python: circleci/python@2.1.1
-  gcp-cli: circleci/gcp-cli@3.0.1
 
 jobs:
   unit-tests:
@@ -167,29 +166,6 @@ jobs:
           tag: $PARAM_IMAGE_TAG
           registry: $PARAM_REGISTRY
 
-  publish-dockerhub:
-    executor: docker/machine
-    parameters:
-      image_tag:
-        type: string
-        default: latest
-    steps:
-      - checkout
-      - docker/check:
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-      - attach_workspace:
-          at: artifacts
-      - run:
-          name: Load Docker image artifact from previous job
-          command: docker load -i artifacts/telemetry-airflow.tar
-      - run:
-          name: Re-tag artifact
-          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} mozilla/$CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>
-      - docker/push:
-          image: mozilla/$CIRCLE_PROJECT_REPONAME
-          tag: << parameters.image_tag >>
-
   sync_gcs:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:323.0.0
@@ -269,9 +245,11 @@ workflows:
 #            branches:
 #              only: main
 
-      - publish-dockerhub:
+      - publish-registry:
           name: Publish tag to Dockerhub
+          registry: mozilla
           image_tag: $CIRCLE_TAG
+          registry_authentication: *mozilla-auth
           requires:
             - 🛠️ Docker build and persist image
           filters:
@@ -283,7 +261,7 @@ workflows:
       - publish-registry:
           name: Publish tag to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: latest
+          image_tag: $CIRCLE_TAG
           registry_authentication: &gar-auth
             - run:
                 name: Authenticate GAR
@@ -291,14 +269,25 @@ workflows:
                   echo $GAR_SERVICE_KEY | base64 -d > creds.json
                   gcloud auth activate-service-account --key-file creds.json
                   gcloud auth configure-docker us-docker.pkg.dev
-#          image_tag: $CIRCLE_TAG
+
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+
+      - publish-registry:
+          name: Publish latest to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          image_tag: latest
+          registry_authentication: *gar-auth
           requires:
             - 🛠️ Docker build and persist image
 #          filters:
-#            tags:
-#              only: /.*/
 #            branches:
-#              ignore: /.*/
+#              only: main
 
       - sync_gcs:
           filters:
