@@ -255,9 +255,14 @@ workflows:
 #            branches:
 #              ignore: /.*/
 
-      - publish-dockerhub:
+      - publish-registry:
           name: Publish latest to Dockerhub
+          registry: mozilla
           image_tag: latest
+          registry_authentication: &mozilla-auth
+            - docker/check:
+                docker-password: DOCKER_PASS
+                docker-username: DOCKER_USER
           requires:
             - 🛠️ Docker build and persist image
 #          filters:
