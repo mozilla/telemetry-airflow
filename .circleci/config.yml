@@ -154,13 +154,16 @@ jobs:
           command: docker load -i artifacts/telemetry-airflow.tar
       - run:
           name: Generate image name
-          command: echo 'export IMAGE_NAME="<< parameters.registry >>/$CIRCLE_PROJECT_REPONAME:<< parameters.image_tag >>"' >> "$BASH_ENV"
+          command: |
+            echo 'export PARAM_REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
+            echo 'export PARAM_IMAGE_TAG="<< parameters.image_tag >>"' >> "$BASH_ENV"
+            echo 'export IMAGE_NAME="$CIRCLE_PROJECT_REPONAME"' >> "$BASH_ENV"
       - run:
           name: Re-tag artifact
-          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $IMAGE_NAME
+          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$PARAM_IMAGE_TAG
       - run:
           name: Push image to registry
-          command: docker push $IMAGE_NAME
+          command: docker push $PARAM_REGISTRY/$IMAGE_NAME:$PARAM_IMAGE_TAG
 
   publish-dockerhub:
     executor: docker/machine
