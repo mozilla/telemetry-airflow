@@ -244,11 +244,11 @@ workflows:
     jobs:
       - docker-build-artifact:
           name: 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
+#          filters:
+#            tags:
+#              only: /.*/
+#            branches:
+#              ignore: /.*/
 
       - publish-dockerhub:
           name: Publish latest to Dockerhub
