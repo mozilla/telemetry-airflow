@@ -162,7 +162,7 @@ jobs:
           name: Re-tag artifact
           command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$PARAM_IMAGE_TAG
       - docker/push:
-          name: Push image to registry
+          step-name: Push image to registry
           image: $IMAGE_NAME
           tag: $PARAM_IMAGE_TAG
           registry: $PARAM_REGISTRY
