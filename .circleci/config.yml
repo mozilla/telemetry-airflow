@@ -153,12 +153,14 @@ jobs:
           name: Re-tag artifact
           command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $IMAGE_NAME
       - run:
-          name: Push image to GAR
+          name: Authenticate GAR
           command: |
             echo $GAR_SERVICE_KEY | base64 -d > creds.json
             gcloud auth activate-service-account --key-file creds.json
             gcloud auth configure-docker us-docker.pkg.dev
-            docker push $IMAGE_NAME
+      - run:
+          name: Push image to GAR
+          command: docker push $IMAGE_NAME
 
   publish-dockerhub:
     executor: docker/machine
@@ -240,6 +242,14 @@ workflows:
 
   publish:
     jobs:
+      - docker-build-artifact:
+          name: 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+
       - publish-dockerhub:
           name: Publish latest to Dockerhub
           image_tag: latest
@@ -260,21 +270,12 @@ workflows:
             branches:
               ignore: /.*/
 
-      - docker-build-artifact:
-          name: 🛠️ Docker build and persist image
-#          filters:
-#            tags:
-#              only: /.*/
-#            branches:
-#              ignore: /.*/
-
       - publish-gar:
           name: Publish tag to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
 #          image_tag: $CIRCLE_TAG
           requires:
             - 🛠️ Docker build and persist image
-#          name: Push tag to GAR
 #          filters:
 #            tags:
 #              only: /.*/
