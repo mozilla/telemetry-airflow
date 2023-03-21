@@ -3,6 +3,7 @@
 # DOCKERHUB_REPO - docker hub repo, format: <username>/<repo>
 # DOCKER_USER
 # DOCKER_PASS
+# GAR_SERVICE_KEY
 #
 # GCLOUD_SERVICE_KEY - key for gsutil rsync bootstrap and jobs with gcs
 # GOOGLE_PROJECT_ID - airflow-dataproc
@@ -45,12 +46,7 @@ jobs:
             sed -i "s/  build: ./  image: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}/g" docker-compose.yml
       - run:
           name: Start up local environment
-          command: |
-            echo "AIRFLOW_UID=$(id -u)" >> .env
-            echo "FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; fernet_key = Fernet.generate_key(); print(fernet_key.decode())")" >> .env
-            docker-compose up --wait
-            docker-compose exec airflow-webserver airflow variables import dev_variables.json
-            docker-compose exec airflow-webserver airflow connections import dev_connections.json
+          command: make up
 
   black:
     executor: *python-executor
@@ -101,6 +97,70 @@ jobs:
             pip-compile --quiet
             git diff --exit-code requirements.txt
 
+  docker-build-artifact:
+    executor: docker/machine
+    steps:
+      - checkout
+      - run:
+          name: Generate build version.json
+          command: >
+            printf 
+            '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' 
+            "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" 
+            "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
+            > version.json
+      - run:
+          name: Output version.json
+          command: cat version.json
+      - docker/build:
+          image: $CIRCLE_PROJECT_REPONAME
+          tag: ${CIRCLE_SHA1:0:9}
+      - run:
+          name: Persist image
+          command: |
+            mkdir -p artifacts
+            docker save -o artifacts/telemetry-airflow.tar $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
+      - persist_to_workspace:
+          root: artifacts
+          paths:
+            - telemetry-airflow.tar
+
+  publish-registry:
+    executor: docker/machine
+    parameters:
+      image_tag:
+        type: string
+      registry:
+        type: string
+      registry_authentication:
+        default: []
+        description: Steps required to authenticate on targeted registry
+        type: steps
+    steps:
+      - checkout
+      - when:
+          condition: <<parameters.registry_authentication>>
+          steps: <<parameters.registry_authentication>>
+      - attach_workspace:
+          at: artifacts
+      - run:
+          name: Load Docker image artifact from previous job
+          command: docker load -i artifacts/telemetry-airflow.tar
+      - run:
+          name: Generate image name
+          command: |
+            echo 'export PARAM_REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
+            echo 'export PARAM_IMAGE_TAG="<< parameters.image_tag >>"' >> "$BASH_ENV"
+            echo 'export IMAGE_NAME="$CIRCLE_PROJECT_REPONAME"' >> "$BASH_ENV"
+      - run:
+          name: Re-tag artifact
+          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$PARAM_IMAGE_TAG
+      - docker/push:
+          step-name: Push image to registry
+          image: $IMAGE_NAME
+          tag: $PARAM_IMAGE_TAG
+          registry: $PARAM_REGISTRY
+
   sync_gcs:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:323.0.0
@@ -126,33 +186,8 @@ workflows:
             tags:
               ignore: /.*/
 
-      - docker/publish:
+      - docker-build-artifact:
           name: 🛠️ Docker build test
-          before_build: &version
-            - run:
-                name: Generate build version.json
-                command: >
-                  printf 
-                  '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' 
-                  "$CIRCLE_SHA1" "$CIRCLE_TAG" "$CIRCLE_PROJECT_USERNAME" 
-                  "$CIRCLE_PROJECT_REPONAME" "$CIRCLE_BUILD_URL" 
-                  > version.json
-            - run:
-                name: Output version.json
-                command: cat version.json
-          after_build:
-            - run:
-                name: Persist image
-                command: |
-                  mkdir -p artifacts
-                  docker save -o artifacts/telemetry-airflow.tar $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
-            - persist_to_workspace:
-                root: artifacts
-                paths:
-                  - telemetry-airflow.tar
-          deploy: false
-          image: $CIRCLE_PROJECT_REPONAME
-          tag: ${CIRCLE_SHA1:0:9}
           filters: *ci-filter
           requires:
             - 🧪 Validate requirements
@@ -183,24 +218,69 @@ workflows:
 
   publish:
     jobs:
-      - docker/publish:
-          name: Push latest
-          before_build: *version
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-          image: mozilla/telemetry-airflow
-          tag: latest
+      - docker-build-artifact:
+          name: 🛠️ Docker build and persist image
           filters:
+            tags:
+              only: /.*/
             branches:
               only: main
 
-      - docker/publish:
-          name: Push tag
-          before_build: *version
-          docker-password: DOCKER_PASS
-          docker-username: DOCKER_USER
-          image: mozilla/telemetry-airflow
-          tag: $CIRCLE_TAG
+      - publish-registry:
+          name: Publish latest to Dockerhub
+          registry: mozilla
+          image_tag: latest
+          registry_authentication: &mozilla-auth
+            - docker/check:
+                docker-password: DOCKER_PASS
+                docker-username: DOCKER_USER
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: main
+
+      - publish-registry:
+          name: Publish tag to Dockerhub
+          registry: mozilla
+          image_tag: $CIRCLE_TAG
+          registry_authentication: *mozilla-auth
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+
+      - publish-registry:
+          name: Publish latest to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          image_tag: latest
+          registry_authentication: &gar-auth
+            - run:
+                name: Authenticate GAR
+                command: |
+                  echo $GAR_SERVICE_KEY | base64 -d > creds.json
+                  gcloud auth activate-service-account --key-file creds.json
+                  gcloud auth configure-docker us-docker.pkg.dev
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: main
+
+      - publish-registry:
+          name: Publish tag to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          image_tag: $CIRCLE_TAG
+          registry_authentication: *gar-auth
+          requires:
+            - 🛠️ Docker build and persist image
           filters:
             tags:
               only: /.*/
