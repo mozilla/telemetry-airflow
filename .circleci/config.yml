@@ -224,7 +224,7 @@ workflows:
             tags:
               only: /.*/
             branches:
-              ignore: /.*/
+              only: main
 
       - publish-registry:
           name: Publish latest to Dockerhub
@@ -237,6 +237,8 @@ workflows:
           requires:
             - 🛠️ Docker build and persist image
           filters:
+            tags:
+              only: /.*/
             branches:
               only: main
 
@@ -254,9 +256,9 @@ workflows:
               ignore: /.*/
 
       - publish-registry:
-          name: Publish tag to GAR
+          name: Publish latest to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: $CIRCLE_TAG
+          image_tag: latest
           registry_authentication: &gar-auth
             - run:
                 name: Authenticate GAR
@@ -264,7 +266,19 @@ workflows:
                   echo $GAR_SERVICE_KEY | base64 -d > creds.json
                   gcloud auth activate-service-account --key-file creds.json
                   gcloud auth configure-docker us-docker.pkg.dev
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: main
 
+      - publish-registry:
+          name: Publish tag to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          image_tag: $CIRCLE_TAG
+          registry_authentication: *gar-auth
           requires:
             - 🛠️ Docker build and persist image
           filters:
@@ -272,17 +286,6 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
-
-      - publish-registry:
-          name: Publish latest to GAR
-          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: latest
-          registry_authentication: *gar-auth
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            branches:
-              only: main
 
       - sync_gcs:
           filters:
