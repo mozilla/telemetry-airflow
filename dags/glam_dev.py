@@ -31,7 +31,9 @@ default_args = {
     "owner": "efilho@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
-    "email": ["efilho@mozilla.com",],
+    "email": [
+        "efilho@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
@@ -286,7 +288,7 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
-# Testing without SubDag because it keeps getting stuck on "running"
+# Testing without subdag because it keeps getting stuck on "running"
 # and not actually executing anything. Also, they're known for causing deadlocks in
 # Celelery (might be our case) thus are discouraged.
 # clients_histogram_bucket_counts = bigquery_etl_query(
