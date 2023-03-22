@@ -1,5 +1,5 @@
 """
-DEV Desktop ETL for https://glam.telemetry.mozilla.org/
+DEV Desktop ETL for https://glam.telemetry.mozilla.org/.
 
 **Note to Airflow triagers:**
 Please disregard any failures from this DAG. It is being monitored by efilho
@@ -13,28 +13,25 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-
 from airflow.operators.subdag import SubDagOperator
-
-from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.general import repeated_subdag
 from glam_subdags.generate_query import generate_and_run_desktop_query
+from glam_subdags.histograms import histogram_aggregates_subdag
 from glam_subdags.probe_hotlist import update_hotlist
 from utils.gcp import bigquery_etl_query, gke_command
 from utils.tags import Tag
 
-
 prod_project_id = "moz-fx-data-shared-prod"
 prod_dataset_id = "telemetry_derived"
 dev_dataset_id = "dev_telemetry_derived"
-tmp_project = "moz-fx-data-glam-nonprod-7d0f"  # for temporary tables in analysis dataset
+tmp_project = (
+    "moz-fx-data-glam-nonprod-7d0f"  # for temporary tables in analysis dataset
+)
 default_args = {
     "owner": "efilho@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
-    "email": [
-        "efilho@mozilla.com",
-    ],
+    "email": ["efilho@mozilla.com",],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 1,
@@ -227,7 +224,6 @@ clients_histogram_aggregates = SubDagOperator(
         dag.schedule_interval,
         dev_dataset_id,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
-
     ),
     task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
     dag=dag,
@@ -291,20 +287,20 @@ client_scalar_probe_counts = gke_command(
 )
 
 # Testing without SubDag because it keeps getting stuck on "running"
-# and not actually executing anything. Also, they're known for causing deadlocks in 
-# Celelery (might be our case) thus are discouraged. 
-clients_histogram_bucket_counts = bigquery_etl_query(
-    task_id="clients_histogram_bucket_counts",
-    destination_table="clients_histogram_bucket_counts_v1",
-    dataset_id=dev_dataset_id,
-    project_id=prod_project_id,
-    owner="efilho@mozilla.com",
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
-    dag=dag,
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
-)
+# and not actually executing anything. Also, they're known for causing deadlocks in
+# Celelery (might be our case) thus are discouraged.
+# clients_histogram_bucket_counts = bigquery_etl_query(
+#    task_id="clients_histogram_bucket_counts",
+#    destination_table="clients_histogram_bucket_counts_v1",
+#    dataset_id=dev_dataset_id,
+#    project_id=prod_project_id,
+#    owner="efilho@mozilla.com",
+#    date_partition_parameter=None,
+#    parameters=("submission_date:DATE:{{ds}}",),
+#    arguments=("--replace",),
+#    dag=dag,
+#    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+# )
 
 # SubdagOperator uses a SequentialExecutor by default
 # so its tasks will run sequentially.
@@ -312,21 +308,21 @@ clients_histogram_bucket_counts = bigquery_etl_query(
 # backfill to schedule tasks in the subdag. User no longer need to specify
 # the executor in SubDagOperator. (We don't but the assumption that Sequential
 # Executor is used is now wrong)
-#clients_histogram_bucket_counts = SubDagOperator(
-#    subdag=repeated_subdag(
-#        GLAM_DAG,
-#        "clients_histogram_bucket_counts",
-#        default_args,
-#        dag.schedule_interval,
-#        dev_dataset_id,
-#        ("submission_date:DATE:{{ds}}",),
-#        25,
-#        None,
-#        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
-#    ),
-#    task_id="clients_histogram_bucket_counts",
-#    dag=dag,
-#)
+clients_histogram_bucket_counts = SubDagOperator(
+    subdag=repeated_subdag(
+        GLAM_DAG,
+        "clients_histogram_bucket_counts",
+        default_args,
+        dag.schedule_interval,
+        dev_dataset_id,
+        ("submission_date:DATE:{{ds}}",),
+        25,
+        None,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+    ),
+    task_id="clients_histogram_bucket_counts",
+    dag=dag,
+)
 
 clients_histogram_probe_counts = bigquery_etl_query(
     task_id="clients_histogram_probe_counts",
@@ -340,7 +336,7 @@ clients_histogram_probe_counts = bigquery_etl_query(
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
 )
 
-""" No dev extracts or imports in this first phase. 
+""" No dev extracts or imports in this first phase.
 We will check the results in the destination tables.
 Besides, there's no dev bucket set up
 
@@ -457,7 +453,7 @@ clients_histogram_bucket_counts >> clients_histogram_probe_counts
 clients_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
-""" No extracts or imports in this first phase. 
+""" No extracts or imports in this first phase.
 There's no dev bucket set up
 glam_user_counts >> extract_counts
 
