@@ -59,6 +59,7 @@ with DAG(
         command=[
             "python",
             "dap_collector/main.py",
+            "--date={{ ds }}",
             "--auth-token={{ var.value.dap_auth_token }}",
             "--hpke-private-key={{ var.value.dap_hpke_private_key }}",
             "--project",
