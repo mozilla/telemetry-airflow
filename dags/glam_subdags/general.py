@@ -1,5 +1,4 @@
 from airflow.models import DAG
-
 from utils.gcp import bigquery_etl_query
 
 
@@ -25,6 +24,7 @@ def repeated_subdag(
     num_partitions=5,
     date_partition_parameter="submission_date",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    parallel=False,
 ):
     dag = DAG(
         f"{parent_dag_name}.{child_dag_name}",
@@ -38,8 +38,10 @@ def repeated_subdag(
     PARTITION_SIZE = NUM_SAMPLE_IDS // num_partitions
 
     if NUM_SAMPLE_IDS % num_partitions != 0:
-        raise ValueError(f"Number of partitions must be a divisor "
-                         f"of the number of sample ids ({NUM_SAMPLE_IDS})")
+        raise ValueError(
+            f"Number of partitions must be a divisor "
+            f"of the number of sample ids ({NUM_SAMPLE_IDS})"
+        )
 
     task_0 = bigquery_etl_query(
         task_id=f"{child_dag_name}_0",
@@ -68,11 +70,15 @@ def repeated_subdag(
             depends_on_past=True,
             parameters=merge_params(min_param, max_param, additional_params),
             date_partition_parameter=date_partition_parameter,
-            arguments=("--append_table", "--noreplace",),
+            arguments=(
+                "--append_table",
+                "--noreplace",
+            ),
             dag=dag,
             docker_image=docker_image,
         )
         upstream_task >> task
-        upstream_task = task
+        if not parallel:
+            upstream_task = task
 
     return dag
