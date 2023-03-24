@@ -62,7 +62,8 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-    conn = BaseHook.get_connection("merino_elasticsearch")
+    prod_connection = BaseHook.get_connection("merino_elasticsearch_prod")
+    staging_connection = BaseHook.get_connection("merino_elasticsearch_stage")
 
     wikipedia_indexer_copy_export = merino_job(
         "wikipedia_indexer_copy_export",
@@ -72,14 +73,14 @@ with DAG(
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
-            "moz-fx-data-shared-prod",
+            "moz-fx-data-shared-nonprod",
         ],
         env_vars={
-            "MERINO_ENV": "production",
+            "MERINO_ENV": "staging",
         },
     )
 
-    wikipedia_indexer_build_index = merino_job(
+    wikipedia_indexer_build_index_for_staging = merino_job(
         "wikipedia_indexer_build_index",
         arguments=[
             "wikipedia-indexer",
@@ -89,7 +90,30 @@ with DAG(
             "--total-docs",
             "6600000",  # Estimate of the total number of documents in wikipedia index
             "--elasticsearch-url",
-            str(conn.host),
+            str(staging_connection.host),
+            "--gcs-path",
+            "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+            "--gcp-project",
+            "moz-fx-data-shared-nonprod",
+        ],
+        env_vars={
+            "MERINO_ENV": "staging",
+            # Using the API key in the argument list leaks the sensitive data into the airflow UI.
+            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": staging_connection.password,
+        },
+    )
+
+    wikipedia_indexer_build_index_for_prod = merino_job(
+        "wikipedia_indexer_build_index",
+        arguments=[
+            "wikipedia-indexer",
+            "index",
+            "--version",
+            "v1",
+            "--total-docs",
+            "6600000",  # Estimate of the total number of documents in wikipedia index
+            "--elasticsearch-url",
+            str(prod_connection.host),
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
@@ -98,8 +122,8 @@ with DAG(
         env_vars={
             "MERINO_ENV": "production",
             # Using the API key in the argument list leaks the sensitive data into the airflow UI.
-            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": conn.password,
+            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": prod_connection.password,
         },
     )
 
-    wikipedia_indexer_copy_export >> wikipedia_indexer_build_index
+    wikipedia_indexer_copy_export_to_production >> [wikipedia_indexer_build_index_for_staging, wikipedia_indexer_build_index_for_prod]
