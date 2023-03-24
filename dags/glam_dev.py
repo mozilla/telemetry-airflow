@@ -321,7 +321,7 @@ clients_histogram_bucket_counts = SubDagOperator(
         10,
         None,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
-        parallel=True,
+        parallel=False,
     ),
     task_id="clients_histogram_bucket_counts",
     dag=dag,
