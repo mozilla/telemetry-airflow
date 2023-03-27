@@ -149,9 +149,19 @@
     "schema": null,
     "extra": null
   },
-  "merino_elasticsearch": {
+  "merino_elasticsearch_stage": {
     "conn_type": "http",
-    "description": "Used to authenticate into Merino Elasticsearch cluster",
+    "description": "Used to authenticate into the staging Merino Elasticsearch cluster",
+    "login": "",
+    "password": null,
+    "host": "",
+    "port": null,
+    "schema": null,
+    "extra": "{\"refresh_token\": \"dummy_refresh_token\"}"
+  },
+  "merino_elasticsearch_prod": {
+    "conn_type": "http",
+    "description": "Used to authenticate into the production Merino Elasticsearch cluster",
     "login": "",
     "password": null,
     "host": "",
