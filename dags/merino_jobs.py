@@ -73,15 +73,15 @@ with DAG(
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
-            "moz-fx-data-shared-nonprod",
+            "moz-fx-data-shared-prod",
         ],
         env_vars={
-            "MERINO_ENV": "staging",
+            "MERINO_ENV": "production",
         },
     )
 
     wikipedia_indexer_build_index_for_staging = merino_job(
-        "wikipedia_indexer_build_index",
+        "wikipedia_indexer_build_index_staging",
         arguments=[
             "wikipedia-indexer",
             "index",
@@ -97,14 +97,14 @@ with DAG(
             "moz-fx-data-shared-nonprod",
         ],
         env_vars={
-            "MERINO_ENV": "staging",
+            "MERINO_ENV": "production",
             # Using the API key in the argument list leaks the sensitive data into the airflow UI.
             "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": staging_connection.password,
         },
     )
 
     wikipedia_indexer_build_index_for_prod = merino_job(
-        "wikipedia_indexer_build_index",
+        "wikipedia_indexer_build_index_production",
         arguments=[
             "wikipedia-indexer",
             "index",
