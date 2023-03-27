@@ -94,7 +94,7 @@ with DAG(
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
-            "moz-fx-data-shared-nonprod",
+            "moz-fx-data-shared-prod",
         ],
         env_vars={
             "MERINO_ENV": "production",
