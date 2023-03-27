@@ -126,4 +126,4 @@ with DAG(
         },
     )
 
-    wikipedia_indexer_copy_export_to_production >> [wikipedia_indexer_build_index_for_staging, wikipedia_indexer_build_index_for_prod]
+    wikipedia_indexer_copy_export >> [wikipedia_indexer_build_index_for_staging, wikipedia_indexer_build_index_for_prod]
