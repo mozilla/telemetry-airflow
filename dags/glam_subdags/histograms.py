@@ -1,9 +1,7 @@
 from airflow.models import DAG
 from airflow.operators.subdag_operator import SubDagOperator
-
 from glam_subdags.general import repeated_subdag
 from utils.gcp import bigquery_etl_query
-
 
 GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG = "clients_histogram_aggregates"
 
@@ -14,9 +12,10 @@ def histogram_aggregates_subdag(
     default_args,
     schedule_interval,
     dataset_id,
+    final_num_partitions=5,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 ):
-    GLAM_HISTOGRAM_AGGREGATES_SUBDAG = "%s.%s" % (parent_dag_name, child_dag_name)
+    GLAM_HISTOGRAM_AGGREGATES_SUBDAG = f"{parent_dag_name}.{child_dag_name}"
     default_args["depends_on_past"] = True
     dag = DAG(
         GLAM_HISTOGRAM_AGGREGATES_SUBDAG,
@@ -43,6 +42,7 @@ def histogram_aggregates_subdag(
             default_args,
             dag.schedule_interval,
             dataset_id,
+            num_partitions=final_num_partitions,
             docker_image=docker_image,
         ),
         task_id=GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG,
