@@ -42,6 +42,7 @@ default_args = {
     "start_date": datetime.datetime(2019, 7, 25),
     "email": [
         "telemetry-alerts@mozilla.com",
+        "dataops+alerts@mozilla.com",
         "akomarzewski@mozilla.com",
     ],
     "email_on_failure": True,
