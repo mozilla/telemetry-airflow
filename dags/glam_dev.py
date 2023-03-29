@@ -225,7 +225,7 @@ clients_histogram_aggregates = SubDagOperator(
         default_args,
         dag.schedule_interval,
         dev_dataset_id,
-        final_num_partitions=1,
+        is_dev=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
     ),
     task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
