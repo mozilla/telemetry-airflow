@@ -26,6 +26,7 @@ default_args = {
         "telemetry-alerts@mozilla.com",
         "kignasiak@mozilla.com",
         "mreid@mozilla.com",
+        "lvargas@mozilla.com",
     ],
     "email_on_failure": True,
     "retries": 0,
@@ -38,7 +39,7 @@ TAGS = [
 IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 
 APP_NAME_POSTFIX = "active_users_aggregates"
-APPS = ("desktop",)
+APPS = ("firefox_desktop",)
 
 PROJECT_ID = "moz-fx-data-shared-prod"
 EXEC_DATE = "{{{{ macros.ds_add(ds, -1) }}}}"
@@ -56,12 +57,10 @@ with DAG(
     )
 
     for app_name in APPS:
-        dataset = f"firefox_{app_name}" if app_name == "desktop" else app_name
-
         wait_for_aggregates = ExternalTaskSensor(
             task_id=f"wait_for_{app_name}",
             external_dag_id="bqetl_analytics_aggregations",
-            external_task_id=f"{dataset}_active_users_aggregates",
+            external_task_id=f"{app_name}_active_users_aggregates",
             execution_delta=timedelta(seconds=3600),
             check_existence=True,
             mode="reschedule",
@@ -78,7 +77,7 @@ with DAG(
                 "run",
                 "--fail_process_on_failure",
                 f"--project_id={PROJECT_ID}",
-                f"--dataset={dataset}",
+                f"--dataset={app_name}",
                 "--table=active_users_aggregates",
                 f"--date={EXEC_DATE}",
             ],
