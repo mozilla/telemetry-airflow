@@ -484,7 +484,7 @@ pywinrm==0.4.3
 pyzmq==23.2.0
 qds-sdk==1.16.1
 readme-renderer==35.0
-redis==3.5.3
+redis==4.4.4
 redshift-connector==2.0.908
 requests-file==1.5.1
 requests-kerberos==0.14.0
