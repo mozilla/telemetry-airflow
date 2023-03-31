@@ -35,32 +35,18 @@ def histogram_aggregates_subdag(
         docker_image=docker_image,
     )
 
-    if is_dev:
-        clients_histogram_aggregates_final = bigquery_etl_query(
-            task_id="clients_histogram_aggregates_v1",
-            destination_table="clients_histogram_aggregates_v1_perf",
-            dataset_id=dataset_id,
-            project_id="moz-fx-data-shared-prod",
-            depends_on_past=True,
-            parameters=("submission_date:DATE:{{ds}}",),
-            date_partition_parameter=None,
-            arguments=("--replace",),
-            dag=dag,
-            docker_image=docker_image,
-        )
-    else:
-        clients_histogram_aggregates_final = SubDagOperator(
-            subdag=repeated_subdag(
-                GLAM_HISTOGRAM_AGGREGATES_SUBDAG,
-                GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG,
-                default_args,
-                dag.schedule_interval,
-                dataset_id,
-                docker_image=docker_image,
-            ),
-            task_id=GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG,
-            dag=dag,
-        )
+    clients_histogram_aggregates_final = bigquery_etl_query(
+        task_id="clients_histogram_aggregates_v2",
+        destination_table="clients_histogram_aggregates_v2",
+        dataset_id=dataset_id,
+        project_id="moz-fx-data-shared-prod",
+        depends_on_past=True,
+        parameters=("submission_date:DATE:{{ds}}",),
+        date_partition_parameter=None,
+        arguments=("--replace",),
+        dag=dag,
+        docker_image=docker_image,
+    )
 
     clients_histogram_aggregates_new >> clients_histogram_aggregates_final
     return dag
