@@ -6,17 +6,16 @@ https://github.com/airflow-plugins/Getting-Started/blob/master/Tutorial/creating
 """
 from airflow.plugins_manager import AirflowPlugin
 
-
 telemetry_airflow = {
     "name": "telemetry-airflow on GitHub",
     "category": "Mozilla",
-    "href": "https://github.com/mozilla/telemetry-airflow"
+    "href": "https://github.com/mozilla/telemetry-airflow",
 }
 
 wtmo_dev = {
     "name": "WTMO Developer Guide",
     "category": "Mozilla",
-    "href": "https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide"
+    "href": "https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide",
 }
 
 airflow_triage_guide = {
