@@ -1,6 +1,4 @@
 from airflow.models import DAG
-from airflow.operators.subdag_operator import SubDagOperator
-from glam_subdags.general import repeated_subdag
 from utils.gcp import bigquery_etl_query
 
 GLAM_HISTOGRAM_AGGREGATES_FINAL_SUBDAG = "clients_histogram_aggregates"
