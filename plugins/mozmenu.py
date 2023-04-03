@@ -22,7 +22,7 @@ wtmo_dev = {
 airflow_triage_guide = {
     "name": "Airflow Triage Guide",
     "category": "Mozilla",
-    "href": "https://mana.mozilla.org/wiki/display/DATA/Airflow+Triage+Process",
+    "href": "https://mozilla-hub.atlassian.net/wiki/spaces/DATA/pages/175603730/Airflow+Triage+Guide",
 }
 
 
