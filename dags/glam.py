@@ -268,7 +268,7 @@ clients_histogram_bucket_counts = SubDagOperator(
         dag.schedule_interval,
         dataset_id,
         ("submission_date:DATE:{{ds}}",),
-        10,
+        25,
         None,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
     ),
