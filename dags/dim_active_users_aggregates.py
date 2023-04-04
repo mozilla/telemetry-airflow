@@ -41,7 +41,7 @@ APP_NAME_POSTFIX = "active_users_aggregates"
 APPS = ("firefox_desktop",)
 
 PROJECT_ID = "moz-fx-data-shared-prod"
-EXEC_DATE = "{{{{ macros.ds_add(ds, -1) }}}}"
+EXEC_DATE = "{{ macros.ds_add(ds, -1) }}"
 
 with DAG(
     "dim_active_users_aggregates",
