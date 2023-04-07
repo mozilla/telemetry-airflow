@@ -195,6 +195,7 @@ def bigquery_etl_query(
     date_partition_parameter="submission_date",
     multipart=False,
     is_delete_operator_pod=False,
+    table_partition_template="${{ds_nodash}}",
     **kwargs
 ):
     """ Generate.
@@ -221,6 +222,8 @@ def bigquery_etl_query(
     :param is_delete_operator_pod                  Optional, What to do when the pod reaches its final
                                                    state, or the execution is interrupted.
                                                    If False (default): do nothing, If True: delete the pod
+    :param str table_partition_template:           Template for the datestring that's used for
+                                                   the partition table id. Defaults to "{{ds_nodash}}".
     :return: GKEPodOperator
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
@@ -230,7 +233,7 @@ def bigquery_etl_query(
     destination_table_no_partition = destination_table.split("$")[0] if destination_table is not None else None
     sql_file_path = sql_file_path or "sql/{}/{}/{}/query.sql".format(project_id, dataset_id, destination_table_no_partition)
     if destination_table is not None and date_partition_parameter is not None:
-        destination_table = destination_table + "${{ds_nodash}}"
+        destination_table = destination_table + table_partition_template
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     if multipart:
         args = ["script/bqetl", "query", "run-multipart"]
@@ -343,6 +346,7 @@ def bigquery_xcom_query(
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
+    table_partition_template="${{ds_nodash}}",
     **kwargs
 ):
     """ Generate a GKEPodOperator which runs an xcom result as a bigquery query.
@@ -363,6 +367,8 @@ def bigquery_xcom_query(
                                                    partition to generate, if None
                                                    destination should be whole table
                                                    rather than partition
+    :param str table_partition_template:           Template for the datestring that's used for
+                                                   the partition table id. Defaults to "{{ds_nodash}}".
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
 
@@ -371,7 +377,7 @@ def bigquery_xcom_query(
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
     if destination_table is not None and date_partition_parameter is not None:
-        destination_table = destination_table + "${{ds_nodash}}"
+        destination_table = destination_table + table_partition_template
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
     return GKEPodOperator(
