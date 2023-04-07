@@ -1,33 +1,31 @@
+import json
+import re
+
 from airflow import models
-
-from dags.operators.gcp_container_operator import GKEPodOperator
-
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
     DataprocCreateClusterOperator,
     DataprocDeleteClusterOperator,
     DataprocSubmitPySparkJobOperator,
 )
-
-from airflow.providers.google.cloud.transfers.bigquery_to_gcs import BigQueryToGCSOperator
-
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
+    BigQueryToGCSOperator,
+)
 
+from dags.operators.gcp_container_operator import GKEPodOperator
 from dags.utils.dataproc import get_dataproc_parameters
-
-import json
-import re
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"
 
+
 def export_to_parquet(
     table,
     destination_table=None,
-    static_partitions=[],
-    arguments=[],
+    static_partitions=None,
+    arguments=None,
     use_storage_api=False,
     dag_name="export_to_parquet",
     parent_dag_name=None,
@@ -39,8 +37,8 @@ def export_to_parquet(
     gcs_output_bucket="airflow-dataproc-bq-parquet-exports",
     region="us-west1",
 ):
-
-    """ Export a BigQuery table to Parquet.
+    """
+    Export a BigQuery table to Parquet.
 
     https://github.com/mozilla/bigquery-etl/blob/main/script/pyspark/export_to_parquet.py
 
@@ -72,7 +70,7 @@ def export_to_parquet(
     if len(cluster_name) > 35:
         # preserve version when truncating cluster name to 42 characters
         prefix, version = re.match(r"(.*?)(-v[0-9]+)?$", cluster_name).groups("")
-        cluster_name = prefix[:35 - len(version)] + version
+        cluster_name = prefix[: 35 - len(version)] + version
     cluster_name += "-export-{{ ds_nodash }}"
 
     dag_prefix = parent_dag_name + "." if parent_dag_name else ""
@@ -90,6 +88,9 @@ def export_to_parquet(
     avro_path = "gs://" + gcs_output_bucket + "/" + avro_prefix + "*.avro"
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
+
+    if arguments is None:
+        arguments = []
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
 
@@ -121,9 +122,7 @@ def export_to_parquet(
         run_dataproc_pyspark = DataprocSubmitPySparkJobOperator(
             task_id="run_dataproc_pyspark",
             cluster_name=cluster_name,
-            dataproc_jars=[
-                "gs://spark-lib/bigquery/spark-2.4-bigquery-latest.jar"
-            ],
+            dataproc_jars=["gs://spark-lib/bigquery/spark-2.4-bigquery-latest.jar"],
             dataproc_properties={
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
@@ -196,9 +195,10 @@ def bigquery_etl_query(
     multipart=False,
     is_delete_operator_pod=False,
     table_partition_template="${{ds_nodash}}",
-    **kwargs
+    **kwargs,
 ):
-    """ Generate.
+    """
+    Generate.
 
     :param str destination_table:                  [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
@@ -230,15 +230,17 @@ def bigquery_etl_query(
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
     if not project_id:
         project_id = "moz-fx-data-shared-prod"
-    destination_table_no_partition = destination_table.split("$")[0] if destination_table is not None else None
-    sql_file_path = sql_file_path or "sql/{}/{}/{}/query.sql".format(project_id, dataset_id, destination_table_no_partition)
+    destination_table_no_partition = (
+        destination_table.split("$")[0] if destination_table is not None else None
+    )
+    sql_file_path = (
+        sql_file_path
+        or f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}/query.sql"
+    )
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + table_partition_template
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    if multipart:
-        args = ["script/bqetl", "query", "run-multipart"]
-    else:
-        args = ["query"]
+    args = ["script/bqetl", "query", "run-multipart"] if multipart else ["query"]
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
@@ -254,7 +256,7 @@ def bigquery_etl_query(
         + list(arguments)
         + [sql_file_path],
         is_delete_operator_pod=is_delete_operator_pod,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -274,10 +276,10 @@ def bigquery_etl_copy_deduplicate(
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    **kwargs
+    **kwargs,
 ):
-    """ Copy a day's data from live ping tables to stable ping tables,
-    deduplicating on document_id.
+    """
+    Copy a day's data from live ping tables to stable ping tables, deduplicating on document_id.
 
     :param str task_id:              [Required] ID for the task
     :param str target_project_id:    [Required] ID of project where target tables live
@@ -305,11 +307,11 @@ def bigquery_etl_copy_deduplicate(
     if only_tables:
         # bqetl expects multiple args as --only ... --only ...
         for only_table in only_tables:
-            table_qualifiers.append('--only')
+            table_qualifiers.append("--only")
             table_qualifiers.append(only_table)
     if except_tables:
         for except_table in except_tables:
-            table_qualifiers.append('--except')
+            table_qualifiers.append("--except")
             table_qualifiers.append(except_table)
     return GKEPodOperator(
         task_id=task_id,
@@ -321,14 +323,14 @@ def bigquery_etl_copy_deduplicate(
         image=docker_image,
         arguments=["script/bqetl", "copy_deduplicate"]
         + ["--project-id=" + target_project_id]
-        + (["--billing-projects"] + list(billing_projects) if billing_projects else [])
+        + (["--billing-projects", *list(billing_projects)] if billing_projects else [])
         + ["--date={{ds}}"]
-        + ["--parallelism={}".format(parallelism)]
-        + ["--priority={}".format(priority)]
+        + [f"--parallelism={parallelism}"]
+        + [f"--priority={priority}"]
         + (["--hourly"] if hourly else [])
-        + (["--slices={}".format(slices)] if slices is not None else [])
+        + ([f"--slices={slices}"] if slices is not None else [])
         + table_qualifiers,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -347,9 +349,10 @@ def bigquery_xcom_query(
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
     table_partition_template="${{ds_nodash}}",
-    **kwargs
+    **kwargs,
 ):
-    """ Generate a GKEPodOperator which runs an xcom result as a bigquery query.
+    """
+    Generate a GKEPodOperator which runs an xcom result as a bigquery query.
 
     :param str destination_table:                  [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
@@ -379,7 +382,7 @@ def bigquery_xcom_query(
     if destination_table is not None and date_partition_parameter is not None:
         destination_table = destination_table + table_partition_template
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    query = "{{ " + "task_instance.xcom_pull({!r})".format(xcom_task_id) + " }}"
+    query = "{{ " + f"task_instance.xcom_pull({xcom_task_id!r})" + " }}"
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
@@ -395,22 +398,23 @@ def bigquery_xcom_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [query],
-        **kwargs
+        **kwargs,
     )
 
 
 def normalize_table_id(table_name):
     """
     Normalize table name for use with BigQuery.
+
     * Contain up to 1,024 characters
     * Contain letters (upper or lower case), numbers, and underscores
     We intentionally lower case the table_name.
-    https://cloud.google.com/bigquery/docs/tables
+    https://cloud.google.com/bigquery/docs/tables.
     """
     if len(table_name) > 1024:
-        raise ValueError('table_name cannot contain more than 1024 characters')
+        raise ValueError("table_name cannot contain more than 1024 characters")
     else:
-        return re.sub('\W+', '_', table_name).lower()
+        return re.sub("\\W+", "_", table_name).lower()
 
 
 def gke_command(
@@ -424,11 +428,12 @@ def gke_command(
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     xcom_push=False,
-    env_vars={},
+    env_vars=None,
     is_delete_operator_pod=False,
-    **kwargs
+    **kwargs,
 ):
-    """ Run a docker command on GKE
+    """
+    Run a docker command on GKE.
 
     :param str task_id:            [Required] ID for the task
     :param List[str] command:      [Required] Command to run
@@ -450,11 +455,16 @@ def gke_command(
         key: value
         for key, value in zip(
             ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
-            AwsBaseHook(aws_conn_id=aws_conn_id, client_type='s3').get_credentials() if aws_conn_id else (),
+            AwsBaseHook(aws_conn_id=aws_conn_id, client_type="s3").get_credentials()
+            if aws_conn_id
+            else (),
         )
-        if value is not None}
+        if value is not None
+    }
     context_env_vars["XCOM_PUSH"] = json.dumps(xcom_push)
-    context_env_vars.update(env_vars)
+
+    if env_vars:
+        context_env_vars.update(env_vars)
 
     return GKEPodOperator(
         task_id=task_id,
@@ -468,5 +478,5 @@ def gke_command(
         do_xcom_push=xcom_push,
         env_vars=context_env_vars,
         is_delete_operator_pod=is_delete_operator_pod,
-        **kwargs
+        **kwargs,
     )
