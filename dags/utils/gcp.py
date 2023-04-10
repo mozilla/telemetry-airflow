@@ -139,7 +139,7 @@ def export_to_parquet(
                 if value
             ]
             + (["--static-partitions"] if static_partitions else [])
-            + static_partitions
+            + (static_partitions if static_partitions else [])
             + arguments,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
