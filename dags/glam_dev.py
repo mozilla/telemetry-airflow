@@ -328,7 +328,6 @@ clients_histogram_all_combos = SubDagOperator(
     dag=dag,
 )
 
-
 clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
@@ -343,6 +342,23 @@ clients_histogram_bucket_counts = SubDagOperator(
         parallel=False,
     ),
     task_id="clients_histogram_bucket_counts",
+    dag=dag,
+)
+
+clients_non_norm_histogram_bucket_counts = SubDagOperator(
+    subdag=repeated_subdag(
+        GLAM_DAG,
+        "clients_non_norm_histogram_bucket_counts",
+        default_args,
+        dag.schedule_interval,
+        dev_dataset_id,
+        ("submission_date:DATE:{{ds}}",),
+        10,
+        None,
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
+        parallel=False,
+    ),
+    task_id="clients_non_norm_histogram_bucket_counts",
     dag=dag,
 )
 
@@ -468,11 +484,13 @@ clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_all_combos
 clients_histogram_all_combos >> clients_histogram_bucket_counts
+clients_histogram_all_combos >> clients_non_norm_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
 clients_histogram_aggregates >> glam_sample_counts
 
 
 clients_histogram_bucket_counts >> clients_histogram_probe_counts
+clients_non_norm_histogram_bucket_counts >> clients_histogram_probe_counts
 clients_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
