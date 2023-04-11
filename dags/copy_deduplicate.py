@@ -6,9 +6,8 @@ from airflow.utils.task_group import TaskGroup
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
+    gke_command,
 )
-
-from utils.gcp import gke_command
 from utils.tags import Tag
 
 DOCS = """\
@@ -41,7 +40,11 @@ https://github.com/mozilla/telemetry-airflow/pull/1279/files)
 default_args = {
     "owner": "akomarzewski@mozilla.com",
     "start_date": datetime.datetime(2019, 7, 25),
-    "email": ["telemetry-alerts@mozilla.com", "akomarzewski@mozilla.com"],
+    "email": [
+        "telemetry-alerts@mozilla.com",
+        "dataops+alerts@mozilla.com",
+        "akomarzewski@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
@@ -54,7 +57,11 @@ dag_name = "copy_deduplicate"
 tags = [Tag.ImpactTier.tier_1]
 
 with models.DAG(
-    dag_name, schedule_interval="0 1 * * *", doc_md=DOCS, default_args=default_args, tags=tags,
+    dag_name,
+    schedule_interval="0 1 * * *",
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
 ) as dag:
 
     # This single task is responsible for sequentially running copy queries
@@ -80,12 +87,13 @@ with models.DAG(
             "telemetry_live.main_v4",
             "telemetry_live.event_v4",
             "telemetry_live.first_shutdown_v4",
-            "telemetry_live.saved_session_v4"],
+            "telemetry_live.saved_session_v4",
+        ],
         node_selectors={"nodepool": "highmem"},
         resources=resources,
     )
 
-    with TaskGroup('copy_deduplicate_all_external') as copy_deduplicate_all_external:
+    with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:
         # list of downstream dependencies consisting of external DAG name and execution delta
         downstream_dependencies = {
             ("bhr_collection", "hour=5, minute=0"),
@@ -107,7 +115,7 @@ with models.DAG(
             ("bqetl_monitoring", "hour=2, minute=0"),
             ("bqetl_org_mozilla_fenix_derived", "hour=2, minute=0"),
             ("bqetl_regrets_reporter_summary", "hour=4, minute=0"),
-            ("bqetl_search_terms_daily", "hour=3, minute=0")
+            ("bqetl_search_terms_daily", "hour=3, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -115,7 +123,9 @@ with models.DAG(
                 task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_all",
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_copy_deduplicate_all",
-                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
             )
 
         copy_deduplicate_all >> copy_deduplicate_all_external
@@ -138,7 +148,7 @@ with models.DAG(
         ],
     )
 
-    with TaskGroup('main_ping_external') as main_ping_external:
+    with TaskGroup("main_ping_external") as main_ping_external:
         downstream_dependencies = {
             ("graphics_telemetry", "hour=3, minute=0"),
             ("glam", "hour=2, minute=0"),
@@ -151,7 +161,7 @@ with models.DAG(
             ("bqetl_internet_outages", "hour=7, minute=0"),
             ("bqetl_main_summary", "hour=2, minute=0"),
             ("bqetl_monitoring", "hour=2, minute=0"),
-            ("bqetl_ssl_ratios", "hour=2, minute=0")
+            ("bqetl_ssl_ratios", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -159,7 +169,9 @@ with models.DAG(
                 task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_main_ping",
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_copy_deduplicate_main_ping",
-                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
             )
 
         copy_deduplicate_main_ping >> main_ping_external
@@ -208,13 +220,13 @@ with models.DAG(
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
-    with TaskGroup('event_events_external') as event_events_external:
+    with TaskGroup("event_events_external") as event_events_external:
         downstream_dependencies = {
             ("jetstream", "hour=4, minute=0"),
             ("bqetl_amo_stats", "hour=3, minute=0"),
             ("bqetl_experiments_daily", "hour=3, minute=0"),
             ("bqetl_feature_usage", "hour=5, minute=0"),
-            ("bqetl_main_summary", "hour=2, minute=0")
+            ("bqetl_main_summary", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -222,7 +234,9 @@ with models.DAG(
                 task_id=f"{downstream_dependency[0]}__wait_for_event_events",
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_event_events",
-                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
             )
 
         event_events >> event_events_external
@@ -240,13 +254,13 @@ with models.DAG(
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
     )
 
-    with TaskGroup('bq_main_events_external') as bq_main_events_external:
+    with TaskGroup("bq_main_events_external") as bq_main_events_external:
         downstream_dependencies = {
             ("jetstream", "hour=4, minute=0"),
             ("bqetl_amo_stats", "hour=3, minute=0"),
             ("bqetl_experiments_daily", "hour=3, minute=0"),
             ("bqetl_feature_usage", "hour=5, minute=0"),
-            ("bqetl_main_summary", "hour=2, minute=0")
+            ("bqetl_main_summary", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -254,7 +268,9 @@ with models.DAG(
                 task_id=f"{downstream_dependency[0]}__wait_for_bq_main_events",
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_bq_main_events",
-                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
             )
 
         bq_main_events >> bq_main_events_external
@@ -281,7 +297,9 @@ with models.DAG(
         dag=dag,
     )
 
-    with TaskGroup('core_clients_first_seen_external') as core_clients_first_seen_external:
+    with TaskGroup(
+        "core_clients_first_seen_external"
+    ) as core_clients_first_seen_external:
         ExternalTaskMarker(
             task_id="bqetl_core__wait_for_core_clients_first_seen",
             external_dag_id="bqetl_core",
@@ -289,7 +307,10 @@ with models.DAG(
             execution_date="{{ execution_date.replace(hour=2, minute=0).isoformat() }}",
         )
 
-        telemetry_derived__core_clients_first_seen__v1 >> core_clients_first_seen_external
+        (
+            telemetry_derived__core_clients_first_seen__v1
+            >> core_clients_first_seen_external
+        )
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
 
@@ -308,7 +329,8 @@ with models.DAG(
             "backfill",
             "*.baseline_clients_first_seen_v1",
             "--no-partition",
-        ] + baseline_args,
+            *baseline_args,
+        ],
         depends_on_past=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
@@ -319,7 +341,8 @@ with models.DAG(
             "query",
             "backfill",
             "*.baseline_clients_daily_v1",
-        ] + baseline_args,
+            *baseline_args,
+        ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     baseline_clients_last_seen = gke_command(
@@ -329,15 +352,18 @@ with models.DAG(
             "query",
             "backfill",
             "*.baseline_clients_last_seen_v1",
-        ] + baseline_args,
+            *baseline_args,
+        ],
         depends_on_past=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
 
-    with TaskGroup('baseline_clients_last_seen_external') as baseline_clients_last_seen_external:
+    with TaskGroup(
+        "baseline_clients_last_seen_external"
+    ) as baseline_clients_last_seen_external:
         downstream_dependencies = {
             ("bqetl_gud", "hour=3, minute=0"),
-            ("bqetl_nondesktop", "hour=3, minute=0")
+            ("bqetl_nondesktop", "hour=3, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -345,7 +371,9 @@ with models.DAG(
                 task_id=f"{downstream_dependency[0]}__wait_for_baseline_clients_last_seen",
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_baseline_clients_last_seen",
-                execution_date="{{ execution_date.replace(" + downstream_dependency[1] + ").isoformat() }}",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
             )
 
         baseline_clients_last_seen >> baseline_clients_last_seen_external
@@ -357,7 +385,8 @@ with models.DAG(
             "query",
             "backfill",
             "*.metrics_clients_daily_v1",
-        ] + baseline_args,
+            *baseline_args,
+        ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     metrics_clients_last_seen = gke_command(
@@ -367,7 +396,8 @@ with models.DAG(
             "query",
             "backfill",
             "*.metrics_clients_last_seen_v1",
-        ] + baseline_args,
+            *baseline_args,
+        ],
         depends_on_past=True,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
@@ -378,7 +408,8 @@ with models.DAG(
             "query",
             "backfill",
             "*.clients_last_seen_joined_v1",
-        ] + [    # metrics pings are usually delayed by one day after their logical activity period
+        ]
+        + [  # metrics pings are usually delayed by one day after their logical activity period
             "--project-id=moz-fx-data-shared-prod",
             "--start_date={{ macros.ds_add(ds, -1) }}",
             "--end_date={{ macros.ds_add(ds, -1) }}",
@@ -386,7 +417,9 @@ with models.DAG(
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
-    with TaskGroup('clients_last_seen_joined_external') as clients_last_seen_joined_external:
+    with TaskGroup(
+        "clients_last_seen_joined_external"
+    ) as clients_last_seen_joined_external:
         downstream_dag_times = {
             "bqetl_unified": "hour=3, minute=0",
         }
@@ -396,7 +429,9 @@ with models.DAG(
                 task_id=f"{downstream_dag}__wait_for_clients_last_seen_joined",
                 external_dag_id=downstream_dag,
                 external_task_id="wait_for_clients_last_seen_joined",
-                execution_date="{{ execution_date.replace(" + dag_time_parts + ").isoformat() }}",
+                execution_date="{{ execution_date.replace("
+                + dag_time_parts
+                + ").isoformat() }}",
             )
 
         clients_last_seen_joined >> clients_last_seen_joined_external
