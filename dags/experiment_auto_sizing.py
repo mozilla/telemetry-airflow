@@ -27,11 +27,11 @@ default_args = {
 tags = [Tag.ImpactTier.tier_1]
 
 with DAG(
-        "experiment_auto_sizing",
-        default_args=default_args,
-        schedule_interval="0 6 * * 0", # 6am every Sunday, after Jetstream
-        doc_md=__doc__,
-        tags=tags,
+    "experiment_auto_sizing",
+    default_args=default_args,
+    schedule_interval="0 6 * * 0",  # 6am every Sunday, after Jetstream
+    doc_md=__doc__,
+    tags=tags,
 ) as dag:
 
     # Built from repo https://github.com/mozilla/auto-sizing
@@ -46,11 +46,12 @@ with DAG(
             "--log-to-bigquery",
             "run-argo",
             "--bucket=auto-sizing",
-            # the Airflow cluster doesn't have Compute Engine API access so pass in IP 
+            # the Airflow cluster doesn't have Compute Engine API access so pass in IP
             # and certificate in order for the pod to connect to the Kubernetes cluster
-            # running Jetstream/auto-sizing 
+            # running Jetstream/auto-sizing
             "--cluster-ip={{ var.value.jetstream_cluster_ip }}",
-            "--cluster-cert={{ var.value.jetstream_cluster_cert }}"],
+            "--cluster-cert={{ var.value.jetstream_cluster_cert }}",
+        ],
         dag=dag,
     )
 
