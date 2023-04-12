@@ -21,7 +21,7 @@ from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": ["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+    "email": ["ascholtz@mozilla.com", "mwilliams@mozilla.com",],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),
     "email_on_failure": True,
@@ -47,7 +47,7 @@ with DAG(
         task_id="jetstream_run",
         name="jetstream_run",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+        email=default_args["email"],
         arguments=[
             "--log_to_bigquery",
             "run-argo", 
@@ -64,7 +64,7 @@ with DAG(
         task_id="jetstream_run_config_changed",
         name="jetstream_run_config_changed",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+        email=default_args["email"],
         arguments=[
             "--log_to_bigquery",
             "rerun-config-changed",
