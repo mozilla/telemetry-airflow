@@ -10,18 +10,22 @@ In case jetstream configuration is modified it is perfectly normal for the task
 `jetstream_run_config_changed` to take significantly longer to complete (hours instead of minutes).
 In these cases we expect anything below 12 hours, only after that amount of time should
 this task be considered potentially faulty and subject to the triage process.
-"""
+"""  # noqa: D205
+
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": ["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+    "email": [
+        "ascholtz@mozilla.com",
+        "mwilliams@mozilla.com",
+    ],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),
     "email_on_failure": True,
@@ -33,11 +37,11 @@ default_args = {
 tags = [Tag.ImpactTier.tier_1]
 
 with DAG(
-        "jetstream",
-        default_args=default_args,
-        schedule_interval="0 4 * * *",
-        doc_md=__doc__,
-        tags=tags,
+    "jetstream",
+    default_args=default_args,
+    schedule_interval="0 4 * * *",
+    doc_md=__doc__,
+    tags=tags,
 ) as dag:
 
     # Built from repo https://github.com/mozilla/jetstream
@@ -47,16 +51,17 @@ with DAG(
         task_id="jetstream_run",
         name="jetstream_run",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+        email=default_args["email"],
         arguments=[
             "--log_to_bigquery",
-            "run-argo", 
+            "run-argo",
             "--date={{ ds }}",
-            # the Airflow cluster doesn't have Compute Engine API access so pass in IP 
+            # the Airflow cluster doesn't have Compute Engine API access so pass in IP
             # and certificate in order for the pod to connect to the Kubernetes cluster
-            # running Jetstream 
+            # running Jetstream
             "--cluster-ip={{ var.value.jetstream_cluster_ip }}",
-            "--cluster-cert={{ var.value.jetstream_cluster_cert }}"],
+            "--cluster-cert={{ var.value.jetstream_cluster_cert }}",
+        ],
         dag=dag,
     )
 
@@ -64,16 +69,17 @@ with DAG(
         task_id="jetstream_run_config_changed",
         name="jetstream_run_config_changed",
         image=jetstream_image,
-        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+        email=default_args["email"],
         arguments=[
             "--log_to_bigquery",
             "rerun-config-changed",
             "--argo",
-            # the Airflow cluster doesn't have Compute Engine API access so pass in IP 
+            # the Airflow cluster doesn't have Compute Engine API access so pass in IP
             # and certificate in order for the pod to connect to the Kubernetes cluster
             # running Jetstream
             "--cluster-ip={{ var.value.jetstream_cluster_ip }}",
-            "--cluster-cert={{ var.value.jetstream_cluster_cert }}"],
+            "--cluster-cert={{ var.value.jetstream_cluster_cert }}",
+        ],
         dag=dag,
     )
 
