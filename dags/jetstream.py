@@ -10,7 +10,7 @@ In case jetstream configuration is modified it is perfectly normal for the task
 `jetstream_run_config_changed` to take significantly longer to complete (hours instead of minutes).
 In these cases we expect anything below 12 hours, only after that amount of time should
 this task be considered potentially faulty and subject to the triage process.
-""" # noqa: D205
+"""  # noqa: D205
 
 from datetime import datetime, timedelta
 
