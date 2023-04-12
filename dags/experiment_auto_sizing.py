@@ -4,11 +4,12 @@ for computing experiment sizing information for various configurations.
 
 *Triage notes*
 TBD
-"""
+"""  # noqa: D205
+
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag

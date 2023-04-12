@@ -10,11 +10,12 @@ In case jetstream configuration is modified it is perfectly normal for the task
 `jetstream_run_config_changed` to take significantly longer to complete (hours instead of minutes).
 In these cases we expect anything below 12 hours, only after that amount of time should
 this task be considered potentially faulty and subject to the triage process.
-"""
+""" # noqa: D205
+
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
