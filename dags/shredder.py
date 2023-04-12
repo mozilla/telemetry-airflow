@@ -1,5 +1,6 @@
-from airflow import DAG
 from datetime import datetime, timedelta
+
+from airflow import DAG
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -43,7 +44,10 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-tags = [Tag.ImpactTier.tier_2]
+tags = [
+    Tag.ImpactTier.tier_2,
+    Tag.Triage.no_triage,
+]
 
 dag = DAG(
     "shredder",
@@ -75,8 +79,8 @@ base_command = [
 telemetry_main = gke_command(
     task_id="telemetry_main",
     name="shredder-telemetry-main",
-    command=base_command
-    + [
+    command=[
+        *base_command,
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v4",
@@ -94,8 +98,8 @@ telemetry_main = gke_command(
 telemetry_main_summary = gke_command(
     task_id="telemetry_main_summary",
     name="shredder-telemetry-main-summary",
-    command=base_command
-    + [
+    command=[
+        *base_command,
         "--parallelism=2",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--only=telemetry_derived.main_summary_v4",
@@ -110,8 +114,8 @@ telemetry_main_summary = gke_command(
 flat_rate = gke_command(
     task_id="all",
     name="shredder-all",
-    command=base_command
-    + [
+    command=[
+        *base_command,
         "--parallelism=4",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--except",
