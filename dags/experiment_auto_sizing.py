@@ -57,7 +57,7 @@ with DAG(
     wait_for_jetstream = ExternalTaskSensor(
         task_id="wait_for_jetstream",
         external_dag_id="jetstream",
-        external_task_id="jetstream_run",
+        external_task_id="jetstream_run_config_changed",
         execution_delta=timedelta(hours=2),
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
