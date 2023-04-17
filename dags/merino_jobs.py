@@ -62,8 +62,8 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-    prod_connection = BaseHook.get_connection("merino_elasticsearch_prod")
-    staging_connection = BaseHook.get_connection("merino_elasticsearch_stage")
+    es_prod_connection = BaseHook.get_connection("merino_elasticsearch_prod")
+    es_staging_connection = BaseHook.get_connection("merino_elasticsearch_stage")
 
     wikipedia_indexer_copy_export = merino_job(
         "wikipedia_indexer_copy_export",
@@ -90,7 +90,7 @@ with DAG(
             "--total-docs",
             "6600000",  # Estimate of the total number of documents in wikipedia index
             "--elasticsearch-url",
-            str(staging_connection.host),
+            str(es_staging_connection.host),
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
@@ -99,7 +99,7 @@ with DAG(
         env_vars={
             "MERINO_ENV": "production",
             # Using the API key in the argument list leaks the sensitive data into the airflow UI.
-            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": staging_connection.password,
+            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": es_staging_connection.password,
         },
     )
 
@@ -113,7 +113,7 @@ with DAG(
             "--total-docs",
             "6600000",  # Estimate of the total number of documents in wikipedia index
             "--elasticsearch-url",
-            str(prod_connection.host),
+            str(es_prod_connection.host),
             "--gcs-path",
             "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
             "--gcp-project",
@@ -122,7 +122,7 @@ with DAG(
         env_vars={
             "MERINO_ENV": "production",
             # Using the API key in the argument list leaks the sensitive data into the airflow UI.
-            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": prod_connection.password,
+            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": es_prod_connection.password,
         },
     )
 
@@ -130,3 +130,20 @@ with DAG(
         wikipedia_indexer_build_index_for_staging,
         wikipedia_indexer_build_index_for_prod,
     ]
+
+    # Navigational suggestions task.
+    prepare_domain_metadata_stage = merino_job(
+        "nav_suggestions_prepare_domain_metadata_stage",
+        arguments=[
+            "navigational-suggestions",
+            "prepare-domain-metadata",
+            "--src-gcp-project",
+            "moz-fx-data-shared-prod",
+            "--dst-gcp-project",
+            "moz-fx-merino-nonprod-ee93",
+            "--dst-gcs-bucket",
+            "merino-images-stagepy",
+        ],
+    )
+
+    prepare_domain_metadata_stage
