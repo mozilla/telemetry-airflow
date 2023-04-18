@@ -18,8 +18,13 @@ DOCS = """\
 def merino_job(
     name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None
 ):
+    default_env_vars = {
+        "MERINO_ENV": "production"
+    }
+
     if env_vars is None:
         env_vars = {}
+
     return GKEPodOperator(
         task_id=name,
         name=name,
@@ -30,7 +35,7 @@ def merino_job(
         location="us-west1",
         cmds=["python", "-m", "merino.jobs.cli"],
         arguments=arguments,
-        env_vars=env_vars,
+        env_vars=default_env_vars.update(env_vars),
         email=[
             "wstuckey@mozilla.com",
         ],
@@ -76,9 +81,6 @@ with DAG(
             "--gcp-project",
             "moz-fx-data-shared-prod",
         ],
-        env_vars={
-            "MERINO_ENV": "production",
-        },
     )
 
     wikipedia_indexer_build_index_for_staging = merino_job(
@@ -98,7 +100,6 @@ with DAG(
             "moz-fx-data-shared-prod",
         ],
         env_vars={
-            "MERINO_ENV": "production",
             # Using the API key in the argument list leaks the sensitive data into the airflow UI.
             "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": es_staging_connection.password,
         },
@@ -121,7 +122,6 @@ with DAG(
             "moz-fx-data-shared-prod",
         ],
         env_vars={
-            "MERINO_ENV": "production",
             # Using the API key in the argument list leaks the sensitive data into the airflow UI.
             "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": es_prod_connection.password,
         },
@@ -145,9 +145,6 @@ with DAG(
             "--dst-gcs-bucket",
             "merino-images-stagepy",
         ],
-        env_vars={
-            "MERINO_ENV": "production"
-        },
     )
 
     prepare_domain_metadata_prod = merino_job(
@@ -162,9 +159,6 @@ with DAG(
             "--dst-gcs-bucket",
             "merino-images-prodpy",
         ],
-        env_vars={
-            "MERINO_ENV": "production"
-        },
     )
 
     on_domain_success = EmailOperator(
