@@ -19,9 +19,9 @@ def merino_job(
     name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None
 ):
     default_env_vars = {"MERINO_ENV": "production"}
-
     if env_vars is None:
         env_vars = {}
+    default_env_vars.update(env_vars)
 
     return GKEPodOperator(
         task_id=name,
@@ -33,7 +33,7 @@ def merino_job(
         location="us-west1",
         cmds=["python", "-m", "merino.jobs.cli"],
         arguments=arguments,
-        env_vars=default_env_vars | env_vars,
+        env_vars=default_env_vars,
         email=[
             "wstuckey@mozilla.com",
         ],
