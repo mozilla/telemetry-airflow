@@ -2,8 +2,8 @@ import datetime
 from typing import Any, Dict, List, Optional
 
 from airflow import DAG
-from airflow.operators.email import EmailOperator
 from airflow.hooks.base import BaseHook
+from airflow.operators.email import EmailOperator
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -18,9 +18,7 @@ DOCS = """\
 def merino_job(
     name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None
 ):
-    default_env_vars = {
-        "MERINO_ENV": "production"
-    }
+    default_env_vars = {"MERINO_ENV": "production"}
 
     if env_vars is None:
         env_vars = {}
