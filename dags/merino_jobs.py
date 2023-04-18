@@ -33,7 +33,7 @@ def merino_job(
         location="us-west1",
         cmds=["python", "-m", "merino.jobs.cli"],
         arguments=arguments,
-        env_vars=default_env_vars.update(env_vars),
+        env_vars=default_env_vars | env_vars,
         email=[
             "wstuckey@mozilla.com",
         ],
