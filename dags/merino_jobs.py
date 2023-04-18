@@ -2,6 +2,7 @@ import datetime
 from typing import Any, Dict, List, Optional
 
 from airflow import DAG
+from airflow.operators.email import EmailOperator
 from airflow.hooks.base import BaseHook
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -144,6 +145,35 @@ with DAG(
             "--dst-gcs-bucket",
             "merino-images-stagepy",
         ],
+        env_vars={
+            "MERINO_ENV": "production"
+        },
     )
 
-    prepare_domain_metadata_stage
+    prepare_domain_metadata_prod = merino_job(
+        "nav_suggestions_prepare_domain_metadata_prod",
+        arguments=[
+            "navigational-suggestions",
+            "prepare-domain-metadata",
+            "--src-gcp-project",
+            "moz-fx-data-shared-prod",
+            "--dst-gcp-project",
+            "moz-fx-merino-prod-1c2f ",
+            "--dst-gcs-bucket",
+            "merino-images-prodpy",
+        ],
+        env_vars={
+            "MERINO_ENV": "production"
+        },
+    )
+
+    on_domain_success = EmailOperator(
+        task_id="email_on_domain_success",
+        to="wstuckey@mozilla.com",
+        subject="Navigational Suggestions Domain Metadata job successful",
+        html_content="""
+        Job completed. Download the new top picks json file on GCS.
+        """,
+    )
+
+    [prepare_domain_metadata_stage, prepare_domain_metadata_prod] >> on_domain_success
