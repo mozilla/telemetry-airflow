@@ -34,6 +34,7 @@ x-airflow-common:
     DEPLOY_ENVIRONMENT: dev
   volumes:
     - ./dags:/opt/airflow/dags
+    - ./utils:/opt/airflow/utils
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./resources/dev_webserver_config.py:/opt/airflow/webserver_config.py

@@ -17,7 +17,7 @@ from flask_appbuilder import expose as app_builder_expose, BaseView as AppBuilde
 from airflow import configuration
 
 from shelljob import proc
-from dags.utils.backfill import BackfillParams
+from utils.backfill import BackfillParams
 
 # Inspired from
 # https://mortoray.com/2014/03/04/http-streaming-of-command-output-in-python-flask/

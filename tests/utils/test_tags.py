@@ -1,5 +1,5 @@
 import pytest
-from dags.utils.tags import Tag, InvalidTagError
+from utils.tags import Tag, InvalidTagError
 
 
 @pytest.mark.parametrize(
