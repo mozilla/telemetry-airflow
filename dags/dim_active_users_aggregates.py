@@ -40,7 +40,7 @@ IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 APP_NAME_POSTFIX = "active_users_aggregates"
 APPS = ("firefox_desktop",)
 
-PROJECT_ID = "moz-fx-data-shared-prod"
+PROJECT_ID = "mozdata"
 EXEC_DATE = "{{ macros.ds_add(ds, -1) }}"
 
 with DAG(
@@ -73,6 +73,7 @@ with DAG(
             name=f"{app_name}_{APP_NAME_POSTFIX}_dim_check",
             image=IMAGE,
             arguments=[
+                "dim",
                 "run",
                 "--fail_process_on_failure",
                 f"--project_id={PROJECT_ID}",
