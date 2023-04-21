@@ -142,6 +142,9 @@ with DAG(
             "moz-fx-merino-nonprod-ee93",
             "--dst-gcs-bucket",
             "merino-images-stagepy",
+            "--dst-cdn-hostname",
+            "stagepy-images.merino.nonprod.cloudops.mozgcp.net",
+            "--force-upload",
         ],
     )
 
@@ -156,6 +159,9 @@ with DAG(
             "moz-fx-merino-prod-1c2f ",
             "--dst-gcs-bucket",
             "merino-images-prodpy",
+            "--dst-cdn-hostname",
+            "merino-images.services.mozilla.com",
+            "--force-upload",
         ],
     )
 
