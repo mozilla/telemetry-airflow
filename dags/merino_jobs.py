@@ -143,7 +143,7 @@ with DAG(
             "--dst-gcs-bucket",
             "merino-images-stagepy",
             "--dst-cdn-hostname",
-            "stagepy-images.merino.nonprod.cloudops.mozgcp.net"
+            "stagepy-images.merino.nonprod.cloudops.mozgcp.net",
             "--force-upload"
         ],
     )
@@ -160,7 +160,7 @@ with DAG(
             "--dst-gcs-bucket",
             "merino-images-prodpy",
             "--dst-cdn-hostname",
-            "merino-images.services.mozilla.com"
+            "merino-images.services.mozilla.com",
             "--force-upload"
         ],
     )
