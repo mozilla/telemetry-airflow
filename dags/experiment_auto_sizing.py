@@ -36,7 +36,7 @@ with DAG(
 ) as dag:
 
     # Built from repo https://github.com/mozilla/auto-sizing
-    auto_sizing_image = "gcr.io/moz-fx-data-experiments/auto-sizing:latest"
+    auto_sizing_image = "gcr.io/moz-fx-data-experiments/auto_sizing:latest"
 
     auto_sizing_run = GKEPodOperator(
         task_id="auto_sizing_run",
