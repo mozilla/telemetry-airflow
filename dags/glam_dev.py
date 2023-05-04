@@ -308,29 +308,6 @@ client_scalar_probe_counts = gke_command(
 #    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
 # )
 
-# SubdagOperator uses a SequentialExecutor by default
-# so its tasks will run sequentially.
-# Note: In 2.0, SubDagOperator is changed to use airflow scheduler instead of
-# backfill to schedule tasks in the subdag. User no longer need to specify
-# the executor in SubDagOperator. (We don't but the assumption that Sequential
-# Executor is used is now wrong)
-clients_histogram_all_combos = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_histogram_all_combos",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        10,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
-        parallel=False,
-    ),
-    task_id="clients_histogram_all_combos",
-    dag=dag,
-)
-
 clients_histogram_bucket_counts = SubDagOperator(
     subdag=repeated_subdag(
         GLAM_DAG,
@@ -339,7 +316,7 @@ clients_histogram_bucket_counts = SubDagOperator(
         dag.schedule_interval,
         dev_dataset_id,
         ("submission_date:DATE:{{ds}}",),
-        10,
+        20,
         None,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
         parallel=False,
@@ -356,7 +333,7 @@ clients_non_norm_histogram_bucket_counts = SubDagOperator(
         dag.schedule_interval,
         dev_dataset_id,
         ("submission_date:DATE:{{ds}}",),
-        10,
+        20,
         None,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
         parallel=False,
@@ -485,9 +462,8 @@ clients_daily_histogram_aggregates_content >> clients_histogram_aggregates
 clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
-clients_histogram_aggregates >> clients_histogram_all_combos
-clients_histogram_all_combos >> clients_histogram_bucket_counts
-clients_histogram_all_combos >> clients_non_norm_histogram_bucket_counts
+clients_histogram_aggregates >> clients_histogram_bucket_counts
+clients_histogram_aggregates >> clients_non_norm_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
 clients_histogram_aggregates >> glam_sample_counts
 
