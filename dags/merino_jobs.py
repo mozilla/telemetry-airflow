@@ -145,6 +145,8 @@ with DAG(
             "--dst-cdn-hostname",
             "stagepy-images.merino.nonprod.cloudops.mozgcp.net",
             "--force-upload",
+            "--min-favicon-width",
+            "52",
         ],
     )
 
@@ -162,6 +164,8 @@ with DAG(
             "--dst-cdn-hostname",
             "merino-images.services.mozilla.com",
             "--force-upload",
+            "--min-favicon-width",
+            "52",
         ],
     )
 
