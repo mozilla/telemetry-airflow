@@ -2,7 +2,7 @@
 See [kpi-forecasting in the docker-etl repository]
 (https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
 
-This DAG runs the forecast for year-end KPI values for Desktop QDAU and Mobile DAU. These forecasts can then be aggregated to calculate Desktop QCDOU and Mobile CDOU.
+This DAG runs the forecast for year-end KPI values for Desktop DAU and Mobile DAU.
 The forecast is only updated once per week since values aren't expected to change significantly day-to-day. 
 The output powers KPI dashboards and monthly revenue forecasts.
 
@@ -18,8 +18,8 @@ from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
-    "owner": "pmcmanis@mozilla.com",
-    "email": ["pmcmanis@mozilla.com"],
+    "owner": "bochocki@mozilla.com",
+    "email": ["bochocki@mozilla.com"],
     "depends_on_past": False,
     "start_date": datetime(2022, 3, 28),
     "email_on_failure": True,
