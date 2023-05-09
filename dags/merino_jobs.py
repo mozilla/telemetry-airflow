@@ -16,7 +16,7 @@ DOCS = """\
 
 
 def merino_job(
-    name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None
+    name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None, **kwargs
 ):
     default_env_vars = {"MERINO_ENV": "production"}
     if env_vars is None:
@@ -37,6 +37,7 @@ def merino_job(
         email=[
             "wstuckey@mozilla.com",
         ],
+        **kwargs,
     )
 
 
@@ -146,6 +147,7 @@ with DAG(
             "stagepy-images.merino.nonprod.cloudops.mozgcp.net",
             "--force-upload",
         ],
+        do_xcom_push=True,
     )
 
     prepare_domain_metadata_prod = merino_job(
@@ -163,6 +165,7 @@ with DAG(
             "merino-images.services.mozilla.com",
             "--force-upload",
         ],
+        do_xcom_push=True,
     )
 
     on_domain_success = EmailOperator(
@@ -171,6 +174,9 @@ with DAG(
         subject="Navigational Suggestions Domain Metadata job successful",
         html_content="""
         Job completed. Download the new top picks json file on GCS.
+        
+        Prod Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_prod")["top_pick_url"]}}
+        Stage Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_stage")["top_pick_url"]}}
         """,
     )
 
