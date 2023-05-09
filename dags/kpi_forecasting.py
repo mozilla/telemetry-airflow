@@ -1,6 +1,5 @@
 """
-See [kpi-forecasting in the docker-etl repository]
-(https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
+See [kpi-forecasting in the docker-etl repository](https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
 
 This DAG runs the forecast for year-end KPI values for Desktop DAU and Mobile DAU.
 The forecast is only updated once per week since values aren't expected to change significantly day-to-day. 
@@ -12,9 +11,9 @@ This DAG is high priority for week 1 of the month. This DAG is low priority for 
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from utils.gcp import gke_command
 from airflow.sensors.external_task import ExternalTaskSensor
 from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.gcp import gke_command
 from utils.tags import Tag
 
 default_args = {
