@@ -9,7 +9,7 @@ this DAG are important and the standatd triage process should be followed
 as long as this DAG is active.
 """
 
-
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -37,25 +37,31 @@ TAGS = [
 ]
 IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 
-APP_NAME_POSTFIX = "active_users_aggregates"
-APPS = ("firefox_desktop",)
+Config = namedtuple("Config", "exec_date apps")
+CONFIGS = {
+    "desktop": Config("{{ ds }}", ("firefox_desktop",)),
+    # "mobile": Config("{{ macros.ds_add(ds, -1) }}", ("firefox_ios", "fenix",)),
+}
 
 PROJECT_ID = "mozdata"
-EXEC_DATE = "{{ macros.ds_add(ds, -1) }}"
+APP_NAME_POSTFIX = "active_users_aggregates"
 
-with DAG(
-    "dim_active_users_aggregates",
-    default_args=default_args,
-    schedule_interval="30 4 * * *",
-    tags=TAGS,
-    doc_md=__doc__,
-) as dag:
+for platform, config in CONFIGS.items():
+    dag_id = f"dim_active_users_aggregates_{platform}"
+    with DAG(
+        dag_id,
+        default_args=default_args,
+        schedule_interval="30 4 * * *",
+        tags=TAGS,
+        start_date=datetime(2023, 3, 20),
+        doc_md=__doc__,
+    ) as dag:
 
-    run_all = DummyOperator(
-        task_id="run_all",
-    )
+        run_all = DummyOperator(
+            task_id="run_all",
+        )
 
-    for app_name in APPS:
+    for app_name in config.apps:
         wait_for_aggregates = ExternalTaskSensor(
             task_id=f"wait_for_{app_name}",
             external_dag_id="bqetl_analytics_aggregations",
@@ -79,7 +85,7 @@ with DAG(
                 f"--project_id={PROJECT_ID}",
                 f"--dataset={app_name}",
                 "--table=active_users_aggregates",
-                f"--date={EXEC_DATE}",
+                f"--date={config.exec_date}",
             ],
             env_vars={"SLACK_BOT_TOKEN": "{{ var.value.dim_slack_secret_token }}"},
             gcp_conn_id="google_cloud_airflow_gke",
@@ -89,3 +95,4 @@ with DAG(
         )
 
         run_all >> wait_for_aggregates >> dim_check
+    globals()[dag_id] = dag
