@@ -1,8 +1,7 @@
 """
-See [kpi-forecasting in the docker-etl repository]
-(https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
+See [kpi-forecasting in the docker-etl repository](https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
 
-This DAG runs the forecast for year-end KPI values for Desktop QDAU and Mobile DAU. These forecasts can then be aggregated to calculate Desktop QCDOU and Mobile CDOU.
+This DAG runs the forecast for year-end KPI values for Desktop DAU and Mobile DAU.
 The forecast is only updated once per week since values aren't expected to change significantly day-to-day. 
 The output powers KPI dashboards and monthly revenue forecasts.
 
@@ -12,14 +11,14 @@ This DAG is high priority for week 1 of the month. This DAG is low priority for 
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from utils.gcp import gke_command
 from airflow.sensors.external_task import ExternalTaskSensor
 from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.gcp import gke_command
 from utils.tags import Tag
 
 default_args = {
-    "owner": "pmcmanis@mozilla.com",
-    "email": ["pmcmanis@mozilla.com"],
+    "owner": "bochocki@mozilla.com",
+    "email": ["bochocki@mozilla.com"],
     "depends_on_past": False,
     "start_date": datetime(2022, 3, 28),
     "email_on_failure": True,
@@ -30,14 +29,21 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
-with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * * SAT", doc_md=__doc__, tags=tags,) as dag:
-    
+with DAG(
+    "kpi_forecasting",
+    default_args=default_args,
+    schedule_interval="0 4 * * SAT",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     kpi_forecasting_desktop_non_cumulative = gke_command(
         task_id="kpi_forecasting_desktop_non_cumulative",
         command=[
-            "python", "kpi-forecasting/kpi_forecasting.py",
+            "python",
+            "kpi-forecasting/kpi_forecasting.py",
             "-c",
-        ] + ["kpi-forecasting/yaml/desktop_non_cumulative.yaml"],
+        ]
+        + ["kpi-forecasting/yaml/desktop_non_cumulative.yaml"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
         dag=dag,
     )
@@ -45,9 +51,11 @@ with DAG("kpi_forecasting", default_args=default_args, schedule_interval="0 4 * 
     kpi_forecasting_mobile_non_cumulative = gke_command(
         task_id="kpi_forecasting_mobile_non_cumulative",
         command=[
-            "python", "kpi-forecasting/kpi_forecasting.py",
+            "python",
+            "kpi-forecasting/kpi_forecasting.py",
             "-c",
-        ] + ["kpi-forecasting/yaml/mobile_non_cumulative.yaml"],
+        ]
+        + ["kpi-forecasting/yaml/mobile_non_cumulative.yaml"],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
         dag=dag,
     )
