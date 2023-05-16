@@ -415,21 +415,21 @@ common_where_sql
 # Create the SQL for the summary query.
 summary_sql = (""
 "SELECT "
-    "COUNT(CASE WHEN build.major_version[0] >= '{}.' AND build.major_version[0] < '{}.' THEN 1 END) AS versionUpToDate, "
-    "COUNT(CASE WHEN build.major_version[0] < '{}.' AND build.major_version[0] >= '{}.' THEN 1 END) AS versionOutOfDate, "
-    "COUNT(CASE WHEN build.major_version[0] < '{}.' THEN 1 END) AS versionTooLow, "
-    "COUNT(CASE WHEN build.major_version[0] > '{}.' THEN 1 END) AS versionTooHigh, "
-    "COUNT(CASE WHEN NOT build.major_version[0] > '0' THEN 1 END) AS versionMissing "
+    "COUNT(CASE WHEN build.major_version[0] >= {} AND build.major_version[0] < {} THEN 1 END) AS versionUpToDate, "
+    "COUNT(CASE WHEN build.major_version[0] < {} AND build.major_version[0] >= {} THEN 1 END) AS versionOutOfDate, "
+    "COUNT(CASE WHEN build.major_version[0] < {} THEN 1 END) AS versionTooLow, "
+    "COUNT(CASE WHEN build.major_version[0] > {} THEN 1 END) AS versionTooHigh, "
+    "COUNT(CASE WHEN NOT build.major_version[0] > 0 THEN 1 END) AS versionMissing "
 "{} "
 "WHERE "
     "{} AND "
     "{}"
-"").format(str(latest_version - up_to_date_releases),
-           str(latest_version + 2),
-           str(latest_version - up_to_date_releases),
-           str(min_version),
-           str(min_version),
-           str(latest_version + 2),
+"").format(latest_version - up_to_date_releases,
+           latest_version + 2,
+           latest_version - up_to_date_releases,
+           min_version,
+           min_version,
+           latest_version + 2,
            longitudinal_from_sql,
            common_where_sql,
            build_version_where_sql)
@@ -489,13 +489,13 @@ out_of_date_details_sql = (""
 "WHERE "
     "{} AND "
     "{} AND "
-    "build.major_version[0] < '{}.' AND "
-    "build.major_version[0] >= '{}.'"
+    "build.major_version[0] < {} AND "
+    "build.major_version[0] >= {}"
 "").format(longitudinal_from_sql,
            common_where_sql,
            build_version_where_sql,
-           str(latest_version - up_to_date_releases),
-           str(min_version))
+           latest_version - up_to_date_releases,
+           min_version)
 out_of_date_details_sql
 
 
