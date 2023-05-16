@@ -47,7 +47,9 @@ jobs:
             sed -i "s/  build: ./  image: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}/g" docker-compose.yml
       - run:
           name: Start up local environment
-          command: make up
+          command: |
+            pip3 install cryptography -c constraints.txt
+            make up
 
   black:
     executor: *python-executor
