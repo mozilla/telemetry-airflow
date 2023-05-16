@@ -129,7 +129,7 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
         SELECT
             submission_timestamp,
             client_id,
-            struct(cast(environment.build.version as STRING) as version, environment.build.application_name as application_name) as build,
+            struct(cast(environment.build.version as STRING) as version, mozfun.norm.truncate_version(environment.build.version, 'major') as major_version, environment.build.application_name as application_name) as build,
             struct(struct(environment.settings.update.channel as channel, environment.settings.update.enabled as enabled) as update) as settings,
             payload.info.session_length,
             payload.info.profile_subsession_counter,
@@ -163,7 +163,7 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
             AND environment.build.version IS NOT NULL )
     SELECT
         client_id,
-        struct(array_agg(build.version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as version, array_agg(build.application_name order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as application_name) as build,
+        struct(array_agg(build.version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as version, array_agg(build.major_version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as major_version, array_agg(build.application_name order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as application_name) as build,
         struct(struct(array_agg(struct(settings.update.channel) order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as channel, array_agg(struct(settings.update.enabled) order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as enabled) as update) as settings,
         array_agg(session_length ignore nulls order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as session_length,
         array_agg(enabled ignore nulls order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as enabled,
@@ -415,11 +415,11 @@ common_where_sql
 # Create the SQL for the summary query.
 summary_sql = (""
 "SELECT "
-    "COUNT(CASE WHEN build.version[0] >= '{}.' AND build.version[0] < '{}.' THEN 1 END) AS versionUpToDate, "
-    "COUNT(CASE WHEN build.version[0] < '{}.' AND build.version[0] >= '{}.' THEN 1 END) AS versionOutOfDate, "
-    "COUNT(CASE WHEN build.version[0] < '{}.' THEN 1 END) AS versionTooLow, "
-    "COUNT(CASE WHEN build.version[0] > '{}.' THEN 1 END) AS versionTooHigh, "
-    "COUNT(CASE WHEN NOT build.version[0] > '0' THEN 1 END) AS versionMissing "
+    "COUNT(CASE WHEN build.major_version[0] >= '{}.' AND build.major_version[0] < '{}.' THEN 1 END) AS versionUpToDate, "
+    "COUNT(CASE WHEN build.major_version[0] < '{}.' AND build.major_version[0] >= '{}.' THEN 1 END) AS versionOutOfDate, "
+    "COUNT(CASE WHEN build.major_version[0] < '{}.' THEN 1 END) AS versionTooLow, "
+    "COUNT(CASE WHEN build.major_version[0] > '{}.' THEN 1 END) AS versionTooHigh, "
+    "COUNT(CASE WHEN NOT build.major_version[0] > '0' THEN 1 END) AS versionMissing "
 "{} "
 "WHERE "
     "{} AND "
@@ -489,8 +489,8 @@ out_of_date_details_sql = (""
 "WHERE "
     "{} AND "
     "{} AND "
-    "build.version[0] < '{}.' AND "
-    "build.version[0] >= '{}.'"
+    "build.major_version[0] < '{}.' AND "
+    "build.major_version[0] >= '{}.'"
 "").format(longitudinal_from_sql,
            common_where_sql,
            build_version_where_sql,
