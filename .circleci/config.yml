@@ -36,7 +36,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: artifacts
-      - docker/install-docker-compose
+      - docker/install-docker-compose:
+          version: v2.17.3
       - run:
           name: Load Docker image artifact from previous job
           command: docker load -i artifacts/telemetry-airflow.tar
