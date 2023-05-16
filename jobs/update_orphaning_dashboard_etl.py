@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# flake8: noqa
+# fmt: off
+# This is a complex, legacy job. Disabling linter will make browsing history of changes easier.
+
 import argparse
 import boto3
 import datetime as dt
@@ -129,7 +133,7 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
         SELECT
             submission_timestamp,
             client_id,
-            struct(cast(environment.build.version as STRING) as version, environment.build.application_name as application_name) as build,
+            struct(cast(environment.build.version as STRING) as version, mozfun.norm.truncate_version(environment.build.version, 'major') as major_version, environment.build.application_name as application_name) as build,
             struct(struct(environment.settings.update.channel as channel, environment.settings.update.enabled as enabled) as update) as settings,
             payload.info.session_length,
             payload.info.profile_subsession_counter,
@@ -163,7 +167,7 @@ def longitudinal_shim_aggregate(date_from, date_to, destination_project, destina
             AND environment.build.version IS NOT NULL )
     SELECT
         client_id,
-        struct(array_agg(build.version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as version, array_agg(build.application_name order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as application_name) as build,
+        struct(array_agg(build.version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as version, array_agg(build.major_version order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as major_version, array_agg(build.application_name order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as application_name) as build,
         struct(struct(array_agg(struct(settings.update.channel) order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as channel, array_agg(struct(settings.update.enabled) order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as enabled) as update) as settings,
         array_agg(session_length ignore nulls order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as session_length,
         array_agg(enabled ignore nulls order by subsession_start_date desc, profile_subsession_counter desc limit 1000) as enabled,
@@ -237,7 +241,7 @@ def longitudinal_shim_transform(project, dataset, table):
         destination_uri,
         location="US",
         job_config=job_config
-    )  
+    )
     extract_job.result()  # Waits for job to complete.
 
     print(
@@ -344,10 +348,10 @@ aggregation_to = max_report_date.strftime("%Y-%m-%d")
 aggregation_from = (max_report_date - dt.timedelta(days=6*31)).strftime("%Y-%m-%d")
 
 longitudinal_shim_aggregate(date_from=aggregation_from, date_to=aggregation_to,
-                                destination_project=AGGREGATION_TABLE_PROJECT, 
+                                destination_project=AGGREGATION_TABLE_PROJECT,
                                 destination_dataset=AGGREGATION_TABLE_DATASET, destination_table=AGGREGATION_TABLE_NAME)
 
-longitudinal_shim_transform(project=AGGREGATION_TABLE_PROJECT, 
+longitudinal_shim_transform(project=AGGREGATION_TABLE_PROJECT,
                                 dataset=AGGREGATION_TABLE_DATASET, table=AGGREGATION_TABLE_NAME)
 
 ####################################### END LONGITUDINAL SHIM ##########################################################
@@ -415,21 +419,21 @@ common_where_sql
 # Create the SQL for the summary query.
 summary_sql = (""
 "SELECT "
-    "COUNT(CASE WHEN build.version[0] >= '{}.' AND build.version[0] < '{}.' THEN 1 END) AS versionUpToDate, "
-    "COUNT(CASE WHEN build.version[0] < '{}.' AND build.version[0] >= '{}.' THEN 1 END) AS versionOutOfDate, "
-    "COUNT(CASE WHEN build.version[0] < '{}.' THEN 1 END) AS versionTooLow, "
-    "COUNT(CASE WHEN build.version[0] > '{}.' THEN 1 END) AS versionTooHigh, "
-    "COUNT(CASE WHEN NOT build.version[0] > '0' THEN 1 END) AS versionMissing "
+    "COUNT(CASE WHEN build.major_version[0] >= {} AND build.major_version[0] < {} THEN 1 END) AS versionUpToDate, "
+    "COUNT(CASE WHEN build.major_version[0] < {} AND build.major_version[0] >= {} THEN 1 END) AS versionOutOfDate, "
+    "COUNT(CASE WHEN build.major_version[0] < {} THEN 1 END) AS versionTooLow, "
+    "COUNT(CASE WHEN build.major_version[0] > {} THEN 1 END) AS versionTooHigh, "
+    "COUNT(CASE WHEN NOT build.major_version[0] > 0 THEN 1 END) AS versionMissing "
 "{} "
 "WHERE "
     "{} AND "
     "{}"
-"").format(str(latest_version - up_to_date_releases),
-           str(latest_version + 2),
-           str(latest_version - up_to_date_releases),
-           str(min_version),
-           str(min_version),
-           str(latest_version + 2),
+"").format(latest_version - up_to_date_releases,
+           latest_version + 2,
+           latest_version - up_to_date_releases,
+           min_version,
+           min_version,
+           latest_version + 2,
            longitudinal_from_sql,
            common_where_sql,
            build_version_where_sql)
@@ -489,13 +493,13 @@ out_of_date_details_sql = (""
 "WHERE "
     "{} AND "
     "{} AND "
-    "build.version[0] < '{}.' AND "
-    "build.version[0] >= '{}.'"
+    "build.major_version[0] < {} AND "
+    "build.major_version[0] >= {}"
 "").format(longitudinal_from_sql,
            common_where_sql,
            build_version_where_sql,
-           str(latest_version - up_to_date_releases),
-           str(min_version))
+           latest_version - up_to_date_releases,
+           min_version)
 out_of_date_details_sql
 
 
@@ -681,7 +685,7 @@ def is_supported_mapper(d):
                 return False, ping
 
         index += 1
-        
+
     return True, ping
 
 is_supported_rdd = has_min_update_ping_count_true_rdd.map(is_supported_mapper).cache()
@@ -696,7 +700,7 @@ is_supported_true_rdd = is_supported_rdd.filter(lambda p: p[0] == True).values()
 
 
 # Create an RDD of out of date telemetry pings that have and don't have
-# the ability to apply an update along with a dictionary of the count 
+# the ability to apply an update along with a dictionary of the count
 # of True and False.
 def is_able_to_apply_mapper(d):
     ping = d
@@ -771,7 +775,7 @@ of_concern_dict = has_update_enabled_dict
 
 # Create an RDD of the telemetry pings that have the
 # application.update.enabled preference set to True.
-# 
+#
 # This RDD is created from the last "out of date, potentially of concern"
 # RDD and it is named of_concern_true_rdd to simplify the addition of new code
 # without having to modify consumers of the RDD.
@@ -1184,7 +1188,7 @@ results_json = results_json.replace('"true"', '"True"').replace('"false"', '"Fal
 # Save the output to be uploaded automatically once the job completes.
 # The file will be stored at:
 # * https://analysis-output.telemetry.mozilla.org/app-update/data/out-of-date/FILENAME
-    
+
 bucket = args.s3_output_bucket #"telemetry-public-analysis-2"
 path = args.s3_output_path #"app-update/data/out-of-date/"
 timestamped_s3_key = path + report_filename + ".json"
@@ -1204,3 +1208,4 @@ print("End: " + str(end_time.strftime("%Y-%m-%d %H:%M:%S")))
 # Get the elapsed time it took to run this job.
 elapsed_time = end_time - start_time
 print("Elapsed Seconds: " + str(int(elapsed_time.total_seconds())))
+# fmt: on
