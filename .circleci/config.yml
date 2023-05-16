@@ -36,7 +36,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: artifacts
-      - docker/install-docker-compose
+      - docker/install-docker-compose:
+          version: v2.17.3
       - run:
           name: Load Docker image artifact from previous job
           command: docker load -i artifacts/telemetry-airflow.tar
@@ -46,7 +47,9 @@ jobs:
             sed -i "s/  build: ./  image: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}/g" docker-compose.yml
       - run:
           name: Start up local environment
-          command: make up
+          command: |
+            pip3 install cryptography -c constraints.txt
+            make up
 
   black:
     executor: *python-executor
