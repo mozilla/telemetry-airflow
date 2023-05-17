@@ -41,7 +41,6 @@ default_args = {
 }
 
 
-
 tags = [
     Tag.ImpactTier.tier_3,
     Tag.Triage.no_triage,
@@ -63,7 +62,7 @@ with DAG(
             "--influxdb_host={{ var.value.influxdb_host }}",
             "--influxdb_username={{ var.value.influxdb_username }}",
             "--influxdb_password={{ var.value.influxdb_password }}",
-            "--influxdb_measurement=\"svcops\".\"autogen\".\"contile.tiles.adm.request\" ",
+            '--influxdb_measurement="svcops"."autogen"."contile.tiles.adm.request" ',
             "--bq_project_id=moz-fx-data-shared-prod",
             "--bq_dataset_id=analysis",
             "--bq_table_id=contile_tiles_adm_request",
@@ -80,7 +79,7 @@ with DAG(
             "--influxdb_host={{ var.value.influxdb_host }}",
             "--influxdb_username={{ var.value.influxdb_username }}",
             "--influxdb_password={{ var.value.influxdb_password }}",
-            "--influxdb_measurement=\"svcops\".\"autogen\".\"contile.tiles.adm.response.tiles_count\" ",
+            '--influxdb_measurement="svcops"."autogen"."contile.tiles.adm.response.tiles_count" ',
             "--bq_project_id=moz-fx-data-shared-prod",
             "--bq_dataset_id=analysis",
             "--bq_table_id=contile_tiles_adm_response_tiles_count",
@@ -97,7 +96,7 @@ with DAG(
             "--influxdb_host={{ var.value.influxdb_host }}",
             "--influxdb_username={{ var.value.influxdb_username }}",
             "--influxdb_password={{ var.value.influxdb_password }}",
-            "--influxdb_measurement=\"svcops\".\"autogen\".\"contile.filter.adm.empty_response\" ",
+            '--influxdb_measurement="svcops"."autogen"."contile.filter.adm.empty_response" ',
             "--bq_project_id=moz-fx-data-shared-prod",
             "--bq_dataset_id=analysis",
             "--bq_table_id=contile_filter_adm_empty_response",
@@ -106,4 +105,4 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
     )
 
-    contile_adm_request  >> adm_response_tiles_count >> adm_empty_response
+    contile_adm_request >> adm_response_tiles_count >> adm_empty_response
