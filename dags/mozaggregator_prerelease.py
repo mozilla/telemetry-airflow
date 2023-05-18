@@ -1,5 +1,6 @@
 """
-Aggregates that power the legacy telemetry
+Aggregates that power the legacy telemetry.
+
 [Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
 
 See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
@@ -9,9 +10,9 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.operators.subdag import SubDagOperator
-from utils.dataproc import moz_dataproc_pyspark_runner, copy_artifacts_dev
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -57,14 +58,12 @@ client_email = (
     else "dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com"
 )
 artifact_bucket = (
-    "{}-dataproc-artifacts".format(project_id)
+    f"{project_id}-dataproc-artifacts"
     if is_dev
     else "moz-fx-data-prod-airflow-dataproc-artifacts"
 )
 storage_bucket = (
-    "{}-dataproc-scratch".format(project_id)
-    if is_dev
-    else "moz-fx-data-prod-dataproc-scratch"
+    f"{project_id}-dataproc-scratch" if is_dev else "moz-fx-data-prod-dataproc-scratch"
 )
 
 
@@ -151,7 +150,50 @@ trim_database = gke_command(
     dag=dag,
 )
 
+mozaggregator2bq_extract = gke_command(
+    task_id="mozaggregator2bq_extract",
+    name="mozaggregator2bq_extract",
+    command=["bin/backfill"],
+    env_vars={
+        "POSTGRES_HOST": "{{ var.value.mozaggregator_postgres_host }}",
+        "POSTGRES_DB": "telemetry",
+        "POSTGRES_USER": "root",
+        "POSTGRES_PASS": "{{ var.value.mozaggregator_postgres_pass }}",
+        "START_DS": "{{ ds }}",
+        "END_DS": "{{ next_ds }}",
+        "SPARK_LOCAL_HOSTNAME": "localhost",
+    },
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
+    dag=dag,
+)
+
+mozaggregator2bq_load_build = gke_command(
+    task_id="mozaggregator2bq_load_build",
+    name="mozaggregator2bq_load_build",
+    command=["bin/load_bq", "build_id"],
+    env_vars={
+        "REPLACE": "true",
+    },
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
+    dag=dag,
+)
+
+mozaggregator2bq_load_submission = gke_command(
+    task_id="mozaggregator2bq_load_submission",
+    name="mozaggregator2bq_load_submission",
+    command=["bin/load_bq", "submission_date"],
+    env_vars={
+        "REPLACE": "true",
+    },
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/mozaggregator2bq_docker_etl:latest",
+    dag=dag,
+)
+
+
 prerelease_telemetry_aggregate_view_dataproc >> trim_database
+prerelease_telemetry_aggregate_view_dataproc >> mozaggregator2bq_extract
+mozaggregator2bq_extract >> mozaggregator2bq_load_build
+mozaggregator2bq_extract >> mozaggregator2bq_load_submission
 
 # export to avro, if necessary
 if EXPORT_TO_AVRO:
