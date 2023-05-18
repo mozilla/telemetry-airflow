@@ -27,6 +27,7 @@ default_args = {
     "email": [
         "telemetry-alerts@mozilla.com",
         "ahabibi@mozilla.com",
+        "rsteuber@mozilla.com",
         "akomar@mozilla.com",
     ],
     "email_on_failure": True,
