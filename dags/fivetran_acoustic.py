@@ -8,9 +8,10 @@ from airflow.operators.python import PythonOperator
 from fivetran_provider.operators.fivetran import FivetranOperator
 from fivetran_provider.sensors.fivetran import FivetranSensor
 
-from utils.acoustic.acoustic_client import AcousticClient
-from utils.callbacks import retry_tasks_callback
-from utils.tags import Tag
+from dags.utils.acoustic.acoustic_client import AcousticClient
+from dags.utils.callbacks import retry_tasks_callback
+from dags.utils.tags import Tag
+
 
 def _generate_acoustic_report(
     conn_id: str, report_type: str, config: Dict[Any, Any], *args, **kwargs

@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow import DAG
 from operators.gcp_container_operator import GKEPodOperator
 
-from utils.tags import Tag
+from dags.utils.tags import Tag
 
 DOCS = """\
 This DAG is related to data monitoring project it is still under development.
