@@ -146,6 +146,7 @@ with DAG(
             "--dst-cdn-hostname",
             "stagepy-images.merino.nonprod.cloudops.mozgcp.net",
             "--force-upload",
+            "--write-xcom",
         ],
         do_xcom_push=True,
     )
@@ -164,6 +165,7 @@ with DAG(
             "--dst-cdn-hostname",
             "merino-images.services.mozilla.com",
             "--force-upload",
+            "--write-xcom",
         ],
         do_xcom_push=True,
     )
