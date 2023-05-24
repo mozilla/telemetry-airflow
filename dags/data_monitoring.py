@@ -39,7 +39,7 @@ TARGET_DATASETS = (
 
 default_args = {
     "owner": "akommasani@mozilla.com",
-    "start_date": datetime(2022, 11, 1),
+    "start_date": datetime(2023, 5, 24),
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
@@ -55,7 +55,7 @@ with DAG(
     schedule_interval="0 7 * * *",  # all bqetl jobs should have finished by 7am UTC
     doc_md=DOCS,
     tags=TAGS,
-    catchup=False,
+    catchup=True,
 ) as dag:
 
     for target_dataset in TARGET_DATASETS:
