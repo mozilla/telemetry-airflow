@@ -1110,7 +1110,7 @@ rsa==4.8
     # via
     #   -c ./constraints.txt
     #   google-auth
-ruff==0.0.252
+ruff==0.0.269
     # via -r requirements.in
 s3transfer==0.6.0
     # via
