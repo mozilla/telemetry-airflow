@@ -55,7 +55,7 @@ with DAG(
     schedule_interval="0 7 * * *",  # all bqetl jobs should have finished by 7am UTC
     doc_md=DOCS,
     tags=TAGS,
-    catchup=True,
+    catchup=False,
 ) as dag:
 
     for target_dataset in TARGET_DATASETS:

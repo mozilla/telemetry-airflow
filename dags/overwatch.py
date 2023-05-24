@@ -37,7 +37,7 @@ with DAG(
     schedule_interval="0 7 * * *",
     doc_md=__doc__,
     tags=tags,
-    catchup=True,
+    catchup=False,
 ) as dag:
     run_analysis = GKEPodOperator(
         task_id="run_analysis",
