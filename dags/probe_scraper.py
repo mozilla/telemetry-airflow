@@ -360,8 +360,6 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
-    delay_python_task >> lookml_generator_prod
-
     lookml_generator_staging = GKEPodOperator(
         owner="ascholtz@mozilla.com",
         email=["ascholtz@mozilla.com", "dataops+alerts@mozilla.com"],
@@ -389,7 +387,7 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
-    delay_python_task >> lookml_generator_staging
+    delay_python_task >> lookml_generator_staging >> lookml_generator_prod
 
     # This emits a POST request to a netlify webhook URL that triggers a new
     # build of the glean dictionary. We do this after the schema generator has
