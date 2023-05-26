@@ -165,7 +165,7 @@ DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": [DAG_OWNER],
     "depends_on_past": True,
-    "start_date": datetime(2021, 3, 1),
+    "start_date": datetime(2023, 5, 26),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 1,  # at this point we can probably be confident user intervention is required
@@ -183,7 +183,7 @@ for report_type, _config in REPORTS_CONFIG.items():
         doc_md=DOCS,
         schedule_interval="0 8 * * *",  # Fivetran seems to operate in PST timezone (UTC -8)
         tags=TAGS,
-        catchup=False,
+        catchup=True,
         max_active_runs=1,  # to make sure that we don't attempt to trigger multiple Fivetran when one already running.
     ) as dag:
         generate_report = PythonOperator(

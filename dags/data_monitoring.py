@@ -39,7 +39,7 @@ TARGET_DATASETS = (
 
 default_args = {
     "owner": "akommasani@mozilla.com",
-    "start_date": datetime(2023, 5, 24),
+    "start_date": datetime(2023, 5, 26),
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
