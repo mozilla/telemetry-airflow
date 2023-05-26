@@ -14,7 +14,7 @@ Runs a Docker image that collects data from Influx DB (Database for contile rela
 The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/influxdb-to-bigquery)
 
-For more information on 
+For more information on
 https://mozilla-hub.atlassian.net/browse/RS-683
 
 This DAG requires following variables to be defined in Airflow:
@@ -64,7 +64,7 @@ with DAG(
             "--influxdb_password={{ var.value.influxdb_password }}",
             '--influxdb_measurement="svcops"."autogen"."contile.tiles.adm.request" ',
             "--bq_project_id=moz-fx-data-shared-prod",
-            "--bq_dataset_id=analysis",
+            "--bq_dataset_id=telemetry_derived",
             "--bq_table_id=contile_tiles_adm_request",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
@@ -81,7 +81,7 @@ with DAG(
             "--influxdb_password={{ var.value.influxdb_password }}",
             '--influxdb_measurement="svcops"."autogen"."contile.tiles.adm.response.tiles_count" ',
             "--bq_project_id=moz-fx-data-shared-prod",
-            "--bq_dataset_id=analysis",
+            "--bq_dataset_id=telemetry_derived",
             "--bq_table_id=contile_tiles_adm_response_tiles_count",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
@@ -98,7 +98,7 @@ with DAG(
             "--influxdb_password={{ var.value.influxdb_password }}",
             '--influxdb_measurement="svcops"."autogen"."contile.filter.adm.empty_response" ',
             "--bq_project_id=moz-fx-data-shared-prod",
-            "--bq_dataset_id=analysis",
+            "--bq_dataset_id=telemetry_derived",
             "--bq_table_id=contile_filter_adm_empty_response",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
