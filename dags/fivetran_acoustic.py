@@ -2,20 +2,21 @@ from datetime import datetime, timedelta
 from typing import Any, Dict
 
 from airflow import DAG
+from airflow.hooks.base import BaseHook
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from airflow.hooks.base import BaseHook
 from fivetran_provider.operators.fivetran import FivetranOperator
 from fivetran_provider.sensors.fivetran import FivetranSensor
-from utils.callbacks import retry_tasks_callback
-from utils.tags import Tag
-from utils.acoustic.acoustic_client import AcousticClient
+
+from dags.utils.acoustic.acoustic_client import AcousticClient
+from dags.utils.callbacks import retry_tasks_callback
+from dags.utils.tags import Tag
 
 
-def _generate_acoustic_report(conn_id: str, report_type: str, config: Dict[Any, Any], *args, **kwargs):
-    """
-    A wrapper function for retrieving Acoustic connection details from Airflow instantiating AcousticClient and generating report.
-    """
+def _generate_acoustic_report(
+    conn_id: str, report_type: str, config: Dict[Any, Any], *args, **kwargs
+):
+    """Retrieve Acoustic connection details from Airflow, instantiate AcousticClient and generate report."""
 
     if config["request_params"]["date_start"] == config["request_params"]["date_end"]:
         err_msg = "It appears start and end date are exactly the same. This is undesired and will result in data being generated for 0 second time range."
@@ -31,7 +32,11 @@ def _generate_acoustic_report(conn_id: str, report_type: str, config: Dict[Any, 
     }
 
     acoustic_client = AcousticClient(**acoustic_connection)
-    acoustic_client.generate_report(request_template=config["request_template"], template_params=config["request_params"], report_type=report_type)
+    acoustic_client.generate_report(
+        request_template=config["request_template"],
+        template_params=config["request_params"],
+        report_type=report_type,
+    )
 
     return
 
@@ -120,8 +125,8 @@ REPORTS_CONFIG = {
             "date_end": EXEC_END,
         },
     },
-"contact_export": {
-    "request_template": """
+    "contact_export": {
+        "request_template": """
     <!-- https://developer.goacoustic.com/acoustic-campaign/reference/export-from-a-database -->
     <!-- date_format: 07/25/2011 12:12:11 (time is optional) -->
     <Envelope>
@@ -141,18 +146,18 @@ REPORTS_CONFIG = {
     </Body>
     </Envelope>
     """,
-    "request_params": {
-        "list_id": "{{ var.value.fivetran_acoustic_contact_export_list_id }}",  # list_name: "Main Contact Table revision 3"
-        "export_type": "ALL",
-        "export_format": "CSV",
-        "visibility": 1,  # 0 (Private) or 1 (Shared)
-        "date_start": EXEC_START,
-        "date_end": EXEC_END,
-        "columns": "\n".join([
-            f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS
-        ])
+        "request_params": {
+            "list_id": "{{ var.value.fivetran_acoustic_contact_export_list_id }}",  # list_name: "Main Contact Table revision 3"
+            "export_type": "ALL",
+            "export_format": "CSV",
+            "visibility": 1,  # 0 (Private) or 1 (Shared)
+            "date_start": EXEC_START,
+            "date_end": EXEC_END,
+            "columns": "\n".join(
+                [f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS]
+            ),
+        },
     },
-},
 }
 
 
@@ -160,7 +165,7 @@ DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": [DAG_OWNER],
     "depends_on_past": True,
-    "start_date": datetime(2021, 3, 1),
+    "start_date": datetime(2023, 5, 26),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 1,  # at this point we can probably be confident user intervention is required
@@ -170,7 +175,7 @@ DEFAULT_ARGS = {
 TAGS = [Tag.ImpactTier.tier_1]
 
 for report_type, _config in REPORTS_CONFIG.items():
-    dag_id = f'fivetran_acoustic_{report_type}'
+    dag_id = f"fivetran_acoustic_{report_type}"
 
     with DAG(
         dag_id=dag_id,
@@ -189,21 +194,21 @@ for report_type, _config in REPORTS_CONFIG.items():
         )
 
         sync_trigger = FivetranOperator(
-            task_id='trigger_fivetran_connector',
+            task_id="trigger_fivetran_connector",
             connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
         )
 
         sync_wait = FivetranSensor(
-            task_id='wait_for_fivetran_connector_completion',
+            task_id="wait_for_fivetran_connector_completion",
             connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
             poke_interval=30,
             xcom="{{ task_instance.xcom_pull('trigger_fivetran_connector') }}",
             on_retry_callback=retry_tasks_callback,
-            params={'retry_tasks': ['trigger_fivetran_connector']},
+            params={"retry_tasks": ["trigger_fivetran_connector"]},
         )
 
         load_completed = EmptyOperator(
-            task_id='fivetran_load_completed',
+            task_id="fivetran_load_completed",
         )
 
         generate_report >> sync_trigger >> sync_wait >> load_completed

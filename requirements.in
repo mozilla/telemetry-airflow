@@ -14,7 +14,7 @@ airflow-provider-fivetran==1.1.2
 pytest==6.2.5
 pytest-mock==3.10.0
 black==22.6.0
-ruff==0.0.252
+ruff==0.0.269
 
 # Misc
 mozlogging

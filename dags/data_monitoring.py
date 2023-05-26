@@ -1,9 +1,9 @@
 from datetime import datetime
 
 from airflow import DAG
-from utils.tags import Tag
-
 from operators.gcp_container_operator import GKEPodOperator
+
+from dags.utils.tags import Tag
 
 DOCS = """\
 This DAG is related to data monitoring project it is still under development.
@@ -39,7 +39,7 @@ TARGET_DATASETS = (
 
 default_args = {
     "owner": "akommasani@mozilla.com",
-    "start_date": datetime(2022, 11, 1),
+    "start_date": datetime(2023, 5, 26),
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
@@ -75,10 +75,9 @@ with DAG(
                 f"--table={table}",
                 "--date={{ macros.ds_add(ds, -1) }}",
             ],
-            env_vars=dict(
-                SLACK_BOT_TOKEN="{{ var.value.dim_slack_secret_token }}"),
-            gcp_conn_id='google_cloud_airflow_gke',
-            project_id='moz-fx-data-airflow-gke-prod',
-            cluster_name='workloads-prod-v1',
-            location='us-west1',
+            env_vars={"SLACK_BOT_TOKEN": "{{ var.value.dim_slack_secret_token }}"},
+            gcp_conn_id="google_cloud_airflow_gke",
+            project_id="moz-fx-data-airflow-gke-prod",
+            cluster_name="workloads-prod-v1",
+            location="us-west1",
         )

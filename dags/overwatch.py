@@ -1,6 +1,7 @@
 """
-Overwatch
-Runs daily at 0700 UTC
+Overwatch.
+
+Runs daily at 0700 UTC.
 
 Source code is [overwatch-mvp repository](https://github.com/mozilla/overwatch-mvp/).
 
@@ -14,7 +15,6 @@ from datetime import datetime
 from airflow import DAG
 from operators.gcp_container_operator import GKEPodOperator
 
-
 default_args = {
     "owner": "gleonard@mozilla.com",
     "email": [
@@ -27,7 +27,10 @@ default_args = {
     "retries": 0,
 }
 
-tags = ["repo/telemetry-airflow", "impact/tier_3", ]
+tags = [
+    "repo/telemetry-airflow",
+    "impact/tier_3",
+]
 image = "gcr.io/moz-fx-data-airflow-prod-88e0/overwatch:{{ var.value.overwatch_image_version }}"
 
 
@@ -37,7 +40,7 @@ with DAG(
     schedule_interval="0 7 * * *",
     doc_md=__doc__,
     tags=tags,
-    catchup=True,
+    catchup=False,
 ) as dag:
     run_analysis = GKEPodOperator(
         task_id="run_analysis",
