@@ -14,7 +14,7 @@ Runs a Docker image that collects data from Influx DB (Database for contile rela
 The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/influxdb-to-bigquery)
 
-For more information on 
+For more information on
 https://mozilla-hub.atlassian.net/browse/RS-683
 
 This DAG requires following variables to be defined in Airflow:
