@@ -1,6 +1,7 @@
 """
-This is a processing job on top of BHR pings, migrated from Databricks and now running
-as a scheduled Dataproc task.
+A processing job on top of BHR pings.
+
+Migrated from Databricks and now running as a scheduled Dataproc task.
 
 BHR is related to the Background Hang Monitor in desktop Firefox.
 See [bug 1675103](https://bugzilla.mozilla.org/show_bug.cgi?id=1675103)
@@ -12,12 +13,11 @@ is maintained in the mozetl repository.
 import datetime
 
 from airflow import DAG
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.operators.subdag import SubDagOperator
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
-
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
+from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 default_args = {
