@@ -201,7 +201,7 @@ clients_histogram_aggregates = SubDagOperator(
         default_args,
         dag.schedule_interval,
         dataset_id,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     ),
     task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
     dag=dag,
@@ -226,7 +226,7 @@ glam_user_counts = bigquery_etl_query(
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 )
 
 glam_sample_counts = bigquery_etl_query(
@@ -238,7 +238,7 @@ glam_sample_counts = bigquery_etl_query(
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
     dag=dag,
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 )
 client_scalar_probe_counts = gke_command(
     task_id="client_scalar_probe_counts",
@@ -256,7 +256,7 @@ client_scalar_probe_counts = gke_command(
         "--dataset",
         dataset_id,
     ],
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     dag=dag,
 )
 
@@ -270,7 +270,7 @@ clients_histogram_bucket_counts = SubDagOperator(
         ("submission_date:DATE:{{ds}}",),
         10,
         None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-bigquery-etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     ),
     task_id="clients_histogram_bucket_counts",
     dag=dag,
