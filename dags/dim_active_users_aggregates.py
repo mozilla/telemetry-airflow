@@ -40,7 +40,16 @@ IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 Config = namedtuple("Config", "exec_date apps")
 CONFIGS = {
     "desktop": Config("{{ ds }}", ("firefox_desktop",)),
-    # "mobile": Config("{{ macros.ds_add(ds, -1) }}", ("firefox_ios", "fenix",)),
+    "mobile": Config(
+        "{{ macros.ds_add(ds, -1) }}",
+        (
+            "fenix",
+            "focus_android",
+            "firefox_ios",
+            "focus_ios",
+            "klar_ios",
+        ),
+    ),
 }
 
 PROJECT_ID = "mozdata"
