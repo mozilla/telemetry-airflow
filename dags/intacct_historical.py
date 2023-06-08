@@ -33,7 +33,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_1, "repo/telemetry-airflow", "decommissioned"]
+tags = [Tag.ImpactTier.tier_1, "repo/telemetry-airflow"]
 
 list_of_connectors = {
     "moz": "decently_wouldst",
