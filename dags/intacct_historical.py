@@ -12,7 +12,7 @@ docs = """
 
 #### Description
 
-This DAG is decommissioned. 
+This DAG is decommissioned.
 Sage Intacct is no longer used by FP&A since January 2023. (see DENG-1003)
 
 This DAG triggers Fivetran to import data from Sage Intacct connector.
