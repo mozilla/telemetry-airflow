@@ -68,6 +68,7 @@ with DAG(
             name=task_name,
             image=IMAGE,
             arguments=[
+                "dim",
                 "run",
                 "--fail_process_on_failure",
                 f"--project_id={project_id}",
