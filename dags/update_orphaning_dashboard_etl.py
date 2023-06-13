@@ -114,7 +114,7 @@ gcs_sync = GKEPodOperator(
         "-d",
         "-r",
         "s3://telemetry-public-analysis-2/app-update/",
-        "gs://moz-fx-data-static-websit-f7e0-analysis-output/app-update/",
+        "gs://moz-fx-data-static-websit-8565-analysis-output/app-update/",
     ],
     env_vars={
         "AWS_ACCESS_KEY_ID": aws_access_key,
