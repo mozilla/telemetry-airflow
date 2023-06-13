@@ -202,6 +202,28 @@ ensemble_transposer = GKEPodOperator(
     dag=dag,
 )
 
-wait_for_main_ping >> hardware_report >> ensemble_transposer
+# TODO remove this when the job writes to GCS directly
+gcs_sync = GKEPodOperator(
+    task_id="aws_s3_sync",
+    name="aws-s3-sync",
+    image="google/cloud-sdk:slim",
+    arguments=[
+        "/usr/bin/gsutil",
+        "-m",
+        "rsync",
+        "-d",
+        "-r",
+        "s3://telemetry-public-analysis-2/public-data-report/",
+        "gs://moz-fx-data-static-websit-f7e0-analysis-output/public-data-report/",
+    ],
+    env_vars={
+        "AWS_ACCESS_KEY_ID": aws_access_key,
+        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+    },
+    dag=dag,
+)
+
+wait_for_main_ping >> hardware_report >> gcs_sync
 wait_for_clients_last_seen >> user_activity >> user_activity_usage_behavior_export
+user_activity_usage_behavior_export >> gcs_sync
 annotations_export >> ensemble_transposer
