@@ -404,4 +404,4 @@ with DAG(
         dag=dag,
     )
 
-    probe_scraper >> glean_dictionary_netlify_build
+    lookml_generator_prod >> glean_dictionary_netlify_build
