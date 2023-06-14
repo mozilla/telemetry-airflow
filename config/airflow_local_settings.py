@@ -1,7 +1,3 @@
-from gevent import monkey
-
-monkey.patch_all()
-
 STATE_COLORS = {
     "queued": 'gray',
     "running": 'lime',

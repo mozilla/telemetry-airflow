@@ -19,6 +19,25 @@ Some links relevant to users and developers of WTMO:
   [WTMO Developer Guide](https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide)
   (behind SSO)
 
+## Writing DAGs
+See the Airflow's [Best Practices guide](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#best-practices) to help you write DAGs.
+
+**⚠ Note: How to import DAGs and modules ⚠** 
+
+**Modules should be imported from the project directory, such as `from dags.my_dag import load_data` 
+rather than `from my_dag import load_data`.**
+
+In Airflow, the `dags`, `config`, and `plugins` folders are [automatically added](https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/modules_management.html#built-in-pythonpath-entries-in-airflow) to the 
+`PYTHONPATH` to ensure they can be imported and accessed by Airflow's execution environment. 
+
+However, this default configuration can cause problems when running unit tests located 
+in the `tests` directory. Since the `PYTHONPATH` includes the `dags` directory, 
+but not the project directory itself, the unit tests will not be able to import code from 
+the `dags` directory. This limitation restricts the ability to test the DAGs effectively 
+within the project structure. It is also generally expected that imports should work from the 
+project directory rather than from any of its subdirectories. For this reason, `telemetry-airflow`'s 
+Dockerfile adds the project directory to `PYTHONPATH`.
+
 ## Prerequisites
 
 This app is built and deployed with
@@ -27,7 +46,7 @@ This app is built and deployed with
 Dependencies are managed with
 [pip-tools](https://pypi.org/project/pip-tools/) `pip-compile`.
 
-You'll also need to install MySQL to build the database container.
+You'll also need to install PostgreSQL to build the database container.
 
 ### Installing dependencies locally
 **_⚠ Make sure you use the right Python version. Refer to Dockerfile for current supported Python Version ⚠_**
@@ -124,80 +143,20 @@ make build && make up
 You can then connect to Airflow [locally](localhost:8080). Enable your DAG and see that it runs correctly.
 
 ### Production Setup
-When deploying to production make sure to set up the following environment
-variables:
-
-- `AWS_ACCESS_KEY_ID` -- The AWS access key ID to spin up the Spark clusters
-- `AWS_SECRET_ACCESS_KEY` -- The AWS secret access key
-- `AIRFLOW_DATABASE_URL` -- The connection URI for the Airflow database, e.g.
-  `mysql://username:password@hostname:port/database`
-- `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow worker queue, e.g.
-  `redis://hostname:6379/0`
-- `AIRFLOW_BROKER_URL` -- The connection URI for the Airflow result backend, e.g.
-  `redis://hostname:6379/1`
-- `AIRFLOW_GOOGLE_CLIENT_ID` -- The Google Auth client id used for
-  authentication.
-- `AIRFLOW_GOOGLE_CLIENT_SECRET` -- The Google Auth client secret used for
-  authentication.
-- `AIRFLOW_GOOGLE_APPS_DOMAIN` -- The domain(s) to restrict Google Auth login
-  to e.g. `mozilla.com`
-- `AIRFLOW_SMTP_HOST` -- The SMTP server to use to send emails e.g.
-  `email-smtp.us-west-2.amazonaws.com`
-- `AIRFLOW_SMTP_USER` -- The SMTP user name
-- `AIRFLOW_SMTP_PASSWORD` -- The SMTP password
-- `AIRFLOW_SMTP_FROM` -- The email address to send emails from e.g.
-  `telemetry-alerts@workflow.telemetry.mozilla.org`
-- `URL` -- The base URL of the website e.g.
-  `https://workflow.telemetry.mozilla.org`
-- `DEPLOY_ENVIRONMENT` -- The environment currently running, e.g.
-  `stage` or `prod`
-
-
-Also, please set
-
-- `AIRFLOW_SECRET_KEY` -- A secret key for Airflow's Flask based webserver
-- `AIRFLOW__CORE__FERNET_KEY` -- A secret key to saving connection passwords in the DB
+This repository was structured to be deployed using the [offical Airflow Helm Chart.](https://airflow.apache.org/docs/helm-chart/stable/index.html).
+See the [Production Guide](https://airflow.apache.org/docs/helm-chart/stable/production-guide.html) for best practices.
 
 ### Debugging
 
 Some useful docker tricks for development and debugging:
 
 ```bash
-# Stop all docker containers:
-docker stop $(docker ps -aq)
+make clean
 
 # Remove any leftover docker volumes:
 docker volume rm $(docker volume ls -qf dangling=true)
 
-# Purge docker volumes (helps with mysql container failing to start)
+# Purge docker volumes (helps with postgres container failing to start)
 # Careful as this will purge all local volumes not used by at least one container.
 docker volume prune
 ```
-
-### Triggering a task to re-run within the Airflow UI
-
-- Check if the task / run you want to re-run is visible in the DAG's Tree View UI
-  - For example, [the `main_summary` DAG tree view](http://workflow.telemetry.mozilla.org/admin/airflow/tree?num_runs=25&root=&dag_id=main_summary).
-  - Hover over the little squares to find the scheduled dag run you're looking for.
-- If the dag run is not showing in the Dag Tree View UI (maybe deleted)
-  - Browse -> Dag Runs
-  - Create (you can look at another dag run of the same dag for example values too)
-    - Dag Id: the name of the dag, for example, `main_summary`
-    - Execution Date: The date the dag should have run, for example, `2018-05-14 00:00:00`
-    - Start Date: Some date between the execution date and "now", for example, `2018-05-20 00:00:05`
-    - End Date: Leave it blank
-    - State: success
-    - Run Id: `scheduled__2018-05-14T00:00:00`
-    - External Trigger: unchecked
-  - Click Save
-  - Click on the Graph view for the dag in question. From the main DAGs view, click the name of the DAG
-  - Select the "Run Id" you just entered from the drop-down list
-  - Click "Go"
-  - Click each element of the DAG and "Mark Success"
-  - The tasks should now show in the Tree View UI
-- If the dag run is showing in the DAG's Tree View UI
-  - Click on the small square for the task you want to re-run
-  - **Uncheck** the "Downstream" toggle
-  - Click the "Clear" button
-  - Confirm that you want to clear it
-  - The task should be scheduled to run again straight away.
