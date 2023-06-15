@@ -104,8 +104,8 @@ with DAG(
 
     # TODO remove this when the job writes to GCS directly
     gcs_sync = GKEPodOperator(
-        task_id="aws_s3_sync",
-        name="aws-s3-sync",
+        task_id="s3_gcs_sync",
+        name="s3-gcs-sync",
         image="google/cloud-sdk:slim",
         arguments=[
             "/usr/bin/gsutil",
@@ -114,7 +114,7 @@ with DAG(
             "-d",
             "-r",
             "s3://telemetry-public-analysis-2/bhr/",
-            "gs://moz-fx-data-static-websit-f7e0-analysis-output/bhr/",
+            "gs://moz-fx-data-static-websit-8565-analysis-output/bhr/",
         ],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
