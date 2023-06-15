@@ -159,7 +159,7 @@ with DAG(
     gcs_sync = GKEPodOperator(
         task_id="s3_gcs_sync",
         name="s3-gcs-sync",
-        image="google/cloud-sdk:slim",
+        image="google/cloud-sdk:435.0.1-alpine",
         arguments=[
             "/usr/bin/gsutil",
             "-m",
