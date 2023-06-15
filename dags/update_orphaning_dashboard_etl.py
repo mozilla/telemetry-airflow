@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -100,3 +101,26 @@ crash_report_parquet = SubDagOperator(
         gcp_conn_id=gcp_conn_id,
     ),
 )
+
+# TODO remove this when the job writes to GCS directly
+gcs_sync = GKEPodOperator(
+    task_id="s3_gcs_sync",
+    name="s3-gcs-sync",
+    image="google/cloud-sdk:slim",
+    arguments=[
+        "/usr/bin/gsutil",
+        "-m",
+        "rsync",
+        "-d",
+        "-r",
+        "s3://telemetry-public-analysis-2/app-update/",
+        "gs://moz-fx-data-static-websit-8565-analysis-output/app-update/",
+    ],
+    env_vars={
+        "AWS_ACCESS_KEY_ID": aws_access_key,
+        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+    },
+    dag=dag,
+)
+
+crash_report_parquet >> gcs_sync
