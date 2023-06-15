@@ -226,4 +226,5 @@ gcs_sync = GKEPodOperator(
 wait_for_main_ping >> hardware_report >> gcs_sync
 wait_for_clients_last_seen >> user_activity >> user_activity_usage_behavior_export
 user_activity_usage_behavior_export >> gcs_sync
-annotations_export >> ensemble_transposer
+annotations_export >> gcs_sync
+gcs_sync >> ensemble_transposer
