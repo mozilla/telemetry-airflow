@@ -17,6 +17,7 @@ from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -154,5 +155,26 @@ with DAG(
         ),
     )
 
+    # TODO remove this when the job writes to GCS directly
+    gcs_sync = GKEPodOperator(
+        task_id="s3_gcs_sync",
+        name="s3-gcs-sync",
+        image="google/cloud-sdk:435.0.1-alpine",
+        arguments=[
+            "/usr/bin/gsutil",
+            "-m",
+            "rsync",
+            "-d",
+            "-r",
+            "s3://telemetry-public-analysis-2/gfx/",
+            "gs://moz-fx-data-static-websit-8565-analysis-output/gfx/",
+        ],
+        env_vars={
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+        },
+        dag=dag,
+    )
+
     wait_for_main_ping >> graphics_trends
-    wait_for_main_ping >> graphics_dashboard
+    wait_for_main_ping >> graphics_dashboard >> gcs_sync
