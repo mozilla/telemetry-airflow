@@ -215,10 +215,7 @@ with DAG(
             job_name="Train_the_Collaborative_Addon_Recommender",
             main_class="com.mozilla.telemetry.ml.AddonRecommender",
             jar_urls=[
-                # GCS bucket for testing is located in `cfr-personalization-experiment` project
-                # 'gs://taar_models/tmp/telemetry-batch-view-1.2.jar'
-                # we should move artifacts to GCS eventually
-                "https://s3-us-west-2.amazonaws.com/net-mozaws-data-us-west-2-ops-ci-artifacts"
+                "https://storage.googleapis.com/moz-fx-data-taar-pr-prod-e0f7-prod-artifacts"
                 "/mozilla/telemetry-batch-view/main/telemetry-batch-view.jar",
             ],
             jar_args=[
