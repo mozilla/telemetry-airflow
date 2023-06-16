@@ -333,6 +333,72 @@ def bigquery_etl_copy_deduplicate(
         **kwargs,
     )
 
+def bigquery_dq_check(destination_table,
+    dataset_id,
+    task_id,
+    sql_file_path=None,
+    parameters=(),
+    project_id=None,
+    gcp_conn_id="google_cloud_airflow_gke",
+    gke_project_id=GCP_PROJECT_ID,
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
+    gke_namespace="default",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    date_partition_parameter="submission_date",
+    **kwargs,
+):
+    """
+    Run `bqetl check run` to run data quality checks against BigQuery table
+
+    :param str destination_table:                  [Required] BigQuery destination table the DQ checks are run on
+    :param str dataset_id:                         [Required] BigQuery default dataset id
+
+    :param str task_id:              [             [Required] ID for the task
+    :param Optional[str] sql_file_path:            Optional override for path to the
+                                                   SQL query file to run
+    :param Tuple[str] parameters:                  Parameters passed to bq query
+    :param Optional[str] project_id:               BigQuery default project id
+    :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_project_id:                     GKE cluster project id
+    :param str gke_location:                       GKE cluster location
+    :param str gke_cluster_name:                   GKE cluster name
+    :param str gke_namespace:                      GKE cluster namespace
+    :param str docker_image:                       docker image to use
+    :param Optional[str] date_partition_parameter: Parameter for indicating destination
+                                                   partition to generate, if None
+                                                   destination should be whole table
+                                                   rather than partition
+    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
+                                                   GKEPodOperator
+    :return: GKEPodOperator
+    """
+    kwargs["task_id"] = kwargs.get("task_id", task_id)
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    if not project_id:
+        project_id = "moz-fx-data-shared-prod"
+    destination_table_no_partition = (
+        destination_table.split("$")[0] if destination_table is not None else None
+    )
+    parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    sql_file_path = (
+        sql_file_path
+        or f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}/query.sql"
+    )
+    args = ["script/bqetl", "check", "run", sql_file_path]
+    return GKEPodOperator(
+        gcp_conn_id=gcp_conn_id,
+        project_id=gke_project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=args
+        + ["--parameter=" + parameter for parameter in parameters],
+        **kwargs,
+    )
+    
+
 
 def bigquery_xcom_query(
     destination_table,
