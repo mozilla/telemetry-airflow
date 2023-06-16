@@ -17,16 +17,14 @@ any actions for the past failed DAG runs.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag import SubDagOperator
 from airflow.models import Variable
-
-from operators.gcp_container_operator import GKEPodOperator  # noqa
+from airflow.operators.subdag import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskSensor
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import (
-    moz_dataproc_pyspark_runner,
     moz_dataproc_jar_runner,
+    moz_dataproc_pyspark_runner,
 )
 from utils.tags import Tag
 
@@ -51,8 +49,11 @@ default_args = {
     "owner": "epavlov@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 7),
-    "email": ["telemetry-alerts@mozilla.com", "hwoo@mozilla.com",
-              "epavlov@mozilla.com"],
+    "email": [
+        "telemetry-alerts@mozilla.com",
+        "hwoo@mozilla.com",
+        "epavlov@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 0,
@@ -61,14 +62,26 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
-with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__, tags=tags,) as dag:
+with DAG(
+    "taar_daily",
+    default_args=default_args,
+    schedule_interval="0 4 * * *",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     amodump = GKEPodOperator(
         task_id="taar_amodump",
         name="taar-amodump",
         # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
         image=TAAR_ETL_CONTAINER_IMAGE,
-        arguments=["-m", "taar_etl.taar_amodump", "--date", "{{ ds_nodash }}",
-                "--gcs-bucket", TAAR_ETL_MODEL_STORAGE_BUCKET],
+        arguments=[
+            "-m",
+            "taar_etl.taar_amodump",
+            "--date",
+            "{{ ds_nodash }}",
+            "--gcs-bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+        ],
     )
 
     amowhitelist = GKEPodOperator(
@@ -79,8 +92,12 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
         # We are extracting addons from the AMO server's APIs which don't
         # support date based queries, so no date parameter is required
         # here.
-        arguments=["-m", "taar_etl.taar_amowhitelist",
-                "--gcs-bucket", TAAR_ETL_MODEL_STORAGE_BUCKET],
+        arguments=[
+            "-m",
+            "taar_etl.taar_amowhitelist",
+            "--gcs-bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+        ],
     )
 
     editorial_whitelist = GKEPodOperator(
@@ -88,8 +105,14 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
         name="taar-update-whitelist",
         # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
         image=TAAR_ETL_CONTAINER_IMAGE,
-        arguments=["-m", "taar_etl.taar_update_whitelist", "--date", "{{ ds_nodash }}",
-                "--bucket", TAAR_ETL_MODEL_STORAGE_BUCKET],
+        arguments=[
+            "-m",
+            "taar_etl.taar_update_whitelist",
+            "--date",
+            "{{ ds_nodash }}",
+            "--bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+        ],
     )
 
     wait_for_clients_daily_export = ExternalTaskSensor(
@@ -101,7 +124,8 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
         allowed_states=ALLOWED_STATES,
         failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
-        email_on_retry=False,)
+        email_on_retry=False,
+    )
 
     wait_for_clients_last_seen = ExternalTaskSensor(
         task_id="wait_for_clients_last_seen",
@@ -136,7 +160,7 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
                 "taar/locale",
             ],
             gcp_conn_id=taar_gcpdataproc_conn_id,
-            project_id=taar_gcpdataproc_project_id
+            project_id=taar_gcpdataproc_project_id,
         ),
     )
 
@@ -151,17 +175,26 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
             python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
             # GCS bucket for testing is located in `cfr-personalization-experiment` project
             # python_driver_code="gs://taar_models/tmp/jobs/taar_similarity.py",
-            init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
-            additional_metadata={'PIP_PACKAGES': "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"},
-            additional_properties={"spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
-                                "spark:spark.jars":"gs://spark-lib/bigquery/spark-bigquery-latest.jar"},
+            init_actions_uris=[
+                "gs://dataproc-initialization-actions/python/pip-install.sh"
+            ],
+            additional_metadata={
+                "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"
+            },
+            additional_properties={
+                "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
+                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+            },
             num_workers=8,
-            master_machine_type='n1-standard-8',
+            master_machine_type="n1-standard-8",
             worker_machine_type="n1-highmem-32",
             py_args=[
-                "--date", "{{ ds }}",
-                "--bucket", TAAR_ETL_MODEL_STORAGE_BUCKET,
-                "--prefix", "taar/similarity"
+                "--date",
+                "{{ ds }}",
+                "--bucket",
+                TAAR_ETL_MODEL_STORAGE_BUCKET,
+                "--prefix",
+                "taar/similarity",
             ],
             gcp_conn_id=taar_gcpdataproc_conn_id,
             project_id=taar_gcpdataproc_project_id,
@@ -189,11 +222,11 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
                 "/mozilla/telemetry-batch-view/main/telemetry-batch-view.jar",
             ],
             jar_args=[
-            "train",
-            "--runDate={{ds_nodash}}",
-            "--inputTable=gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6",
-            f"--privateBucket=gs://{TAAR_ETL_MODEL_STORAGE_BUCKET}",
-            f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints"
+                "train",
+                "--runDate={{ds_nodash}}",
+                "--inputTable=gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6",
+                f"--privateBucket=gs://{TAAR_ETL_MODEL_STORAGE_BUCKET}",
+                f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints",
             ],
             cluster_name="addon-recommender-{{ds_nodash}}",
             image_version="1.3",
@@ -205,7 +238,7 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
             aws_conn_id=taar_aws_conn_id,
             gcp_conn_id=taar_gcpdataproc_conn_id,
             project_id=taar_gcpdataproc_project_id,
-            default_args=default_args
+            default_args=default_args,
         ),
     )
 
@@ -217,38 +250,49 @@ with DAG("taar_daily", default_args=default_args, schedule_interval="0 4 * * *",
             default_args=default_args,
             cluster_name=taarlite_cluster_name,
             job_name="TAAR_Lite_GUID_GUID",
-            init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
+            init_actions_uris=[
+                "gs://dataproc-initialization-actions/python/pip-install.sh"
+            ],
             additional_metadata={
-                'PIP_PACKAGES': "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"},
-            additional_properties={"spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
-                                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"},
+                "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"
+            },
+            additional_properties={
+                "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
+                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+            },
             python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
             # GCS bucket for testing is located in `cfr-personalization-experiment` project
             # python_driver_code="gs://taar_models/tmp/jobs/taar_lite_guidguid.py",
             num_workers=8,
             py_args=[
-                "--date", "{{ ds }}",
-                "--bucket", TAAR_ETL_MODEL_STORAGE_BUCKET,
-                "--prefix", "taar/lite"
+                "--date",
+                "{{ ds }}",
+                "--bucket",
+                TAAR_ETL_MODEL_STORAGE_BUCKET,
+                "--prefix",
+                "taar/lite",
             ],
             gcp_conn_id=taar_gcpdataproc_conn_id,
             project_id=taar_gcpdataproc_project_id,
         ),
     )
 
-
-
     taar_lite_guidranking = GKEPodOperator(
         task_id="taar_lite_guidranking",
         name="taar_lite_guidranking",
         # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
         image=TAAR_ETL_CONTAINER_IMAGE,
-        arguments=["-m", "taar_etl.taar_lite_guid_ranking",
-                "--date", "{{ macros.ds_add(ds, -1) }}",
-                "--prefix", "taar/lite",
-                "--bucket", TAAR_ETL_MODEL_STORAGE_BUCKET],
+        arguments=[
+            "-m",
+            "taar_etl.taar_lite_guid_ranking",
+            "--date",
+            "{{ macros.ds_add(ds, -1) }}",
+            "--prefix",
+            "taar/lite",
+            "--bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+        ],
     )
-
 
     amodump >> amowhitelist
     amodump >> editorial_whitelist
