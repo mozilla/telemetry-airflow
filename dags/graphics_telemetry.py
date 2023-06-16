@@ -161,7 +161,7 @@ with DAG(
         name="s3-gcs-sync",
         image="google/cloud-sdk:435.0.1-alpine",
         arguments=[
-            "/usr/bin/gsutil",
+            "/google-cloud-sdk/bin/gsutil",
             "-m",
             "rsync",
             "-d",
