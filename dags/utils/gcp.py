@@ -334,7 +334,7 @@ def bigquery_etl_copy_deduplicate(
 
 
 def bigquery_dq_check(
-    destination_table,
+    source_table,
     dataset_id,
     task_id,
     sql_file_path=None,
@@ -379,7 +379,7 @@ def bigquery_dq_check(
     if not project_id:
         project_id = "moz-fx-data-shared-prod"
     destination_table_no_partition = (
-        destination_table.split("$")[0] if destination_table is not None else None
+        source_table.split("$")[0] if source_table is not None else None
     )
     parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     sql_file_path = (
