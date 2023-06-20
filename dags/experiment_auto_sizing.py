@@ -46,7 +46,7 @@ with DAG(
         arguments=[
             "--log-to-bigquery",
             "run-argo",
-            "--bucket=auto_sizing",
+            "--bucket=mozanalysis",
             "--dataset-id=auto_sizing",
             # the Airflow cluster doesn't have Compute Engine API access so pass in IP
             # and certificate in order for the pod to connect to the Kubernetes cluster

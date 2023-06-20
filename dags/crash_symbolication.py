@@ -1,6 +1,5 @@
 """
-Generates "Weekly report of modules with missing symbols in crash reports"
-and sends it to the Stability list.
+Generates "Weekly report of modules with missing symbols in crash reports" and sends it to the Stability list.
 
 Generates correlations data for top crashers.
 
@@ -12,9 +11,9 @@ from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
-
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.dataproc import moz_dataproc_pyspark_runner, get_dataproc_parameters
+from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 default_args = {
@@ -51,14 +50,14 @@ with DAG(
     # top_signatures_correlations uploads results to public analysis bucket
     write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
     analysis_access_key, analysis_secret_key, _ = AwsBaseHook(
-        aws_conn_id=write_aws_conn_id,
-        client_type='s3'
+        aws_conn_id=write_aws_conn_id, client_type="s3"
     ).get_credentials()
 
     # modules_with_missing_symbols sends results as email
     ses_aws_conn_id = "aws_data_iam_ses"
     ses_access_key, ses_secret_key, _ = AwsBaseHook(
-        aws_conn_id=ses_aws_conn_id, client_type='s3').get_credentials()
+        aws_conn_id=ses_aws_conn_id, client_type="s3"
+    ).get_credentials()
 
     wait_for_socorro_import = ExternalTaskSensor(
         task_id="wait_for_socorro_import",
@@ -94,10 +93,7 @@ with DAG(
                 "spark-env:AWS_ACCESS_KEY_ID": ses_access_key,
                 "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
             },
-            py_args=[
-                "--run-on-days", "0",  # run monday
-                "--date", "{{ ds }}"
-            ],
+            py_args=["--run-on-days", "0", "--date", "{{ ds }}"],  # run monday
             idle_delete_ttl=14400,
             num_workers=2,
             worker_machine_type="n1-standard-4",
@@ -128,8 +124,12 @@ with DAG(
             },
             py_args=[
                 # run monday, wednesday, and friday
-                "--run-on-days", "0", "2", "4",
-                "--date", "{{ ds }}",
+                "--run-on-days",
+                "0",
+                "2",
+                "4",
+                "--date",
+                "{{ ds }}",
             ],
             idle_delete_ttl=14400,
             num_workers=2,
@@ -140,5 +140,26 @@ with DAG(
         ),
     )
 
+    # TODO remove this when the job writes to GCS directly
+    gcs_sync = GKEPodOperator(
+        task_id="s3_gcs_sync",
+        name="s3-gcs-sync",
+        image="google/cloud-sdk:435.0.1-alpine",
+        arguments=[
+            "/google-cloud-sdk/bin/gsutil",
+            "-m",
+            "rsync",
+            "-d",
+            "-r",
+            "s3://telemetry-public-analysis-2/top-signatures-correlations/",
+            "gs://moz-fx-data-static-websit-8565-analysis-output/top-signatures-correlations/",
+        ],
+        env_vars={
+            "AWS_ACCESS_KEY_ID": analysis_access_key,
+            "AWS_SECRET_ACCESS_KEY": analysis_secret_key,
+        },
+        dag=dag,
+    )
+
     wait_for_socorro_import >> modules_with_missing_symbols
-    wait_for_socorro_import >> top_signatures_correlations
+    wait_for_socorro_import >> top_signatures_correlations >> gcs_sync
