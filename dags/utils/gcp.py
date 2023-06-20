@@ -93,7 +93,6 @@ def export_to_parquet(
         arguments = []
 
     with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
-
         create_dataproc_cluster = DataprocCreateClusterOperator(
             task_id="create_dataproc_cluster",
             cluster_name=cluster_name,
@@ -333,7 +332,9 @@ def bigquery_etl_copy_deduplicate(
         **kwargs,
     )
 
-def bigquery_dq_check(destination_table,
+
+def bigquery_dq_check(
+    destination_table,
     dataset_id,
     task_id,
     sql_file_path=None,
@@ -349,7 +350,7 @@ def bigquery_dq_check(destination_table,
     **kwargs,
 ):
     """
-    Run `bqetl check run` to run data quality checks against BigQuery table
+    Run `bqetl check run` to run data quality checks against BigQuery table.
 
     :param str destination_table:                  [Required] BigQuery destination table the DQ checks are run on
     :param str dataset_id:                         [Required] BigQuery default dataset id
@@ -393,11 +394,9 @@ def bigquery_dq_check(destination_table,
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=args
-        + ["--parameter=" + parameter for parameter in parameters],
+        arguments=args + ["--parameter=" + parameter for parameter in parameters],
         **kwargs,
     )
-    
 
 
 def bigquery_xcom_query(
