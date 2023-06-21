@@ -33,7 +33,7 @@ jobs:
   test-local-environment:
     executor:
       name: docker/machine
-      image: cimg/base:current-22.04
+      image: ubuntu-2204:2023.04.2
     resource_class: large
     steps:
       - checkout
