@@ -102,7 +102,8 @@ jobs:
             git diff --exit-code requirements.txt
 
   docker-build-artifact:
-    executor: docker/machine
+    docker:
+      - image: cimg/base:2023.06
     steps:
       - checkout
       - run:
@@ -193,8 +194,6 @@ workflows:
       - docker-build-artifact:
           name: 🛠️ Docker build test
           filters: *ci-filter
-          requires:
-            - 🧪 Validate requirements
 
       - test-local-environment:
           name: 🧪 Validate local environment
