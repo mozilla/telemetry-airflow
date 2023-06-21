@@ -31,7 +31,9 @@ jobs:
           path: test-results
 
   test-local-environment:
-    executor: docker/machine
+    executor:
+      name: docker/machine
+      image: cimg/base:current-22.04
     resource_class: large
     steps:
       - checkout
@@ -102,8 +104,7 @@ jobs:
             git diff --exit-code requirements.txt
 
   docker-build-artifact:
-    docker:
-      - image: cimg/base:2023.06
+    executor: docker/machine
     steps:
       - checkout
       - run:
