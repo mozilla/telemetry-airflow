@@ -1,13 +1,12 @@
 """
 See [kpi-forecasting in the docker-etl repository](https://github.com/mozilla/docker-etl/blob/main/jobs/kpi-forecasting).
 
-This DAG runs the forecast for year-end KPI values for Desktop DAU and Mobile DAU.
-The forecast is only updated once per week since values aren't expected to change significantly day-to-day. 
-The output powers KPI dashboards and monthly revenue forecasts.
+This DAG runs the forecast Desktop DAU and Mobile DAU. The output powers KPI dashboards and monthly revenue forecasts.
 
-This DAG is high priority for week 1 of the month. This DAG is low priority for weeks 2-4 of each month. 
+This DAG is high priority for week 1 of the month and low priority otherwise.
 """
-
+import os
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -27,52 +26,63 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_1]
+TAGS = [Tag.ImpactTier.tier_1]
+IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest"
+
+Config = namedtuple("Config", ["filename", "wait_dag", "wait_tasks"])
+CONFIGS = {
+    "dau_desktop": Config(
+        "dau_desktop.yaml",
+        "dim_active_users_aggregates_desktop",
+        [
+            "firefox_desktop_active_users_aggregates_dim_check",
+        ],
+    ),
+    "dau_mobile": Config(
+        "dau_mobile.yaml",
+        "dim_active_users_aggregates_mobile",
+        [
+            "fenix_active_users_aggregates_dim_check",
+            "firefox_ios_active_users_aggregates_dim_check",
+            "focus_android_active_users_aggregates_dim_check",
+            "focus_ios_active_users_aggregates_dim_check",
+        ],
+    ),
+}
 
 with DAG(
     "kpi_forecasting",
     default_args=default_args,
-    schedule_interval="0 4 * * SAT",
+    schedule_interval="0 4 * * *",
     doc_md=__doc__,
-    tags=tags,
+    tags=TAGS,
 ) as dag:
-    kpi_forecasting_desktop_non_cumulative = gke_command(
-        task_id="kpi_forecasting_desktop_non_cumulative",
-        command=[
-            "python",
-            "kpi-forecasting/kpi_forecasting.py",
-            "-c",
-        ]
-        + ["kpi-forecasting/yaml/desktop_non_cumulative.yaml"],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
-        dag=dag,
-    )
+    for id, config in CONFIGS.items():
+        script_path = os.path.join("kpi-forecasting", "kpi_forecasting.py")
+        config_path = os.path.join("kpi-forecasting", "configs", config.filename)
+        wait_tasks = config.wait_tasks
 
-    kpi_forecasting_mobile_non_cumulative = gke_command(
-        task_id="kpi_forecasting_mobile_non_cumulative",
-        command=[
-            "python",
-            "kpi-forecasting/kpi_forecasting.py",
-            "-c",
-        ]
-        + ["kpi-forecasting/yaml/mobile_non_cumulative.yaml"],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest",
-        dag=dag,
-    )
+        if not isinstance(config.wait_tasks, list):
+            wait_tasks = [wait_tasks]
 
-    wait_for_unified_metrics = ExternalTaskSensor(
-        task_id="wait_for_unified_metrics",
-        external_dag_id="bqetl_unified",
-        external_task_id="telemetry_derived__unified_metrics__v1",
-        execution_delta=timedelta(hours=1),
-        check_existence=True,
-        mode="reschedule",
-        allowed_states=ALLOWED_STATES,
-        failed_states=FAILED_STATES,
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
-        email_on_retry=False,
-        dag=dag,
-    )
+        forecast_task = gke_command(
+            task_id=f"kpi_forecasting_{id}",
+            command=["python", script_path, "-c", config_path],
+            docker_image=IMAGE,
+            dag=dag,
+        )
 
-    wait_for_unified_metrics >> kpi_forecasting_desktop_non_cumulative
-    wait_for_unified_metrics >> kpi_forecasting_mobile_non_cumulative
+        for wait_task in wait_tasks:
+            wait_task_sensor = ExternalTaskSensor(
+                task_id=f"wait_for_{wait_task}",
+                external_dag_id=config.wait_dag,
+                external_task_id=wait_task,
+                execution_delta=timedelta(seconds=3600),
+                check_existence=True,
+                mode="reschedule",
+                allowed_states=ALLOWED_STATES,
+                failed_states=FAILED_STATES,
+                pool="DATA_ENG_EXTERNALTASKSENSOR",
+            )
+
+            wait_task_sensor >> forecast_task
