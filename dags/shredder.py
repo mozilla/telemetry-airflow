@@ -33,7 +33,8 @@ dthorn@mozilla.com
 default_args = {
     "owner": "dthorn@mozilla.com",
     "depends_on_past": True,
-    "start_date": datetime(2020, 4, 7),
+    "start_date": datetime(2023, 5, 16),
+    "catchup": True,
     "email": [
         "telemetry-alerts@mozilla.com",
         "dthorn@mozilla.com",
@@ -67,7 +68,8 @@ base_command = [
     # start date should be two schedule intervals before end date, to avoid
     # race conditions with downstream tables and pings received shortly after a
     # deletion request.
-    "--start-date={{macros.ds_add(ds, 27-28*2)}}",
+    # This is temporarily increased to 4 intervals, in order handle outstanding backlog
+    "--start-date={{macros.ds_add(ds, 27-28*4)}}",
     # non-dml statements use LEFT JOIN instead of IN to filter rows, which takes about
     # half as long as of 2022-02-14, and reduces cost by using less flat rate slot time
     "--no-use-dml",
@@ -84,8 +86,6 @@ telemetry_main = gke_command(
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v4",
-        # handle additional 5 "month" backlog with current run
-        "--start-date={{macros.ds_add(ds, 27-28*(2+5))}}",
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
