@@ -31,7 +31,10 @@ jobs:
           path: test-results
 
   test-local-environment:
-    executor: docker/machine
+    executor:
+      name: docker/machine
+      image: ubuntu-2204:2023.04.2
+    resource_class: large
     steps:
       - checkout
       - attach_workspace:
@@ -192,8 +195,6 @@ workflows:
       - docker-build-artifact:
           name: 🛠️ Docker build test
           filters: *ci-filter
-          requires:
-            - 🧪 Validate requirements
 
       - test-local-environment:
           name: 🧪 Validate local environment

@@ -10,22 +10,21 @@
 #                                Default: 50000
 # AIRFLOW_PROJ_DIR             - Base path to which all the files will be volumed.
 #                                Default: .
-
+---
 version: '3'
-
 x-airflow-common:
   &airflow-common
   build: .
   environment:
     &airflow-common-env
-    # Compatibility with legacy airflow.cfg
     AIRFLOW__WEBSERVER__WEB_SERVER_PORT: '8080'
     AIRFLOW__WEBSERVER__BASE_URL: 'http://localhost:8080'
     AIRFLOW__CELERY__FLOWER_PORT: '5555'
-
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql://root:secret@db:3306/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: redis://:@redis:6379/0
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    # For backward compatibility, with Airflow <2.3
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: $FERNET_KEY
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -44,32 +43,30 @@ x-airflow-common:
     &airflow-common-depends-on
     redis:
       condition: service_healthy
-    db:
+    postgres:
       condition: service_healthy
 
 services:
-  db:
-    # platform key added for Macbook M1 compatibility, followed:
-    # https://stackoverflow.com/questions/65456814/docker-apple-silicon-m1-preview-mysql-no-matching-manifest-for-linux-arm64-v8
-    platform: linux/x86_64
-    image: mysql:5.7
-    ports:
-      - '3306:3306'
-    command: ['--explicit_defaults_for_timestamp=1']
+  postgres:
+    image: postgres:13
     environment:
-       MYSQL_ROOT_PASSWORD: secret
-       MYSQL_DATABASE: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
-      timeout: 20s
-      retries: 10
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
 
   redis:
-    image: redis:3.2
+    image: redis:latest
     expose:
       - 6379
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50
@@ -130,7 +127,7 @@ services:
     <<: *airflow-common
     command: triggerer
     healthcheck:
-      test: [ "CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"' ]
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
       interval: 10s
       timeout: 10s
       retries: 5
@@ -167,7 +164,7 @@ services:
           echo "If you are on Linux, you SHOULD follow the instructions below to set "
           echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
           echo "For other operating systems you can get rid of the warning with manually created .env file:"
-          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
+          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#setting-the-right-airflow-user"
           echo
         fi
         one_meg=1048576
@@ -200,7 +197,7 @@ services:
           echo
           echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
           echo "Please follow the instructions to increase amount of resources available:"
-          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
+          echo "   https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#before-you-begin"
           echo
         fi
         mkdir -p /sources/logs /sources/dags /sources/plugins
@@ -240,7 +237,7 @@ services:
     profiles:
       - flower
     ports:
-      - '5555:5555'
+      - 5555:5555
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 10s
@@ -251,3 +248,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+volumes:
+  postgres-db-volume:
