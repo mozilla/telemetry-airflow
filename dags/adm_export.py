@@ -3,11 +3,9 @@ import datetime
 from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
-
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
-
 
 DOCS = """\
 Daily data exports of contextual services data aggregates to adMarketplace.
@@ -36,9 +34,12 @@ dag_name = "adm_export"
 tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
-    dag_name, schedule_interval="0 5 * * *", doc_md=DOCS, default_args=default_args, tags=tags,
+    dag_name,
+    schedule_interval="0 5 * * *",
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
 ) as dag:
-
     conn = BaseHook.get_connection("adm_sftp")
 
     adm_daily_aggregates_to_sftp = GKEPodOperator(
@@ -50,20 +51,20 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",
         location="us-west1",
-        env_vars=dict(
-            SFTP_USERNAME=conn.login,
-            SFTP_PASSWORD=conn.password,
-            SFTP_HOST=conn.host,
-            SFTP_PORT=str(conn.port),
-            KNOWN_HOSTS=conn.extra_dejson["known_hosts"],
-            SRC_TABLE="moz-fx-data-shared-prod.search_terms_derived.adm_daily_aggregates_v1",
+        env_vars={
+            "SFTP_USERNAME": conn.login,
+            "SFTP_PASSWORD": conn.password,
+            "SFTP_HOST": conn.host,
+            "SFTP_PORT": str(conn.port),
+            "KNOWN_HOSTS": conn.extra_dejson["known_hosts"],
+            "SRC_TABLE": "moz-fx-data-shared-prod.search_terms_derived.adm_daily_aggregates_v1",
             # The run for submission_date=2022-03-04 will be named:
             # Aggregated-Query-Data-03042022.csv.gz
-            DST_PATH='files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
-            SUBMISSION_DATE="{{ ds }}",
-        ),
+            "DST_PATH": 'files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
+            "SUBMISSION_DATE": "{{ ds }}",
+        },
         email=[
-            "jklukas@mozilla.com",
+            "telemetry-alerts@mozilla.com",
         ],
     )
 
