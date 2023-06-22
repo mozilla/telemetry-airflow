@@ -180,7 +180,11 @@ with DAG(
                 "hwoo@mozilla.com",
                 "relud@mozilla.com",
             ],
-            env_vars={"BOTO_PATH": ".gce_boto"},
+            env_vars={
+                "BOTO_PATH": ".gce_boto",
+                "AWS_ACCESS_KEY_ID": aws_access_key,
+                "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+            },
             dag=dag,
             **airflow_gke_prod_kwargs,
         )
