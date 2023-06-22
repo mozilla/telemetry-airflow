@@ -53,7 +53,7 @@ CONFIGS = {
 with DAG(
     "kpi_forecasting",
     default_args=default_args,
-    schedule_interval="0 4 * * *",
+    schedule_interval="0 5 * * *",
     doc_md=__doc__,
     tags=TAGS,
 ) as dag:
@@ -77,7 +77,7 @@ with DAG(
                 task_id=f"wait_for_{wait_task}",
                 external_dag_id=config.wait_dag,
                 external_task_id=wait_task,
-                execution_delta=timedelta(seconds=3600),
+                execution_delta=timedelta(minutes=30),
                 check_existence=True,
                 mode="reschedule",
                 allowed_states=ALLOWED_STATES,
