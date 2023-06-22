@@ -74,7 +74,6 @@ with DAG(
     schedule_interval="0 0 * * *",
     tags=tags,
 ) as dag:
-
     airflow_gke_prod_kwargs = {
         "gcp_conn_id": "google_cloud_airflow_gke",
         "project_id": "moz-fx-data-airflow-gke-prod",
@@ -112,7 +111,7 @@ with DAG(
         name="probe-scraper-moz-central",
         # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
         # works on pod resource requests, instead of usage
-        resources={
+        container_resources={
             "request_memory": "13312Mi",
             "request_cpu": None,
             "limit_memory": "20480Mi",
@@ -120,7 +119,7 @@ with DAG(
             "limit_gpu": None,
         },
         # This python job requires 13 GB of memory, thus the highmem node pool
-        node_selectors={"nodepool": "highmem"},
+        node_selector={"nodepool": "highmem"},
         # Due to the nature of the container run, we set get_logs to False, to avoid
         # urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes
         # read)' errors where the pod continues to run, but airflow loses its connection

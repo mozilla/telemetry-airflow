@@ -55,7 +55,7 @@ def generate_bash_command(params: dict) -> str:
 doc_md = """
 # Backfill DAG
 
-#### Use with caution 
+#### Use with caution
 
 #### Some tips/notes:
 
@@ -79,12 +79,12 @@ doc_md = """
     params={
         "dag_name": Param("dag_name", type="string"),
         "start_date": Param(
-            (datetime.date.today() - datetime.timedelta(days=10)).isoformat(),
+            (datetime.datetime.today() - datetime.timedelta(days=10)).isoformat(),
             type="string",
             format="date-time",
         ),
         "end_date": Param(
-            datetime.date.today().isoformat(), type="string", format="date-time"
+            datetime.datetime.today().isoformat(), type="string", format="date-time"
         ),
         "clear": Param(False, type="boolean"),
         "dry_run": Param(True, type="boolean"),
