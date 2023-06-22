@@ -1,6 +1,9 @@
 # Telemetry-Airflow
 
-[![CircleCi](https://circleci.com/gh/mozilla/telemetry-airflow.svg?style=shield&circle-token=62f4c1be98e5c9f36bd667edb7545fa736eed3ae)](https://circleci.com/gh/mozilla/telemetry-airflow)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/mozilla/telemetry-airflow/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/mozilla/telemetry-airflow/tree/main)
+[![Python 3.10](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/)
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 [Apache Airflow](https://airflow.apache.org/) is a platform to programmatically
 author, schedule and monitor workflows.
