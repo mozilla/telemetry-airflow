@@ -1,5 +1,5 @@
 """
-Malicious Addons Detection
+Malicious Addons Detection.
 
 This runs once a week to emit a trained model to GCS.
 
@@ -15,11 +15,11 @@ So as long as the most recent DAG run is successful the job can be considered he
 and not action is required for failed DAG runs.
 """
 
-from airflow import DAG
 from datetime import datetime, timedelta
+
+from airflow import DAG
 from utils.gcp import gke_command
 from utils.tags import Tag
-
 
 default_args = {
     "owner": "gleonard@mozilla.com",
@@ -37,11 +37,16 @@ gcs_bucket = "mad-resources-training"
 gcs_root_training = "datasets"
 cloud_service = "GCS"
 customs_training_allow_overwrite = "True"
-gcloud_project = 'mad-model-training'
-gcs_report_bucket = 'mad-reports'
+gcloud_project = "mad-model-training"
+gcs_report_bucket = "mad-reports"
 
-with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", doc_md=__doc__, tags=tags,) as dag:
-
+with DAG(
+    "mad_server",
+    default_args=default_args,
+    schedule_interval="@weekly",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     mad_server_pull = gke_command(
         task_id="mad_server_pull",
         # Controls the entrypoint of the container, which for mad-server
@@ -58,16 +63,15 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gke_project_id="moz-fx-data-airflow-gke-prod",
         gke_cluster_name="workloads-prod-v1",
         gke_location="us-west1",
-        env_vars=dict(
-            GCS_BUCKET=gcs_bucket,
-            GCS_ROOT_TRAINING=gcs_root_training,
-            CLOUD_SERVICE=cloud_service,
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
-            AMO_CRED_ISSUER="{{ var.value.AMO_CRED_ISSUER }}",
-            AMO_CRED_SECRET="{{ var.value.AMO_CRED_SECRET }}",
-        ),
+        env_vars={
+            "GCS_BUCKET": gcs_bucket,
+            "GCS_ROOT_TRAINING": gcs_root_training,
+            "CLOUD_SERVICE": cloud_service,
+            "CUSTOMS_TRAINING_ALLOW_OVERWRITE": customs_training_allow_overwrite,
+            "AMO_CRED_ISSUER": "{{ var.value.AMO_CRED_ISSUER }}",
+            "AMO_CRED_SECRET": "{{ var.value.AMO_CRED_SECRET }}",
+        },
         email=[
-            "jklukas@mozilla.com",
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
         ],
@@ -88,17 +92,16 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gcp_conn_id="google_cloud_airflow_gke",
         gke_project_id="moz-fx-data-airflow-gke-prod",
         gke_cluster_name="workloads-prod-v1",
-        gke_location='us-west1',
-        env_vars=dict(
-            GCS_BUCKET=gcs_bucket,
-            GCS_ROOT_TRAINING=gcs_root_training,
-            CLOUD_SERVICE=cloud_service,
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
-            GCLOUD_PROJECT=gcloud_project,
-            GCS_REPORT_BUCKET=gcs_report_bucket,
-        ),
+        gke_location="us-west1",
+        env_vars={
+            "GCS_BUCKET": gcs_bucket,
+            "GCS_ROOT_TRAINING": gcs_root_training,
+            "CLOUD_SERVICE": cloud_service,
+            "CUSTOMS_TRAINING_ALLOW_OVERWRITE": customs_training_allow_overwrite,
+            "GCLOUD_PROJECT": gcloud_project,
+            "GCS_REPORT_BUCKET": gcs_report_bucket,
+        },
         email=[
-            "jklukas@mozilla.com",
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
         ],
@@ -119,17 +122,16 @@ with DAG("mad_server", default_args=default_args, schedule_interval="@weekly", d
         gcp_conn_id="google_cloud_airflow_gke",
         gke_project_id="moz-fx-data-airflow-gke-prod",
         gke_cluster_name="workloads-prod-v1",
-        gke_location='us-west1',
-        env_vars=dict(
-            GCS_BUCKET=gcs_bucket,
-            GCS_ROOT_TRAINING=gcs_root_training,
-            CLOUD_SERVICE=cloud_service,
-            CUSTOMS_TRAINING_ALLOW_OVERWRITE=customs_training_allow_overwrite,
-            GCLOUD_PROJECT=gcloud_project,
-            GCS_REPORT_BUCKET=gcs_report_bucket,
-        ),
+        gke_location="us-west1",
+        env_vars={
+            "GCS_BUCKET": gcs_bucket,
+            "GCS_ROOT_TRAINING": gcs_root_training,
+            "CLOUD_SERVICE": cloud_service,
+            "CUSTOMS_TRAINING_ALLOW_OVERWRITE": customs_training_allow_overwrite,
+            "GCLOUD_PROJECT": gcloud_project,
+            "GCS_REPORT_BUCKET": gcs_report_bucket,
+        },
         email=[
-            "jklukas@mozilla.com",
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
         ],
