@@ -337,9 +337,8 @@ def bigquery_dq_check(
     source_table,
     dataset_id,
     task_id,
-    sql_file_path=None,
     parameters=(),
-    project_id=None,
+    project_id="moz-fx-data-shared-prod",
     gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
     gke_location="us-west1",
@@ -376,16 +375,13 @@ def bigquery_dq_check(
     """
     kwargs["task_id"] = kwargs.get("task_id", task_id)
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
-    if not project_id:
-        project_id = "moz-fx-data-shared-prod"
     destination_table_no_partition = (
         source_table.split("$")[0] if source_table is not None else None
     )
-    parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    sql_file_path = (
-        sql_file_path
-        or f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}/query.sql"
-    )
+    if not date_partition_parameter:
+        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+
+    sql_file_path = f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}"
     args = ["script/bqetl", "check", "run", sql_file_path]
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
