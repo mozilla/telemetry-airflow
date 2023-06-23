@@ -180,7 +180,11 @@ with DAG(
                 "hwoo@mozilla.com",
                 "relud@mozilla.com",
             ],
-            env_vars={"BOTO_PATH": ".gce_boto"},
+            env_vars={
+                "BOTO_PATH": ".gce_boto",
+                "AWS_ACCESS_KEY_ID": aws_access_key,
+                "AWS_SECRET_ACCESS_KEY": aws_secret_key,
+            },
             dag=dag,
             **airflow_gke_prod_kwargs,
         )
@@ -398,8 +402,8 @@ with DAG(
         endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
         data={},
-        owner="wlach@mozilla.com",
-        email=["wlach@mozilla.com", "dataops+alerts@mozilla.com"],
+        owner="linh@mozilla.com",
+        email=["linh@mozilla.com", "dataops+alerts@mozilla.com"],
         task_id="glean_dictionary_build",
         dag=dag,
     )
