@@ -884,8 +884,6 @@ mdurl==0.1.2
     # via
     #   -c ./constraints.txt
     #   markdown-it-py
-mozlogging==0.1.0
-    # via -r requirements.in
 multidict==6.0.4
     # via
     #   -c ./constraints.txt
