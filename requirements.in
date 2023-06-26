@@ -16,9 +16,6 @@ pytest-mock==3.10.0
 black==23.1a1
 ruff==0.0.269
 
-# Misc
-mozlogging
-
 # Required for backfill UI
 flask-admin
 shelljob==0.5.6
