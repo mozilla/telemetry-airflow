@@ -6,6 +6,10 @@ Nightly deploy of bigquery etl views.
 The DAG always re-deploys all bqetl views. So as long as the most recent DAG run
 is successful the job can be considered healthy. This means previous failed DAG runs
 can be ignored or marked as successful.
+
+`publish_views` doesn't show any logs due to spitting out invalid unicode.
+To view relevant errors, either check the [Kubernetes pods](https://console.cloud.google.com/kubernetes/workload/overview?project=moz-fx-data-airflow-gke-prod)
+or go to [GCP console and check the query "Project History" tab at the bottom of the page](https://console.cloud.google.com/bigquery?project=moz-fx-data-airflow-gke-prod&ws=!1m0).
 """
 
 from datetime import datetime, timedelta

@@ -195,8 +195,7 @@ ensemble_transposer = GKEPodOperator(
     name="ensemble_transposer",
     image="gcr.io/moz-fx-data-airflow-prod-88e0/ensemble-transposer:latest",
     env_vars={
-        # prod location will be moz-fx-data-static-websit-8565-ensemble
-        "GCS_BUCKET_NAME": "moz-fx-data-static-websit-f7e0-ensemble",
+        "GCS_BUCKET_NAME": "moz-fx-data-static-websit-8565-ensemble",
     },
     image_pull_policy="Always",
     dag=dag,
