@@ -1,23 +1,20 @@
 # Official Airflow constraints file
 # Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
-# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.3.3/constraints-3.10.txt
+# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.5.3/constraints-3.10.txt
 --constraint ./constraints.txt
 
 # Airflow dependencies
-apache-airflow[amazon,async,celery,cncf.kubernetes,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.3.3
+apache-airflow[amazon,async,celery,cncf.kubernetes,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.5.3
 apache-airflow-providers-google
 apache-airflow-providers-http
 apache-airflow-providers-slack
 airflow-provider-fivetran==1.1.2
 
 # Code quality
-pytest==6.2.5
+pytest==7.2.2
 pytest-mock==3.10.0
-black==22.6.0
+black==23.1a1
 ruff==0.0.269
-
-# Misc
-mozlogging
 
 # Required for backfill UI
 flask-admin

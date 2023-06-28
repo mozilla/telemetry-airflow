@@ -13,7 +13,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -65,8 +65,7 @@ for platform, config in CONFIGS.items():
         start_date=datetime(2023, 3, 20),
         doc_md=__doc__,
     ) as dag:
-
-        run_all = DummyOperator(
+        run_all = EmptyOperator(
             task_id="run_all",
         )
 

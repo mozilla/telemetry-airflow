@@ -63,7 +63,6 @@ with models.DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-
     # This single task is responsible for sequentially running copy queries
     # over all the tables in _live datasets into _stable datasets except those
     # that are specifically used in another DAG.
@@ -89,8 +88,8 @@ with models.DAG(
             "telemetry_live.first_shutdown_v4",
             "telemetry_live.saved_session_v4",
         ],
-        node_selectors={"nodepool": "highmem"},
-        resources=resources,
+        node_selector={"nodepool": "highmem"},
+        container_resources=resources,
     )
 
     with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:
