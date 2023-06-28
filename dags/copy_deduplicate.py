@@ -1,6 +1,7 @@
 import datetime
 
 from airflow import models
+from airflow.datasets import Dataset
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 from utils.gcp import (
@@ -90,6 +91,7 @@ with models.DAG(
         ],
         node_selector={"nodepool": "highmem"},
         container_resources=resources,
+        outlets=[Dataset("//copy_deduplicate/copy_deduplicate_all")],
     )
 
     with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:

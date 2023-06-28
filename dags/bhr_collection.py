@@ -13,11 +13,10 @@ is maintained in the mozetl repository.
 import datetime
 
 from airflow import DAG
+from airflow.datasets import Dataset
 from airflow.operators.subdag import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from airflow.sensors.external_task import ExternalTaskSensor
 from operators.gcp_container_operator import GKEPodOperator
-from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
@@ -41,7 +40,7 @@ tags = [Tag.ImpactTier.tier_1]
 with DAG(
     "bhr_collection",
     default_args=default_args,
-    schedule_interval="0 5 * * *",
+    schedule=[Dataset("//copy_deduplicate/copy_deduplicate_all")],
     doc_md=__doc__,
     tags=tags,
 ) as dag:
@@ -50,20 +49,6 @@ with DAG(
     aws_access_key, aws_secret_key, _ = AwsBaseHook(
         aws_conn_id=write_aws_conn_id, client_type="s3"
     ).get_credentials()
-
-    wait_for_bhr_ping = ExternalTaskSensor(
-        task_id="wait_for_copy_deduplicate",
-        external_dag_id="copy_deduplicate",
-        external_task_id="copy_deduplicate_all",
-        execution_delta=datetime.timedelta(hours=4),
-        check_existence=True,
-        mode="reschedule",
-        allowed_states=ALLOWED_STATES,
-        failed_states=FAILED_STATES,
-        pool="DATA_ENG_EXTERNALTASKSENSOR",
-        email_on_retry=False,
-        dag=dag,
-    )
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
@@ -123,4 +108,4 @@ with DAG(
         dag=dag,
     )
 
-    wait_for_bhr_ping >> bhr_collection >> gcs_sync
+    bhr_collection >> gcs_sync
