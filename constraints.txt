@@ -95,7 +95,7 @@ apache-airflow-providers-hashicorp==3.3.0
 apache-airflow-providers-http==4.2.0
 apache-airflow-providers-imap==3.1.1
 apache-airflow-providers-influxdb==2.1.0
-apache-airflow-providers-jdbc==3.3.0
+apache-airflow-providers-jdbc==4.0.0
 apache-airflow-providers-jenkins==3.2.0
 apache-airflow-providers-microsoft-azure==5.2.1
 apache-airflow-providers-microsoft-mssql==3.3.2
