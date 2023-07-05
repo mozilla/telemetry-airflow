@@ -1,6 +1,5 @@
 """
-See [search-term-data-validation in the docker-etl repository]
-(https://github.com/mozilla/docker-etl/blob/main/jobs/seawrch-term-data-validation.
+See [search-term-data-validation in the docker-etl repository](https://github.com/mozilla/docker-etl/blob/main/jobs/seawrch-term-data-validation.
 
 This job populates a table for evaluating whether our recorded search terms
 (candidate search volume for being sanitized and stored) are changing in ways
@@ -12,7 +11,6 @@ This DAG is low priority.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-
 from utils.gcp import gke_command
 from utils.tags import Tag
 
