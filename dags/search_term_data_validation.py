@@ -27,7 +27,10 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_3]
+tags = [
+    Tag.ImpactTier.tier_3,
+    Tag.Triage.no_triage,
+]
 
 daily_at_8AM = "0 8 * * *"
 with DAG("search_term_data_validation", default_args=default_args, schedule_interval=daily_at_8AM, doc_md=__doc__, tags=tags, ) as dag:
