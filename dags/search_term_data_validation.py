@@ -33,17 +33,23 @@ tags = [
 ]
 
 daily_at_8AM = "0 8 * * *"
-with DAG("search_term_data_validation", default_args=default_args, schedule_interval=daily_at_8AM, doc_md=__doc__, tags=tags, ) as dag:
+with DAG(
+    "search_term_data_validation",
+    default_args=default_args,
+    schedule_interval=daily_at_8AM,
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     search_term_data_validation = gke_command(
         task_id="search_term_data_validation",
         command=[
-            "python", "src/data_validation_job.py",
+            "python",
+            "src/data_validation_job.py",
             "--data_validation_origin",
             "moz-fx-data-shared-prod.search_terms.sanitization_job_data_validation_metrics",
             "--data_validation_reporting_destination",
-            "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1"
+            "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation_docker_etl:latest",
         dag=dag,
     )
-
