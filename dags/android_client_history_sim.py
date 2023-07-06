@@ -1,5 +1,4 @@
 import datetime
-from enum import Enum
 
 from airflow.decorators import dag
 from airflow.models.param import Param
@@ -34,13 +33,11 @@ doc_md = """
         "end_date": Param(
             datetime.datetime.today().isoformat(), type="string", format="date-time"
         ),
-        "lookback": Param(
-            7, type="integer"
-        ),
+        "lookback": Param(7, type="integer"),
     },
 )
 def client_history_sim_dag():
-    client_history_sim = gke_command(
+    gke_command(
         task_id="android_client_history_sim",
         command=[
             "python",
