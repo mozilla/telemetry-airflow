@@ -25,8 +25,9 @@ doc_md = """
     tags=[Tag.ImpactTier.tier_3, Tag.Triage.record_only],
     render_template_as_native_obj=True,
     params={
-        "seed": Param(type="integer"),
+        "seed": Param(42, type="integer"),
         "start_date": Param(
+            datetime.datetime.today().isoformat(),
             type="string",
             format="date-time",
         ),
