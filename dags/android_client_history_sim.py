@@ -12,6 +12,9 @@ doc_md = """
 
 #### Some tips/notes:
 * Date formats are 2020-03-01 or 2020-03-01T00:00:00
+
+#### Owner
+frank@mozilla.com
 """
 
 
