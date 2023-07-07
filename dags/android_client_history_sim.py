@@ -44,12 +44,12 @@ def client_history_sim_dag():
     gke_command(
         task_id="android_client_history_sim",
         command=[
-            "python ",
-            "client_regeneration/main.py ",
-            "--seed={{ dag_run.conf['seed'] }} "
-            "--start_date={{ dag_run.conf['start_date'] }} ",
-            "--end_date={{ dag_run.conf['end_date'] }} ",
-            "--lookback={{ dag_run.conf['lookback'] }} ",
+            "python",
+            "client_regeneration/main.py",
+            "--seed={{ dag_run.conf['seed'] }}",
+            "--start_date={{ dag_run.conf['start_date'] }}",
+            "--end_date={{ dag_run.conf['end_date'] }}",
+            "--lookback={{ dag_run.conf['lookback'] }}",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/client-regeneration_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
