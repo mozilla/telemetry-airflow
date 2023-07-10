@@ -24,7 +24,7 @@ frank@mozilla.com
     doc_md=doc_md,
     catchup=False,
     start_date=datetime.datetime(2023, 7, 1),
-    dagrun_timeout=datetime.timedelta(days=1),
+    dagrun_timeout=datetime.timedelta(days=4),
     tags=[Tag.ImpactTier.tier_3, Tag.Triage.record_only],
     render_template_as_native_obj=True,
     params={
