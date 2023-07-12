@@ -49,6 +49,5 @@ with DAG(
             "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation_docker_etl:latest",
-        get_logs=False,
         dag=dag,
     )
