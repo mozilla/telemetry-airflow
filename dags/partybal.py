@@ -1,4 +1,6 @@
 """
+DAG to schedule generation of results for partybal.
+
 Partybal is an experimental service to visualize experiment results that have been
 produced by [jetstream](https://github.com/mozilla/jetstream).
 See https://github.com/mozilla/partybal
@@ -11,14 +13,18 @@ The DAG is scheduled to run every three hours to pick up experiment results from
 triggered analysis runs quickly.
 """
 
+from datetime import datetime, timedelta
+
 from airflow import DAG
-from datetime import timedelta, datetime
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
-    "email": ["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+    "email": [
+        "ascholtz@mozilla.com",
+        "mwilliams@mozilla.com",
+    ],
     "depends_on_past": False,
     "start_date": datetime(2021, 6, 21),
     "email_on_failure": True,
@@ -29,15 +35,23 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
-with DAG("partybal", default_args=default_args, schedule_interval="0 */3 * * *", doc_md=__doc__, tags=tags,) as dag:
-
+with DAG(
+    "partybal",
+    default_args=default_args,
+    schedule_interval="0 */3 * * *",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     # Built from repo https://github.com/mozilla/partybal
-    partybal_image = "gcr.io/partybal/partybal:latest"
+    partybal_image = "gcr.io/moz-fx-data-experiments/partybal:latest"
 
     partybal = GKEPodOperator(
         task_id="partybal",
         name="partybal",
         image=partybal_image,
-        email=["ascholtz@mozilla.com", "kignasiak@mozilla.com",],
+        email=[
+            "ascholtz@mozilla.com",
+            "mwilliams@mozilla.com",
+        ],
         dag=dag,
     )
