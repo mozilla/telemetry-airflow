@@ -338,6 +338,7 @@ def bigquery_dq_check(
     dataset_id,
     task_id,
     parameters=(),
+    arguments=(),
     project_id="moz-fx-data-shared-prod",
     gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
@@ -390,7 +391,7 @@ def bigquery_dq_check(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=args + ["--parameter=" + parameter for parameter in parameters],
+        arguments=args + ["--parameter=" + parameter for parameter in parameters] + list(arguments),
         **kwargs,
     )
 
