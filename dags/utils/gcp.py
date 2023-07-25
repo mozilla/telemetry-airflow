@@ -391,7 +391,9 @@ def bigquery_dq_check(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=args + ["--parameter=" + parameter for parameter in parameters] + list(arguments),
+        arguments=args
+        + ["--parameter=" + parameter for parameter in parameters]
+        + list(arguments),
         **kwargs,
     )
 
