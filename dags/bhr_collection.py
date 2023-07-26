@@ -1,5 +1,5 @@
 """
-A processing job on top of BHR (Background Hang Reporter) pings
+A processing job on top of BHR (Background Hang Reporter) pings.
 
 More information about the pings: https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/backgroundhangmonitor-ping.html
 
