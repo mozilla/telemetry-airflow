@@ -1,13 +1,18 @@
 """
-A processing job on top of BHR pings.
+A processing job on top of BHR (Background Hang Reporter) pings.
 
-Migrated from Databricks and now running as a scheduled Dataproc task.
+More information about the pings: https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/backgroundhangmonitor-ping.html
 
-BHR is related to the Background Hang Monitor in desktop Firefox.
-See [bug 1675103](https://bugzilla.mozilla.org/show_bug.cgi?id=1675103)
+BHR is related to the Background Hang Monitor in Firefox Desktop.
+See: [bug 1675103](https://bugzilla.mozilla.org/show_bug.cgi?id=1675103)
 
 The [job source](https://github.com/mozilla/python_mozetl/blob/main/mozetl/bhr_collection)
 is maintained in the mozetl repository.
+
+* Migrated from Databricks and now running as a scheduled Dataproc task. *
+
+The resulting aggregatations are used by the following service:
+https://fqueze.github.io/hang-stats/#date=[DATE]&row=0
 """
 
 import datetime
