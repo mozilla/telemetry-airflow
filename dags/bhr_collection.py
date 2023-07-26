@@ -10,6 +10,9 @@ The [job source](https://github.com/mozilla/python_mozetl/blob/main/mozetl/bhr_c
 is maintained in the mozetl repository.
 
 * Migrated from Databricks and now running as a scheduled Dataproc task. *
+
+The resulting aggregatations are used by the following service:
+https://fqueze.github.io/hang-stats/#date=[DATE]&row=0
 """
 
 import datetime
