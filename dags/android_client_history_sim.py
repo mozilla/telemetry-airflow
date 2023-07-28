@@ -38,19 +38,26 @@ frank@mozilla.com
             type="string",
         ),
         "lookback": Param(7, type="integer"),
+        "action": Param(["replacement", "clients-daily"], type="array")
     },
 )
-def client_history_sim_dag():
+def client_history_sim_dag(**kwargs):
+    arguments = [
+        "--seed={{ dag_run.conf['seed'] }}",
+        "--start_date={{ dag_run.conf['start_date'] }}",
+        "--end_date={{ dag_run.conf['end_date'] }}",
+        "--lookback={{ dag_run.conf['lookback'] }}",
+    ]
+    for action in kwargs["dag_run"].conf["actions"]:
+        arguments.append(f"--actions={action}")
+
     gke_command(
         task_id="android_client_history_sim",
         command=[
             "python",
             "client_regeneration/main.py",
-            "--seed={{ dag_run.conf['seed'] }}",
-            "--start_date={{ dag_run.conf['start_date'] }}",
-            "--end_date={{ dag_run.conf['end_date'] }}",
-            "--lookback={{ dag_run.conf['lookback'] }}",
-        ],
+        ]
+        + arguments,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/client-regeneration_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
