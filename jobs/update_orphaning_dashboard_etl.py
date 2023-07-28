@@ -6,10 +6,10 @@
 # This is a complex, legacy job. Disabling linter will make browsing history of changes easier.
 
 import argparse
-import boto3
 import datetime as dt
 import json
 import re
+from google.cloud import storage
 from urllib.request import urlopen
 
 from pyspark.sql.functions import udf
@@ -47,10 +47,8 @@ def parse_args():
         "--gcs-prefix", required=True,
         help="GCS prefix for intermediate aggregation table dump and results.",
     )
-    parser.add_argument("--s3-output-bucket", required=True)
-    parser.add_argument("--s3-output-path", required=True)
-    parser.add_argument("--aws-access-key-id", required=True)
-    parser.add_argument("--aws-secret-access-key", required=True)
+    parser.add_argument("--gcs-output-bucket", required=True)
+    parser.add_argument("--gcs-output-path", required=True)
     return parser.parse_args()
 
 args = parse_args()
@@ -1188,16 +1186,15 @@ results_json = results_json.replace('"true"', '"True"').replace('"false"', '"Fal
 # Save the output to be uploaded automatically once the job completes.
 # The file will be stored at:
 # * https://analysis-output.telemetry.mozilla.org/app-update/data/out-of-date/FILENAME
+bucket_name = args.gcs_output_bucket #"telemetry-public-analysis-2"
+path = "app-update/data/out-of-date/"
+timestamped_gcs_key = path + report_filename + ".json"
 
-bucket = args.s3_output_bucket #"telemetry-public-analysis-2"
-path = args.s3_output_path #"app-update/data/out-of-date/"
-timestamped_s3_key = path + report_filename + ".json"
-client = boto3.client('s3', 'us-west-2',
-    aws_access_key_id=args.aws_access_key_id,
-    aws_secret_access_key=args.aws_secret_access_key
-)
-client.put_object(Body=results_json, Bucket=bucket, Key=timestamped_s3_key)
-print(f"Output file saved to: {bucket}/{timestamped_s3_key}")
+storage_client = storage.Client()
+bucket = storage_client.get_bucket(bucket_name)
+blob = bucket.blob(timestamped_gcs_key)
+blob.upload_from_string(results_json)
+print(f"Output file saved to: {bucket}/{timestamped_gcs_key}")
 
 
 # Get the time when this job ended.
