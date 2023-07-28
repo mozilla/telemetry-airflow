@@ -37,6 +37,7 @@ frank@mozilla.com
             datetime.date.today().isoformat(),
             type="string",
         ),
+        "lookback": Param(7, type="integer"),
         "run_replacement": Param(False, type="boolean"),
         "run_usage_history": Param(False, type="boolean"),
         "run_clients_daily": Param(False, type="boolean"),
@@ -45,7 +46,7 @@ frank@mozilla.com
         "run_attributed_clients": Param(False, type="boolean"),
     },
 )
-def client_history_sim_dag(**kwargs):
+def client_history_sim_dag():
     gke_command(
         task_id="android_client_history_sim",
         command=[
