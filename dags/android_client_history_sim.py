@@ -37,26 +37,30 @@ frank@mozilla.com
             datetime.date.today().isoformat(),
             type="string",
         ),
-        "lookback": Param(7, type="integer"),
-        "action": Param(["replacement", "clients-daily"], type="array"),
+        "run_replacement": Param(False, type="boolean"),
+        "run_usage_history": Param(False, type="boolean"),
+        "run_clients_daily": Param(False, type="boolean"),
+        "run_clients_daily_with_search": Param(False, type="boolean"),
+        "run_clients_yearly": Param(False, type="boolean"),
+        "run_attributed_clients": Param(False, type="boolean"),
     },
 )
 def client_history_sim_dag(**kwargs):
-    arguments = [
-        "--seed={{ dag_run.conf['seed'] }}",
-        "--start_date={{ dag_run.conf['start_date'] }}",
-        "--end_date={{ dag_run.conf['end_date'] }}",
-        "--lookback={{ dag_run.conf['lookback'] }}",
-    ]
-    for action in kwargs["dag_run"].conf["actions"]:
-        arguments.append(f"--actions={action}")
-
     gke_command(
         task_id="android_client_history_sim",
         command=[
             "python",
             "client_regeneration/main.py",
-            *arguments,
+            "--seed={{ dag_run.conf['seed'] }}",
+            "--start_date={{ dag_run.conf['start_date'] }}",
+            "--end_date={{ dag_run.conf['end_date'] }}",
+            "--lookback={{ dag_run.conf['lookback'] }}",
+            "--run-replacement={{ dag_run.conf['run_replacement'] }}",
+            "--run-usage-history={{ dag_run.conf['run_usage_history'] }}",
+            "--run-clients-daily={{ dag_run.conf['run_clients_daily'] }}",
+            "--run-clients-daily-with-search={{ dag_run.conf['run_clients_daily_with_search'] }}",
+            "--run-clients-yearly={{ dag_run.conf['run_clients_yearly'] }}",
+            "--run-attributed-clients={{ dag_run.conf['run_attributed_clients'] }}",
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/client-regeneration_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
