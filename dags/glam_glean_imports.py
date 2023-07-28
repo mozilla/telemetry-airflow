@@ -11,11 +11,10 @@ from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
-    "owner": "akommasani@mozilla.com",
+    "owner": "efilho@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
     "email": [
-        "telemetry-alerts@mozilla.com",
         "akommasani@mozilla.com",
         "akomarzewski@mozilla.com",
         "efilho@mozilla.com",
