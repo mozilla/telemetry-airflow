@@ -38,7 +38,7 @@ frank@mozilla.com
             type="string",
         ),
         "lookback": Param(7, type="integer"),
-        "action": Param(["replacement", "clients-daily"], type="array")
+        "action": Param(["replacement", "clients-daily"], type="array"),
     },
 )
 def client_history_sim_dag(**kwargs):
@@ -56,8 +56,8 @@ def client_history_sim_dag(**kwargs):
         command=[
             "python",
             "client_regeneration/main.py",
-        ]
-        + arguments,
+            *arguments,
+        ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/client-regeneration_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
