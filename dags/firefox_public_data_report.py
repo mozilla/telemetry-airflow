@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -19,11 +18,6 @@ from utils.dataproc import (
 )
 from utils.gcp import bigquery_etl_query
 from utils.tags import Tag
-
-"""
-The following WTMO connections are needed in order for this job to run:
-conn - aws_dev_telemetry_public_analysis_2_rw
-"""
 
 default_args = {
     "owner": "akomar@mozilla.com",
@@ -50,12 +44,6 @@ dag = DAG(
     doc_md=__doc__,
     tags=tags,
 )
-
-# Required to write json output to s3://telemetry-public-analysis-2/public-data-report/hardware/
-write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
-aws_access_key, aws_secret_key, session = AwsBaseHook(
-    aws_conn_id=write_aws_conn_id, client_type="s3"
-).get_credentials()
 
 # hardware_report's execution date will be {now}-7days. It will read last week's main pings,
 # therefore we need to wait for yesterday's Main Ping deduplication task to finish
@@ -96,8 +84,6 @@ hardware_report = SubDagOperator(
         },
         additional_properties={
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
-            "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key,
         },
         py_args=[
             "public_data_report",
@@ -108,9 +94,9 @@ hardware_report = SubDagOperator(
             "moz-fx-data-shared-prod.telemetry_derived.public_data_report_hardware",
             "--temporary_gcs_bucket",
             params.storage_bucket,
-            "--s3_bucket",
-            "telemetry-public-analysis-2",
-            "--s3_path",
+            "--gcs_bucket",
+            "moz-fx-data-static-websit-f7e0-analysis-output",
+            "--gcs_path",
             "public-data-report/hardware/",
         ],
         idle_delete_ttl=14400,
@@ -154,15 +140,11 @@ user_activity_usage_behavior_export = GKEPodOperator(
         "user_activity",
         "--bq_table",
         "moz-fx-data-shared-prod.telemetry_derived.public_data_report_user_activity_v1",
-        "--s3_bucket",
-        "telemetry-public-analysis-2",
-        "--s3_path",
+        "--gcs_bucket",
+        "moz-fx-data-static-websit-f7e0-analysis-output",
+        "--gcs_path",
         "public-data-report/user_activity",
     ],
-    env_vars={
-        "AWS_ACCESS_KEY_ID": aws_access_key,
-        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
-    },
     image_pull_policy="Always",
     dag=dag,
 )
@@ -178,14 +160,10 @@ annotations_export = GKEPodOperator(
         "--date_to",
         "{{ ds }}",
         "--output_bucket",
-        "telemetry-public-analysis-2",
+        "moz-fx-data-static-websit-f7e0-analysis-output",
         "--output_prefix",
         "public-data-report/annotations",
     ],
-    env_vars={
-        "AWS_ACCESS_KEY_ID": aws_access_key,
-        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
-    },
     image_pull_policy="Always",
     dag=dag,
 )
@@ -201,29 +179,8 @@ ensemble_transposer = GKEPodOperator(
     dag=dag,
 )
 
-# TODO remove this when the job writes to GCS directly
-gcs_sync = GKEPodOperator(
-    task_id="s3_gcs_sync",
-    name="s3-gcs-sync",
-    image="google/cloud-sdk:435.0.1-alpine",
-    arguments=[
-        "/google-cloud-sdk/bin/gsutil",
-        "-m",
-        "rsync",
-        "-d",
-        "-r",
-        "s3://telemetry-public-analysis-2/public-data-report/",
-        "gs://moz-fx-data-static-websit-8565-analysis-output/public-data-report/",
-    ],
-    env_vars={
-        "AWS_ACCESS_KEY_ID": aws_access_key,
-        "AWS_SECRET_ACCESS_KEY": aws_secret_key,
-    },
-    dag=dag,
-)
 
-wait_for_main_ping >> hardware_report >> gcs_sync
+wait_for_main_ping >> hardware_report >> ensemble_transposer
 wait_for_clients_last_seen >> user_activity >> user_activity_usage_behavior_export
-user_activity_usage_behavior_export >> gcs_sync
-annotations_export >> gcs_sync
-gcs_sync >> ensemble_transposer
+user_activity_usage_behavior_export >> ensemble_transposer
+annotations_export >> ensemble_transposer
