@@ -39,7 +39,7 @@ tags = [Tag.ImpactTier.tier_1]
 with DAG(
     "bqetl_artifact_deployment",
     default_args=default_args,
-    schedule_interval="30 5 * * *",
+    schedule_interval="@daily",
     doc_md=__doc__,
     tags=tags,
 ) as dag:
