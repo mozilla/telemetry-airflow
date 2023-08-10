@@ -1,7 +1,7 @@
 """
 A job to power graphics dashboard.
 
-Processes main ping data and exports to S3 to power a graphics dashboard at
+Processes main ping data and exports to GCS to power a graphics dashboard at
 https://firefoxgraphics.github.io/telemetry/.
 
 This was originally a Databricks notebook that was migrated to a scheduled
@@ -11,13 +11,10 @@ repository.
 """
 
 import datetime
-import os
 
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
-from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -43,8 +40,8 @@ PIP_PACKAGES = [
     "six==1.15.0",
 ]
 
-S3_BUCKET = "telemetry-public-analysis-2"
-S3_PREFIX = "gfx/telemetry-data/"
+GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
+GCS_PREFIX = "gfx/telemetry-data/"
 
 tags = [Tag.ImpactTier.tier_1]
 
@@ -55,16 +52,6 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-    # Jobs read from/write to s3://telemetry-public-analysis-2/gfx/telemetry-data/
-    write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
-    is_dev = os.environ.get("DEPLOY_ENVIRONMENT") == "dev"
-    if is_dev:
-        aws_access_key, aws_secret_key = ("replace_me", "replace_me")
-    else:
-        aws_access_key, aws_secret_key, _ = AwsBaseHook(
-            aws_conn_id=write_aws_conn_id, client_type="s3"
-        ).get_credentials()
-
     wait_for_main_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_main_ping",
         external_dag_id="copy_deduplicate",
@@ -98,14 +85,12 @@ with DAG(
             additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
             additional_properties={
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-                "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
-                "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key,
             },
             py_args=[
-                "--s3-bucket",
-                S3_BUCKET,
-                "--s3-prefix",
-                S3_PREFIX,
+                "--gcs-bucket",
+                GCS_BUCKET,
+                "--gcs-prefix",
+                GCS_PREFIX,
                 "--weekly-fraction",
                 "0.003",
             ],
@@ -135,14 +120,12 @@ with DAG(
             additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
             additional_properties={
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-                "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
-                "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key,
             },
             py_args=[
                 "--output-bucket",
-                "telemetry-public-analysis-2",
+                GCS_BUCKET,
                 "--output-prefix",
-                "gfx/telemetry-data/",
+                GCS_PREFIX,
                 "--release-fraction",
                 "0.003",
             ],
@@ -155,26 +138,5 @@ with DAG(
         ),
     )
 
-    # TODO remove this when the job writes to GCS directly
-    gcs_sync = GKEPodOperator(
-        task_id="s3_gcs_sync",
-        name="s3-gcs-sync",
-        image="google/cloud-sdk:435.0.1-alpine",
-        arguments=[
-            "/google-cloud-sdk/bin/gsutil",
-            "-m",
-            "rsync",
-            "-d",
-            "-r",
-            "s3://telemetry-public-analysis-2/gfx/",
-            "gs://moz-fx-data-static-websit-8565-analysis-output/gfx/",
-        ],
-        env_vars={
-            "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_key,
-        },
-        dag=dag,
-    )
-
     wait_for_main_ping >> graphics_trends
-    wait_for_main_ping >> graphics_dashboard >> gcs_sync
+    wait_for_main_ping >> graphics_dashboard
