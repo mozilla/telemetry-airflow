@@ -40,7 +40,7 @@ PIP_PACKAGES = [
     "six==1.15.0",
 ]
 
-GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
+GCS_BUCKET = "moz-fx-data-static-websit-8565-analysis-output"
 GCS_PREFIX = "gfx/telemetry-data/"
 
 tags = [Tag.ImpactTier.tier_1]
