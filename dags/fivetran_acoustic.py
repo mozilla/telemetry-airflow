@@ -51,10 +51,10 @@ from Acoustic SFTP server and waits until its completion.
 
 #### Owner
 
-kignasiak@mozilla.com
+kik@mozilla.com
 """
 
-DAG_OWNER = "kignasiak@mozilla.com"
+DAG_OWNER = "kik@mozilla.com"
 
 ACOUSTIC_CONNECTION_ID = "acoustic"
 
