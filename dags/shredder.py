@@ -4,6 +4,8 @@ from airflow import DAG
 from utils.gcp import gke_command
 from utils.tags import Tag
 
+from plugins.timetable import MultiWeekTimetable
+
 docs = """
 ### shredder
 
@@ -34,7 +36,7 @@ default_args = {
     "owner": "dthorn@mozilla.com",
     "depends_on_past": True,
     "start_date": datetime(2023, 5, 16),
-    "catchup": True,
+    "catchup": False,
     "email": [
         "telemetry-alerts@mozilla.com",
         "dthorn@mozilla.com",
@@ -53,7 +55,9 @@ tags = [
 dag = DAG(
     "shredder",
     default_args=default_args,
-    schedule_interval=timedelta(days=28),
+    # 4 week intervals from start_date. This is similar to
+    # schedule_interval=timedelta(days=28), except it should actually work.
+    schedule=MultiWeekTimetable(num_weeks=4),
     doc_md=docs,
     tags=tags,
 )
@@ -62,12 +66,12 @@ base_command = [
     "script/shredder_delete",
     "--state-table=moz-fx-data-shredder.shredder_state.shredder_state",
     "--task-table=moz-fx-data-shredder.shredder_state.tasks",
-    # dags run schedule_interval after ds, and end date should be one day
-    # before the dag runs, so 28-1 = 27 days after ds.
+    # dags run one schedule interval after ds, end date should be one day before the dag
+    # runs, and schedule intervals are 4 weeks = 28 days, so 28-1 = 27 days after ds
     "--end-date={{macros.ds_add(ds, 27)}}",
     # start date should be two schedule intervals before end date, to avoid
     # race conditions with downstream tables and pings received shortly after a
-    # deletion request.
+    # deletion request. schedule intervals are 4 weeks = 28 days.
     # This is temporarily increased to 4 intervals, in order handle outstanding backlog
     "--start-date={{macros.ds_add(ds, 27-28*4)}}",
     # non-dml statements use LEFT JOIN instead of IN to filter rows, which takes about
