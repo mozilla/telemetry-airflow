@@ -71,8 +71,6 @@ SubDagOperator(
         additional_properties={
             "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3"
         },
-        # TODO: Replace bucket with moz-fx-data-static-websit-8565-analysis-output
-        # after testing
         py_args=[
             "--run-date",
             DS_WEEKLY,
@@ -81,7 +79,7 @@ SubDagOperator(
             "--gcs-prefix",
             "update-orphaning-airflow",
             "--gcs-output-bucket",
-            "moz-fx-data-static-websit-f7e0-analysis-output",
+            "moz-fx-data-static-websit-8565-analysis-output",
             "--gcs-output-path",
             "app-update/data/out-of-date/",
         ],
