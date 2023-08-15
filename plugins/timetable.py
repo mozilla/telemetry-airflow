@@ -1,6 +1,7 @@
 """Plugin for alternative timetables that cannot be trivially defined via cron expressions."""
 
 from datetime import timedelta
+from typing import Any
 
 from airflow.plugins_manager import AirflowPlugin
 from airflow.timetables.base import DagRunInfo, DataInterval, TimeRestriction, Timetable
@@ -9,6 +10,7 @@ from pendulum import UTC, DateTime, Time
 
 class MultiWeekTimetable(Timetable):
     def __init__(self, *, num_weeks: int, time: Time = Time.min):
+        self.num_weeks = num_weeks
         self.interval_delta = timedelta(days=7 * num_weeks)
         # only enforced for automated data intervals
         self.time = time
@@ -51,6 +53,13 @@ class MultiWeekTimetable(Timetable):
         if restriction.latest is not None and next_end > restriction.latest:
             return None  # Over the DAG's scheduled end; don't schedule.
         return DagRunInfo.interval(start=next_end - self.interval_delta, end=next_end)
+
+    def serialize(self) -> dict[str, Any]:
+        return {"num_weeks": self.num_weeks, "time": self.time.isoformat()}
+
+    @classmethod
+    def deserialize(cls, value: dict[str, Any]) -> Timetable:
+        return cls(num_weeks=value["num_weeks"], time=Time.fromisoformat(value["time"]))
 
 
 class MozillaTimetablePlugin(AirflowPlugin):
