@@ -1,5 +1,6 @@
-from airflow import DAG
 from datetime import datetime, timedelta
+
+from airflow import DAG
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
