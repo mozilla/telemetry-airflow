@@ -32,7 +32,10 @@ default_args = {
     'retry_delay': timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_3]
+tags = [
+    Tag.ImpactTier.tier_3,
+    Tag.Triage.no_triage,
+]
 
 dag = DAG("clean-gke-pods", default_args=default_args, schedule_interval="@daily", doc_md = docs, tags=tags,)
 
