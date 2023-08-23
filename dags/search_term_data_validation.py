@@ -1,5 +1,5 @@
 """
-See [search-term-data-validation in the docker-etl repository](https://github.com/mozilla/docker-etl/blob/main/jobs/seawrch-term-data-validation.
+See [search-term-data-validation in the docker-etl repository](https://github.com/mozilla/docker-etl/blob/main/jobs/search-term-data-validation).
 
 This job populates a table for evaluating whether our recorded search terms
 (candidate search volume for being sanitized and stored) are changing in ways
