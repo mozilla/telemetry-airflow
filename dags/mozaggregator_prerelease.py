@@ -19,12 +19,12 @@ from utils.tags import Tag
 EXPORT_TO_AVRO = True
 
 default_args = {
-    "owner": "linhnguyen@mozilla.com",
+    "owner": "efilho@mozilla.com",
     "depends_on_past": True,
     "start_date": datetime(2018, 12, 23),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "linhnguyen@mozilla.com",
+        "efilho@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
