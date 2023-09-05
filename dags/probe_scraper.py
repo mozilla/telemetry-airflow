@@ -136,6 +136,7 @@ with DAG(
             ]
         ),
         email=[
+            "telemetry-alerts@mozilla.com",
             "telemetry-client-dev@mozilla.com",
             "aplacitelli@mozilla.com",
             "hwoo@mozilla.com",
@@ -174,6 +175,7 @@ with DAG(
                 )
             ),
             email=[
+                "telemetry-alerts@mozilla.com",
                 "telemetry-client-dev@mozilla.com",
                 "aplacitelli@mozilla.com",
                 "hwoo@mozilla.com",
@@ -213,6 +215,7 @@ with DAG(
             ]
         ),
         email=[
+            "telemetry-alerts@mozilla.com",
             "telemetry-client-dev@mozilla.com",
             "aplacitelli@mozilla.com",
             "hwoo@mozilla.com",
@@ -244,6 +247,7 @@ with DAG(
                 ]
             ),
             email=[
+                "telemetry-alerts@mozilla.com",
                 "telemetry-client-dev@mozilla.com",
                 "aplacitelli@mozilla.com",
                 "hwoo@mozilla.com",
@@ -289,7 +293,11 @@ with DAG(
     probe_scraper >> check_branch
 
     schema_generator = GKEPodOperator(
-        email=["dthorn@mozilla.com", "dataops+alerts@mozilla.com"],
+        email=[
+            "dthorn@mozilla.com",
+            "dataops+alerts@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
         task_id="mozilla_schema_generator",
         name="schema-generator-1",
         image="mozilla/mozilla-schema-generator:latest",
@@ -339,7 +347,11 @@ with DAG(
 
     lookml_generator_prod = GKEPodOperator(
         owner="ascholtz@mozilla.com",
-        email=["ascholtz@mozilla.com", "dataops+alerts@mozilla.com"],
+        email=[
+            "ascholtz@mozilla.com",
+            "dataops+alerts@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
         task_id="lookml_generator",
         name="lookml-generator-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + image_tag,
@@ -365,7 +377,11 @@ with DAG(
 
     lookml_generator_staging = GKEPodOperator(
         owner="ascholtz@mozilla.com",
-        email=["ascholtz@mozilla.com", "dataops+alerts@mozilla.com"],
+        email=[
+            "ascholtz@mozilla.com",
+            "dataops+alerts@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
         task_id="lookml_generator_staging",
         name="lookml-generator-staging-1",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
@@ -402,7 +418,11 @@ with DAG(
         method="POST",
         data={},
         owner="linh@mozilla.com",
-        email=["linh@mozilla.com", "dataops+alerts@mozilla.com"],
+        email=[
+            "linh@mozilla.com",
+            "dataops+alerts@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
         task_id="glean_dictionary_build",
         dag=dag,
     )
