@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-aiofiles==22.1.0
+aiofiles==23.1.0
     # via
     #   -c ./constraints.txt
     #   gcloud-aio-storage
@@ -20,7 +20,7 @@ aiosignal==1.3.1
     #   aiohttp
 airflow-provider-fivetran==1.1.2
     # via -r requirements.in
-alembic==1.10.2
+alembic==1.11.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -28,98 +28,99 @@ amqp==5.1.1
     # via
     #   -c ./constraints.txt
     #   kombu
-anyio==3.6.2
+anyio==3.7.1
     # via
     #   -c ./constraints.txt
     #   httpcore
-apache-airflow[amazon,async,celery,cncf.kubernetes,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.5.3
+apache-airflow[amazon,async,celery,cncf.kubernetes,github_enterprise,google_auth,jdbc,password,postgres,redis,statsd]==2.6.3
     # via
     #   -r requirements.in
     #   airflow-provider-fivetran
     #   apache-airflow-providers-amazon
     #   apache-airflow-providers-celery
     #   apache-airflow-providers-cncf-kubernetes
+    #   apache-airflow-providers-common-sql
+    #   apache-airflow-providers-ftp
     #   apache-airflow-providers-google
+    #   apache-airflow-providers-http
+    #   apache-airflow-providers-imap
     #   apache-airflow-providers-jdbc
-    #   apache-airflow-providers-mysql
     #   apache-airflow-providers-postgres
     #   apache-airflow-providers-redis
     #   apache-airflow-providers-slack
-apache-airflow-providers-amazon==7.3.0
+    #   apache-airflow-providers-sqlite
+apache-airflow-providers-amazon==8.2.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-celery==3.1.0
+apache-airflow-providers-celery==3.2.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-cncf-kubernetes==5.2.2
+apache-airflow-providers-cncf-kubernetes==7.1.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-common-sql==1.3.4
+apache-airflow-providers-common-sql==1.5.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   apache-airflow-providers-amazon
     #   apache-airflow-providers-google
     #   apache-airflow-providers-jdbc
-    #   apache-airflow-providers-mysql
     #   apache-airflow-providers-postgres
     #   apache-airflow-providers-slack
     #   apache-airflow-providers-sqlite
-apache-airflow-providers-ftp==3.3.1
+apache-airflow-providers-ftp==3.4.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-google==8.11.0
+apache-airflow-providers-google==10.2.0
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
-apache-airflow-providers-http==4.2.0
+apache-airflow-providers-http==4.4.2
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
     #   apache-airflow
-apache-airflow-providers-imap==3.1.1
+apache-airflow-providers-imap==3.2.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-jdbc==3.3.0
+apache-airflow-providers-jdbc==4.0.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-mysql==4.0.2
+apache-airflow-providers-postgres==5.5.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-postgres==5.4.0
+apache-airflow-providers-redis==3.2.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apache-airflow-providers-redis==3.1.0
-    # via
-    #   -c ./constraints.txt
-    #   apache-airflow
-apache-airflow-providers-slack==7.2.0
+apache-airflow-providers-slack==7.3.1
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
-apache-airflow-providers-sqlite==3.3.1
+apache-airflow-providers-sqlite==3.4.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-apispec[yaml]==3.3.2
+apispec[yaml]==5.2.2
     # via
     #   -c ./constraints.txt
     #   flask-appbuilder
-argcomplete==3.0.5
+argcomplete==3.1.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-asgiref==3.6.0
+asgiref==3.7.2
     # via
     #   -c ./constraints.txt
+    #   apache-airflow
+    #   apache-airflow-providers-amazon
     #   apache-airflow-providers-cncf-kubernetes
     #   apache-airflow-providers-google
     #   apache-airflow-providers-http
@@ -131,7 +132,8 @@ async-timeout==4.0.2
     # via
     #   -c ./constraints.txt
     #   aiohttp
-attrs==22.2.0
+    #   redis
+attrs==23.1.0
     # via
     #   -c ./constraints.txt
     #   aiohttp
@@ -139,8 +141,8 @@ attrs==22.2.0
     #   cattrs
     #   jsonschema
     #   looker-sdk
-    #   pytest
-authlib==1.2.0
+    #   referencing
+authlib==1.2.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -158,11 +160,11 @@ bcrypt==4.0.1
     #   -c ./constraints.txt
     #   apache-airflow
     #   flask-bcrypt
-beautifulsoup4==4.12.0
+beautifulsoup4==4.12.2
     # via
     #   -c ./constraints.txt
     #   redshift-connector
-billiard==3.6.4.0
+billiard==4.1.0
     # via
     #   -c ./constraints.txt
     #   celery
@@ -170,17 +172,17 @@ black==23.1a1
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
-blinker==1.5
+blinker==1.6.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-boto3==1.26.102
+boto3==1.26.161
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
     #   redshift-connector
     #   watchtower
-botocore==1.29.102
+botocore==1.29.161
     # via
     #   -c ./constraints.txt
     #   boto3
@@ -191,22 +193,22 @@ cachelib==0.9.0
     #   -c ./constraints.txt
     #   flask-caching
     #   flask-session
-cachetools==5.3.0
+cachetools==5.3.1
     # via
     #   -c ./constraints.txt
     #   google-auth
-cattrs==22.2.0
+cattrs==23.1.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   looker-sdk
-celery==5.2.7
+celery==5.3.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   apache-airflow-providers-celery
     #   flower
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   -c ./constraints.txt
     #   httpcore
@@ -218,16 +220,16 @@ cffi==1.15.1
     # via
     #   -c ./constraints.txt
     #   cryptography
-chardet==4.0.0
+chardet==5.1.0
     # via
     #   -c ./constraints.txt
     #   gcloud-aio-auth
-charset-normalizer==2.1.1
+charset-normalizer==3.1.0
     # via
     #   -c ./constraints.txt
     #   aiohttp
     #   requests
-click==8.1.3
+click==8.1.4
     # via
     #   -c ./constraints.txt
     #   black
@@ -246,7 +248,7 @@ click-plugins==1.1.1
     # via
     #   -c ./constraints.txt
     #   celery
-click-repl==0.2.0
+click-repl==0.3.0
     # via
     #   -c ./constraints.txt
     #   celery
@@ -270,15 +272,15 @@ connexion[flask]==2.14.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-cron-descriptor==1.2.35
+cron-descriptor==1.4.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-croniter==1.3.8
+croniter==1.4.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-cryptography==39.0.2
+cryptography==40.0.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -286,7 +288,7 @@ cryptography==39.0.2
     #   authlib
     #   gcloud-aio-auth
     #   pyopenssl
-db-dtypes==1.1.0
+db-dtypes==1.1.1
     # via
     #   -c ./constraints.txt
     #   pandas-gbq
@@ -294,10 +296,11 @@ decorator==5.1.1
     # via
     #   -c ./constraints.txt
     #   jsonpath-ng
-deprecated==1.2.13
+deprecated==1.2.14
     # via
     #   -c ./constraints.txt
     #   apache-airflow
+    #   limits
 dill==0.3.1.1
     # via
     #   -c ./constraints.txt
@@ -307,7 +310,7 @@ dnspython==2.3.0
     #   -c ./constraints.txt
     #   email-validator
     #   eventlet
-docutils==0.19
+docutils==0.20.1
     # via
     #   -c ./constraints.txt
     #   python-daemon
@@ -319,12 +322,13 @@ eventlet==0.33.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via
     #   -c ./constraints.txt
+    #   anyio
     #   cattrs
     #   pytest
-flask==2.2.3
+flask==2.2.5
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -335,13 +339,14 @@ flask==2.2.3
     #   flask-bcrypt
     #   flask-caching
     #   flask-jwt-extended
+    #   flask-limiter
     #   flask-login
     #   flask-session
     #   flask-sqlalchemy
     #   flask-wtf
 flask-admin==1.6.0
     # via -r requirements.in
-flask-appbuilder[oauth]==4.1.4
+flask-appbuilder[oauth]==4.3.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -357,7 +362,11 @@ flask-caching==2.0.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-flask-jwt-extended==4.4.4
+flask-jwt-extended==4.5.2
+    # via
+    #   -c ./constraints.txt
+    #   flask-appbuilder
+flask-limiter==3.3.1
     # via
     #   -c ./constraints.txt
     #   flask-appbuilder
@@ -366,7 +375,7 @@ flask-login==0.6.2
     #   -c ./constraints.txt
     #   apache-airflow
     #   flask-appbuilder
-flask-session==0.4.0
+flask-session==0.5.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -379,7 +388,7 @@ flask-wtf==1.1.1
     #   -c ./constraints.txt
     #   apache-airflow
     #   flask-appbuilder
-flower==1.2.0
+flower==2.0.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -393,7 +402,7 @@ future==0.18.3
     # via
     #   -c ./constraints.txt
     #   sqlalchemy-bigquery
-gcloud-aio-auth==4.2.0
+gcloud-aio-auth==4.2.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -403,7 +412,7 @@ gcloud-aio-bigquery==6.3.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-gcloud-aio-storage==8.1.0
+gcloud-aio-storage==8.2.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -411,11 +420,11 @@ gevent==22.10.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-google-ads==18.0.0
+google-ads==21.2.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-api-core[grpc,grpcgcp]==2.8.2
+google-api-core[grpc]==2.11.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -461,11 +470,11 @@ google-api-core[grpc,grpcgcp]==2.8.2
     #   google-cloud-workflows
     #   pandas-gbq
     #   sqlalchemy-bigquery
-google-api-python-client==1.12.11
+google-api-python-client==2.92.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-auth==2.17.0
+google-auth==2.21.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -484,60 +493,60 @@ google-auth-httplib2==0.1.0
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
     #   google-api-python-client
-google-auth-oauthlib==0.8.0
+google-auth-oauthlib==1.0.0
     # via
     #   -c ./constraints.txt
     #   google-ads
     #   pandas-gbq
     #   pydata-google-auth
-google-cloud-aiplatform==1.16.1
+google-cloud-aiplatform==1.27.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-appengine-logging==1.1.3
+google-cloud-appengine-logging==1.3.1
     # via
     #   -c ./constraints.txt
     #   google-cloud-logging
-google-cloud-audit-log==0.2.4
+google-cloud-audit-log==0.2.5
     # via
     #   -c ./constraints.txt
     #   google-cloud-logging
-google-cloud-automl==2.8.0
+google-cloud-automl==2.11.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-bigquery==2.34.4
+google-cloud-bigquery==3.11.3
     # via
     #   -c ./constraints.txt
     #   google-cloud-aiplatform
     #   pandas-gbq
     #   sqlalchemy-bigquery
-google-cloud-bigquery-datatransfer==3.7.0
+google-cloud-bigquery-datatransfer==3.11.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-bigquery-storage==2.14.1
+google-cloud-bigquery-storage==2.22.0
     # via
     #   -c ./constraints.txt
     #   pandas-gbq
     #   sqlalchemy-bigquery
-google-cloud-bigtable==2.11.1
+google-cloud-bigtable==2.19.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-build==3.9.0
+google-cloud-build==3.17.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-compute==0.7.0
+google-cloud-compute==1.12.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-container==2.11.1
+google-cloud-container==2.26.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-core==2.3.2
+google-cloud-core==2.3.3
     # via
     #   -c ./constraints.txt
     #   google-cloud-bigquery
@@ -546,112 +555,112 @@ google-cloud-core==2.3.2
     #   google-cloud-spanner
     #   google-cloud-storage
     #   google-cloud-translate
-google-cloud-datacatalog==3.9.0
+google-cloud-datacatalog==3.13.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-dataflow-client==0.5.4
+google-cloud-dataflow-client==0.8.4
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-dataform==0.2.0
+google-cloud-dataform==0.5.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-dataplex==1.1.0
+google-cloud-dataplex==1.5.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-dataproc==5.0.0
+google-cloud-dataproc==5.4.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-dataproc-metastore==1.6.0
+google-cloud-dataproc-metastore==1.12.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-dlp==3.7.1
+google-cloud-dlp==3.12.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-kms==2.12.0
+google-cloud-kms==2.18.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-language==1.3.2
+google-cloud-language==2.10.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-logging==3.2.1
+google-cloud-logging==3.5.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-memcache==1.4.1
+google-cloud-memcache==1.7.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-monitoring==2.11.0
+google-cloud-monitoring==2.15.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-orchestration-airflow==1.4.1
+google-cloud-orchestration-airflow==1.9.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-os-login==2.7.1
+google-cloud-os-login==2.9.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-pubsub==2.13.5
+google-cloud-pubsub==2.17.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-redis==2.9.0
+google-cloud-redis==2.13.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-resource-manager==1.6.0
+google-cloud-resource-manager==1.10.2
     # via
     #   -c ./constraints.txt
     #   google-cloud-aiplatform
-google-cloud-secret-manager==1.0.2
+google-cloud-secret-manager==2.16.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-spanner==1.19.3
+google-cloud-spanner==3.36.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-speech==1.3.4
+google-cloud-speech==2.21.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-storage==2.7.0
+google-cloud-storage==2.10.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
     #   google-cloud-aiplatform
-google-cloud-tasks==2.10.1
+google-cloud-tasks==2.13.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-texttospeech==1.0.3
+google-cloud-texttospeech==2.14.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-translate==1.7.2
+google-cloud-translate==3.11.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-videointelligence==1.16.3
+google-cloud-videointelligence==2.11.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-vision==1.0.2
+google-cloud-vision==3.4.4
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-google-cloud-workflows==1.7.1
+google-cloud-workflows==1.10.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -659,12 +668,16 @@ google-crc32c==1.5.0
     # via
     #   -c ./constraints.txt
     #   google-resumable-media
-google-resumable-media==2.4.1
+google-re2==1.0
+    # via
+    #   -c ./constraints.txt
+    #   apache-airflow
+google-resumable-media==2.5.0
     # via
     #   -c ./constraints.txt
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos[grpc]==1.56.4
+googleapis-common-protos[grpc]==1.59.1
     # via
     #   -c ./constraints.txt
     #   google-ads
@@ -683,14 +696,16 @@ greenlet==2.0.2
     #   eventlet
     #   gevent
     #   sqlalchemy
-grpc-google-iam-v1==0.12.4
+grpc-google-iam-v1==0.12.6
     # via
     #   -c ./constraints.txt
     #   google-cloud-bigtable
-    #   google-cloud-container
+    #   google-cloud-build
     #   google-cloud-datacatalog
     #   google-cloud-dataform
     #   google-cloud-dataplex
+    #   google-cloud-dataproc
+    #   google-cloud-dataproc-metastore
     #   google-cloud-kms
     #   google-cloud-logging
     #   google-cloud-pubsub
@@ -698,7 +713,7 @@ grpc-google-iam-v1==0.12.4
     #   google-cloud-secret-manager
     #   google-cloud-spanner
     #   google-cloud-tasks
-grpcio==1.53.0
+grpcio==1.56.0
     # via
     #   -c ./constraints.txt
     #   google-ads
@@ -713,7 +728,7 @@ grpcio-gcp==0.2.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-grpcio-status==1.48.2
+grpcio-status==1.56.0
     # via
     #   -c ./constraints.txt
     #   google-ads
@@ -731,7 +746,7 @@ httpcore==0.16.3
     # via
     #   -c ./constraints.txt
     #   httpx
-httplib2==0.21.0
+httplib2==0.22.0
     # via
     #   -c ./constraints.txt
     #   google-api-python-client
@@ -741,7 +756,7 @@ httpx==0.23.3
     #   -c ./constraints.txt
     #   apache-airflow
     #   apache-airflow-providers-google
-humanize==4.6.0
+humanize==4.7.0
     # via
     #   -c ./constraints.txt
     #   flower
@@ -753,6 +768,10 @@ idna==3.4
     #   requests
     #   rfc3986
     #   yarl
+importlib-resources==5.12.0
+    # via
+    #   -c ./constraints.txt
+    #   limits
 inflection==0.5.1
     # via
     #   -c ./constraints.txt
@@ -796,13 +815,17 @@ jsonpath-ng==1.5.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
-jsonschema==4.17.3
+jsonschema==4.18.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   connexion
     #   flask-appbuilder
-kombu==5.2.4
+jsonschema-specifications==2023.6.1
+    # via
+    #   -c ./constraints.txt
+    #   jsonschema
+kombu==5.3.1
     # via
     #   -c ./constraints.txt
     #   celery
@@ -811,15 +834,20 @@ kubernetes==23.6.0
     #   -c ./constraints.txt
     #   apache-airflow
     #   apache-airflow-providers-cncf-kubernetes
-kubernetes-asyncio==24.2.2
+kubernetes-asyncio==24.2.3
     # via
     #   -c ./constraints.txt
+    #   apache-airflow
     #   apache-airflow-providers-cncf-kubernetes
 lazy-object-proxy==1.9.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-linkify-it-py==2.0.0
+limits==3.5.0
+    # via
+    #   -c ./constraints.txt
+    #   flask-limiter
+linkify-it-py==2.0.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -828,11 +856,11 @@ lockfile==0.12.2
     #   -c ./constraints.txt
     #   apache-airflow
     #   python-daemon
-looker-sdk==23.2.0
+looker-sdk==23.10.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-lxml==4.9.2
+lxml==4.9.3
     # via
     #   -c ./constraints.txt
     #   redshift-connector
@@ -844,13 +872,13 @@ markdown==3.4.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-markdown-it-py==2.2.0
+markdown-it-py==3.0.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   mdit-py-plugins
     #   rich
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -877,7 +905,7 @@ marshmallow-sqlalchemy==0.26.1
     # via
     #   -c ./constraints.txt
     #   flask-appbuilder
-mdit-py-plugins==0.3.5
+mdit-py-plugins==0.4.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -890,15 +918,19 @@ multidict==6.0.4
     #   -c ./constraints.txt
     #   aiohttp
     #   yarl
-mypy-boto3-appflow==1.26.78
+mypy-boto3-appflow==1.28.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
-mypy-boto3-rds==1.26.102
+mypy-boto3-rds==1.28.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
-mypy-boto3-redshift-data==1.26.88
+mypy-boto3-redshift-data==1.28.0
+    # via
+    #   -c ./constraints.txt
+    #   apache-airflow-providers-amazon
+mypy-boto3-s3==1.28.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
@@ -906,15 +938,7 @@ mypy-extensions==1.0.0
     # via
     #   -c ./constraints.txt
     #   black
-mysql-connector-python==8.0.32
-    # via
-    #   -c ./constraints.txt
-    #   apache-airflow-providers-mysql
-mysqlclient==2.1.1
-    # via
-    #   -c ./constraints.txt
-    #   apache-airflow-providers-mysql
-numpy==1.24.2
+numpy==1.24.4
     # via
     #   -c ./constraints.txt
     #   db-dtypes
@@ -925,6 +949,10 @@ oauthlib==3.2.2
     # via
     #   -c ./constraints.txt
     #   requests-oauthlib
+ordered-set==4.1.0
+    # via
+    #   -c ./constraints.txt
+    #   flask-limiter
 packaging==21.3
     # via
     #   -c ./constraints.txt
@@ -933,8 +961,8 @@ packaging==21.3
     #   db-dtypes
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
-    #   google-cloud-compute
     #   jpype1
+    #   limits
     #   marshmallow
     #   pytest
     #   redshift-connector
@@ -946,7 +974,7 @@ pandas==1.5.3
     #   apache-airflow-providers-google
     #   db-dtypes
     #   pandas-gbq
-pandas-gbq==0.17.9
+pandas-gbq==0.19.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -959,11 +987,11 @@ pendulum==2.1.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-platformdirs==3.2.0
+platformdirs==3.8.1
     # via
     #   -c ./constraints.txt
     #   black
-pluggy==1.0.0
+pluggy==1.2.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -976,15 +1004,15 @@ prison==0.2.1
     # via
     #   -c ./constraints.txt
     #   flask-appbuilder
-prometheus-client==0.16.0
+prometheus-client==0.17.0
     # via
     #   -c ./constraints.txt
     #   flower
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.39
     # via
     #   -c ./constraints.txt
     #   click-repl
-proto-plus==1.19.6
+proto-plus==1.22.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
@@ -1007,6 +1035,7 @@ proto-plus==1.19.6
     #   google-cloud-dataproc-metastore
     #   google-cloud-dlp
     #   google-cloud-kms
+    #   google-cloud-language
     #   google-cloud-logging
     #   google-cloud-memcache
     #   google-cloud-monitoring
@@ -1015,9 +1044,16 @@ proto-plus==1.19.6
     #   google-cloud-pubsub
     #   google-cloud-redis
     #   google-cloud-resource-manager
+    #   google-cloud-secret-manager
+    #   google-cloud-spanner
+    #   google-cloud-speech
     #   google-cloud-tasks
+    #   google-cloud-texttospeech
+    #   google-cloud-translate
+    #   google-cloud-videointelligence
+    #   google-cloud-vision
     #   google-cloud-workflows
-protobuf==3.20.0
+protobuf==4.23.4
     # via
     #   -c ./constraints.txt
     #   google-ads
@@ -1031,6 +1067,7 @@ protobuf==3.20.0
     #   google-cloud-bigquery-storage
     #   google-cloud-bigtable
     #   google-cloud-build
+    #   google-cloud-compute
     #   google-cloud-container
     #   google-cloud-datacatalog
     #   google-cloud-dataflow-client
@@ -1059,18 +1096,18 @@ protobuf==3.20.0
     #   google-cloud-vision
     #   google-cloud-workflows
     #   googleapis-common-protos
+    #   grpc-google-iam-v1
     #   grpcio-status
-    #   mysql-connector-python
     #   proto-plus
-psutil==5.9.4
+psutil==5.9.5
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-postgres
-pyarrow==9.0.0
+pyarrow==11.0.0
     # via
     #   -c ./constraints.txt
     #   db-dtypes
@@ -1090,36 +1127,36 @@ pycparser==2.21
     # via
     #   -c ./constraints.txt
     #   cffi
-pydata-google-auth==1.7.0
+pydantic==1.10.11
+    # via
+    #   -c ./constraints.txt
+    #   apache-airflow
+pydata-google-auth==1.8.0
     # via
     #   -c ./constraints.txt
     #   pandas-gbq
-pygments==2.14.0
+pygments==2.15.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   rich
-pyjwt==2.6.0
+pyjwt==2.7.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
     #   flask-appbuilder
     #   flask-jwt-extended
     #   gcloud-aio-auth
-pyopenssl==23.1.1
+pyopenssl==23.2.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-google
-pyparsing==3.0.9
+pyparsing==3.1.0
     # via
     #   -c ./constraints.txt
     #   httplib2
     #   packaging
-pyrsistent==0.19.3
-    # via
-    #   -c ./constraints.txt
-    #   jsonschema
-pytest==7.2.2
+pytest==7.4.0
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
@@ -1135,6 +1172,7 @@ python-dateutil==2.8.2
     #   -c ./constraints.txt
     #   apache-airflow
     #   botocore
+    #   celery
     #   croniter
     #   flask-appbuilder
     #   google-cloud-bigquery
@@ -1154,7 +1192,6 @@ python-slugify==8.0.1
 pytz==2023.3
     # via
     #   -c ./constraints.txt
-    #   celery
     #   flask-babel
     #   flower
     #   pandas
@@ -1172,15 +1209,20 @@ pyyaml==6.0
     #   google-ads
     #   kubernetes
     #   kubernetes-asyncio
-redis==3.5.3
+redis==4.6.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-redis
-redshift-connector==2.0.910
+redshift-connector==2.0.912
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
-requests==2.28.2
+referencing==0.29.1
+    # via
+    #   -c ./constraints.txt
+    #   jsonschema
+    #   jsonschema-specifications
+requests==2.31.0
     # via
     #   -c ./constraints.txt
     #   airflow-provider-fivetran
@@ -1199,7 +1241,7 @@ requests-oauthlib==1.3.1
     #   -c ./constraints.txt
     #   google-auth-oauthlib
     #   kubernetes
-requests-toolbelt==0.10.1
+requests-toolbelt==1.0.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-http
@@ -1211,18 +1253,31 @@ rfc3986[idna2008]==1.5.0
     # via
     #   -c ./constraints.txt
     #   httpx
-rich==13.3.3
+rich==13.4.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
+    #   flask-limiter
+    #   rich-argparse
+rich-argparse==1.2.0
+    # via
+    #   -c ./constraints.txt
+    #   apache-airflow
+rpds-py==0.8.8
+    # via
+    #   -c ./constraints.txt
+    #   jsonschema
+    #   referencing
 rsa==4.9
     # via
     #   -c ./constraints.txt
     #   gcloud-aio-storage
     #   google-auth
-ruff==0.0.269
-    # via -r requirements.in
-s3transfer==0.6.0
+ruff==0.0.277
+    # via
+    #   -c ./constraints.txt
+    #   -r requirements.in
+s3transfer==0.6.1
     # via
     #   -c ./constraints.txt
     #   boto3
@@ -1234,14 +1289,16 @@ setproctitle==1.3.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
+shapely==1.8.5.post1
+    # via
+    #   -c ./constraints.txt
+    #   google-cloud-aiplatform
 shelljob==0.5.6
     # via -r requirements.in
 six==1.16.0
     # via
     #   -c ./constraints.txt
-    #   click-repl
     #   eventlet
-    #   google-api-python-client
     #   google-auth
     #   google-auth-httplib2
     #   jsonpath-ng
@@ -1250,7 +1307,7 @@ six==1.16.0
     #   prison
     #   python-dateutil
     #   rfc3339-validator
-slack-sdk==3.20.2
+slack-sdk==3.21.3
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-slack
@@ -1260,11 +1317,11 @@ sniffio==1.3.0
     #   anyio
     #   httpcore
     #   httpx
-soupsieve==2.4
+soupsieve==2.4.1
     # via
     #   -c ./constraints.txt
     #   beautifulsoup4
-sqlalchemy==1.4.47
+sqlalchemy==1.4.49
     # via
     #   -c ./constraints.txt
     #   alembic
@@ -1284,18 +1341,19 @@ sqlalchemy-jsonfield==1.0.1.post0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-sqlalchemy-redshift==0.8.13
+sqlalchemy-redshift==0.8.14
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-amazon
-sqlalchemy-utils==0.40.0
+sqlalchemy-utils==0.41.1
     # via
     #   -c ./constraints.txt
     #   flask-appbuilder
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   -c ./constraints.txt
     #   apache-airflow-providers-common-sql
+    #   google-cloud-spanner
 statsd==4.0.1
     # via
     #   -c ./constraints.txt
@@ -1308,7 +1366,7 @@ tenacity==8.2.2
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-termcolor==2.2.0
+termcolor==2.3.0
     # via
     #   -c ./constraints.txt
     #   apache-airflow
@@ -1321,19 +1379,26 @@ tomli==2.0.1
     #   -c ./constraints.txt
     #   black
     #   pytest
-tornado==6.2
+tornado==6.3.2
     # via
     #   -c ./constraints.txt
     #   flower
-typing-extensions==4.5.0
+typing-extensions==4.7.1
     # via
     #   -c ./constraints.txt
     #   alembic
     #   apache-airflow
+    #   asgiref
+    #   cattrs
+    #   flask-limiter
+    #   limits
     #   looker-sdk
-    #   mypy-boto3-appflow
-    #   mypy-boto3-redshift-data
-uc-micro-py==1.0.1
+    #   pydantic
+tzdata==2023.3
+    # via
+    #   -c ./constraints.txt
+    #   celery
+uc-micro-py==1.0.2
     # via
     #   -c ./constraints.txt
     #   linkify-it-py
@@ -1341,14 +1406,15 @@ unicodecsv==0.14.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
-uritemplate==3.0.1
+uritemplate==4.1.1
     # via
     #   -c ./constraints.txt
     #   google-api-python-client
-urllib3==1.26.15
+urllib3==1.26.16
     # via
     #   -c ./constraints.txt
     #   botocore
+    #   google-auth
     #   kubernetes
     #   kubernetes-asyncio
     #   requests
@@ -1366,7 +1432,7 @@ wcwidth==0.2.6
     # via
     #   -c ./constraints.txt
     #   prompt-toolkit
-websocket-client==1.5.1
+websocket-client==1.6.1
     # via
     #   -c ./constraints.txt
     #   kubernetes
@@ -1392,11 +1458,11 @@ xmltodict==0.13.0
     # via
     #   -c ./constraints.txt
     #   -r requirements.in
-yarl==1.8.2
+yarl==1.9.2
     # via
     #   -c ./constraints.txt
     #   aiohttp
-zope-event==4.6
+zope-event==5.0
     # via
     #   -c ./constraints.txt
     #   gevent
