@@ -1,4 +1,4 @@
-FROM apache/airflow:slim-2.5.3-python3.10
+FROM apache/airflow:slim-2.6.3-python3.10
 
 ARG PROJECT_DIR="/opt/airflow"
 
@@ -8,7 +8,7 @@ ENV AIRFLOW_HOME=$PROJECT_DIR
 
 USER root
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential default-libmysqlclient-dev
+  && apt-get install -y --no-install-recommends build-essential
 
 # Legacy docker image dependencies to be reviewed
 RUN apt-get install -y --no-install-recommends \

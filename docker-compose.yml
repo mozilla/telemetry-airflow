@@ -1,5 +1,5 @@
 # Adapted from official docker-compose.yaml
-# https://airflow.apache.org/docs/apache-airflow/2.5.1/docker-compose.yaml
+# https://airflow.apache.org/docs/apache-airflow/2.6.3/docker-compose.yaml
 #
 # WARNING: This configuration is for local development. Do not use it in a production deployment.
 #
