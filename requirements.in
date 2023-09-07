@@ -4,17 +4,17 @@
 --constraint ./constraints.txt
 
 # Airflow dependencies
-apache-airflow[amazon,async,celery,cncf.kubernetes,github_enterprise,google_auth,jdbc,mysql,password,postgres,redis,statsd]==2.5.3
+apache-airflow[amazon,async,celery,cncf.kubernetes,github_enterprise,google_auth,jdbc,password,postgres,redis,statsd]==2.6.3
 apache-airflow-providers-google
 apache-airflow-providers-http
 apache-airflow-providers-slack
 airflow-provider-fivetran==1.1.2
 
 # Code quality
-pytest==7.2.2
+pytest==7.4.0
 pytest-mock==3.10.0
 black==23.1a1
-ruff==0.0.269
+ruff==0.0.277
 
 # Required for backfill UI
 flask-admin
