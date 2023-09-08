@@ -28,6 +28,10 @@ USER airflow
 COPY requirements.txt /
 RUN pip install --no-cache-dir -r /requirements.txt
 
+# Override default version from the constraints file because it is broken
+# https://github.com/apache/airflow/pull/34194
+RUN pip install apache-airflow-providers-google==8.11.0 --upgrade
+
 WORKDIR $PROJECT_DIR
 
 # deploylib expects /app/version.json, copy the file if it exists
