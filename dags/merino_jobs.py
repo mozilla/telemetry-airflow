@@ -172,11 +172,11 @@ with DAG(
 
     on_domain_success = EmailOperator(
         task_id="email_on_domain_success",
-        to="wstuckey@mozilla.com",
+        to=["wstuckey@mozilla.com", "tkorris@mozilla.com", "najiang@mozilla.com"],
         subject="Navigational Suggestions Domain Metadata job successful",
         html_content="""
         Job completed. Download the new top picks json file on GCS.
-        
+
         Prod Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_prod")["top_pick_url"]}}
         Stage Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_stage")["top_pick_url"]}}
         """,
