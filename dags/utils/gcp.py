@@ -347,6 +347,7 @@ def bigquery_dq_check(
     gke_namespace="default",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     date_partition_parameter="submission_date",
+    is_dq_check_fail=True,
     **kwargs,
 ):
     """
@@ -383,7 +384,14 @@ def bigquery_dq_check(
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
 
     sql_file_path = f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}"
-    args = ["script/bqetl", "check", "run", sql_file_path]
+
+    marker = ["--marker"]
+    if is_dq_check_fail:
+        marker += ["fail"]
+    else:
+        marker += ["warn"]
+
+    args = ["script/bqetl", "check", "run", *marker, sql_file_path]
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
