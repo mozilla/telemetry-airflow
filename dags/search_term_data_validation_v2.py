@@ -51,4 +51,7 @@ with DAG(
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
         dag=dag,
         gcp_conn_id="google_cloud_airflow_gke",
+        gke_project_id="moz-fx-data-airflow-gke-prod",
+        gke_location="us-west1",
+        gke_cluster_name="workloads-prod-v1",
     )
