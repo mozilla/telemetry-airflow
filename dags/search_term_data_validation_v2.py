@@ -48,7 +48,6 @@ with DAG(
             "--data_validation_reporting_destination",
             "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
         dag=dag,
-        gcp_conn_id="google_cloud_airflow_gke",
     )
