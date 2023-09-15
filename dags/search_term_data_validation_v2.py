@@ -44,6 +44,6 @@ with DAG(
             "echo",
             '"HELLO WORLD!"'
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
         dag=dag,
     )
