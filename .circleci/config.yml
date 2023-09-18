@@ -188,13 +188,16 @@ jobs:
           fingerprints:
             - "e4:30:50:41:53:f0:d6:3a:bb:c9:38:54:2d:ca:56:41"
       - run:
-          name: Commit to GitHub
+          name: 🤖 Update DAGs repository
           command: |
             git config user.email "dataops@mozilla.com"
             git config user.name "CircleCI Job"
             git clone -b test-branch https://github.com/mozilla/telemetry-airflow-dags.git
-            cd telemetry-airflow-dags
-            git commit --allow-empty -am "Automatic commit from ${CIRCLE_PROJECT_REPONAME} #${CIRCLE_PR_NUMBER} Build ${CIRCLE_BUILD_NUM} [skip ci]"
+            cd telemetry-airflow-dags/telemetry-airflow
+            git pull origin dags
+            cd ..
+            git add telemetry-airflow
+            git commit  "Automatic commit from ${CIRCLE_PROJECT_REPONAME} Commit ${CIRCLE_SHA1:0:9} Build ${CIRCLE_BUILD_NUM} [skip ci]"
             git push origin test-branch
 
 workflows:
