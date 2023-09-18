@@ -11,7 +11,7 @@ from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.utils.weekday import WeekDay
 
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """\

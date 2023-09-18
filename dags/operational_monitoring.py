@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
 
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 docs = """

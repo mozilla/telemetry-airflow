@@ -17,7 +17,7 @@ from utils.dataproc import (
     moz_dataproc_pyspark_runner,
 )
 from utils.gcp import bigquery_etl_query
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {

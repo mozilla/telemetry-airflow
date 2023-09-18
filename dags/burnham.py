@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from utils.operators.bq_sensor import BigQuerySQLSensorOperator
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.bq_sensor import BigQuerySQLSensorOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """\

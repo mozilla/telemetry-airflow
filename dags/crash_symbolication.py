@@ -14,7 +14,7 @@ from airflow.sensors.external_task import ExternalTaskSensor
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {

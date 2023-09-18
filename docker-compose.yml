@@ -42,6 +42,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./utils:/opt/airflow/utils
+    - ./operators:/opt/airflow/operators
     - ./resources/dev_webserver_config.py:/opt/airflow/webserver_config.py
     - ./resources/dev_connections.json:/opt/airflow/dev_connections.json
     - ./resources/dev_variables.json:/opt/airflow/dev_variables.json

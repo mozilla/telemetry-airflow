@@ -17,7 +17,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {

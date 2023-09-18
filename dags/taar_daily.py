@@ -26,7 +26,7 @@ from utils.dataproc import (
     moz_dataproc_jar_runner,
     moz_dataproc_pyspark_runner,
 )
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")

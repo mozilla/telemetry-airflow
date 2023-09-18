@@ -14,7 +14,7 @@ from datetime import datetime
 
 from airflow import DAG
 
-from utils.operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
     "owner": "gleonard@mozilla.com",
