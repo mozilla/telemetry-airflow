@@ -14,12 +14,13 @@ from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
-from glam_subdags.extract import extract_user_counts, extracts_subdag
-from glam_subdags.general import repeated_subdag
-from glam_subdags.generate_query import generate_and_run_desktop_query
-from glam_subdags.histograms import histogram_aggregates_subdag
+
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query, gke_command
+from utils.glam_subdags.extract import extract_user_counts, extracts_subdag
+from utils.glam_subdags.general import repeated_subdag
+from utils.glam_subdags.generate_query import generate_and_run_desktop_query
+from utils.glam_subdags.histograms import histogram_aggregates_subdag
 from utils.tags import Tag
 
 project_id = "moz-fx-data-shared-prod"

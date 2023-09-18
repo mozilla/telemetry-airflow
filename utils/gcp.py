@@ -14,8 +14,8 @@ from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
     BigQueryToGCSOperator,
 )
 
-from dags.operators.gcp_container_operator import GKEPodOperator
-from dags.utils.dataproc import get_dataproc_parameters
+from utils.dataproc import get_dataproc_parameters
+from utils.operators.gcp_container_operator import GKEPodOperator
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"

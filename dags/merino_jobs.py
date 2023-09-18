@@ -1,10 +1,11 @@
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.operators.email import EmailOperator
-from operators.gcp_container_operator import GKEPodOperator
+
+from utils.operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """\
@@ -16,7 +17,7 @@ DOCS = """\
 
 
 def merino_job(
-    name: str, arguments: List[str], env_vars: Optional[Dict[str, Any]] = None, **kwargs
+    name: str, arguments: list[str], env_vars: dict[str, Any] | None = None, **kwargs
 ):
     default_env_vars = {"MERINO_ENV": "production"}
     if env_vars is None:
@@ -176,7 +177,7 @@ with DAG(
         subject="Navigational Suggestions Domain Metadata job successful",
         html_content="""
         Job completed. Download the new top picks json file on GCS.
-        
+
         Prod Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_prod")["top_pick_url"]}}
         Stage Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_stage")["top_pick_url"]}}
         """,
