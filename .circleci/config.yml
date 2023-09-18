@@ -193,7 +193,7 @@ jobs:
             git config user.email "dataops@mozilla.com"
             git config user.name "CircleCI Job"
             git clone -b test-branch git@github.com:mozilla/telemetry-airflow-dags.git
-            cd telemetry-airflow-dags/telemetry-airflow
+            cd ~/project/telemetry-airflow-dags/telemetry-airflow
             git pull origin dags
             cd ..
             git add telemetry-airflow
