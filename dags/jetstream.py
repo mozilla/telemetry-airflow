@@ -16,8 +16,9 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from operators.gcp_container_operator import GKEPodOperator
+
 from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
@@ -43,7 +44,6 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-
     # Built from repo https://github.com/mozilla/jetstream
     jetstream_image = "gcr.io/moz-fx-data-experiments/jetstream:latest"
 

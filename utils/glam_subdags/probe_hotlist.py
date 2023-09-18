@@ -11,6 +11,8 @@ def update_hotlist(
     **kwargs,
 ):
     """
+    Update hotlist.
+
     :param task_id:                     Airflow task id
     :param project_id:                  GCP project to write to
     :param source_dataset_id:           Bigquery dataset to read from in queries
@@ -26,9 +28,7 @@ def update_hotlist(
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",
     }
-    command = [
-        "script/glam/update_probe_hotlist"
-    ]
+    command = ["script/glam/update_probe_hotlist"]
     return gke_command(
         task_id=task_id,
         cmds=["bash"],

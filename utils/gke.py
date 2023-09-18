@@ -11,10 +11,8 @@ def create_gke_config(
     subnetwork="default",
     is_dev=False,
 ):
-
     """
-    Helper function to create gke cluster definition dict. All fields must match
-    their protobuf definitions.
+    Create gke cluster definition dict. All fields must match their protobuf definitions.
 
     See:
         https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters#Cluster

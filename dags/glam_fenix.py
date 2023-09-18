@@ -1,5 +1,6 @@
 """
-Firefox for Android ETL for https://glam.telemetry.mozilla.org/
+Firefox for Android ETL for https://glam.telemetry.mozilla.org/.
+
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
 in bigquery-etl and the
@@ -8,20 +9,19 @@ in telemetry-airflow.
 """
 
 from datetime import datetime, timedelta
+from functools import partial
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.sensors.external_task import ExternalTaskMarker
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
-from glam_subdags.generate_query import (
+from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.gcp import gke_command
+from utils.glam_subdags.generate_query import (
     generate_and_run_glean_queries,
     generate_and_run_glean_task,
 )
-from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import gke_command
-from functools import partial
 from utils.tags import Tag
 
 default_args = {
@@ -93,10 +93,10 @@ with DAG(
     )
 
     pre_import = EmptyOperator(
-        task_id='pre_import',
+        task_id="pre_import",
     )
 
-    with TaskGroup('glam_fenix_external') as glam_fenix_external:
+    with TaskGroup("glam_fenix_external") as glam_fenix_external:
         ExternalTaskMarker(
             task_id="glam_glean_imports__wait_for_fenix",
             external_dag_id="glam_glean_imports",
@@ -112,8 +112,7 @@ with DAG(
             task_id=f"daily_{product}",
             product=product,
             destination_project_id=PROJECT,
-            env_vars=dict(STAGE="daily"),
-
+            env_vars={"STAGE": "daily"},
         )
         mapping[product] = query
         wait_for_copy_deduplicate >> query
@@ -127,12 +126,12 @@ with DAG(
             generate_and_run_glean_task,
             product=product,
             destination_project_id=PROJECT,
-            env_vars=dict(STAGE="incremental"),
-
+            env_vars={"STAGE": "incremental"},
         )
-        view, init, query = [
-            partial(func, task_type=task_type) for task_type in ["view", "init", "query"]
-        ]
+        view, init, query = (
+            partial(func, task_type=task_type)
+            for task_type in ["view", "init", "query"]
+        )
 
         # stage 1 - incremental
         clients_daily_histogram_aggregates = view(
@@ -162,8 +161,12 @@ with DAG(
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
         scalar_percentile = query(task_name=f"{product}__scalar_percentiles_v1")
 
-        histogram_bucket_counts = query(task_name=f"{product}__histogram_bucket_counts_v1")
-        histogram_probe_counts = query(task_name=f"{product}__histogram_probe_counts_v1")
+        histogram_bucket_counts = query(
+            task_name=f"{product}__histogram_bucket_counts_v1"
+        )
+        histogram_probe_counts = query(
+            task_name=f"{product}__histogram_probe_counts_v1"
+        )
         histogram_percentiles = query(task_name=f"{product}__histogram_percentiles_v1")
 
         probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
@@ -186,7 +189,6 @@ with DAG(
             command=["script/glam/export_csv"],
             docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
             gcp_conn_id="google_cloud_airflow_gke",
-
         )
 
         # set all of the dependencies for all of the tasks
@@ -228,5 +230,11 @@ with DAG(
             >> probe_counts
         )
         probe_counts >> sample_counts >> extract_probe_counts >> export >> pre_import
-        clients_scalar_aggregate >> user_counts >> extract_user_counts >> export >> pre_import
+        (
+            clients_scalar_aggregate
+            >> user_counts
+            >> extract_user_counts
+            >> export
+            >> pre_import
+        )
         clients_histogram_aggregate >> export >> pre_import

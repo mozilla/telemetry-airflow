@@ -1,6 +1,6 @@
 import pytest
 
-from dags.utils.backfill import BackfillParams
+from utils.backfill import BackfillParams
 
 
 @pytest.fixture()

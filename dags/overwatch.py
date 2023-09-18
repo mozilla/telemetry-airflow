@@ -13,7 +13,8 @@ All alerts related to this DAG can be ignored.
 from datetime import datetime
 
 from airflow import DAG
-from operators.gcp_container_operator import GKEPodOperator
+
+from utils.operators.gcp_container_operator import GKEPodOperator
 
 default_args = {
     "owner": "gleonard@mozilla.com",

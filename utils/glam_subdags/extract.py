@@ -4,6 +4,7 @@ from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperato
 from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
     BigQueryToGCSOperator,
 )
+
 from utils.gcp import bigquery_etl_query
 
 gcp_conn_id = "google_cloud_airflow_dataproc"
