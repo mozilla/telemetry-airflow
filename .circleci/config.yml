@@ -183,7 +183,6 @@ jobs:
   sync-dags-repo:
     executor: docker/machine
     steps:
-      - checkout
       - add_ssh_keys:
           fingerprints:
             - "e4:30:50:41:53:f0:d6:3a:bb:c9:38:54:2d:ca:56:41"
@@ -192,8 +191,8 @@ jobs:
           command: |
             git config user.email "dataops@mozilla.com"
             git config user.name "CircleCI Job"
-            git clone https://github.com/mozilla/telemetry-airflow-dags.git
-            git checkout origin/test-branch
+            git clone -b origin/test-branch https://github.com/mozilla/telemetry-airflow-dags.git
+            cd telemetry-airflow-dags
             git commit --allow-empty -am "Automatic commit from CircleCI [skip ci]"
             git push origin test-branch
 
