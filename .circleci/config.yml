@@ -212,10 +212,6 @@ workflows:
             tags:
               ignore: /.*/
 
-      - sync-dags-repo:
-          name: Git Test
-          filters: *ci-filter
-
       - docker-build-artifact:
           name: 🛠️ Docker build test
           filters: *ci-filter
