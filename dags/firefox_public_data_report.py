@@ -11,13 +11,13 @@ from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import (
     get_dataproc_parameters,
     moz_dataproc_pyspark_runner,
 )
 from utils.gcp import bigquery_etl_query
-from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {

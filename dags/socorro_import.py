@@ -8,8 +8,8 @@ from airflow.providers.google.cloud.operators.cloud_storage_transfer_service imp
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 
-from utils.dataproc import moz_dataproc_pyspark_runner
 from operators.gcp_container_operator import GKEPodOperator
+from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 """
