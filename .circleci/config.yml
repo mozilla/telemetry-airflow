@@ -193,11 +193,13 @@ jobs:
             git config user.email "dataops@mozilla.com"
             git config user.name "CircleCI Job"
             git clone -b test-branch git@github.com:mozilla/telemetry-airflow-dags.git
-            cd ~/project/telemetry-airflow-dags/telemetry-airflow
+            cd ~/project/telemetry-airflow-dags
+            git submodule update --init --recursive --depth 1
+            cd telemetry-airflow
             git pull origin dags
             cd ..
             git add telemetry-airflow
-            git commit  "Automatic commit from ${CIRCLE_PROJECT_REPONAME} Commit ${CIRCLE_SHA1:0:9} Build ${CIRCLE_BUILD_NUM} [skip ci]"
+            git commit –allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} Commit ${CIRCLE_SHA1:0:9} Build ${CIRCLE_BUILD_NUM} [skip ci]"
             git push origin test-branch
 
 workflows:
