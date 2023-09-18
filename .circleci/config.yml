@@ -183,6 +183,7 @@ jobs:
   sync-dags-repo:
     executor: docker/machine
     steps:
+      - checkout
       - add_ssh_keys:
           fingerprints:
             - "e4:30:50:41:53:f0:d6:3a:bb:c9:38:54:2d:ca:56:41"
