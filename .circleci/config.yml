@@ -192,9 +192,9 @@ jobs:
           command: |
             git config user.email "dataops@mozilla.com"
             git config user.name "CircleCI Job"
-            git clone -b origin/test-branch https://github.com/mozilla/telemetry-airflow-dags.git
+            git clone -b test-branch https://github.com/mozilla/telemetry-airflow-dags.git
             cd telemetry-airflow-dags
-            git commit --allow-empty -am "Automatic commit from CircleCI [skip ci]"
+            git commit --allow-empty -am "Automatic commit from ${CIRCLE_PROJECT_REPONAME} #${CIRCLE_PR_NUMBER} Build ${CIRCLE_BUILD_NUM} [skip ci]"
             git push origin test-branch
 
 workflows:
