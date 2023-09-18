@@ -41,6 +41,6 @@ with DAG(
     search_term_data_validation = gke_command(
         task_id="search_term_data_validation_v2",
         command=["echo", '"HELLO WORLD!"'],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
         dag=dag,
     )
