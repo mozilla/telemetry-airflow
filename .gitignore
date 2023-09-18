@@ -4,6 +4,7 @@
 *.un~
 venv/
 .venv/
+.env
 
 logs
 unittests.cfg
