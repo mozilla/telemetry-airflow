@@ -199,7 +199,7 @@ jobs:
             git pull origin dags
             cd ..
             git add telemetry-airflow
-            git commit -–allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} Commit ${CIRCLE_SHA1:0:9} Build ${CIRCLE_BUILD_NUM} [skip ci]"
+            git commit --allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} Commit ${CIRCLE_SHA1:0:9} Build ${CIRCLE_BUILD_NUM} [skip ci]"
             git push origin test-branch
 
 workflows:
