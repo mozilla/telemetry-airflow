@@ -324,6 +324,7 @@ workflows:
               only: main
 
       - sync-dags-repo:
+          name: 🔃 Synchronize DAGs repository
           filters:
             tags:
               only: /.*/
