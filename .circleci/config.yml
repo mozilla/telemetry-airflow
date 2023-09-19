@@ -238,13 +238,14 @@ workflows:
               ignore: /.*/
 
       - sync-dags-branch:
-          name: Submodule Sync Test
+          name: Update DAGs branch
           filters: *ci-filter
 
       - sync-dags-repo:
+          name: Synchronize telemetry-airflow-dags repository
           filters: *ci-filter
           requires:
-            - Submodule Sync Test
+            - Update DAGs branch
 
       - docker-build-artifact:
           name: 🛠️ Docker build test
@@ -352,10 +353,21 @@ workflows:
             branches:
               only: main
 
-      - sync-dags-repo:
-          name: 🔃 Synchronize DAGs repository
+      - sync-dags-branch:
+          name: 🔃 Update DAGs branch
           filters:
             tags:
               only: /.*/
             branches:
               only: main
+
+      - sync-dags-repo:
+          name: 🔃 Synchronize telemetry-airflow-dags repository
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: main
+          requires:
+            - 🔃 Update DAGs branch
+
