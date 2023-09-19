@@ -190,9 +190,10 @@ jobs:
       - run:
           name: 🤖 Update DAGs repository
           command: |
+            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
             git config --global user.email "dataops@mozilla.com"
             git config --global user.name "CircleCI Job"
-            git clone -b main git@github.com:mozilla/telemetry-airflow-dags.git
+            git clone --branch main git@github.com:mozilla/telemetry-airflow-dags.git
             cd ~/project/telemetry-airflow-dags
             git submodule update --init --recursive --depth 1
             cd ${CIRCLE_PROJECT_REPONAME}
@@ -211,6 +212,10 @@ workflows:
               ignore: main
             tags:
               ignore: /.*/
+
+
+      - sync-dags-repo:
+          filters: *ci-filter
 
       - docker-build-artifact:
           name: 🛠️ Docker build test
