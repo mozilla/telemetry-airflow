@@ -220,7 +220,7 @@ jobs:
               dags-branch
             cd dags-branch/
             rm -rf dags/
-            cp -r /project/dags dags
+            cp -r ~/project/dags dags
             git add .
             git commit -m "Automatic commit - DAGs from commit ${CIRCLE_SHA1:0:9} build ${CIRCLE_BUILD_NUM} [skip ci]" \
               && git push \
