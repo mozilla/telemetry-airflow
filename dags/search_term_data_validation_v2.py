@@ -42,7 +42,7 @@ with DAG(
         task_id="search_term_data_validation_v2",
         command=[
             "python",
-            "search_term_data_validation_v2/main.py",
+            "search_term_data_validation_v2/not_a_real_file.py",
             "--data_validation_origin",
             "moz-fx-data-shared-prod.search_terms.sanitization_job_data_validation_metrics",
             "--data_validation_reporting_destination",
