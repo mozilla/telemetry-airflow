@@ -16,8 +16,8 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.subdag import SubDagOperator
 
-from utils.dataproc import moz_dataproc_pyspark_runner
 from operators.gcp_container_operator import GKEPodOperator
+from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 taar_ensemble_cluster_name = "dataproc-taar-ensemble"

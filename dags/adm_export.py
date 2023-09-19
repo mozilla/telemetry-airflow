@@ -4,8 +4,8 @@ from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
-from utils.constants import ALLOWED_STATES, FAILED_STATES
 from operators.gcp_container_operator import GKEPodOperator
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 DOCS = """\

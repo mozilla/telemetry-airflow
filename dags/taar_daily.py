@@ -21,12 +21,12 @@ from airflow.models import Variable
 from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import (
     moz_dataproc_jar_runner,
     moz_dataproc_pyspark_runner,
 )
-from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 TAAR_ETL_STORAGE_BUCKET = Variable.get("taar_etl_storage_bucket")

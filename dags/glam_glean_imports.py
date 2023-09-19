@@ -7,8 +7,8 @@ from airflow.models import Variable
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
-from utils.constants import ALLOWED_STATES, FAILED_STATES
 from operators.gcp_container_operator import GKENatPodOperator
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
 default_args = {
