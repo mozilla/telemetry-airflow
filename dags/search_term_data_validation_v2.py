@@ -44,7 +44,7 @@ with DAG(
         command=[
             'python',
             '-c',
-            '"print(123)"',
+            '"import logging;logging.error(123)"',
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
         dag=dag,
