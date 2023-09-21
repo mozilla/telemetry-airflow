@@ -86,7 +86,7 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
             "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
         },
         additional_metadata={
-            "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git"
+            "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
         },
         python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
             artifact_bucket
@@ -146,7 +146,7 @@ trim_database = gke_command(
         "{{ var.value.mozaggregator_postgres_host }}",
         "--no-dry-run",
     ],
-    docker_image="mozilla/python_mozaggregator:latest",
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/python_mozaggregator:latest",
     dag=dag,
 )
 
@@ -209,7 +209,7 @@ if EXPORT_TO_AVRO:
             "'nightly', 'beta'",
             "{{ ds }}",
         ],
-        docker_image="mozilla/python_mozaggregator:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/python_mozaggregator:latest",
         dag=dag,
     ).set_downstream(prerelease_telemetry_aggregate_view_dataproc)
 
