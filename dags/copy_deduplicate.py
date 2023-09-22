@@ -107,14 +107,25 @@ with models.DAG(
             ("bqetl_experiments_daily", "hour=3, minute=0"),
             ("bqetl_feature_usage", "hour=5, minute=0"),
             ("bqetl_fenix_event_rollup", "hour=2, minute=0"),
+            ("bqetl_firefox_ios", "hour=4, minute=0"),
+            ("bqetl_fog_decision_support", "hour=4, minute=0"),
             ("bqetl_internal_tooling", "hour=4, minute=0"),
             ("bqetl_internet_outages", "hour=7, minute=0"),
             ("bqetl_messaging_system", "hour=2, minute=0"),
+            ("bqetl_main_summary", "hour=2, minute=0"),
+            ("bqetl_messaging_system", "hour=2, minute=0"),
+            ("bqetl_mobile_activation", "hour=0, minute=0"),
             ("bqetl_mobile_search", "hour=2, minute=0"),
             ("bqetl_monitoring", "hour=2, minute=0"),
+            ("bqetl_newtab", "hour=0, minute=0"),
             ("bqetl_org_mozilla_fenix_derived", "hour=2, minute=0"),
+            ("bqetl_org_mozilla_firefox_derived", "hour=2, minute=0"),
+            ("bqetl_org_mozilla_focus_derived", "hour=2, minute=0"),
+            ("bqetl_public_data_json", "hour=5, minute=0"),
             ("bqetl_regrets_reporter_summary", "hour=4, minute=0"),
             ("bqetl_search_terms_daily", "hour=3, minute=0"),
+            ("bqetl_sponsored_tiles_clients_daily", "hour=4, minute=0"),
+            ("bqetl_urlbar", "hour=3, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -160,6 +171,8 @@ with models.DAG(
             ("bqetl_internet_outages", "hour=7, minute=0"),
             ("bqetl_main_summary", "hour=2, minute=0"),
             ("bqetl_monitoring", "hour=2, minute=0"),
+            ("bqetl_public_data_json", "hour=5, minute=0"),
+            ("bqetl_sponsored_tiles_clients_daily", "hour=4, minute=0"),
             ("bqetl_ssl_ratios", "hour=2, minute=0"),
         }
 
@@ -361,7 +374,9 @@ with models.DAG(
         "baseline_clients_last_seen_external"
     ) as baseline_clients_last_seen_external:
         downstream_dependencies = {
+            ("bqetl_firefox_ios", "hour=4, minute=0"),
             ("bqetl_gud", "hour=3, minute=0"),
+            ("bqetl_mobile_activation", "hour=0, minute=0"),
             ("bqetl_nondesktop", "hour=3, minute=0"),
         }
 
@@ -407,8 +422,6 @@ with models.DAG(
             "query",
             "backfill",
             "*.clients_last_seen_joined_v1",
-        ]
-        + [  # metrics pings are usually delayed by one day after their logical activity period
             "--project-id=moz-fx-data-shared-prod",
             "--start_date={{ macros.ds_add(ds, -1) }}",
             "--end_date={{ macros.ds_add(ds, -1) }}",
@@ -421,6 +434,8 @@ with models.DAG(
     ) as clients_last_seen_joined_external:
         downstream_dag_times = {
             "bqetl_unified": "hour=3, minute=0",
+            "bqetl_analytics_aggregations": "hour=3, minute=30",
+            "bqetl_main_summary": "hour=2, minute=0",
         }
 
         for downstream_dag, dag_time_parts in downstream_dag_times.items():
