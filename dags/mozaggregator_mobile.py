@@ -4,6 +4,8 @@ Aggregates that power the legacy telemetry.
 [Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
 
 See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
+
+## This DAG is paused and pending deletion per https://mozilla-hub.atlassian.net/browse/DO-1283
 """
 
 import os
