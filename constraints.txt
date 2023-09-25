@@ -283,7 +283,7 @@ gcloud-aio-bigquery==6.3.0
 gcloud-aio-storage==8.2.0
 gcsfs==2023.6.0
 geomet==0.2.1.post1
-gevent==22.10.2
+gevent==23.9.1
 gitdb==4.0.10
 google-ads==21.2.0
 google-api-core==2.11.0
