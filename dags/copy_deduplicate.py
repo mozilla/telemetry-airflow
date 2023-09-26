@@ -84,6 +84,8 @@ with models.DAG(
         # copy_deduplicate job elsewhere.
         except_tables=[
             "telemetry_live.main_v4",
+            "telemetry_live.main_use_counter_v4",
+            "telemetry_live.main_remainder_v4",
             "telemetry_live.event_v4",
             "telemetry_live.first_shutdown_v4",
             "telemetry_live.saved_session_v4",
@@ -146,7 +148,11 @@ with models.DAG(
         task_id="copy_deduplicate_main_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
-        only_tables=["telemetry_live.main_v4"],
+        only_tables=[
+            "telemetry_live.main_v4",
+            "telemetry_live.main_use_counter_v4",
+            "telemetry_live.main_remainder_v4",
+        ],
         priority_weight=100,
         parallelism=5,
         slices=20,
@@ -223,6 +229,7 @@ with models.DAG(
     )
 
     event_events = bigquery_etl_query(
+        reattach_on_restart=True,
         task_id="event_events",
         project_id="moz-fx-data-shared-prod",
         destination_table="event_events_v1",
@@ -256,6 +263,7 @@ with models.DAG(
     copy_deduplicate_event_ping >> event_events
 
     bq_main_events = bigquery_etl_query(
+        reattach_on_restart=True,
         task_id="bq_main_events",
         project_id="moz-fx-data-shared-prod",
         destination_table="main_events_v1",
@@ -298,6 +306,7 @@ with models.DAG(
     # being part of the clients daily table in this DAG, it will be easier to
     # reason about dependencies in this single DAG while it is being developed.
     telemetry_derived__core_clients_first_seen__v1 = bigquery_etl_query(
+        reattach_on_restart=True,
         task_id="telemetry_derived__core_clients_first_seen__v1",
         destination_table="core_clients_first_seen_v1",
         dataset_id="telemetry_derived",
@@ -334,6 +343,7 @@ with models.DAG(
     ]
 
     baseline_clients_first_seen = gke_command(
+        reattach_on_restart=True,
         task_id="baseline_clients_first_seen",
         command=[
             "bqetl",
@@ -347,6 +357,7 @@ with models.DAG(
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     baseline_clients_daily = gke_command(
+        reattach_on_restart=True,
         task_id="baseline_clients_daily",
         command=[
             "bqetl",
@@ -358,6 +369,7 @@ with models.DAG(
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     baseline_clients_last_seen = gke_command(
+        reattach_on_restart=True,
         task_id="baseline_clients_last_seen",
         command=[
             "bqetl",
@@ -393,6 +405,7 @@ with models.DAG(
         baseline_clients_last_seen >> baseline_clients_last_seen_external
 
     metrics_clients_daily = gke_command(
+        reattach_on_restart=True,
         task_id="metrics_clients_daily",
         command=[
             "bqetl",
@@ -404,6 +417,7 @@ with models.DAG(
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     metrics_clients_last_seen = gke_command(
+        reattach_on_restart=True,
         task_id="metrics_clients_last_seen",
         command=[
             "bqetl",
@@ -416,6 +430,7 @@ with models.DAG(
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )
     clients_last_seen_joined = gke_command(
+        reattach_on_restart=True,
         task_id="clients_last_seen_joined",
         command=[
             "bqetl",
