@@ -214,6 +214,23 @@ with models.DAG(
         owner="akomarzewski@mozilla.com",
     )
 
+    with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
+        downstream_dependencies = {
+            ("bqetl_analytics_tables", "hour=2, minute=0"),
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_first_shutdown_ping",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
+
     copy_deduplicate_saved_session_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_saved_session_ping",
         target_project_id="moz-fx-data-shared-prod",
