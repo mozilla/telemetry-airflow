@@ -85,10 +85,14 @@ with models.DAG(
         except_tables=[
             "telemetry_live.main_v4",
             "telemetry_live.main_use_counter_v4",
-            "telemetry_live.main_remainder_v4",
+            "telemetry_live.main_v5",
             "telemetry_live.event_v4",
             "telemetry_live.first_shutdown_v4",
+            "telemetry_live.first_shutdown_use_counter_v4",
+            "telemetry_live.first_shutdown_v5",
             "telemetry_live.saved_session_v4",
+            "telemetry_live.saved_session_use_counter_v4",
+            "telemetry_live.saved_session_v5",
         ],
         node_selector={"nodepool": "highmem"},
         container_resources=resources,
@@ -151,7 +155,7 @@ with models.DAG(
         only_tables=[
             "telemetry_live.main_v4",
             "telemetry_live.main_use_counter_v4",
-            "telemetry_live.main_remainder_v4",
+            "telemetry_live.main_v5",
         ],
         priority_weight=100,
         parallelism=5,
@@ -200,17 +204,42 @@ with models.DAG(
         task_id="copy_deduplicate_first_shutdown_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
-        only_tables=["telemetry_live.first_shutdown_v4"],
+        only_tables=[
+            "telemetry_live.first_shutdown_v4",
+            "telemetry_live.first_shutdown_use_counter_v4",
+            "telemetry_live.first_shutdown_v5",
+        ],
         priority_weight=50,
         parallelism=1,
         owner="akomarzewski@mozilla.com",
     )
 
+    with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
+        downstream_dependencies = {
+            ("bqetl_analytics_tables", "hour=2, minute=0"),
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_first_shutdown_ping",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
+
     copy_deduplicate_saved_session_ping = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_saved_session_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
-        only_tables=["telemetry_live.saved_session_v4"],
+        only_tables=[
+            "telemetry_live.saved_session_v4",
+            "telemetry_live.saved_session_use_counter_v4",
+            "telemetry_live.saved_session_v5",
+        ],
         priority_weight=50,
         parallelism=1,
         owner="akomarzewski@mozilla.com",
