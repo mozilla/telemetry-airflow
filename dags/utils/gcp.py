@@ -184,6 +184,7 @@ def bigquery_etl_query(
     arguments=(),
     project_id=None,
     sql_file_path=None,
+    reattach_on_restart=False,
     gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
     gke_location="us-west1",
@@ -241,6 +242,7 @@ def bigquery_etl_query(
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     args = ["script/bqetl", "query", "run-multipart"] if multipart else ["query"]
     return GKEPodOperator(
+        reattach_on_restart=reattach_on_restart,
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
         location=gke_location,
@@ -314,6 +316,7 @@ def bigquery_etl_copy_deduplicate(
             table_qualifiers.append(except_table)
     return GKEPodOperator(
         task_id=task_id,
+        reattach_on_restart=True,
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
         location=gke_location,
@@ -500,6 +503,7 @@ def gke_command(
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     xcom_push=False,
+    reattach_on_restart=False,
     env_vars=None,
     is_delete_operator_pod=False,
     **kwargs,
@@ -548,6 +552,7 @@ def gke_command(
         image=docker_image,
         arguments=command,
         do_xcom_push=xcom_push,
+        reattach_on_restart=reattach_on_restart,
         env_vars=context_env_vars,
         is_delete_operator_pod=is_delete_operator_pod,
         **kwargs,

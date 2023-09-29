@@ -4,6 +4,11 @@ Aggregates that power the legacy telemetry.
 [Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
 
 See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
+
+## This job is in maintenance mode and planned to be deprecated soon.
+## The code here runs from a `pbd_fix_2` branch [python_mozaggregator](https://github.com/mozilla/python_mozaggregator/compare/pbd_fix_2?expand=1) repo.
+## See [this comment](https://github.com/mozilla/python_mozaggregator/pull/242#issuecomment-1726721526) for more details.
+## This job is blocking deprecation of [payload_bytes_decoded](https://mozilla-hub.atlassian.net/browse/DSRE-1410)
 """
 
 import os

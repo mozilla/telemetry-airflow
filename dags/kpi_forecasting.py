@@ -17,7 +17,7 @@ from utils.tags import Tag
 
 default_args = {
     "owner": "bochocki@mozilla.com",
-    "email": ["bochocki@mozilla.com"],
+    "email": ["bochocki@mozilla.com", "jsilverman@mozilla.com"],
     "depends_on_past": False,
     "start_date": datetime(2022, 3, 28),
     "email_on_failure": True,
