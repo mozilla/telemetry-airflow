@@ -48,5 +48,6 @@ class Tag(Enum):
         should attempt to resolve the problem themselves
         """
 
+        confidential: str = "triage/confidential"
         record_only: str = "triage/record_only"
         no_triage: str = "triage/no_triage"
