@@ -27,6 +27,7 @@ def test_dag_tags(get_dag_bag):
         "repo/bigquery-etl",
         "repo/telemetry-airflow",
         "repo/private-bigquery-etl",
+        "triage/confidential",
         "triage/no_triage",
         "triage/record_only",
     }
