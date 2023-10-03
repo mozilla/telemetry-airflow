@@ -34,6 +34,7 @@ default_args = {
 PIP_PACKAGES = [
     "boto3==1.16.20",
     "scipy==1.5.4",
+    "google-cloud-storage==2.7.0",
 ]
 
 tags = [Tag.ImpactTier.tier_3]
