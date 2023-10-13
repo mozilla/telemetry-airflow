@@ -22,6 +22,12 @@ DOCS = """\
 As long as the most recent DAG run is successful this job can be considered healthy.
 In such case, past DAG failures can be ignored.
 
+- Failure of the `lookml_generator` task may be due to a new Glean app or changes to
+`custom-namespaces.yaml`. In these cases, the task will have created a PR in
+[looker-spoke-default](https://github.com/mozilla/looker-spoke-default)
+with the title "Auto-push from LookML Generator". These PRs will need to be merged
+and the task re-run.
+
 
 ## Debugging failures
 

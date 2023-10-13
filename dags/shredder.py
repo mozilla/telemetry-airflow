@@ -78,9 +78,10 @@ base_command = [
     "--no-use-dml",
 ]
 
-# handle telemetry main separately to ensure it runs continuously and don't slow down
-# other tables. run it in a separate project with its own slot reservation to ensure
-# that it can finish on time, because it uses more slots than everything else combined
+# handle telemetry main and main use counter separately to ensure they run continuously
+# and don't slow down other tables. run them in a separate project with their own slot
+# reservation to ensure they can finish on time, because they use more slots than
+# everything else combined
 telemetry_main = gke_command(
     task_id="telemetry_main",
     name="shredder-telemetry-main",
@@ -88,7 +89,7 @@ telemetry_main = gke_command(
         *base_command,
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
-        "--only=telemetry_stable.main_v4",
+        "--only=telemetry_stable.main_v5",
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
@@ -96,16 +97,14 @@ telemetry_main = gke_command(
     dag=dag,
 )
 
-# handle telemetry main summary separately to ensure it runs continuously and doesn't
-# slow down other tables
-telemetry_main_summary = gke_command(
-    task_id="telemetry_main_summary",
-    name="shredder-telemetry-main-summary",
+telemetry_main_use_counter = gke_command(
+    task_id="telemetry_main_use_counter",
+    name="shredder-telemetry-main-use-counter",
     command=[
         *base_command,
         "--parallelism=2",
-        "--billing-project=moz-fx-data-bq-batch-prod",
-        "--only=telemetry_derived.main_summary_v4",
+        "--billing-project=moz-fx-data-shredder",
+        "--only=telemetry_stable.main_use_counter_v4",
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
@@ -122,8 +121,8 @@ flat_rate = gke_command(
         "--parallelism=4",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--except",
-        "telemetry_stable.main_v4",
-        "telemetry_derived.main_summary_v4",
+        "telemetry_stable.main_v5",
+        "telemetry_stable.main_use_counter_v4",
     ],
     docker_image=docker_image,
     is_delete_operator_pod=True,
