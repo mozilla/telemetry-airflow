@@ -1,6 +1,4 @@
-"""
-Module with Airflow tag definitions
-"""
+"""Module with Airflow tag definitions."""
 
 from enum import Enum
 
