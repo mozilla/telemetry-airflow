@@ -1,17 +1,19 @@
 """
-Aggregates that power the legacy telemetry
+Aggregates that power the legacy telemetry.
+
 [Measurement Dashboard](https://telemetry.mozilla.org/new-pipeline/dist.html).
 
 See [python_mozaggregator](https://github.com/mozilla/python_mozaggregator).
+
+## This DAG is paused and pending deletion per https://mozilla-hub.atlassian.net/browse/DO-1283
 """
+
 import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.operators.subdag import SubDagOperator
-
-
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.gcp import gke_command
 from utils.tags import Tag
@@ -35,7 +37,13 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
-dag = DAG("mobile_aggregates", default_args=default_args, schedule_interval="@daily", doc_md=__doc__, tags=tags,)
+dag = DAG(
+    "mobile_aggregates",
+    default_args=default_args,
+    schedule_interval="@daily",
+    doc_md=__doc__,
+    tags=tags,
+)
 
 subdag_args = default_args.copy()
 subdag_args["retries"] = 0
@@ -52,14 +60,12 @@ client_email = (
     else "dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com"
 )
 artifact_bucket = (
-    "{}-dataproc-artifacts".format(project_id)
+    f"{project_id}-dataproc-artifacts"
     if is_dev
     else "moz-fx-data-prod-airflow-dataproc-artifacts"
 )
 storage_bucket = (
-    "{}-dataproc-scratch".format(project_id)
-    if is_dev
-    else "moz-fx-data-prod-dataproc-scratch"
+    f"{project_id}-dataproc-scratch" if is_dev else "moz-fx-data-prod-dataproc-scratch"
 )
 output_bucket = artifact_bucket if is_dev else "airflow-dataproc-bq-parquet-exports"
 
@@ -83,7 +89,7 @@ mobile_aggregate_view_dataproc = SubDagOperator(
             "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
         },
         additional_metadata={
-            "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git"
+            "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
         },
         python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
             artifact_bucket
@@ -93,7 +99,7 @@ mobile_aggregate_view_dataproc = SubDagOperator(
             "--date",
             "{{ ds_nodash }}",
             "--output",
-            "gs://{}/mobile_metrics_aggregates/v3".format(output_bucket),
+            f"gs://{output_bucket}/mobile_metrics_aggregates/v3",
             "--num-partitions",
             str(5 * 32),
         ]
@@ -129,7 +135,7 @@ if EXPORT_TO_AVRO:
             '""',
             "{{ ds }}",
         ],
-        docker_image="mozilla/python_mozaggregator:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/python_mozaggregator:latest",
         dag=dag,
     ).set_downstream(mobile_aggregate_view_dataproc)
 
@@ -138,7 +144,7 @@ if EXPORT_TO_AVRO:
         bucket_name="airflow-dataproc-bq-parquet-exports-tmp",
         prefix="avro/mozaggregator/mobile/moz-fx-data-shared-prod/{{ ds_nodash }}/mobile_metrics_v1",
         gcp_conn_id=gcp_conn_id,
-        dag=dag
+        dag=dag,
     ).set_upstream(mobile_aggregate_view_dataproc)
 
 # copy over artifacts if we're running in dev
