@@ -61,23 +61,23 @@ repositories via [telemetry-airflow-dags](https://github.com/mozilla/telemetry-a
 using git submodules. Git-sync sidecar pattern results in the following directory structure
 once deployed.
 ```
-airflow/
-├─ dags/
-│  ├─ repo/
-│  │  ├─ telemetry-airflow-dags/
-│  │  │  ├─ <submodule repo_a>/
-│  │  │  │  ├─ dags/
-│  │  │  │  │  ├─ <dag files>
-│  │  │  ├─ <submodule repo_b>/
-│  │  │  │  ├─ dags/
-│  │  │  │  │  ├─ <dag files>
-│  │  │  ├─ <submodule repo_c>/
-│  │  │  │  ├─ dags/
-│  │  │  │  │  ├─ <dag files>
-├─ utils/
-│  ├─ ...
-├─ plugins/
-│  ├─ ...
+airflow
+├─ dags
+│  └── repo
+│      └── telemetry-airflow-dags
+│          ├── <submodule repo_a>
+│          │    └── dags
+│          │        └── <dag files>
+│          ├── <submodule repo_b>
+│          │    └── dags
+│          │        └── <dag files>
+│          └── <submodule repo_c>
+│               └── dags
+│                   └── <dag files>
+├─ utils
+│  └── ...
+└─ plugins
+   └── ...
 ```
 Hence, defining `helper_function()` in `dags/dag_a.py` and 
 importing the function in `dags/dag_b.py` as `from dags.dag_a import helper_function` 
