@@ -237,16 +237,6 @@ workflows:
             tags:
               ignore: /.*/
 
-      - sync-dags-branch:
-          name: Update DAGs branch
-          filters: *ci-filter
-
-      - sync-dags-repo:
-          name: Synchronize telemetry-airflow-dags repository
-          filters: *ci-filter
-          requires:
-            - Update DAGs branch
-
       - docker-build-artifact:
           name: 🛠️ Docker build test
           filters: *ci-filter
