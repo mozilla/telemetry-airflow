@@ -195,7 +195,7 @@ jobs:
             git config --global user.name "CircleCI Job"
             git clone --branch main git@github.com:mozilla/telemetry-airflow-dags.git
             cd ~/project/telemetry-airflow-dags
-            git submodule update --init --recursive --depth 1
+            git submodule update --init --recursive --depth 1 telemetry-airflow
             cd ${CIRCLE_PROJECT_REPONAME}
             git pull origin dags
             cd ..
