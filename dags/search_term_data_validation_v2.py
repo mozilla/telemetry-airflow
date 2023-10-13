@@ -42,9 +42,13 @@ with DAG(
     search_term_data_validation = gke_command(
         task_id="search_term_data_validation_v2",
         command=[
-            'python -c "print(123)"',
+            "python",
+            "search_term_data_validation_v2/main.py",
+            "--data_validation_origin",
+            "moz-fx-data-shared-prod.search_terms.sanitization_job_data_validation_metrics",
+            "--data_validation_reporting_destination",
+            "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
         dag=dag,
     )
-
