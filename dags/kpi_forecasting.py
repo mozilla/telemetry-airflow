@@ -58,8 +58,8 @@ with DAG(
     tags=TAGS,
 ) as dag:
     for id, config in CONFIGS.items():
-        script_path = os.path.join("kpi-forecasting", "kpi_forecasting.py")
-        config_path = os.path.join("kpi-forecasting", "configs", config.filename)
+        script_path = os.path.join("kpi_forecasting", "kpi_forecasting.py")
+        config_path = os.path.join("kpi_forecasting", "configs", config.filename)
         wait_tasks = config.wait_tasks
 
         if not isinstance(config.wait_tasks, list):
