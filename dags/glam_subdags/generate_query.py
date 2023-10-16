@@ -90,6 +90,7 @@ def generate_and_run_glean_queries(
     }
 
     return gke_command(
+        reattach_on_restart=True,
         task_id=task_id,
         cmds=["bash", "-c"],
         env_vars=env_vars,
@@ -138,6 +139,7 @@ def generate_and_run_glean_task(
         raise ValueError("task_type must be either a view, init, or query")
 
     return gke_command(
+        reattach_on_restart=True,
         task_id=f"{task_type}_{task_name}",
         cmds=["bash", "-c"],
         env_vars=env_vars,

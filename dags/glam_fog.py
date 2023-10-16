@@ -76,7 +76,7 @@ with DAG(
     )
 
     pre_import = EmptyOperator(
-        task_id=f'pre_import',
+        task_id='pre_import',
     )
 
     with TaskGroup('glam_fog_external') as glam_fog_external:
