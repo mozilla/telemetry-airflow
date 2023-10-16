@@ -346,16 +346,12 @@ workflows:
       - sync-dags-branch:
           name: 🔃 Update DAGs branch
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
       - sync-dags-repo:
           name: 🔃 Synchronize telemetry-airflow-dags repository
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
           requires:
