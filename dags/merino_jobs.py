@@ -61,10 +61,10 @@ tags = [
     Tag.Triage.no_triage,
 ]
 
-# Run weekly on Tuesdays at 5am UTC
+# Run once a month on a Tuesday at 5am UTC.
 with DAG(
     "merino_jobs",
-    schedule_interval="0 5 * * 2",
+    schedule_interval="0 5 1-7 * 2",
     doc_md=DOCS,
     default_args=default_args,
     tags=tags,
