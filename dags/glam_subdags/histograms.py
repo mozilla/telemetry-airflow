@@ -22,6 +22,7 @@ def histogram_aggregates_subdag(
     )
 
     clients_histogram_aggregates_new = bigquery_etl_query(
+        reattach_on_restart=True,
         task_id="clients_histogram_aggregates_new",
         destination_table="clients_histogram_aggregates_new_v1",
         dataset_id=dataset_id,
@@ -34,6 +35,7 @@ def histogram_aggregates_subdag(
     )
 
     clients_histogram_aggregates_final = bigquery_etl_query(
+        reattach_on_restart=True,
         task_id="clients_histogram_aggregates_v2",
         destination_table="clients_histogram_aggregates_v2",
         dataset_id=dataset_id,
