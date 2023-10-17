@@ -24,7 +24,14 @@ airflow_triage_guide = {
     "href": "https://mozilla-hub.atlassian.net/wiki/spaces/DATA/pages/175603730/Airflow+Triage+Guide",
 }
 
+gke_cluster = {
+    "name": "GKE cluster",
+    "category": "Mozilla",
+    "href": "https://console.cloud.google.com/kubernetes/workload/overview?project=moz-fx-data-airflow-gke-prod",
+}
 
+
+# ruff: noqa: RUF012
 class MozMenuPlugin(AirflowPlugin):
     name = "Mozilla"
     operators = []
