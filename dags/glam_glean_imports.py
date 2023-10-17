@@ -105,6 +105,7 @@ for env in ["Dev", "Prod"]:
     with dag as dag:  # noqa SIM117
         with TaskGroup(group_id=env + "_glean") as glean_env_task_group:
             glam_import_glean_aggs_beta = GKENatPodOperator(
+                reattach_on_restart=True,
                 task_id="glam_import_glean_aggs_beta",
                 name="glam_import_glean_aggs_beta",
                 image=glean_import_image,
@@ -113,6 +114,7 @@ for env in ["Dev", "Prod"]:
             )
 
             glam_import_glean_aggs_nightly = GKENatPodOperator(
+                reattach_on_restart=True,
                 task_id="glam_import_glean_aggs_nightly",
                 name="glam_import_glean_aggs_nightly",
                 image=glean_import_image,
@@ -121,6 +123,7 @@ for env in ["Dev", "Prod"]:
             )
 
             glam_import_glean_aggs_release = GKENatPodOperator(
+                reattach_on_restart=True,
                 task_id="glam_import_glean_aggs_release",
                 name="glam_import_glean_aggs_release",
                 image=glean_import_image,
@@ -129,6 +132,7 @@ for env in ["Dev", "Prod"]:
             )
 
             glam_import_glean_counts = GKENatPodOperator(
+                reattach_on_restart=True,
                 task_id="glam_import_glean_counts",
                 name="glam_import_glean_counts",
                 image=glean_import_image,
@@ -163,6 +167,7 @@ for env in ["Dev", "Prod"]:
 
     with dag as dag, TaskGroup(group_id=env + "_glam") as glam_env_task_group:
         glam_import_desktop_aggs_beta = GKENatPodOperator(
+            reattach_on_restart=True,
             task_id="glam_import_desktop_aggs_beta",
             name="glam_import_desktop_aggs_beta",
             image=glam_import_image,
@@ -171,6 +176,7 @@ for env in ["Dev", "Prod"]:
         )
 
         glam_import_desktop_aggs_nightly = GKENatPodOperator(
+            reattach_on_restart=True,
             task_id="glam_import_desktop_aggs_nightly",
             name="glam_import_desktop_aggs_nightly",
             image=glam_import_image,
@@ -179,6 +185,7 @@ for env in ["Dev", "Prod"]:
         )
 
         glam_import_desktop_aggs_release = GKENatPodOperator(
+            reattach_on_restart=True,
             task_id="glam_import_desktop_aggs_release",
             name="glam_import_desktop_aggs_release",
             image=glam_import_image,
@@ -187,6 +194,7 @@ for env in ["Dev", "Prod"]:
         )
 
         glam_import_user_counts = GKENatPodOperator(
+            reattach_on_restart=True,
             task_id="glam_import_user_counts",
             name="glam_import_user_counts",
             image=glam_import_image,
@@ -195,6 +203,7 @@ for env in ["Dev", "Prod"]:
         )
 
         glam_import_probes = GKENatPodOperator(
+            reattach_on_restart=True,
             task_id="glam_import_probes",
             name="glam_import_probes",
             image=glam_import_image,
