@@ -45,6 +45,7 @@ def repeated_subdag(
         )
 
     task_0 = bigquery_etl_query(
+        reattach_on_restart=True,
         task_id=f"{child_dag_name}_0",
         destination_table=f"{child_dag_name}_v1",
         dataset_id=dataset_id,
@@ -64,6 +65,7 @@ def repeated_subdag(
         max_param = min_param + PARTITION_SIZE - 1
 
         task = bigquery_etl_query(
+            reattach_on_restart=True,
             task_id=f"{child_dag_name}_{partition}",
             destination_table=f"{child_dag_name}_v1",
             dataset_id=dataset_id,
