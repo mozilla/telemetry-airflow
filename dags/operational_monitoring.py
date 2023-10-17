@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
@@ -11,7 +11,7 @@ docs = """
 
 
 This DAG schedules queries for populating datasets used for operational monitoring.
-The queries are generated via [`opmon`](https://github.com/mozilla/opmon). 
+The queries are generated via [`opmon`](https://github.com/mozilla/opmon).
 
 #### Owner
 
@@ -52,7 +52,7 @@ with DAG(
         email=["ascholtz@mozilla.com"],
         arguments=[
             "--log_to_bigquery",
-            "run", 
+            "run",
             "--date={{ ds }}",
         ],
         dag=dag,
@@ -64,8 +64,8 @@ with DAG(
         external_task_id="telemetry_derived__clients_daily__v6",
         execution_delta=timedelta(hours=2),
         mode="reschedule",
-        allowed_states=['success'],
-        failed_states=['failed', 'upstream_failed', 'skipped'],
+        allowed_states=["success"],
+        failed_states=["failed", "upstream_failed", "skipped"],
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,
@@ -77,8 +77,8 @@ with DAG(
         external_task_id="search_derived__search_clients_daily__v8",
         execution_delta=timedelta(hours=1),
         mode="reschedule",
-        allowed_states=['success'],
-        failed_states=['failed', 'upstream_failed', 'skipped'],
+        allowed_states=["success"],
+        failed_states=["failed", "upstream_failed", "skipped"],
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
         dag=dag,

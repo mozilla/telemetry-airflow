@@ -1,13 +1,12 @@
+from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-
 from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
     CloudDataTransferServiceS3ToGCSOperator,
 )
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
-
-from datetime import datetime, timedelta
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
@@ -47,8 +46,12 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
-with DAG("socorro_import", default_args=default_args, schedule_interval="@daily", tags=tags,) as dag:
-
+with DAG(
+    "socorro_import",
+    default_args=default_args,
+    schedule_interval="@daily",
+    tags=tags,
+) as dag:
     # Unsalted cluster name so subsequent runs fail if the cluster name exists
     cluster_name = "socorro-import-dataproc-cluster"
 
@@ -101,9 +104,9 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
                 "--date",
                 "{{ ds_nodash }}",
                 "--source-gcs-path",
-                "gs://{}/v1/crash_report".format(gcs_data_bucket),
+                f"gs://{gcs_data_bucket}/v1/crash_report",
                 "--dest-gcs-path",
-                "gs://{}/{}".format(gcs_data_bucket, dataset),
+                f"gs://{gcs_data_bucket}/{dataset}",
             ],
             idle_delete_ttl=14400,
             num_workers=8,
@@ -113,7 +116,6 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
         ),
     )
 
-
     bq_gcp_conn_id = "google_cloud_airflow_gke"
 
     dest_s3_key = "s3://telemetry-parquet"
@@ -121,7 +123,7 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
     # Not using load_to_bigquery since our source data is on GCS.
     # We do use the parquet2bigquery container to load gcs parquet into bq though.
     bq_dataset = "telemetry_derived"
-    bq_table_name = "{}_{}".format(dataset, dataset_version)
+    bq_table_name = f"{dataset}_{dataset_version}"
 
     docker_image = "docker.io/mozilla/parquet2bigquery:20190722"
 
@@ -141,14 +143,15 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
 
     # We remove the current date partition for idempotency.
     table_name = "{}:{}.{}${{{{ds_nodash}}}}".format(
-            "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name)
+        "{{ var.value.gcp_shared_prod_project }}", bq_dataset, bq_table_name
+    )
 
     remove_bq_table_partition = GKEPodOperator(
         task_id="remove_socorro_crash_bq_table_partition",
         gcp_conn_id=bq_gcp_conn_id,
         name="remove_socorro_crash_bq_table_partition",
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        arguments=["bq", "rm", "-f", "--table", table_name]
+        arguments=["bq", "rm", "-f", "--table", table_name],
     )
 
     bq_load = GKEPodOperator(
@@ -160,7 +163,7 @@ with DAG("socorro_import", default_args=default_args, schedule_interval="@daily"
         env_vars={"GOOGLE_CLOUD_PROJECT": "{{ var.value.gcp_shared_prod_project }}"},
     )
 
-    with TaskGroup('socorro_external') as socorro_external:
+    with TaskGroup("socorro_external") as socorro_external:
         ExternalTaskMarker(
             task_id="crash_symbolication__wait_for_socorro_import",
             external_dag_id="crash_symbolication",

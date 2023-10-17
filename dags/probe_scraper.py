@@ -10,6 +10,7 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.utils.weekday import WeekDay
+
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 

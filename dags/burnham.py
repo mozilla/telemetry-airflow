@@ -6,13 +6,13 @@ import base64
 import datetime
 import json
 import logging
-import uuid
 import time
-
+import uuid
 from dataclasses import dataclass
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+
 from operators.bq_sensor import BigQuerySQLSensorOperator
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -431,7 +431,8 @@ def burnham_run(
     gke_namespace=DEFAULT_GKE_NAMESPACE,
     **kwargs,
 ):
-    """Create a new GKEPodOperator that runs the burnham Docker image.
+    """
+    Create a new GKEPodOperator that runs the burnham Docker image.
 
     :param str task_id:                         [Required] ID for the task
     :param str burnham_test_run:                [Required] UUID for the test run
@@ -482,7 +483,8 @@ def burnham_run(
 
 
 def burnham_sensor(task_id, sql, gcp_conn_id=DEFAULT_GCP_CONN_ID, **kwargs):
-    """Create a new BigQuerySQLSensorOperator that checks for burnham data.
+    """
+    Create a new BigQuerySQLSensorOperator that checks for burnham data.
 
     :param str task_id:                 [Required] ID for the task
     :param str sql:                     [Required] SQL for the sensor
@@ -512,7 +514,8 @@ def burnham_bigquery_run(
     gke_namespace=DEFAULT_GKE_NAMESPACE,
     **kwargs,
 ):
-    """Create a new GKEPodOperator that runs the burnham-bigquery Docker image.
+    """
+    Create a new GKEPodOperator that runs the burnham-bigquery Docker image.
 
     :param str task_id:                 [Required] ID for the task
     :param str project_id:              [Required] Project ID where target table lives
@@ -558,7 +561,8 @@ def burnham_bigquery_run(
 
 
 def encode_test_scenarios(test_scenarios):
-    """Encode the given test scenarios as a str.
+    """
+    Encode the given test scenarios as a str.
 
     :param List[Dict[str, object]] test_scenarios:  [Required] ID for the task
     :return: str
@@ -570,7 +574,8 @@ def encode_test_scenarios(test_scenarios):
 
 
 def do_sleep(minutes):
-    """Sleep for the given number of minutes.
+    """
+    Sleep for the given number of minutes.
 
     Writes out an update every minute to give some indication of aliveness.
     """
@@ -581,7 +586,8 @@ def do_sleep(minutes):
 
 
 def sleep_task(minutes, task_id):
-    """Return an operator that sleeps for a certain number of minutes.
+    """
+    Return an operator that sleeps for a certain number of minutes.
 
     :param int    minutes: [Required] Number of minutes to sleep
     :param string task_id: [Required] ID for the task
@@ -592,7 +598,7 @@ def sleep_task(minutes, task_id):
         task_id=task_id,
         depends_on_past=False,
         python_callable=do_sleep,
-        op_kwargs=dict(minutes=minutes),
+        op_kwargs={"minutes": minutes},
     )
 
 
@@ -605,7 +611,6 @@ with DAG(
     doc_md=DOCS,
     tags=tags,
 ) as dag:
-
     # Generate a UUID for this test run
     generate_burnham_test_run_uuid = PythonOperator(
         task_id="generate_burnham_test_run_uuid",

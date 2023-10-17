@@ -1,15 +1,14 @@
 """
-Module for authenticating into and interacting with Acoustic (XML) API
+Module for authenticating into and interacting with Acoustic (XML) API.
 
 Acoustic API docs can be found here: https://developer.goacoustic.com/acoustic-campaign/reference/overview
 """
 
+import logging
 from datetime import datetime
 from time import sleep
-import logging
 
 import requests
-
 import xmltodict  # type: ignore
 
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S"
@@ -22,9 +21,7 @@ def _request_wrapper(request_method, request_body):
 
 
 class AcousticClient:
-    """
-    Acoustic Client object for authenticating into and interacting with Acoustic XML API.
-    """
+    """Acoustic Client object for authenticating into and interacting with Acoustic XML API."""
 
     DEFAULT_BASE_URL = "https://api-campaign-us-6.goacoustic.com"
     XML_API_ENDPOINT = "XMLAPI"
@@ -34,10 +31,12 @@ class AcousticClient:
         client_id: str,
         client_secret: str,
         refresh_token: str,
-        base_url: str = None,
+        base_url: str | None = None,
         **kwargs,
     ):
         """
+        Initialize.
+
         :param client_id: to provide the client identity
         :param client_secret: secret that it used to confirm identity to the API
         :param refresh_token: A long-lived value that the client store,
@@ -54,12 +53,13 @@ class AcousticClient:
 
     def _generate_access_token(self) -> str:
         """
-        Responsible for contacting Acoustic XML API and generating an access_token using Oauth method
+        Responsible for contacting Acoustic XML API and generating an access_token using Oauth method.
+
         to be used for interacting with the API and retrieving data in the following calls.
 
         :return: A short-lived token that can be generated based on the refresh token.
             A value that is ultimately passed to the API to prove that this client is authorized
-            to make API calls on the user’s behalf.
+            to make API calls on the user`s behalf.
 
         More info about Acoustic and Oauth:
         https://developer.goacoustic.com/acoustic-campaign/reference/overview#getting-started-with-oauth
@@ -92,9 +92,9 @@ class AcousticClient:
 
         return response.json()["access_token"]
 
-    def _is_job_complete(self, job_id: int, extra_info: str = None) -> bool:
+    def _is_job_complete(self, job_id: int, extra_info: str | None = None) -> bool:
         """
-        Checks status of an Acoustic job to generate a report.
+        Check status of an Acoustic job to generate a report.
 
         :param job_id: Acoustic job id to check the progress status of
 
@@ -128,19 +128,21 @@ class AcousticClient:
 
         job_status = data["Envelope"]["Body"]["RESULT"]["JOB_STATUS"].lower()
         print(
-            "INFO: Current status for Acoustic job_id: %s is %s (%s)"
-            % (job_id, job_status, extra_info or "")
+            "INFO: Current status for Acoustic job_id: {} is {} ({})".format(
+                job_id, job_status, extra_info or ""
+            )
         )
 
-        return "complete" == job_status
+        return job_status == "complete"
 
     def generate_report(
-        self, request_template: str, template_params: dict, report_type: str,
+        self,
+        request_template: str,
+        template_params: dict,
+        report_type: str,
     ) -> str:
         """
-        Extracts a listing of Acoustic Campaign emails that are sent for an organization
-        for a specified date range and provides metrics for those emails.
-
+        Extract a listing of Acoustic Campaign emails that are sent for an organization for a specified date range and provides metrics for those emails.
 
         :param request_template: path to XML template file containing request body template to be used
         :param template_params: values that should be used to render the request template provided
@@ -148,7 +150,10 @@ class AcousticClient:
         :return: Returns back a list of rows of data returned by the API call as a dictionary
         """
 
-        supported_report_types = ("raw_recipient_export", "contact_export",)
+        supported_report_types = (
+            "raw_recipient_export",
+            "contact_export",
+        )
         if report_type not in supported_report_types:
             err_msg = f"{report_type} is not a valid option, supported types are: {supported_report_types}"
             raise AttributeError(err_msg)
@@ -182,6 +187,8 @@ class AcousticClient:
         while not self._is_job_complete(job_id=job_id, extra_info=report_type):
             sleep(sleep_delay)
 
-        logging.info(f"{report_type} generation complete. Report location: {report_loc}. Time taken: {datetime.now() - start}")
+        logging.info(
+            f"{report_type} generation complete. Report location: {report_loc}. Time taken: {datetime.now() - start}"
+        )
 
         return

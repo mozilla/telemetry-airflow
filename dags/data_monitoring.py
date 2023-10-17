@@ -1,9 +1,9 @@
 from datetime import datetime
 
 from airflow import DAG
-from operators.gcp_container_operator import GKEPodOperator
 
-from dags.utils.tags import Tag
+from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 DOCS = """\
 This DAG is related to data monitoring project it is still under development.
@@ -57,7 +57,6 @@ with DAG(
     tags=TAGS,
     catchup=True,
 ) as dag:
-
     for target_dataset in TARGET_DATASETS:
         project_id, dataset, table = target_dataset.split(".")
 

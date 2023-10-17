@@ -1,4 +1,5 @@
 from airflow.models import DAG
+
 from utils.gcp import bigquery_etl_query
 
 

@@ -5,12 +5,13 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
-from glam_subdags.generate_query import (
+
+from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.gcp import gke_command
+from utils.glam_subdags.generate_query import (
     generate_and_run_glean_queries,
     generate_and_run_glean_task,
 )
-from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import gke_command
 from utils.tags import Tag
 
 default_args = {

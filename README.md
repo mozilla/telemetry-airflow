@@ -25,21 +25,65 @@ Some links relevant to users and developers of WTMO:
 ## Writing DAGs
 See the Airflow's [Best Practices guide](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#best-practices) to help you write DAGs.
 
-**⚠ Note: How to import DAGs and modules ⚠** 
+### **⚠ Warning: Do not import resources from the `dags` directory in DAGs definition files ⚠** 
+As an example, if you have `dags/dag_a.py` and `dags/dag_b.py` and want to use a helper
+function in both DAG definition files, define the helper function in the `utils` directory
+such as: 
 
-**Modules should be imported from the project directory, such as `from dags.my_dag import load_data` 
-rather than `from my_dag import load_data`.**
+#### `utils/helper.py`
+```python
+def helper_function():
+    return "Help"
+```
 
-In Airflow, the `dags`, `config`, and `plugins` folders are [automatically added](https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/modules_management.html#built-in-pythonpath-entries-in-airflow) to the 
-`PYTHONPATH` to ensure they can be imported and accessed by Airflow's execution environment. 
+#### `dags/dag_a.py`
+```python
+from airflow import DAG
 
-However, this default configuration can cause problems when running unit tests located 
-in the `tests` directory. Since the `PYTHONPATH` includes the `dags` directory, 
-but not the project directory itself, the unit tests will not be able to import code from 
-the `dags` directory. This limitation restricts the ability to test the DAGs effectively 
-within the project structure. It is also generally expected that imports should work from the 
-project directory rather than from any of its subdirectories. For this reason, `telemetry-airflow`'s 
-Dockerfile adds the project directory to `PYTHONPATH`.
+from utils.helper import helper_function
+
+with DAG("dag_a", ...):
+    ...
+```
+
+#### `dags/dag_b.py`
+```python
+from airflow import DAG
+
+from utils.helper import helper_function
+
+with DAG("dag_b", ...):
+    ...
+```
+
+WTMO deployments use git-sync sidecars to synchronize DAG files from multiple 
+repositories via [telemetry-airflow-dags](https://github.com/mozilla/telemetry-airflow-dags/) 
+using git submodules. Git-sync sidecar pattern results in the following directory structure
+once deployed.
+```
+airflow
+├─ dags
+│  └── repo
+│      └── telemetry-airflow-dags
+│          ├── <submodule repo_a>
+│          │    └── dags
+│          │        └── <dag files>
+│          ├── <submodule repo_b>
+│          │    └── dags
+│          │        └── <dag files>
+│          └── <submodule repo_c>
+│               └── dags
+│                   └── <dag files>
+├─ utils
+│  └── ...
+└─ plugins
+   └── ...
+```
+Hence, defining `helper_function()` in `dags/dag_a.py` and 
+importing the function in `dags/dag_b.py` as `from dags.dag_a import helper_function` 
+**will not work after deployment** because of the directory structured required for
+git-sync sidecars.
+
 
 ## Prerequisites
 

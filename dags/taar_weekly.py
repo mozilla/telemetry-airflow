@@ -1,5 +1,5 @@
 """
-This configures a weekly DAG to run the TAAR Ensemble job off.
+Configure a weekly DAG to run the TAAR Ensemble job off.
 
 For context, see https://github.com/mozilla/taar
 
@@ -10,15 +10,15 @@ is successful then this job can be considered healthy and there is not need to t
 any actions for the past failed DAG runs.
 """
 
-from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.operators.subdag import SubDagOperator
-from airflow.models import Variable
 
-from operators.gcp_container_operator import GKEPodOperator  # noqa
+from airflow import DAG
+from airflow.models import Variable
+from airflow.operators.subdag import SubDagOperator
+
+from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
-
 
 taar_ensemble_cluster_name = "dataproc-taar-ensemble"
 taar_gcpdataproc_conn_id = "google_cloud_airflow_dataproc"
@@ -32,9 +32,7 @@ TAAR_DATAFLOW_SUBNETWORK = Variable.get("taar_dataflow_subnetwork")
 TAAR_DATAFLOW_SERVICE_ACCOUNT = Variable.get("taar_dataflow_service_account_email")
 
 # This uses a circleci built docker image from github.com/mozilla/taar_gcp_etl
-TAAR_ETL_CONTAINER_IMAGE = (
-    "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.5"
-)
+TAAR_ETL_CONTAINER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/taar_gcp_etl:0.6.5"
 DELETE_DAYS = 29
 
 
@@ -43,7 +41,7 @@ default_args_weekly = {
     "email": [
         "hwoo@mozilla.com",
         "epavlov@mozilla.com",
-        "telemetry-alerts@mozilla.com"
+        "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
     "start_date": datetime(2020, 4, 4),
@@ -56,7 +54,9 @@ default_args_weekly = {
 tags = [Tag.ImpactTier.tier_2]
 
 taar_weekly = DAG(
-    "taar_weekly", default_args=default_args_weekly, schedule_interval="@weekly",
+    "taar_weekly",
+    default_args=default_args_weekly,
+    schedule_interval="@weekly",
     doc_md=__doc__,
     tags=tags,
 )
@@ -84,7 +84,7 @@ def taar_profile_common_args():
         "--bigtable-instance-id=%s" % TAAR_BIGTABLE_INSTANCE_ID,
         "--sample-rate=1.0",
         "--subnetwork=%s" % TAAR_DATAFLOW_SUBNETWORK,
-        "--dataflow-service-account=%s" % TAAR_DATAFLOW_SERVICE_ACCOUNT
+        "--dataflow-service-account=%s" % TAAR_DATAFLOW_SERVICE_ACCOUNT,
     ]
 
 
@@ -100,7 +100,7 @@ dump_bq_to_tmp_table = GKEPodOperator(
     task_id="dump_bq_to_tmp_table",
     name="dump_bq_to_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=taar_profile_common_args() + ["--fill-bq",],
+    arguments=[*taar_profile_common_args(), "--fill-bq"],
     dag=taar_weekly,
 )
 
@@ -108,7 +108,7 @@ extract_bq_tmp_to_gcs_avro = GKEPodOperator(
     task_id="extract_bq_tmp_to_gcs_avro",
     name="extract_bq_tmp_to_gcs_avro",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=taar_profile_common_args() + ["--bq-to-gcs",],
+    arguments=[*taar_profile_common_args(), "--bq-to-gcs"],
     dag=taar_weekly,
 )
 
@@ -121,7 +121,7 @@ dataflow_import_avro_to_bigtable = GKEPodOperator(
     # Where the pod continues to run, but airflow loses its connection and sets the status to Failed
     # See: https://github.com/mozilla/telemetry-airflow/issues/844
     get_logs=False,
-    arguments=taar_profile_common_args() + ["--gcs-to-bigtable",],
+    arguments=[*taar_profile_common_args(), "--gcs-to-bigtable"],
     dag=taar_weekly,
 )
 
@@ -129,9 +129,12 @@ delete_optout = GKEPodOperator(
     task_id="delete_opt_out_users_from_bigtable",
     name="delete_opt_out_users_from_bigtable",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=taar_profile_common_args() + ["--bigtable-delete-opt-out",
-                                            "--delete-opt-out-days=%s" % DELETE_DAYS],
-    dag=taar_weekly
+    arguments=[
+        *taar_profile_common_args(),
+        "--bigtable-delete-opt-out",
+        "--delete-opt-out-days=%s" % DELETE_DAYS,
+    ],
+    dag=taar_weekly,
 )
 
 wipe_gcs_bucket_cleanup = GKEPodOperator(
@@ -146,7 +149,7 @@ wipe_bigquery_tmp_table = GKEPodOperator(
     task_id="wipe_bigquery_tmp_table",
     name="wipe_bigquery_tmp_table",
     image=TAAR_ETL_CONTAINER_IMAGE,
-    arguments=taar_profile_common_args() + ["--wipe-bigquery-tmp-table",],
+    arguments=[*taar_profile_common_args(), "--wipe-bigquery-tmp-table"],
     dag=taar_weekly,
 )
 
@@ -177,7 +180,7 @@ taar_ensemble = SubDagOperator(
         ],
         additional_metadata={
             "PIP_PACKAGES": "mozilla-taar3==1.0.7 python-decouple==3.1 click==7.0 "
-                            "google-cloud-storage==1.19.1"
+            "google-cloud-storage==1.19.1"
         },
         optional_components=["ANACONDA", "JUPYTER"],
         py_args=[
@@ -201,11 +204,13 @@ taar_ensemble = SubDagOperator(
 )
 
 
-wipe_gcs_bucket >> \
-dump_bq_to_tmp_table >> \
-extract_bq_tmp_to_gcs_avro >> \
-dataflow_import_avro_to_bigtable >> \
-delete_optout >> \
-wipe_gcs_bucket_cleanup >> \
-wipe_bigquery_tmp_table >> \
-taar_ensemble
+(
+    wipe_gcs_bucket
+    >> dump_bq_to_tmp_table
+    >> extract_bq_tmp_to_gcs_avro
+    >> dataflow_import_avro_to_bigtable
+    >> delete_optout
+    >> wipe_gcs_bucket_cleanup
+    >> wipe_bigquery_tmp_table
+    >> taar_ensemble
+)

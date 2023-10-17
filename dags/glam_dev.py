@@ -14,11 +14,12 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-from glam_subdags.general import repeated_subdag
-from glam_subdags.generate_query import generate_and_run_desktop_query
-from glam_subdags.histograms import histogram_aggregates_subdag
-from glam_subdags.probe_hotlist import update_hotlist
+
 from utils.gcp import bigquery_etl_query, gke_command
+from utils.glam_subdags.general import repeated_subdag
+from utils.glam_subdags.generate_query import generate_and_run_desktop_query
+from utils.glam_subdags.histograms import histogram_aggregates_subdag
+from utils.glam_subdags.probe_hotlist import update_hotlist
 from utils.tags import Tag
 
 prod_project_id = "moz-fx-data-shared-prod"

@@ -16,6 +16,10 @@ class Tag(Enum):
 
         Instead of Tag.ImpactTier.value.tier_1.value we can
         just use Tag.ImpactTier.tier_1.
+        Simplify accessing enum values.
+
+        Instead of Tag.ImpactTier.value.tier_1.value we can just use
+        Tag.ImpactTier.tier_1.
 
         # source: https://newbedev.com/enum-of-enums-in-python
         """
@@ -27,6 +31,7 @@ class Tag(Enum):
             ret_val = getattr(self.value, item).value
         except AttributeError as _err:
             raise InvalidTagError(_err) from None
+            raise InvalidTagError() from _err
 
         return ret_val
 
