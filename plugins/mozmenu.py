@@ -31,6 +31,7 @@ gke_cluster = {
 }
 
 
+# ruff: noqa: RUF012
 class MozMenuPlugin(AirflowPlugin):
     name = "Mozilla"
     operators = []
