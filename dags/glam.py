@@ -74,6 +74,7 @@ wait_for_main_ping = ExternalTaskSensor(
 )
 
 latest_versions = bigquery_etl_query(
+    reattach_on_restart=True,
     task_id="latest_versions",
     destination_table="latest_versions",
     dataset_id=dataset_id,
@@ -86,6 +87,7 @@ latest_versions = bigquery_etl_query(
 # This task runs first and replaces the relevant partition, followed
 # by the next two tasks that append to the same partition of the same table.
 clients_daily_scalar_aggregates = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_scalar_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -96,6 +98,7 @@ clients_daily_scalar_aggregates = generate_and_run_desktop_query(
 )
 
 clients_daily_keyed_scalar_aggregates = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_keyed_scalar_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -106,6 +109,7 @@ clients_daily_keyed_scalar_aggregates = generate_and_run_desktop_query(
 )
 
 clients_daily_keyed_boolean_aggregates = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_keyed_boolean_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -116,6 +120,7 @@ clients_daily_keyed_boolean_aggregates = generate_and_run_desktop_query(
 )
 
 clients_scalar_aggregates = bigquery_etl_query(
+    reattach_on_restart=True,
     task_id="clients_scalar_aggregates",
     destination_table="clients_scalar_aggregates_v1",
     dataset_id=dataset_id,
@@ -126,6 +131,7 @@ clients_scalar_aggregates = bigquery_etl_query(
 )
 
 scalar_percentiles = gke_command(
+    reattach_on_restart=True,
     task_id="scalar_percentiles",
     command=[
         "python3",
@@ -149,6 +155,7 @@ scalar_percentiles = gke_command(
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
 clients_daily_histogram_aggregates_parent = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_histogram_aggregates_parent",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -161,6 +168,7 @@ clients_daily_histogram_aggregates_parent = generate_and_run_desktop_query(
 )
 
 clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_histogram_aggregates_content",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -173,6 +181,7 @@ clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
 )
 
 clients_daily_histogram_aggregates_gpu = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_histogram_aggregates_gpu",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -185,6 +194,7 @@ clients_daily_histogram_aggregates_gpu = generate_and_run_desktop_query(
 )
 
 clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
+    reattach_on_restart=True,
     task_id="clients_daily_keyed_histogram_aggregates",
     project_id=project_id,
     source_dataset_id=dataset_id,
@@ -209,6 +219,7 @@ clients_histogram_aggregates = SubDagOperator(
 )
 
 histogram_percentiles = bigquery_etl_query(
+    reattach_on_restart=True,
     task_id="histogram_percentiles",
     destination_table="histogram_percentiles_v1",
     dataset_id=dataset_id,
@@ -219,6 +230,7 @@ histogram_percentiles = bigquery_etl_query(
 )
 
 glam_user_counts = bigquery_etl_query(
+    reattach_on_restart=True,
     task_id="glam_user_counts",
     destination_table="glam_user_counts_v1",
     dataset_id=dataset_id,
@@ -231,6 +243,7 @@ glam_user_counts = bigquery_etl_query(
 )
 
 glam_sample_counts = bigquery_etl_query(
+    reattach_on_restart=True,
     task_id="glam_sample_counts",
     destination_table="glam_sample_counts_v1",
     dataset_id=dataset_id,
@@ -241,7 +254,9 @@ glam_sample_counts = bigquery_etl_query(
     dag=dag,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 )
+
 client_scalar_probe_counts = gke_command(
+    reattach_on_restart=True,
     task_id="client_scalar_probe_counts",
     command=[
         "python3",
@@ -295,6 +310,7 @@ clients_non_norm_histogram_bucket_counts = SubDagOperator(
 )
 
 clients_histogram_probe_counts = bigquery_etl_query(
+    reattach_on_restart=True,
     task_id="clients_histogram_probe_counts",
     destination_table="clients_histogram_probe_counts_v1",
     dataset_id=dataset_id,
