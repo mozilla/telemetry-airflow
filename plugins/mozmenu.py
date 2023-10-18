@@ -39,4 +39,9 @@ class MozMenuPlugin(AirflowPlugin):
     hooks = []
     executors = []
     appbuilder_views = []
-    appbuilder_menu_items = [telemetry_airflow, wtmo_dev, airflow_triage_guide]
+    appbuilder_menu_items = [
+        telemetry_airflow,
+        wtmo_dev,
+        airflow_triage_guide,
+        gke_cluster,
+    ]
