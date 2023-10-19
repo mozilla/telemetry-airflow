@@ -1,6 +1,8 @@
 import datetime
+
 from airflow.decorators import dag, task
 from airflow.models.param import Param
+
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -132,7 +134,7 @@ def bqetl_backfill_dag():
         if context["params"]["no_partition"]:
             cmd.append("--no_partition")
 
-        if not all((isinstance(c, str) for c in cmd)):
+        if not all(isinstance(c, str) for c in cmd):
             raise Exception(
                 f"All GKE arguments must be strings! Did you do something surprising to the DAG params?\nArgs: {cmd}"
             )
