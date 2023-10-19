@@ -93,10 +93,7 @@ def bqetl_backfill_dag():
         task_id="bqetl_backfill",
         command = "{{ " + "task_instance.xcom_pull(task_ids='generate_backfill_command')" + " }}",
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        gcp_conn_id='google_cloud_gke_sandbox',
-        gke_project_id='moz-fx-data-gke-sandbox',
-        gke_location='us-west1',
-        gke_cluster_name='fbertsch-gke-sandbox-2',
+        gcp_conn_id='google_cloud_airflow_gke',
     )
 
     generate_backfill_command() >> run_backfill
