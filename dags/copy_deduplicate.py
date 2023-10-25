@@ -3,6 +3,7 @@ import datetime
 from airflow import models
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
+
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
@@ -380,6 +381,7 @@ with models.DAG(
             "backfill",
             "*.baseline_clients_first_seen_v1",
             "--no-partition",
+            "--checks",
             *baseline_args,
         ],
         depends_on_past=True,
@@ -393,6 +395,7 @@ with models.DAG(
             "query",
             "backfill",
             "*.baseline_clients_daily_v1",
+            "--checks",
             *baseline_args,
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
