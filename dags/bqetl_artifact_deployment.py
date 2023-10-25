@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.utils.trigger_rule import TriggerRule
+
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -65,7 +66,7 @@ with DAG(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
         command=[
-            "script/bqetl generate all --use-cloud-function=false && "
+            "script/bqetl generate all --use-cloud-function=false --ignore glean_usage && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
