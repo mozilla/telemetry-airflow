@@ -510,7 +510,7 @@ with models.DAG(
         f'AND partition_id = "{archive_partition_id}") > 0 '
         'AS "refusing to archive empty partition"'
     )
-    main_v5 = "moz-fx-data-shared-prod.telemetry_stable.main_v5"
+    main_v5 = "moz-fx-data-shared-prod:telemetry_stable.main_v5"
     archive_main = gke_command(
         reattach_on_restart=True,
         task_id="archive_main",
