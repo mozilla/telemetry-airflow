@@ -77,7 +77,7 @@ with DAG(
                 task_id=f"wait_for_{wait_task}",
                 external_dag_id=config.wait_dag,
                 external_task_id=wait_task,
-                execution_delta=timedelta(minutes=30),
+                execution_delta=timedelta(minutes=45),
                 check_existence=True,
                 mode="reschedule",
                 allowed_states=ALLOWED_STATES,
