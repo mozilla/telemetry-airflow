@@ -61,7 +61,7 @@ for platform, config in CONFIGS.items():
     with DAG(
         dag_id,
         default_args=default_args,
-        schedule_interval="30 4 * * *",
+        schedule_interval="15 4 * * *",
         tags=TAGS,
         start_date=datetime(2023, 3, 20),
         doc_md=__doc__,
@@ -72,10 +72,10 @@ for platform, config in CONFIGS.items():
 
     for app_name in config.apps:
         wait_for_aggregates = ExternalTaskSensor(
-            task_id=f"wait_for_{app_name}",
+            task_id=f"wait_for_bqetl_analytics_aggregations_{app_name}",
             external_dag_id="bqetl_analytics_aggregations",
             external_task_id=f"{app_name}_active_users_aggregates",
-            execution_delta=timedelta(seconds=3600),
+            execution_delta=timedelta(seconds=0),
             check_existence=True,
             mode="reschedule",
             allowed_states=ALLOWED_STATES,

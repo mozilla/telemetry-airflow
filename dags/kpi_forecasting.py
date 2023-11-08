@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
+
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import gke_command
 from utils.tags import Tag
@@ -77,7 +78,7 @@ with DAG(
                 task_id=f"wait_for_{wait_task}",
                 external_dag_id=config.wait_dag,
                 external_task_id=wait_task,
-                execution_delta=timedelta(minutes=30),
+                execution_delta=timedelta(minutes=45),
                 check_existence=True,
                 mode="reschedule",
                 allowed_states=ALLOWED_STATES,
