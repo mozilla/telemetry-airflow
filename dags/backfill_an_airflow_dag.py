@@ -8,6 +8,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
+
 from utils.backfill import BackfillParams
 from utils.tags import Tag
 
@@ -53,7 +54,10 @@ def generate_bash_command(params: dict) -> str:
 
 
 doc_md = """
-# Backfill DAG
+# Backfill an Airflow DAG
+
+This runs historical instances of an Airflow DAG.
+For backfilling bigquery-etl queries, try `backfill_via_bqetl_cli_cmd`.
 
 #### Use with caution
 
@@ -68,7 +72,7 @@ doc_md = """
 
 
 @dag(
-    dag_id="backfill",
+    dag_id="backfill_an_airflow_dag",
     schedule_interval=None,
     doc_md=doc_md,
     catchup=False,

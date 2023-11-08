@@ -7,7 +7,9 @@ from utils.gcp import gke_command
 from utils.tags import Tag
 
 doc_md = """
-# Bqetl Backfill DAG
+# Backfill via the Bqetl CLI command
+
+e.g. `bqetl query backfill $dataset.$table_v1`
 
 #### Use with caution: This will overwrite the dates and tables you choose!
 
@@ -22,7 +24,7 @@ frank@mozilla.com
 
 
 @dag(
-    dag_id="bqetl_backfill",
+    dag_id="backfill_via_bqetl_cli_cmd",
     schedule_interval=None,
     doc_md=doc_md,
     catchup=False,
