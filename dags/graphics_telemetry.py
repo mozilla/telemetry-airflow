@@ -8,6 +8,9 @@ This was originally a Databricks notebook that was migrated to a scheduled
 Dataproc task. Source code lives in the
 [FirefoxGraphics/telemetry](https://github.com/FirefoxGraphics/telemetry)
 repository.
+
+This is a overwrite kind of operation and as long as the most recent DAG run succeeded
+the job should be considered healthy.
 """
 
 import datetime
