@@ -490,7 +490,7 @@ pure-sasl==0.6.2
 py-partiql-parser==0.3.3
 py4j==0.10.9.7
 pyOpenSSL==23.2.0
-pyarrow==11.0.0
+pyarrow==14.0.1
 pyasn1-modules==0.2.8
 pyasn1==0.4.8
 pycountry==22.3.5
