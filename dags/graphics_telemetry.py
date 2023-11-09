@@ -34,7 +34,7 @@ default_args = {
 }
 
 PIP_PACKAGES = [
-    "git+https://github.com/mozilla/python_moztelemetry.git@v0.10.4#egg=python-moztelemetry",
+    "git+https://github.com/mozilla/python_moztelemetry.git@v0.10.7#egg=python-moztelemetry",
     "git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim",
     "boto3==1.16.20",
     "six==1.15.0",
