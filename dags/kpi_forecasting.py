@@ -34,19 +34,19 @@ Config = namedtuple("Config", ["filename", "wait_dag", "wait_tasks"])
 CONFIGS = {
     "dau_desktop": Config(
         "dau_desktop.yaml",
-        "dim_active_users_aggregates_desktop",
+        "bqetl_analytics_aggregations",
         [
-            "firefox_desktop_active_users_aggregates_dim_check",
+            "firefox_desktop_active_users_aggregates",
         ],
     ),
     "dau_mobile": Config(
         "dau_mobile.yaml",
-        "dim_active_users_aggregates_mobile",
+        "bqetl_analytics_aggregations",
         [
-            "fenix_active_users_aggregates_dim_check",
-            "firefox_ios_active_users_aggregates_dim_check",
-            "focus_android_active_users_aggregates_dim_check",
-            "focus_ios_active_users_aggregates_dim_check",
+            "fenix_active_users_aggregates",
+            "firefox_ios_active_users_aggregates",
+            "focus_android_active_users_aggregates",
+            "focus_ios_active_users_aggregates",
         ],
     ),
 }
