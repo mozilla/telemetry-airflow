@@ -154,6 +154,7 @@ authlib==1.2.1
     # via
     #   -c ./constraints.txt
     #   apache-airflow
+    #   flask-appbuilder
 babel==2.13.1
     # via
     #   -c ./constraints.txt
@@ -360,7 +361,7 @@ flask==2.2.5
     #   flask-wtf
 flask-admin==1.6.0
     # via -r requirements.in
-flask-appbuilder==4.3.6
+flask-appbuilder[oauth]==4.3.6
     # via
     #   -c ./constraints.txt
     #   apache-airflow
