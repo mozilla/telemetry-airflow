@@ -26,6 +26,7 @@ fixes:
 	black $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
 
 clean: stop
+	docker-compose down --volumes
 	docker-compose rm -f
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
