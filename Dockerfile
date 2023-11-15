@@ -1,4 +1,4 @@
-FROM apache/airflow:slim-2.6.3-python3.10
+FROM apache/airflow:slim-2.7.3-python3.10
 
 ARG PROJECT_DIR="/opt/airflow"
 
@@ -27,10 +27,6 @@ USER airflow
 
 COPY requirements.txt /
 RUN pip install --no-cache-dir -r /requirements.txt
-
-# Override default version from the constraints file because it is broken
-# https://github.com/apache/airflow/pull/34194
-RUN pip install apache-airflow-providers-google==8.11.0 apache-airflow-providers-cncf-kubernetes==5.2.2 --upgrade
 
 WORKDIR $PROJECT_DIR
 
