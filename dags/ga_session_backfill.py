@@ -43,6 +43,8 @@ with DAG(
 ) as dag:
     for day_offset in ["-3", "-2", "-1"]:
         task_id = "mozilla_org_derived__ga_sessions__v1__backfill_" + day_offset
+        date_str = "macros.ds_add(ds, " + day_offset + ")"
+        date_str_no_dash = "macros.ds_format(" + date_str + ", '%Y-%m-%d', '%Y%m%d')"
 
         ga_sessions_v1_checks = bigquery_dq_check(
             task_id="checks__fail_" + task_id,
@@ -53,27 +55,19 @@ with DAG(
             owner="frank@mozilla.com",
             email=["frank@mozilla.com", "telemetry-alerts@mozilla.com"],
             depends_on_past=False,
-            parameters=[
-                "session_date:DATE:{{ macros.ds_add(ds, " + day_offset + ") }}"
-            ],
+            parameters=["session_date:DATE:{{ " + date_str + " }}"],
             retries=0,
         )
 
         ga_sessions_v1 = bigquery_etl_query(
             task_id=task_id,
-            destination_table="ga_sessions_v1${{ macros.ds_format(macros.ds_add(ds, "
-            + day_offset
-            + "), '%Y-%m-%d', '%Y%m%d') }}",
+            destination_table="ga_sessions_v1${{ " + date_str_no_dash + " }}",
             dataset_id="mozilla_org_derived",
             project_id="moz-fx-data-shared-prod",
             owner="frank@mozilla.com",
             email=["frank@mozilla.com", "telemetry-alerts@mozilla.com"],
             date_partition_parameter=None,
-            parameters=[
-                "session_date:DATE:{{ macros.ds_format(macros.ds_add(ds, "
-                + day_offset
-                + "), '%Y-%m-%d', '%Y%m%d') }}"
-            ],
+            parameters=["session_date:DATE:{{ " + date_str_no_dash + " }}"],
             depends_on_past=False,
         )
 
