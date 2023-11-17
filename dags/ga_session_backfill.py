@@ -67,7 +67,7 @@ with DAG(
             owner="frank@mozilla.com",
             email=["frank@mozilla.com", "telemetry-alerts@mozilla.com"],
             date_partition_parameter=None,
-            parameters=["session_date:DATE:{{ " + date_str_no_dash + " }}"],
+            parameters=["session_date:DATE:{{ " + date_str + " }}"],
             depends_on_past=False,
         )
 
