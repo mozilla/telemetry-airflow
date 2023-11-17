@@ -78,10 +78,10 @@ with DAG(
         )
 
         todays_ga_sessions = ExternalTaskMarker(
-            task_id="mozilla_org_derived__ga_sessions__v1",
+            task_id="rerun__mozilla_org_derived__ga_sessions_v1__" + day_offset,
             external_dag_id="bqetl_mozilla_org_derived",
             external_task_id="wait_for_" + task_id,
-            execution_delta=datetime.timedelta(hours=-1),
+            execution_date="{{ (execution_date - macros.timedelta(days=-1, seconds=82800)).isoformat() }}",
         )
 
         ga_sessions_v1 >> ga_sessions_v1_checks >> todays_ga_sessions
