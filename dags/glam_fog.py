@@ -15,12 +15,11 @@ from utils.glam_subdags.generate_query import (
 from utils.tags import Tag
 
 default_args = {
-    "owner": "akommasani@mozilla.com",
+    "owner": "efilho@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 2, 19),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "akommasani@mozilla.com",
         "akomarzewski@mozilla.com",
         "efilho@mozilla.com",
         "linhnguyen@mozilla.com",
