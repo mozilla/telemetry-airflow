@@ -27,12 +27,11 @@ project_id = "moz-fx-data-shared-prod"
 dataset_id = "telemetry_derived"
 tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis dataset
 default_args = {
-    "owner": "akommasani@mozilla.com",
+    "owner": "efilho@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 22),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "akommasani@mozilla.com",
         "akomarzewski@mozilla.com",
         "efilho@mozilla.com",
         "linhnguyen@mozilla.com",
