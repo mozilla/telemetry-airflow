@@ -8,6 +8,9 @@ This was originally a Databricks notebook that was migrated to a scheduled
 Dataproc task. Source code lives in the
 [FirefoxGraphics/telemetry](https://github.com/FirefoxGraphics/telemetry)
 repository.
+
+This is a overwrite kind of operation and as long as the most recent DAG run succeeded
+the job should be considered healthy.
 """
 
 import datetime
@@ -15,6 +18,7 @@ import datetime
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskSensor
+
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -34,7 +38,7 @@ default_args = {
 }
 
 PIP_PACKAGES = [
-    "git+https://github.com/mozilla/python_moztelemetry.git@v0.10.4#egg=python-moztelemetry",
+    "git+https://github.com/mozilla/python_moztelemetry.git@v0.10.7#egg=python-moztelemetry",
     "git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim",
     "boto3==1.16.20",
     "six==1.15.0",

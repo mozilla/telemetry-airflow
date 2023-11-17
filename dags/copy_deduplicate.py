@@ -3,6 +3,7 @@ import datetime
 from airflow import models
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
+
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
@@ -380,6 +381,7 @@ with models.DAG(
             "backfill",
             "*.baseline_clients_first_seen_v1",
             "--no-partition",
+            "--checks",
             *baseline_args,
         ],
         depends_on_past=True,
@@ -393,6 +395,7 @@ with models.DAG(
             "query",
             "backfill",
             "*.baseline_clients_daily_v1",
+            "--checks",
             *baseline_args,
         ],
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
@@ -493,6 +496,33 @@ with models.DAG(
             )
 
         clients_last_seen_joined >> clients_last_seen_joined_external
+
+    archive_partition_id = (
+        "{{ macros.ds_format(macros.ds_add(ds, -"
+        # 37 months = 3 years + 1 leap day + 31 days (1 month)
+        + str(365 * 3 + 1 + 31)
+        + '), "%Y-%m-%d", "%Y%m%d") }}'
+    )
+    precheck_query = (
+        "ASSERT (SELECT total_rows FROM "
+        "moz-fx-data-shared-prod.telemetry_stable.INFORMATION_SCHEMA.PARTITIONS "
+        'WHERE table_name = "main_v5" '
+        f'AND partition_id = "{archive_partition_id}") > 0 '
+        'AS "refusing to archive empty partition"'
+    )
+    main_v5 = "moz-fx-data-shared-prod:telemetry_stable.main_v5"
+    archive_main = gke_command(
+        reattach_on_restart=True,
+        task_id="archive_main",
+        cmds=["bash", "-x", "-c"],
+        command=[
+            f"bq query '{precheck_query}' &&"
+            f"bq cp -f {main_v5}'$'{archive_partition_id} "
+            f"{main_v5}_archive'$'{archive_partition_id} && "
+            f"bq rm -f {main_v5}'$'{archive_partition_id}"
+        ],
+        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    )
 
     telemetry_derived__core_clients_first_seen__v1 >> baseline_clients_first_seen
     baseline_clients_first_seen >> baseline_clients_daily
