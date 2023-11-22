@@ -128,5 +128,4 @@ with DAG(
         },
         dag=dag,
     )
-
     wait_for_bhr_ping >> bhr_collection >> gcs_sync
