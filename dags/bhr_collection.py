@@ -143,7 +143,9 @@ with DAG(
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
-            additional_metadata={"PIP_PACKAGES": "boto3==1.16.20 click==7.1.2 google-cloud-storage==2.7.0"},
+            additional_metadata={
+                "PIP_PACKAGES": "boto3==1.16.20 click==7.1.2 google-cloud-storage==2.7.0"
+            },
             additional_properties={
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
             },
