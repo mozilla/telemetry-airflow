@@ -137,17 +137,15 @@ with DAG(
             image_version="1.5-debian10",
             dag_name="bhr_collection_gcs_test",
             default_args=default_args,
-            cluster_name="bhr-collection-{{ ds }}",
-            job_name="bhr-collection",
+            cluster_name="bhr-test-collection-{{ ds }}",
+            job_name="bhr-test-collection",
             python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/bhr_collection/bhr_collection.py",
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
-            additional_metadata={"PIP_PACKAGES": "boto3==1.16.20 click==7.1.2"},
+            additional_metadata={"PIP_PACKAGES": "boto3==1.16.20 click==7.1.2 google-cloud-storage==2.7.0"},
             additional_properties={
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-                "spark-env:AWS_ACCESS_KEY_ID": aws_access_key,
-                "spark-env:AWS_SECRET_ACCESS_KEY": aws_secret_key,
             },
             py_args=[
                 "--date",
