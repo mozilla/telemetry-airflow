@@ -38,6 +38,7 @@ def extract_channel_task_group(task_group_name, dag, default_args, dataset_id, c
             arguments=("--replace",),
             sql_file_path=f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_client_probe_counts_extract_v1/query.sql",
             parameters=(f"channel:STRING:{channel}",),
+            dag=dag,
         )
 
         gcs_delete = GCSDeleteObjectsOperator(
@@ -45,6 +46,7 @@ def extract_channel_task_group(task_group_name, dag, default_args, dataset_id, c
             bucket_name=glam_bucket,
             prefix=f"aggs-desktop-{channel}",
             gcp_conn_id=gcp_conn_id,
+            dag=dag,
         )
 
         gcs_destination = f"gs://{glam_bucket}/aggs-desktop-{channel}-*.csv"
@@ -55,6 +57,7 @@ def extract_channel_task_group(task_group_name, dag, default_args, dataset_id, c
             gcp_conn_id=gcp_conn_id,
             export_format="CSV",
             print_header=False,
+            dag=dag,
         )
 
         etl_query >> gcs_delete >> bq2gcs
@@ -80,6 +83,7 @@ def extract_user_counts(
             project_id=project_id,
             date_partition_parameter=None,
             arguments=("--replace",),
+            dag=dag,
         )
 
         gcs_delete = GCSDeleteObjectsOperator(
@@ -87,6 +91,7 @@ def extract_user_counts(
             bucket_name=glam_bucket,
             prefix=f"glam-extract-firefox-{file_prefix}",
             gcp_conn_id=gcp_conn_id,
+            dag=dag,
         )
 
         if file_prefix == "sample-counts":
@@ -105,6 +110,7 @@ def extract_user_counts(
             gcp_conn_id=gcp_conn_id,
             export_format="CSV",
             print_header=False,
+            dag=dag,
         )
 
         etl_query >> gcs_delete >> bq2gcs

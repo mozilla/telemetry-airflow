@@ -48,6 +48,7 @@ def repeated_task_group(
             parameters=merge_params(0, PARTITION_SIZE - 1, additional_params),
             date_partition_parameter=date_partition_parameter,
             arguments=("--replace",),
+            dag=dag,
             docker_image=docker_image,
         )
 
@@ -70,6 +71,7 @@ def repeated_task_group(
                     "--append_table",
                     "--noreplace",
                 ),
+                dag=dag,
                 docker_image=docker_image,
             )
             upstream_task >> task

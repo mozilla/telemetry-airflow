@@ -2,6 +2,7 @@ import os
 from collections import namedtuple
 
 from airflow.exceptions import AirflowException
+from airflow.models.dag import DagContext
 from airflow.operators.bash import BashOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
@@ -388,7 +389,10 @@ def moz_dataproc_pyspark_runner(
         worker_num_local_ssds=worker_num_local_ssds,
     )
 
-    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
+    with (
+        dag or DagContext.get_current_dag(),
+        TaskGroup(task_group_name, default_args=default_args) as task_group,
+    ):
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         run_pyspark_on_dataproc = DataprocSubmitPySparkJobOperator(
@@ -523,7 +527,10 @@ def moz_dataproc_jar_runner(
         worker_num_local_ssds=worker_num_local_ssds,
     )
 
-    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
+    with (
+        dag or DagContext.get_current_dag(),
+        TaskGroup(task_group_name, default_args=default_args) as task_group,
+    ):
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         run_jar_on_dataproc = DataprocSubmitSparkJobOperator(
@@ -688,7 +695,10 @@ def moz_dataproc_scriptrunner(
     if arguments:
         args += ["--arguments", arguments]
 
-    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
+    with (
+        dag or DagContext.get_current_dag(),
+        TaskGroup(task_group_name, default_args=default_args) as task_group,
+    ):
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         # Run DataprocSubmitSparkJobOperator with script-runner.jar pointing to airflow_gcp.sh.

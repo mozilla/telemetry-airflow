@@ -1,6 +1,7 @@
 import json
 import re
 
+from airflow.models.dag import DagContext
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
@@ -91,7 +92,10 @@ def export_to_parquet(
     if arguments is None:
         arguments = []
 
-    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
+    with (
+        dag or DagContext.get_current_dag(),
+        TaskGroup(task_group_name, default_args=default_args) as task_group,
+    ):
         create_dataproc_cluster = DataprocCreateClusterOperator(
             task_id="create_dataproc_cluster",
             cluster_name=cluster_name,
