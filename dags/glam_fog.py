@@ -8,7 +8,7 @@ from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import gke_command
-from utils.glam_subdags.generate_query import (
+from utils.glam.generate_query import (
     generate_and_run_glean_queries,
     generate_and_run_glean_task,
 )

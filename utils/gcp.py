@@ -1,7 +1,6 @@
 import json
 import re
 
-from airflow import models
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
@@ -13,6 +12,7 @@ from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperato
 from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
     BigQueryToGCSOperator,
 )
+from airflow.utils.task_group import TaskGroup
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import get_dataproc_parameters
@@ -27,8 +27,8 @@ def export_to_parquet(
     static_partitions=None,
     arguments=None,
     use_storage_api=False,
-    dag_name="export_to_parquet",
-    parent_dag_name=None,
+    task_group_name="export_to_parquet",
+    dag=None,
     default_args=None,
     gcp_conn_id="google_cloud_airflow_dataproc",
     dataproc_storage_bucket="airflow-dataproc-bq-parquet-exports",
@@ -49,9 +49,9 @@ def export_to_parquet(
     :param List[str] arguments:                   Additional pyspark arguments
     :param bool use_storage_api:                  Whether to read from the BigQuery
                                                   Storage API or an AVRO export
-    :param str dag_name:                          Name of DAG
-    :param Optional[str] parent_dag_name:         Parent DAG name
-    :param Optional[Dict[str, Any]] default_args: DAG configuration
+    :param str task_group_name:                   Name of task group
+    :param Optional[DAG] dag:                     Parent DAG
+    :param Optional[Dict[str, Any]] default_args: Task configuration
     :param str gcp_conn_id:                       Airflow connection id for GCP access
     :param str dataproc_storage_bucket:           Dataproc staging GCS bucket
     :param int num_preemptible_workers:           Number of Dataproc preemptible workers
@@ -73,7 +73,6 @@ def export_to_parquet(
         cluster_name = prefix[: 35 - len(version)] + version
     cluster_name += "-export-{{ ds_nodash }}"
 
-    dag_prefix = parent_dag_name + "." if parent_dag_name else ""
     project_id = DATAPROC_PROJECT_ID
 
     if destination_table is None:
@@ -92,7 +91,7 @@ def export_to_parquet(
     if arguments is None:
         arguments = []
 
-    with models.DAG(dag_id=dag_prefix + dag_name, default_args=default_args) as dag:
+    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
         create_dataproc_cluster = DataprocCreateClusterOperator(
             task_id="create_dataproc_cluster",
             cluster_name=cluster_name,
@@ -174,7 +173,7 @@ def export_to_parquet(
 
         create_dataproc_cluster >> run_dataproc_pyspark >> delete_dataproc_cluster
 
-        return dag
+    return task_group
 
 
 def bigquery_etl_query(

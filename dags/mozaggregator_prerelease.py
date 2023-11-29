@@ -15,7 +15,6 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.gcp import gke_command
@@ -48,8 +47,8 @@ dag = DAG(
 )
 
 
-subdag_args = default_args.copy()
-subdag_args["retries"] = 0
+task_group_args = default_args.copy()
+task_group_args["retries"] = 0
 
 task_id = "prerelease_telemetry_aggregate_view_dataproc"
 gcp_conn_id = "google_cloud_airflow_dataproc"
@@ -72,65 +71,61 @@ storage_bucket = (
 )
 
 
-prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
-    task_id=task_id,
+prerelease_telemetry_aggregate_view_dataproc = moz_dataproc_pyspark_runner(
+    task_group_name=task_id,
     dag=dag,
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name=task_id,
-        job_name="prerelease_aggregates",
-        cluster_name="prerelease-telemetry-aggregates-{{ ds_nodash }}",
-        idle_delete_ttl=600,
-        num_workers=10,
-        worker_machine_type="n1-standard-8",
-        init_actions_uris=[
-            "gs://dataproc-initialization-actions/python/pip-install.sh"
-        ],
-        additional_properties={
-            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
-            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
-        },
-        additional_metadata={
-            "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
-        },
-        python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
-            artifact_bucket
-        ),
-        py_args=[
-            "aggregator",
-            "--date",
-            "{{ ds_nodash }}",
-            "--channels",
-            "nightly,aurora,beta",
-            "--postgres-db",
-            "telemetry",
-            "--postgres-user",
-            "root",
-            "--postgres-pass",
-            "{{ var.value.mozaggregator_postgres_pass }}",
-            "--postgres-host",
-            "{{ var.value.mozaggregator_postgres_host }}",
-            "--postgres-ro-host",
-            "{{ var.value.mozaggregator_postgres_ro_host }}",
-            "--num-partitions",
-            str(10 * 32),
-        ]
-        + (
-            ["--source", "bigquery", "--project-id", "moz-fx-data-shared-prod"]
-            if not EXPORT_TO_AVRO
-            else [
-                "--source",
-                "avro",
-                "--avro-prefix",
-                "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/prerelease/moz-fx-data-shared-prod",
-            ]
-        ),
-        gcp_conn_id=gcp_conn_id,
-        service_account=client_email,
-        artifact_bucket=artifact_bucket,
-        storage_bucket=storage_bucket,
-        default_args=subdag_args,
+    job_name="prerelease_aggregates",
+    cluster_name="prerelease-telemetry-aggregates-{{ ds_nodash }}",
+    idle_delete_ttl=600,
+    num_workers=10,
+    worker_machine_type="n1-standard-8",
+    init_actions_uris=[
+        "gs://dataproc-initialization-actions/python/pip-install.sh"
+    ],
+    additional_properties={
+        "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+        "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
+    },
+    additional_metadata={
+        "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
+    },
+    python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
+        artifact_bucket
     ),
+    py_args=[
+        "aggregator",
+        "--date",
+        "{{ ds_nodash }}",
+        "--channels",
+        "nightly,aurora,beta",
+        "--postgres-db",
+        "telemetry",
+        "--postgres-user",
+        "root",
+        "--postgres-pass",
+        "{{ var.value.mozaggregator_postgres_pass }}",
+        "--postgres-host",
+        "{{ var.value.mozaggregator_postgres_host }}",
+        "--postgres-ro-host",
+        "{{ var.value.mozaggregator_postgres_ro_host }}",
+        "--num-partitions",
+        str(10 * 32),
+    ]
+    + (
+        ["--source", "bigquery", "--project-id", "moz-fx-data-shared-prod"]
+        if not EXPORT_TO_AVRO
+        else [
+            "--source",
+            "avro",
+            "--avro-prefix",
+            "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/prerelease/moz-fx-data-shared-prod",
+        ]
+    ),
+    gcp_conn_id=gcp_conn_id,
+    service_account=client_email,
+    artifact_bucket=artifact_bucket,
+    storage_bucket=storage_bucket,
+    default_args=task_group_args,
 )
 
 trim_database = gke_command(

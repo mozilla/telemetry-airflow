@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.subdag import SubDagOperator
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import moz_dataproc_pyspark_runner
@@ -156,51 +155,47 @@ wipe_bigquery_tmp_table = GKEPodOperator(
 
 # This job should complete in approximately 30 minutes given
 # 35 x n1-standard-8 workers and 2 SSDs per node.
-taar_ensemble = SubDagOperator(
-    task_id="taar_ensemble",
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=taar_weekly.dag_id,
-        dag_name="taar_ensemble",
-        default_args=default_args_weekly,
-        cluster_name=taar_ensemble_cluster_name,
-        job_name="TAAR_ensemble",
-        # GCS bucket for testing is located in `cfr-personalization-experiment` project
-        # python_driver_code="gs://taar_models/tmp/jobs/taar_ensemble.py",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_ensemble.py",
-        additional_properties={
-            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
-            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
-            "spark:spark.python.profile": "true",
-        },
-        num_workers=35,
-        worker_machine_type="n1-standard-8",
-        master_machine_type="n1-standard-8",
-        init_actions_uris=[
-            "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/pip-install.sh"
-        ],
-        additional_metadata={
-            "PIP_PACKAGES": "mozilla-taar3==1.0.7 python-decouple==3.1 click==7.0 "
-            "google-cloud-storage==1.19.1"
-        },
-        optional_components=["ANACONDA", "JUPYTER"],
-        py_args=[
-            "--date",
-            "{{ ds_nodash }}",
-            "--gcs_model_bucket",
-            TAAR_ETL_MODEL_STORAGE_BUCKET,
-            "--sample_rate",
-            "0.005",
-        ],
-        gcp_conn_id=taar_gcpdataproc_conn_id,
-        project_id=taar_gcpdataproc_project_id,
-        master_disk_type="pd-ssd",
-        worker_disk_type="pd-ssd",
-        master_disk_size=1024,
-        worker_disk_size=1024,
-        master_num_local_ssds=2,
-        worker_num_local_ssds=2,
-    ),
+taar_ensemble = moz_dataproc_pyspark_runner(
+    task_group_name="taar_ensemble",
     dag=taar_weekly,
+    default_args=default_args_weekly,
+    cluster_name=taar_ensemble_cluster_name,
+    job_name="TAAR_ensemble",
+    # GCS bucket for testing is located in `cfr-personalization-experiment` project
+    # python_driver_code="gs://taar_models/tmp/jobs/taar_ensemble.py",
+    python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_ensemble.py",
+    additional_properties={
+        "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+        "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
+        "spark:spark.python.profile": "true",
+    },
+    num_workers=35,
+    worker_machine_type="n1-standard-8",
+    master_machine_type="n1-standard-8",
+    init_actions_uris=[
+        "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/pip-install.sh"
+    ],
+    additional_metadata={
+        "PIP_PACKAGES": "mozilla-taar3==1.0.7 python-decouple==3.1 click==7.0 "
+        "google-cloud-storage==1.19.1"
+    },
+    optional_components=["ANACONDA", "JUPYTER"],
+    py_args=[
+        "--date",
+        "{{ ds_nodash }}",
+        "--gcs_model_bucket",
+        TAAR_ETL_MODEL_STORAGE_BUCKET,
+        "--sample_rate",
+        "0.005",
+    ],
+    gcp_conn_id=taar_gcpdataproc_conn_id,
+    project_id=taar_gcpdataproc_project_id,
+    master_disk_type="pd-ssd",
+    worker_disk_type="pd-ssd",
+    master_disk_size=1024,
+    worker_disk_size=1024,
+    master_num_local_ssds=2,
+    worker_num_local_ssds=2,
 )
 
 

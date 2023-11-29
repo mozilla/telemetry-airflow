@@ -7,7 +7,6 @@ See [jobs/update_orphaning_dashboard_etl.py](https://github.com/mozilla/telemetr
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -52,40 +51,36 @@ cluster_name = "app-update-out-of-date-dataproc-cluster"
 # Defined in Airflow's UI -> Admin -> Connections
 gcp_conn_id = "google_cloud_airflow_dataproc"
 
-SubDagOperator(
-    task_id="update_orphaning_dashboard_etl",
+moz_dataproc_pyspark_runner(
+    task_group_name="update_orphaning_dashboard_etl",
     dag=dag,
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name="update_orphaning_dashboard_etl",
-        default_args=default_args,
-        cluster_name=cluster_name,
-        job_name="update_orphaning_dashboard_etl",
-        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/update_orphaning_dashboard_etl.py",
-        init_actions_uris=[
-            "gs://dataproc-initialization-actions/python/pip-install.sh"
-        ],
-        additional_metadata={
-            "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1 boto3==1.9.253"
-        },
-        additional_properties={
-            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3"
-        },
-        py_args=[
-            "--run-date",
-            DS_WEEKLY,
-            "--gcs-bucket",
-            "mozdata-analysis",
-            "--gcs-prefix",
-            "update-orphaning-airflow",
-            "--gcs-output-bucket",
-            "moz-fx-data-static-websit-8565-analysis-output",
-            "--gcs-output-path",
-            "app-update/data/out-of-date/",
-        ],
-        idle_delete_ttl=14400,
-        num_workers=20,
-        worker_machine_type="n1-standard-8",
-        gcp_conn_id=gcp_conn_id,
-    ),
+    default_args=default_args,
+    cluster_name=cluster_name,
+    job_name="update_orphaning_dashboard_etl",
+    python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/update_orphaning_dashboard_etl.py",
+    init_actions_uris=[
+        "gs://dataproc-initialization-actions/python/pip-install.sh"
+    ],
+    additional_metadata={
+        "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1 boto3==1.9.253"
+    },
+    additional_properties={
+        "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3"
+    },
+    py_args=[
+        "--run-date",
+        DS_WEEKLY,
+        "--gcs-bucket",
+        "mozdata-analysis",
+        "--gcs-prefix",
+        "update-orphaning-airflow",
+        "--gcs-output-bucket",
+        "moz-fx-data-static-websit-8565-analysis-output",
+        "--gcs-output-path",
+        "app-update/data/out-of-date/",
+    ],
+    idle_delete_ttl=14400,
+    num_workers=20,
+    worker_machine_type="n1-standard-8",
+    gcp_conn_id=gcp_conn_id,
 )

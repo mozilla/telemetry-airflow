@@ -16,7 +16,6 @@ the job should be considered healthy.
 import datetime
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -72,74 +71,64 @@ with DAG(
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-    graphics_trends = SubDagOperator(
-        task_id="graphics_trends",
-        dag=dag,
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="graphics_trends",
-            default_args=default_args,
-            cluster_name="graphics-trends-{{ ds }}",
-            job_name="graphics-trends",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/graphics/graphics_telemetry_trends.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            },
-            py_args=[
-                "--gcs-bucket",
-                GCS_BUCKET,
-                "--gcs-prefix",
-                GCS_PREFIX,
-                "--weekly-fraction",
-                "0.003",
-            ],
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-4",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
+    graphics_trends = moz_dataproc_pyspark_runner(
+        image_version="1.5-debian10",
+        task_group_name="graphics_trends",
+        default_args=default_args,
+        cluster_name="graphics-trends-{{ ds }}",
+        job_name="graphics-trends",
+        python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/graphics/graphics_telemetry_trends.py",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+        additional_properties={
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+        },
+        py_args=[
+            "--gcs-bucket",
+            GCS_BUCKET,
+            "--gcs-prefix",
+            GCS_PREFIX,
+            "--weekly-fraction",
+            "0.003",
+        ],
+        idle_delete_ttl=14400,
+        num_workers=2,
+        worker_machine_type="n1-standard-4",
+        gcp_conn_id=params.conn_id,
+        service_account=params.client_email,
+        storage_bucket=params.storage_bucket,
     )
 
-    graphics_dashboard = SubDagOperator(
-        task_id="graphics_dashboard",
-        dag=dag,
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="graphics_dashboard",
-            default_args=default_args,
-            cluster_name="graphics-dashboard-{{ ds }}",
-            job_name="graphics-dashboard",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/graphics/graphics_telemetry_dashboard.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            },
-            py_args=[
-                "--output-bucket",
-                GCS_BUCKET,
-                "--output-prefix",
-                GCS_PREFIX,
-                "--release-fraction",
-                "0.003",
-            ],
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-highmem-4",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
+    graphics_dashboard = moz_dataproc_pyspark_runner(
+        image_version="1.5-debian10",
+        task_group_name="graphics_dashboard",
+        default_args=default_args,
+        cluster_name="graphics-dashboard-{{ ds }}",
+        job_name="graphics-dashboard",
+        python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/graphics/graphics_telemetry_dashboard.py",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+        additional_properties={
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+        },
+        py_args=[
+            "--output-bucket",
+            GCS_BUCKET,
+            "--output-prefix",
+            GCS_PREFIX,
+            "--release-fraction",
+            "0.003",
+        ],
+        idle_delete_ttl=14400,
+        num_workers=2,
+        worker_machine_type="n1-highmem-4",
+        gcp_conn_id=params.conn_id,
+        service_account=params.client_email,
+        storage_bucket=params.storage_bucket,
     )
 
     wait_for_main_ping >> graphics_trends

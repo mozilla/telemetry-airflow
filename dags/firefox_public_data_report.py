@@ -8,7 +8,6 @@ Source code is in the [firefox-public-data-report-etl repository]
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -64,49 +63,45 @@ wait_for_main_ping = ExternalTaskSensor(
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-hardware_report = SubDagOperator(
-    task_id="public_data_hardware_report",
+hardware_report = moz_dataproc_pyspark_runner(
+    image_version="1.5-debian10",
+    task_group_name="public_data_hardware_report",
     dag=dag,
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        image_version="1.5-debian10",
-        dag_name="public_data_hardware_report",
-        default_args=default_args,
-        cluster_name="public-data-hardware-report-{{ ds }}",
-        job_name="firefox-public-data-hardware-report",
-        python_driver_code="gs://{}/jobs/moz_dataproc_runner.py".format(
-            params.artifact_bucket
-        ),
-        init_actions_uris=[
-            "gs://dataproc-initialization-actions/python/pip-install.sh"
-        ],
-        additional_metadata={
-            "PIP_PACKAGES": "git+https://github.com/mozilla/firefox-public-data-report-etl.git"
-        },
-        additional_properties={
-            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-        },
-        py_args=[
-            "public_data_report",
-            "hardware_report",
-            "--date_from",
-            "{{ ds }}",
-            "--bq_table",
-            "moz-fx-data-shared-prod.telemetry_derived.public_data_report_hardware",
-            "--temporary_gcs_bucket",
-            params.storage_bucket,
-            "--gcs_bucket",
-            "moz-fx-data-static-websit-8565-analysis-output",
-            "--gcs_path",
-            "public-data-report/hardware/",
-        ],
-        idle_delete_ttl=14400,
-        num_workers=2,
-        worker_machine_type="n1-standard-4",
-        gcp_conn_id=params.conn_id,
-        service_account=params.client_email,
-        storage_bucket=params.storage_bucket,
+    default_args=default_args,
+    cluster_name="public-data-hardware-report-{{ ds }}",
+    job_name="firefox-public-data-hardware-report",
+    python_driver_code="gs://{}/jobs/moz_dataproc_runner.py".format(
+        params.artifact_bucket
     ),
+    init_actions_uris=[
+        "gs://dataproc-initialization-actions/python/pip-install.sh"
+    ],
+    additional_metadata={
+        "PIP_PACKAGES": "git+https://github.com/mozilla/firefox-public-data-report-etl.git"
+    },
+    additional_properties={
+        "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+    },
+    py_args=[
+        "public_data_report",
+        "hardware_report",
+        "--date_from",
+        "{{ ds }}",
+        "--bq_table",
+        "moz-fx-data-shared-prod.telemetry_derived.public_data_report_hardware",
+        "--temporary_gcs_bucket",
+        params.storage_bucket,
+        "--gcs_bucket",
+        "moz-fx-data-static-websit-8565-analysis-output",
+        "--gcs_path",
+        "public-data-report/hardware/",
+    ],
+    idle_delete_ttl=14400,
+    num_workers=2,
+    worker_machine_type="n1-standard-4",
+    gcp_conn_id=params.conn_id,
+    service_account=params.client_email,
+    storage_bucket=params.storage_bucket,
 )
 
 wait_for_clients_last_seen = ExternalTaskSensor(

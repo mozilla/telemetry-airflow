@@ -8,7 +8,6 @@ See [client_ltv docs on DTMO](https://docs.telemetry.mozilla.org/datasets/search
 """
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag import SubDagOperator
 from datetime import datetime, timedelta
 
 from utils.dataproc import (
@@ -41,57 +40,53 @@ dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *",
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-subdag_args = default_args.copy()
-subdag_args["retries"] = 0
+task_group_args = default_args.copy()
+task_group_args["retries"] = 0
 
 task_id = "ltv_daily"
 project = params.project_id if params.is_dev else "moz-fx-data-shared-prod"
-ltv_daily = SubDagOperator(
-    task_id=task_id,
+ltv_daily = moz_dataproc_pyspark_runner(
+    task_group_name=task_id,
     dag=dag,
-    subdag=moz_dataproc_pyspark_runner(
-        parent_dag_name=dag.dag_id,
-        dag_name=task_id,
-        job_name="ltv-daily",
-        cluster_name="ltv-daily-{{ ds_nodash }}",
-        idle_delete_ttl=600,
-        num_workers=30,
-        worker_machine_type="n2-standard-16",
-        optional_components=["ANACONDA"],
-        init_actions_uris=[
-            "gs://dataproc-initialization-actions/python/pip-install.sh"
-        ],
-        additional_properties={
-            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
-        },
-        additional_metadata={"PIP_PACKAGES": "lifetimes==0.11.1"},
-        python_driver_code="gs://{}/jobs/ltv_daily.py".format(params.artifact_bucket),
-        py_args=[
-            "--submission-date",
-            "{{ ds }}",
-            "--prediction-days",
-            "364",
-            "--project-id",
-            project,
-            "--source-qualified-table-id",
-            "{project}.search.search_rfm".format(project=project),
-            "--dataset-id",
-            "analysis",
-            "--intermediate-table-id",
-            "ltv_daily_temporary_search_rfm_day",
-            "--model-input-table-id",
-            "ltv_daily_model_perf",
-            "--model-output-table-id",
-            "ltv_daily",
-            "--temporary-gcs-bucket",
-            params.storage_bucket,
-        ],
-        gcp_conn_id=params.conn_id,
-        service_account=params.client_email,
-        artifact_bucket=params.artifact_bucket,
-        storage_bucket=params.storage_bucket,
-        default_args=subdag_args,
-    ),
+    job_name="ltv-daily",
+    cluster_name="ltv-daily-{{ ds_nodash }}",
+    idle_delete_ttl=600,
+    num_workers=30,
+    worker_machine_type="n2-standard-16",
+    optional_components=["ANACONDA"],
+    init_actions_uris=[
+        "gs://dataproc-initialization-actions/python/pip-install.sh"
+    ],
+    additional_properties={
+        "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
+    },
+    additional_metadata={"PIP_PACKAGES": "lifetimes==0.11.1"},
+    python_driver_code="gs://{}/jobs/ltv_daily.py".format(params.artifact_bucket),
+    py_args=[
+        "--submission-date",
+        "{{ ds }}",
+        "--prediction-days",
+        "364",
+        "--project-id",
+        project,
+        "--source-qualified-table-id",
+        "{project}.search.search_rfm".format(project=project),
+        "--dataset-id",
+        "analysis",
+        "--intermediate-table-id",
+        "ltv_daily_temporary_search_rfm_day",
+        "--model-input-table-id",
+        "ltv_daily_model_perf",
+        "--model-output-table-id",
+        "ltv_daily",
+        "--temporary-gcs-bucket",
+        params.storage_bucket,
+    ],
+    gcp_conn_id=params.conn_id,
+    service_account=params.client_email,
+    artifact_bucket=params.artifact_bucket,
+    storage_bucket=params.storage_bucket,
+    default_args=task_group_args,
 )
 
 if params.is_dev:

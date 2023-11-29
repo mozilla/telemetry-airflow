@@ -3,9 +3,8 @@ Firefox for Android ETL for https://glam.telemetry.mozilla.org/.
 
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
-in bigquery-etl and the
-[glam_subdags](https://github.com/mozilla/telemetry-airflow/tree/main/dags/glam_subdags)
-in telemetry-airflow.
+in bigquery-etl and the `glam*` DAGs in
+[telemetry-airflow](https://github.com/mozilla/telemetry-airflow/tree/main/dags).
 """
 
 from datetime import datetime, timedelta
@@ -18,7 +17,7 @@ from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import gke_command
-from utils.glam_subdags.generate_query import (
+from utils.glam.generate_query import (
     generate_and_run_glean_queries,
     generate_and_run_glean_task,
 )

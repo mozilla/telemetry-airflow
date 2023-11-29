@@ -1,10 +1,10 @@
 import os
 from collections import namedtuple
 
-from airflow import models
 from airflow.exceptions import AirflowException
 from airflow.operators.bash import BashOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.utils.task_group import TaskGroup
 
 # When google deprecates dataproc_v1beta2 in DataprocHook/Operator classes
 # We can import these from our patched code, rather than upgrading/deploying
@@ -213,8 +213,8 @@ class DataProcHelper:
 
 
 def moz_dataproc_pyspark_runner(
-    parent_dag_name=None,
-    dag_name="run_pyspark_on_dataproc",
+    task_group_name="run_pyspark_on_dataproc",
+    dag=None,
     default_args=None,
     cluster_name=None,
     num_workers=2,
@@ -262,25 +262,22 @@ def moz_dataproc_pyspark_runner(
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id = 'google_cloud_airflow_dataproc'
 
-        run_dataproc_pyspark = SubDagOperator(
-            task_id='run_dataproc_pyspark',
+        run_dataproc_pyspark = moz_dataproc_pyspark_runner(
+            task_group_name='run_dataproc_pyspark',
             dag=dag,
-            subdag = moz_dataproc_pyspark_runner(
-                parent_dag_name=dag.dag_id,
-                dag_name='run_dataproc_pyspark',
-                job_name='Do_something_on_pyspark',
-                default_args=default_args,
-                cluster_name=cluster_name,
-                python_driver_code='gs://some_bucket/some_py_script.py',
-                py_args=["-d", "{{ ds_nodash }}"],
-                gcp_conn_id=gcp_conn_id)
+            job_name='Do_something_on_pyspark',
+            default_args=default_args,
+            cluster_name=cluster_name,
+            python_driver_code='gs://some_bucket/some_py_script.py',
+            py_args=["-d", "{{ ds_nodash }}"],
+            gcp_conn_id=gcp_conn_id,
         )
 
     Airflow related args:
     ---
-    :param str parent_dag_name:           Parent dag name.
-    :param str dag_name:                  Dag name.
-    :param dict default_args:             Dag configuration.
+    :param str task_group_name:           Task group name.
+    :param DAG dag:                       Parent DAG.
+    :param dict default_args:             Task configuration.
 
     Dataproc Cluster related args:
     ---
@@ -391,9 +388,7 @@ def moz_dataproc_pyspark_runner(
         worker_num_local_ssds=worker_num_local_ssds,
     )
 
-    _dag_name = f"{parent_dag_name}.{dag_name}"
-
-    with models.DAG(_dag_name, default_args=default_args) as dag:
+    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         run_pyspark_on_dataproc = DataprocSubmitPySparkJobOperator(
@@ -410,15 +405,16 @@ def moz_dataproc_pyspark_runner(
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
         create_dataproc_cluster >> run_pyspark_on_dataproc >> delete_dataproc_cluster
-        return dag
+
+    return task_group
 
 
 # End moz_dataproc_pyspark_runner
 
 
 def moz_dataproc_jar_runner(
-    parent_dag_name=None,
-    dag_name="run_script_on_dataproc",
+    task_group_name="run_pyspark_on_dataproc",
+    dag=None,
     default_args=None,
     cluster_name=None,
     num_workers=2,
@@ -463,19 +459,16 @@ def moz_dataproc_jar_runner(
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id = 'google_cloud_airflow_dataproc'
 
-        run_dataproc_jar = SubDagOperator(
-            task_id='run_dataproc_jar',
+        run_dataproc_jar = moz_dataproc_jar_runner(
+            task_group_name='run_dataproc_jar',
             dag=dag,
-            subdag = moz_dataproc_jar_runner(
-                parent_dag_name=dag.dag_id,
-                dag_name='run_dataproc_jar',
-                job_name='Run_some_spark_jar_on_dataproc',
-                default_args=default_args,
-                cluster_name=cluster_name,
-                jar_urls=['gs://some_bucket/some_jar.jar'],
-                main_class='com.mozilla.path.to.ClassName',
-                jar_args=["-d", "{{ ds_nodash }}"],
-                gcp_conn_id=gcp_conn_id)
+            job_name='Run_some_spark_jar_on_dataproc',
+            default_args=default_args,
+            cluster_name=cluster_name,
+            jar_urls=['gs://some_bucket/some_jar.jar'],
+            main_class='com.mozilla.path.to.ClassName',
+            jar_args=["-d", "{{ ds_nodash }}"],
+            gcp_conn_id=gcp_conn_id,
         )
 
     Airflow related args:
@@ -530,9 +523,7 @@ def moz_dataproc_jar_runner(
         worker_num_local_ssds=worker_num_local_ssds,
     )
 
-    _dag_name = f"{parent_dag_name}.{dag_name}"
-
-    with models.DAG(_dag_name, default_args=default_args) as dag:
+    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         run_jar_on_dataproc = DataprocSubmitSparkJobOperator(
@@ -550,7 +541,8 @@ def moz_dataproc_jar_runner(
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
         create_dataproc_cluster >> run_jar_on_dataproc >> delete_dataproc_cluster
-        return dag
+
+    return task_group
 
 
 # End moz_dataproc_jar_runner
@@ -562,8 +554,8 @@ def _format_envvar(env=None):
 
 
 def moz_dataproc_scriptrunner(
-    parent_dag_name=None,
-    dag_name="run_script_on_dataproc",
+    task_group_name="run_script_on_dataproc",
+    dag=None,
     default_args=None,
     cluster_name=None,
     num_workers=2,
@@ -611,19 +603,16 @@ def moz_dataproc_scriptrunner(
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id = 'google_cloud_airflow_dataproc'
 
-        run_dataproc_script = SubDagOperator(
-            task_id='run_dataproc_script',
+        run_dataproc_script = moz_dataproc_scriptrunner(
+            task_group_name='run_dataproc_script',
             dag=dag,
-            subdag = moz_dataproc_scriptrunner(
-                parent_dag_name=dag.dag_id,
-                dag_name='run_dataproc_script',
-                default_args=default_args,
-                cluster_name=cluster_name,
-                job_name='Run_a_script_on_dataproc',
-                uri='https://raw.githubusercontent.com/mozilla/telemetry-airflow/main/jobs/some_bash_or_py_script.py',
-                env={"date": "{{ ds_nodash }}"},
-                arguments="-d {{ ds_nodash }}",
-                gcp_conn_id=gcp_conn_id)
+            default_args=default_args,
+            cluster_name=cluster_name,
+            job_name='Run_a_script_on_dataproc',
+            uri='https://raw.githubusercontent.com/mozilla/telemetry-airflow/main/jobs/some_bash_or_py_script.py',
+            env={"date": "{{ ds_nodash }}"},
+            arguments="-d {{ ds_nodash }}",
+            gcp_conn_id=gcp_conn_id,
         )
 
     Airflow related args:
@@ -681,7 +670,6 @@ def moz_dataproc_scriptrunner(
         worker_num_local_ssds=worker_num_local_ssds,
     )
 
-    _dag_name = f"{parent_dag_name}.{dag_name}"
     environment = _format_envvar(env)
 
     script_bucket = "moz-fx-data-prod-airflow-dataproc-artifacts"
@@ -700,7 +688,7 @@ def moz_dataproc_scriptrunner(
     if arguments:
         args += ["--arguments", arguments]
 
-    with models.DAG(_dag_name, default_args=default_args) as dag:
+    with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
         # Run DataprocSubmitSparkJobOperator with script-runner.jar pointing to airflow_gcp.sh.
@@ -720,7 +708,8 @@ def moz_dataproc_scriptrunner(
         delete_dataproc_cluster = dataproc_helper.delete_cluster()
 
         create_dataproc_cluster >> run_script_on_dataproc >> delete_dataproc_cluster
-        return dag
+
+    return task_group
 
 
 # End moz_dataproc_scriptrunner

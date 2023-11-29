@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -140,139 +139,123 @@ with DAG(
         email_on_retry=False,
     )
 
-    taar_locale = SubDagOperator(
-        task_id="taar_locale",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            dag_name="taar_locale",
-            default_args=default_args,
-            cluster_name=taar_locale_cluster_name,
-            job_name="TAAR_Locale",
-            python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_locale.py",
-            # GCS bucket for testing is located in `cfr-personalization-experiment` project
-            # python_driver_code="gs://taar_models/tmp/jobs/taar_locale.py",
-            num_workers=12,
-            py_args=[
-                "--date",
-                "{{ ds_nodash }}",
-                "--bucket",
-                TAAR_ETL_MODEL_STORAGE_BUCKET,
-                "--prefix",
-                "taar/locale",
-            ],
-            gcp_conn_id=taar_gcpdataproc_conn_id,
-            project_id=taar_gcpdataproc_project_id,
-        ),
+    taar_locale = moz_dataproc_pyspark_runner(
+        task_group_name="taar_locale",
+        default_args=default_args,
+        cluster_name=taar_locale_cluster_name,
+        job_name="TAAR_Locale",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_locale.py",
+        # GCS bucket for testing is located in `cfr-personalization-experiment` project
+        # python_driver_code="gs://taar_models/tmp/jobs/taar_locale.py",
+        num_workers=12,
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+            "--prefix",
+            "taar/locale",
+        ],
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
     )
 
-    taar_similarity = SubDagOperator(
-        task_id="taar_similarity",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            dag_name="taar_similarity",
-            default_args=default_args,
-            cluster_name=taar_similarity_cluster_name,
-            job_name="TAAR_similarity",
-            python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
-            # GCS bucket for testing is located in `cfr-personalization-experiment` project
-            # python_driver_code="gs://taar_models/tmp/jobs/taar_similarity.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={
-                "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"
-            },
-            additional_properties={
-                "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
-            },
-            num_workers=8,
-            master_machine_type="n1-standard-8",
-            worker_machine_type="n1-highmem-32",
-            py_args=[
-                "--date",
-                "{{ ds }}",
-                "--bucket",
-                TAAR_ETL_MODEL_STORAGE_BUCKET,
-                "--prefix",
-                "taar/similarity",
-            ],
-            gcp_conn_id=taar_gcpdataproc_conn_id,
-            project_id=taar_gcpdataproc_project_id,
-            master_disk_type="pd-ssd",
-            worker_disk_type="pd-ssd",
-            master_disk_size=1024,
-            worker_disk_size=1024,
-            master_num_local_ssds=2,
-            worker_num_local_ssds=2,
-        ),
+    taar_similarity = moz_dataproc_pyspark_runner(
+        task_group_name="taar_similarity",
+        default_args=default_args,
+        cluster_name=taar_similarity_cluster_name,
+        job_name="TAAR_similarity",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_similarity.py",
+        # GCS bucket for testing is located in `cfr-personalization-experiment` project
+        # python_driver_code="gs://taar_models/tmp/jobs/taar_similarity.py",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_metadata={
+            "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"
+        },
+        additional_properties={
+            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+        },
+        num_workers=8,
+        master_machine_type="n1-standard-8",
+        worker_machine_type="n1-highmem-32",
+        py_args=[
+            "--date",
+            "{{ ds }}",
+            "--bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+            "--prefix",
+            "taar/similarity",
+        ],
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
+        master_disk_type="pd-ssd",
+        worker_disk_type="pd-ssd",
+        master_disk_size=1024,
+        worker_disk_size=1024,
+        master_num_local_ssds=2,
+        worker_num_local_ssds=2,
     )
 
-    taar_collaborative_recommender = SubDagOperator(
-        task_id="addon_recommender",
-        subdag=moz_dataproc_jar_runner(
-            parent_dag_name=dag.dag_id,
-            dag_name="addon_recommender",
-            job_name="Train_the_Collaborative_Addon_Recommender",
-            main_class="com.mozilla.telemetry.ml.AddonRecommender",
-            jar_urls=[
-                "https://storage.googleapis.com/moz-fx-data-taar-pr-prod-e0f7-prod-artifacts"
-                "/mozilla/telemetry-batch-view/main/telemetry-batch-view.jar",
-            ],
-            jar_args=[
-                "train",
-                "--runDate={{ds_nodash}}",
-                "--inputTable=gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6",
-                f"--privateBucket=gs://{TAAR_ETL_MODEL_STORAGE_BUCKET}",
-                f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints",
-            ],
-            cluster_name="addon-recommender-{{ds_nodash}}",
-            image_version="1.3",
-            worker_machine_type="n1-standard-8",
-            num_workers=20,
-            optional_components=[],
-            install_component_gateway=False,
-            init_actions_uris=[],
-            aws_conn_id=taar_aws_conn_id,
-            gcp_conn_id=taar_gcpdataproc_conn_id,
-            project_id=taar_gcpdataproc_project_id,
-            default_args=default_args,
-        ),
+    taar_collaborative_recommender = moz_dataproc_jar_runner(
+        task_group_name="addon_recommender",
+        job_name="Train_the_Collaborative_Addon_Recommender",
+        main_class="com.mozilla.telemetry.ml.AddonRecommender",
+        jar_urls=[
+            "https://storage.googleapis.com/moz-fx-data-taar-pr-prod-e0f7-prod-artifacts"
+            "/mozilla/telemetry-batch-view/main/telemetry-batch-view.jar",
+        ],
+        jar_args=[
+            "train",
+            "--runDate={{ds_nodash}}",
+            "--inputTable=gs://airflow-dataproc-bq-parquet-exports/clients_daily/v6",
+            f"--privateBucket=gs://{TAAR_ETL_MODEL_STORAGE_BUCKET}",
+            f"--checkpointDir=gs://{TAAR_ETL_STORAGE_BUCKET}/spark-checkpoints",
+        ],
+        cluster_name="addon-recommender-{{ds_nodash}}",
+        image_version="1.3",
+        worker_machine_type="n1-standard-8",
+        num_workers=20,
+        optional_components=[],
+        install_component_gateway=False,
+        init_actions_uris=[],
+        aws_conn_id=taar_aws_conn_id,
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
+        default_args=default_args,
     )
 
-    taar_lite = SubDagOperator(
-        task_id="taar_lite",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            dag_name="taar_lite",
-            default_args=default_args,
-            cluster_name=taarlite_cluster_name,
-            job_name="TAAR_Lite_GUID_GUID",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={
-                "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"
-            },
-            additional_properties={
-                "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
-            },
-            python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
-            # GCS bucket for testing is located in `cfr-personalization-experiment` project
-            # python_driver_code="gs://taar_models/tmp/jobs/taar_lite_guidguid.py",
-            num_workers=8,
-            py_args=[
-                "--date",
-                "{{ ds }}",
-                "--bucket",
-                TAAR_ETL_MODEL_STORAGE_BUCKET,
-                "--prefix",
-                "taar/lite",
-            ],
-            gcp_conn_id=taar_gcpdataproc_conn_id,
-            project_id=taar_gcpdataproc_project_id,
-        ),
+    taar_lite = moz_dataproc_pyspark_runner(
+        task_group_name="taar_lite",
+        default_args=default_args,
+        cluster_name=taarlite_cluster_name,
+        job_name="TAAR_Lite_GUID_GUID",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_metadata={
+            "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1"
+        },
+        additional_properties={
+            "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+        },
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
+        # GCS bucket for testing is located in `cfr-personalization-experiment` project
+        # python_driver_code="gs://taar_models/tmp/jobs/taar_lite_guidguid.py",
+        num_workers=8,
+        py_args=[
+            "--date",
+            "{{ ds }}",
+            "--bucket",
+            TAAR_ETL_MODEL_STORAGE_BUCKET,
+            "--prefix",
+            "taar/lite",
+        ],
+        gcp_conn_id=taar_gcpdataproc_conn_id,
+        project_id=taar_gcpdataproc_project_id,
     )
 
     taar_lite_guidranking = GKEPodOperator(

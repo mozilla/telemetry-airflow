@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.providers.google.cloud.operators.cloud_storage_transfer_service import (
     CloudDataTransferServiceS3ToGCSOperator,
 )
@@ -91,29 +90,25 @@ with DAG(
     )
 
     # Spark job reads gcs json and writes gcs parquet
-    crash_report_parquet = SubDagOperator(
-        task_id="crash_report_parquet",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            dag_name="crash_report_parquet",
-            default_args=default_args,
-            cluster_name=cluster_name,
-            job_name="Socorro_Crash_Reports_to_Parquet",
-            python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/socorro_import_crash_data.py",
-            py_args=[
-                "--date",
-                "{{ ds_nodash }}",
-                "--source-gcs-path",
-                f"gs://{gcs_data_bucket}/v1/crash_report",
-                "--dest-gcs-path",
-                f"gs://{gcs_data_bucket}/{dataset}",
-            ],
-            idle_delete_ttl=14400,
-            num_workers=8,
-            worker_machine_type="n1-standard-8",
-            aws_conn_id=read_aws_conn_id,
-            gcp_conn_id=gcp_conn_id,
-        ),
+    crash_report_parquet = moz_dataproc_pyspark_runner(
+        task_group_name="crash_report_parquet",
+        default_args=default_args,
+        cluster_name=cluster_name,
+        job_name="Socorro_Crash_Reports_to_Parquet",
+        python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/socorro_import_crash_data.py",
+        py_args=[
+            "--date",
+            "{{ ds_nodash }}",
+            "--source-gcs-path",
+            f"gs://{gcs_data_bucket}/v1/crash_report",
+            "--dest-gcs-path",
+            f"gs://{gcs_data_bucket}/{dataset}",
+        ],
+        idle_delete_ttl=14400,
+        num_workers=8,
+        worker_machine_type="n1-standard-8",
+        aws_conn_id=read_aws_conn_id,
+        gcp_conn_id=gcp_conn_id,
     )
 
     bq_gcp_conn_id = "google_cloud_airflow_gke"
