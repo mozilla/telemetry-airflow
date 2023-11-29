@@ -181,6 +181,9 @@ with DAG(
 
         Prod Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_prod")["top_pick_url"]}}
         Stage Top Pick JSON file: {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_stage")["top_pick_url"]}}
+
+        Change Summary:
+        {{ task_instance.xcom_pull("nav_suggestions_prepare_domain_metadata_prod")["diff"]}}
         """,
     )
 
