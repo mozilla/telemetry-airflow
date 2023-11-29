@@ -11,8 +11,6 @@ def histogram_aggregates_task_group(
     is_dev=False,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 ):
-    default_args["depends_on_past"] = True
-
     with TaskGroup(task_group_name, dag=dag, default_args=default_args) as task_group:
         clients_histogram_aggregates_new = bigquery_etl_query(
             reattach_on_restart=True,
@@ -20,6 +18,7 @@ def histogram_aggregates_task_group(
             destination_table="clients_histogram_aggregates_new_v1",
             dataset_id=dataset_id,
             project_id="moz-fx-data-shared-prod",
+            depends_on_past=True,
             date_partition_parameter=None,
             parameters=("submission_date:DATE:{{ds}}",),
             arguments=("--replace",),
