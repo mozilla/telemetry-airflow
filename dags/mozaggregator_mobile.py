@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.gcp import gke_command
 from utils.tags import Tag
@@ -77,9 +78,7 @@ mobile_aggregate_view_dataproc = moz_dataproc_pyspark_runner(
     idle_delete_ttl=600,
     num_workers=5,
     worker_machine_type="n1-standard-8",
-    init_actions_uris=[
-        "gs://dataproc-initialization-actions/python/pip-install.sh"
-    ],
+    init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
     additional_properties={
         "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
         "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
@@ -87,9 +86,7 @@ mobile_aggregate_view_dataproc = moz_dataproc_pyspark_runner(
     additional_metadata={
         "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
     },
-    python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
-        artifact_bucket
-    ),
+    python_driver_code=f"gs://{artifact_bucket}/jobs/mozaggregator_runner.py",
     py_args=[
         "mobile",
         "--date",

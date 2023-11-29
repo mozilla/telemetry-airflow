@@ -36,9 +36,7 @@ def extract_channel_task_group(task_group_name, dag, default_args, dataset_id, c
             project_id=project_id,
             date_partition_parameter=None,
             arguments=("--replace",),
-            sql_file_path="sql/moz-fx-data-shared-prod/{}/glam_client_probe_counts_extract_v1/query.sql".format(
-                dataset_id
-            ),
+            sql_file_path=f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_client_probe_counts_extract_v1/query.sql",
             parameters=(f"channel:STRING:{channel}",),
         )
 
@@ -49,14 +47,10 @@ def extract_channel_task_group(task_group_name, dag, default_args, dataset_id, c
             gcp_conn_id=gcp_conn_id,
         )
 
-        gcs_destination = "gs://{bucket}/aggs-desktop-{channel}-*.csv".format(
-            bucket=glam_bucket, channel=channel
-        )
+        gcs_destination = f"gs://{glam_bucket}/aggs-desktop-{channel}-*.csv"
         bq2gcs = BigQueryToGCSOperator(
             task_id=f"glam_extract_{channel}_to_csv",
-            source_project_dataset_table="{}.{}.{}".format(
-                project_id, dataset_id, bq_extract_table
-            ),
+            source_project_dataset_table=f"{project_id}.{dataset_id}.{bq_extract_table}",
             destination_cloud_storage_uris=gcs_destination,
             gcp_conn_id=gcp_conn_id,
             export_format="CSV",
@@ -96,19 +90,17 @@ def extract_user_counts(
         )
 
         if file_prefix == "sample-counts":
-            gcs_destination = "gs://{}/glam-extract-firefox-{}-*.csv".format(
-                glam_bucket, file_prefix
+            gcs_destination = (
+                f"gs://{glam_bucket}/glam-extract-firefox-{file_prefix}-*.csv"
             )
         else:
-            gcs_destination = "gs://{}/glam-extract-firefox-{}.csv".format(
-                glam_bucket, file_prefix
+            gcs_destination = (
+                f"gs://{glam_bucket}/glam-extract-firefox-{file_prefix}.csv"
             )
 
         bq2gcs = BigQueryToGCSOperator(
             task_id=f"glam_extract_{task_prefix}_to_csv",
-            source_project_dataset_table="{}.{}.{}".format(
-                project_id, dataset_id, bq_extract_table
-            ),
+            source_project_dataset_table=f"{project_id}.{dataset_id}.{bq_extract_table}",
             destination_cloud_storage_uris=gcs_destination,
             gcp_conn_id=gcp_conn_id,
             export_format="CSV",

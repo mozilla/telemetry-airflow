@@ -7,6 +7,7 @@ See [jobs/update_orphaning_dashboard_etl.py](https://github.com/mozilla/telemetr
 from datetime import datetime, timedelta
 
 from airflow import DAG
+
 from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -58,9 +59,7 @@ moz_dataproc_pyspark_runner(
     cluster_name=cluster_name,
     job_name="update_orphaning_dashboard_etl",
     python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/update_orphaning_dashboard_etl.py",
-    init_actions_uris=[
-        "gs://dataproc-initialization-actions/python/pip-install.sh"
-    ],
+    init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
     additional_metadata={
         "PIP_PACKAGES": "google-cloud-bigquery==1.20.0 google-cloud-storage==1.19.1 boto3==1.9.253"
     },

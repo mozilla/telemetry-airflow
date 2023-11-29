@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+
 from utils.dataproc import (
-    moz_dataproc_pyspark_runner,
     copy_artifacts_dev,
     get_dataproc_parameters,
+    moz_dataproc_pyspark_runner,
 )
 from utils.tags import Tag
 
@@ -24,7 +25,12 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
-dag = DAG("adjust_import", default_args=default_args, schedule_interval="@daily", tags=tags,)
+dag = DAG(
+    "adjust_import",
+    default_args=default_args,
+    schedule_interval="@daily",
+    tags=tags,
+)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
@@ -41,14 +47,12 @@ fenix_beta_adjust_import = moz_dataproc_pyspark_runner(
     idle_delete_ttl="600",
     num_workers=40,
     worker_machine_type="n1-standard-8",
-    init_actions_uris=[
-        "gs://dataproc-initialization-actions/python/pip-install.sh"
-    ],
+    init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
     additional_properties={
         "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
     },
     additional_metadata={"PIP_PACKAGES": "click==7.1.2"},
-    python_driver_code="gs://{}/jobs/adjust_import.py".format(params.artifact_bucket),
+    python_driver_code=f"gs://{params.artifact_bucket}/jobs/adjust_import.py",
     py_args=[
         "--pbkdf2",
         "--salt",
@@ -79,14 +83,12 @@ fennec_adjust_import = moz_dataproc_pyspark_runner(
     idle_delete_ttl="600",
     num_workers=40,
     worker_machine_type="n1-standard-8",
-    init_actions_uris=[
-        "gs://dataproc-initialization-actions/python/pip-install.sh"
-    ],
+    init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
     additional_properties={
         "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
     },
     additional_metadata={"PIP_PACKAGES": "click==7.1.2 bcrypt==3.1.7"},
-    python_driver_code="gs://{}/jobs/adjust_import.py".format(params.artifact_bucket),
+    python_driver_code=f"gs://{params.artifact_bucket}/jobs/adjust_import.py",
     py_args=[
         "--bcrypt",
         "--salt",

@@ -70,12 +70,8 @@ hardware_report = moz_dataproc_pyspark_runner(
     default_args=default_args,
     cluster_name="public-data-hardware-report-{{ ds }}",
     job_name="firefox-public-data-hardware-report",
-    python_driver_code="gs://{}/jobs/moz_dataproc_runner.py".format(
-        params.artifact_bucket
-    ),
-    init_actions_uris=[
-        "gs://dataproc-initialization-actions/python/pip-install.sh"
-    ],
+    python_driver_code=f"gs://{params.artifact_bucket}/jobs/moz_dataproc_runner.py",
+    init_actions_uris=["gs://dataproc-initialization-actions/python/pip-install.sh"],
     additional_metadata={
         "PIP_PACKAGES": "git+https://github.com/mozilla/firefox-public-data-report-etl.git"
     },

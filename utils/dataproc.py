@@ -4,7 +4,6 @@ from collections import namedtuple
 from airflow.exceptions import AirflowException
 from airflow.operators.bash import BashOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from airflow.utils.task_group import TaskGroup
 
 # When google deprecates dataproc_v1beta2 in DataprocHook/Operator classes
 # We can import these from our patched code, rather than upgrading/deploying
@@ -17,6 +16,7 @@ from airflow.providers.google.cloud.operators.dataproc import (
     DataprocSubmitPySparkJobOperator,
     DataprocSubmitSparkJobOperator,
 )
+from airflow.utils.task_group import TaskGroup
 
 
 class DataProcHelper:
