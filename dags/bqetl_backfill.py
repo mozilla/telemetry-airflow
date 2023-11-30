@@ -28,7 +28,7 @@ frank@mozilla.com
     catchup=False,
     start_date=datetime.datetime(2023, 10, 18),
     dagrun_timeout=datetime.timedelta(days=4),
-    tags=[Tag.ImpactTier.tier_3, Tag.Triage.record_only],
+    tags=[Tag.ImpactTier.tier_3, Tag.Triage.no_triage],
     render_template_as_native_obj=True,
     params={
         "table_name": Param(
