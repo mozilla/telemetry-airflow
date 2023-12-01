@@ -209,7 +209,7 @@ if EXPORT_TO_AVRO:
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
             "gs://airflow-dataproc-bq-parquet-exports-tmp/avro/mozaggregator/prerelease",
-            "main_v5",
+            "main_v4",
             "'nightly', 'beta'",
             "{{ ds }}",
         ],
@@ -221,7 +221,7 @@ if EXPORT_TO_AVRO:
     GCSDeleteObjectsOperator(
         task_id="delete_main_avro",
         bucket_name="airflow-dataproc-bq-parquet-exports-tmp",
-        prefix="avro/mozaggregator/prerelease/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v5",
+        prefix="avro/mozaggregator/prerelease/moz-fx-data-shared-prod/{{ ds_nodash }}/main_v4",
         gcp_conn_id=gcp_conn_id,
         dag=dag,
     ).set_upstream(prerelease_telemetry_aggregate_view_dataproc)
