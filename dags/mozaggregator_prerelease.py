@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
 from utils.gcp import gke_command
 from utils.tags import Tag
@@ -93,9 +94,7 @@ prerelease_telemetry_aggregate_view_dataproc = SubDagOperator(
         additional_metadata={
             "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
         },
-        python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
-            artifact_bucket
-        ),
+        python_driver_code=f"gs://{artifact_bucket}/jobs/mozaggregator_runner.py",
         py_args=[
             "aggregator",
             "--date",
