@@ -29,11 +29,11 @@ TARGET_DATASETS = (
     "moz-fx-data-shared-prod.telemetry_derived.unified_metrics_v1",
     # "moz-fx-data-shared-prod.telemetry.cohort_daily_statistics",  # removed as no longer needed: DENG-2065
     # "moz-fx-data-shared-prod.telemetry_derived.cohort_daily_statistics_v1",  # removed as no longer needed: DENG-2065
-    "moz-fx-data-shared-prod.telemetry.rolling_cohorts",
-    "moz-fx-data-shared-prod.telemetry_derived.rolling_cohorts_v1",
+    # "moz-fx-data-shared-prod.telemetry.rolling_cohorts",  # removed as no longer needed: DENG-2064
+    # "moz-fx-data-shared-prod.telemetry_derived.rolling_cohorts_v1",  # removed as no longer needed: DENG-2064
     "moz-fx-data-shared-prod.telemetry.active_users_aggregates",
     "moz-fx-data-shared-prod.telemetry_derived.active_users_aggregates_v1",
-    # "moz-fx-data-shared-prod.internet_outages.global_outages_v1",  Migrated over to ETL checks: DENG-2045
+    # "moz-fx-data-shared-prod.internet_outages.global_outages_v1", # Migrated over to ETL checks: DENG-2045
     "moz-fx-data-shared-prod.org_mozilla_fenix_nightly.baseline_clients_last_seen",
 )
 
