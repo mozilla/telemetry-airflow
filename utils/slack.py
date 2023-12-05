@@ -21,3 +21,19 @@ def if_task_fails_alert_slack(context):
         ),
     )
     return failed_alert.execute(context=context)
+
+
+def send_slack_notification(
+    text="",
+    task_id="slack",
+    channel=SLACK_CHANNEL,
+    token=None,
+    context=None,
+):
+    alert = SlackAPIPostOperator(
+        task_id=task_id,
+        channel=channel,
+        token=token or Variable.get("slack_secret_token"),
+        text=text,
+    )
+    return alert.execute(context=context)
