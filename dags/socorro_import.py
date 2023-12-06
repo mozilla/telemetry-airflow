@@ -13,15 +13,20 @@ from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 """
-Originally, this job read json (non-ndjson) from aws prod at:
-s3://crashstats-telemetry-crashes-prod-us-west-2/v1/crash_report
-and wrote the data to parquet format in aws dev at:
-s3://telemetry-parquet/socorro_crash/v2
+Originally, this job read json (non-ndjson) from aws prod at::
 
-Until we migrate socorro to gcp (https://bugzilla.mozilla.org/show_bug.cgi?id=1512641),
-or at least modify it to write crash stats to gcs, this job will now copy json from s3
-to gcs, use dataproc to rewrite the data to parquet in gcs, and load the parquet data
-into bigquery.
+    s3://crashstats-telemetry-crashes-prod-us-west-2/v1/crash_report
+
+and wrote the data to parquet format in aws dev at::
+
+    s3://telemetry-parquet/socorro_crash/v2
+
+Then it copies the json from S3 to GCS. After we migrate socorro to gcp
+(https://bugzilla.mozilla.org/show_bug.cgi?id=1687802), we can remove the copy
+step.
+
+After the copy, it uses dataproc to rewrite the data to parquet in gcs, and
+load the parquet data into bigquery.
 
 The following WTMO connections are needed in order for this job to run:
 conn - google_cloud_airflow_dataproc
