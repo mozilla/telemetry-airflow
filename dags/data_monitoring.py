@@ -25,8 +25,8 @@ things fail we will update the DAG.
 # one of the checks.
 
 TARGET_DATASETS = (
-    "moz-fx-data-shared-prod.telemetry.unified_metrics",
-    "moz-fx-data-shared-prod.telemetry_derived.unified_metrics_v1",
+    # "moz-fx-data-shared-prod.telemetry.unified_metrics",  # Migrated over to ETL checks: DENG-2049
+    # "moz-fx-data-shared-prod.telemetry_derived.unified_metrics_v1",  # Migrated over to ETL checks: DENG-2049
     # "moz-fx-data-shared-prod.telemetry.cohort_daily_statistics",  # removed as no longer needed: DENG-2065
     # "moz-fx-data-shared-prod.telemetry_derived.cohort_daily_statistics_v1",  # removed as no longer needed: DENG-2065
     # "moz-fx-data-shared-prod.telemetry.rolling_cohorts",  # removed as no longer needed: DENG-2064
