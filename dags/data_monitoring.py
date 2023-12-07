@@ -34,7 +34,7 @@ TARGET_DATASETS = (
     # "moz-fx-data-shared-prod.telemetry.active_users_aggregates",  # Migrated over to ETL checks: DENG-2046
     # "moz-fx-data-shared-prod.telemetry_derived.active_users_aggregates_v1",  # Migrated over to ETL checks: DENG-2046
     # "moz-fx-data-shared-prod.internet_outages.global_outages_v1", # Migrated over to ETL checks: DENG-2045
-    "moz-fx-data-shared-prod.org_mozilla_fenix_nightly.baseline_clients_last_seen",
+    # "moz-fx-data-shared-prod.org_mozilla_fenix_nightly.baseline_clients_last_seen",  # Migrated over to ETL checks: DENG-2120
 )
 
 default_args = {
