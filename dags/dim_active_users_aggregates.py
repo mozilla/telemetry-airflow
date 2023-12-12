@@ -40,7 +40,6 @@ IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/dim:latest"
 
 Config = namedtuple("Config", "exec_date apps")
 CONFIGS = {
-    "desktop": Config("{{ ds }}", ("firefox_desktop",)),
     # "mobile": Config(
     #     "{{ macros.ds_add(ds, -1) }}",
     #     (
@@ -51,6 +50,7 @@ CONFIGS = {
     #         "klar_ios",
     #     ),
     # ),  # migrated over to BQETL data checks via: DENG-2051
+    # "desktop": Config("{{ ds }}", ("firefox_desktop",)),  # migrated over to BQETL data checks via: DENG-2051
 }
 
 PROJECT_ID = "mozdata"
