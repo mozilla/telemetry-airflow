@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from timetable import MultiWeekTimetable
+
 from utils.gcp import gke_command
 from utils.tags import Tag
 

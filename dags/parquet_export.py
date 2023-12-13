@@ -6,11 +6,11 @@ We should eventually update the TAAR logic to use BigQuery directly,
 which would allow us to tear down this DAG.
 """
 
-from airflow import DAG
 from datetime import datetime, timedelta
+
+from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-from airflow.sensors.external_task import ExternalTaskMarker
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -19,23 +19,28 @@ from utils.gcp import (
 )
 from utils.tags import Tag
 
-
 default_args = {
-    'owner': 'akomar@mozilla.com',
-    'depends_on_past': False,
-    'start_date': datetime(2018, 11, 27),
-    'email': ['telemetry-alerts@mozilla.com', 'akomar@mozilla.com'],
-    'email_on_failure': True,
-    'email_on_retry': True,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=30),
+    "owner": "akomar@mozilla.com",
+    "depends_on_past": False,
+    "start_date": datetime(2018, 11, 27),
+    "email": ["telemetry-alerts@mozilla.com", "akomar@mozilla.com"],
+    "email_on_failure": True,
+    "email_on_retry": True,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=30),
 }
 
 tags = [Tag.ImpactTier.tier_2]
 
 # Make sure all the data for the given day has arrived before running.
 # Running at 1am should suffice.
-with DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * * *', doc_md=__doc__, tags=tags,) as dag:
+with DAG(
+    "parquet_export",
+    default_args=default_args,
+    schedule_interval="0 3 * * *",
+    doc_md=__doc__,
+    tags=tags,
+) as dag:
     clients_daily_export = SubDagOperator(
         subdag=export_to_parquet(
             table="moz-fx-data-shared-prod.telemetry_derived.clients_daily_v6${{ds_nodash}}",
@@ -81,11 +86,13 @@ with DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * *
             parent_dag_name=dag.dag_id,
             dag_name="clients_daily_export",
             default_args=default_args,
-            num_preemptible_workers=10),
+            num_preemptible_workers=10,
+        ),
         task_id="clients_daily_export",
-        dag=dag)
+        dag=dag,
+    )
 
-    with TaskGroup('clients_daily_export_external') as clients_daily_export_external:
+    with TaskGroup("clients_daily_export_external") as clients_daily_export_external:
         ExternalTaskMarker(
             task_id="taar_daily__wait_for_clients_daily_export",
             external_dag_id="taar_daily",
@@ -105,6 +112,7 @@ with DAG('parquet_export', default_args=default_args, schedule_interval='0 3 * *
         failed_states=FAILED_STATES,
         pool="DATA_ENG_EXTERNALTASKSENSOR",
         email_on_retry=False,
-        dag=dag)
+        dag=dag,
+    )
 
     clients_daily_export.set_upstream(wait_for_clients_daily)
