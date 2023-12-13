@@ -62,7 +62,7 @@ DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION = "v1.17.0"
 
 
 default_args = {
-    "owner": "dthorn@mozilla.com",
+    "owner": "akomar@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 28),
     "email_on_failure": True,
@@ -147,7 +147,7 @@ with DAG(
             "telemetry-client-dev@mozilla.com",
             "aplacitelli@mozilla.com",
             "hwoo@mozilla.com",
-            "relud@mozilla.com",
+            "akomar@mozilla.com",
         ],
         env_vars={"BOTO_PATH": ".gce_boto"},
         dag=dag,
@@ -186,7 +186,7 @@ with DAG(
                 "telemetry-client-dev@mozilla.com",
                 "aplacitelli@mozilla.com",
                 "hwoo@mozilla.com",
-                "relud@mozilla.com",
+                "akomar@mozilla.com",
             ],
             env_vars={
                 "BOTO_PATH": ".gce_boto",
@@ -226,7 +226,7 @@ with DAG(
             "telemetry-client-dev@mozilla.com",
             "aplacitelli@mozilla.com",
             "hwoo@mozilla.com",
-            "relud@mozilla.com",
+            "akomar@mozilla.com",
         ],
         env_vars={"BOTO_PATH": ".gce_boto"},
         dag=dag,
@@ -258,7 +258,7 @@ with DAG(
                 "telemetry-client-dev@mozilla.com",
                 "aplacitelli@mozilla.com",
                 "hwoo@mozilla.com",
-                "relud@mozilla.com",
+                "akomar@mozilla.com",
             ],
             env_vars={
                 "BOTO_PATH": ".gce_boto",
@@ -301,7 +301,7 @@ with DAG(
 
     schema_generator = GKEPodOperator(
         email=[
-            "dthorn@mozilla.com",
+            "akomar@mozilla.com",
             "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
@@ -332,7 +332,7 @@ with DAG(
             "--bugzilla-api-key",
             "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
         ],
-        email=["dthorn@mozilla.com", "telemetry-alerts@mozilla.com"],
+        email=["akomar@mozilla.com", "telemetry-alerts@mozilla.com"],
         env_vars={
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key,

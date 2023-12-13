@@ -21,10 +21,10 @@ from utils.tags import Tag
 
 
 default_args = {
-    'owner': 'dthorn@mozilla.com',
+    'owner': 'akomar@mozilla.com',
     'depends_on_past': False,
     'start_date': datetime(2018, 11, 27),
-    'email': ['telemetry-alerts@mozilla.com', 'dthorn@mozilla.com'],
+    'email': ['telemetry-alerts@mozilla.com', 'akomar@mozilla.com'],
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 2,
