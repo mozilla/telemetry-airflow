@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from timetable import MultiWeekTimetable
+
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -28,21 +29,21 @@ while the rest are queued.
 
 #### Owner
 
-dthorn@mozilla.com
+akomar@mozilla.com
 """
 
 default_args = {
-    "owner": "dthorn@mozilla.com",
+    "owner": "akomar@mozilla.com",
     "depends_on_past": True,
     "start_date": datetime(2023, 5, 16),
     "catchup": False,
     "email": [
         "telemetry-alerts@mozilla.com",
-        "dthorn@mozilla.com",
+        "akomar@mozilla.com",
     ],
     "email_on_failure": True,
-    "email_on_retry": True,
-    "retries": 14,
+    "email_on_retry": False,
+    "retries": 44,
     "retry_delay": timedelta(minutes=5),
 }
 

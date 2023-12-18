@@ -24,7 +24,6 @@ default_args = {
     "owner": "ascholtz@mozilla.com",
     "email": [
         "ascholtz@mozilla.com",
-        "dthorn@mozilla.com",
         "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
