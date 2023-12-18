@@ -39,7 +39,7 @@ default_args = {
     "retry_delay": timedelta(hours=2),
 }
 
-project_id = "mozdata"
+project_id = "moz-fx-data-shared-prod"
 table_id = "dap_collector_derived.aggregates_v1"
 
 tags = [
