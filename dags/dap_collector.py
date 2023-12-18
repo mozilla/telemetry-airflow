@@ -40,7 +40,7 @@ default_args = {
 }
 
 project_id = "mozdata"
-table_id = "analysis.sfriedberger_dap_test"
+table_id = "dap_collector_derived.aggregates_v1"
 
 tags = [
     Tag.ImpactTier.tier_3,
