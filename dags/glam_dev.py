@@ -5,21 +5,19 @@ DEV Desktop ETL for https://glam.telemetry.mozilla.org/.
 Please disregard any failures from this DAG. It is being monitored by efilho
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
-in bigquery-etl and the
-[glam_subdags](https://github.com/mozilla/telemetry-airflow/tree/main/dags/glam_subdags)
-in telemetry-airflow.
+in bigquery-etl and the `glam*` DAGs in
+[telemetry-airflow](https://github.com/mozilla/telemetry-airflow/tree/main/dags).
 """
 
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 
 from utils.gcp import bigquery_etl_query, gke_command
-from utils.glam_subdags.general import repeated_subdag
-from utils.glam_subdags.generate_query import generate_and_run_desktop_query
-from utils.glam_subdags.histograms import histogram_aggregates_subdag
-from utils.glam_subdags.probe_hotlist import update_hotlist
+from utils.glam.general import repeated_task_group
+from utils.glam.generate_query import generate_and_run_desktop_query
+from utils.glam.histograms import histogram_aggregates_task_group
+from utils.glam.probe_hotlist import update_hotlist
 from utils.tags import Tag
 
 prod_project_id = "moz-fx-data-shared-prod"
@@ -42,7 +40,7 @@ default_args = {
 }
 
 GLAM_DAG = "glam-dev"
-GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
+GLAM_CLIENTS_HISTOGRAM_AGGREGATES_TASK_GROUP = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
 tags = [
@@ -222,18 +220,13 @@ clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
 )
 
-clients_histogram_aggregates = SubDagOperator(
-    subdag=histogram_aggregates_subdag(
-        GLAM_DAG,
-        GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        is_dev=True,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
-    ),
-    task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-    dag=dag,
+clients_histogram_aggregates = histogram_aggregates_task_group(
+    GLAM_CLIENTS_HISTOGRAM_AGGREGATES_TASK_GROUP,
+    dag,
+    default_args,
+    dev_dataset_id,
+    is_dev=True,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
 )
 
 histogram_percentiles = bigquery_etl_query(
@@ -309,38 +302,28 @@ client_scalar_probe_counts = gke_command(
 #    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
 # )
 
-clients_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        20,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
-        parallel=False,
-    ),
-    task_id="clients_histogram_bucket_counts",
-    dag=dag,
+clients_histogram_bucket_counts = repeated_task_group(
+    "clients_histogram_bucket_counts",
+    dag,
+    default_args,
+    dev_dataset_id,
+    ("submission_date:DATE:{{ds}}",),
+    20,
+    None,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
+    parallel=False,
 )
 
-clients_non_norm_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_non_norm_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        20,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
-        parallel=False,
-    ),
-    task_id="clients_non_norm_histogram_bucket_counts",
-    dag=dag,
+clients_non_norm_histogram_bucket_counts = repeated_task_group(
+    "clients_non_norm_histogram_bucket_counts",
+    dag,
+    default_args,
+    dev_dataset_id,
+    ("submission_date:DATE:{{ds}}",),
+    20,
+    None,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/glam-dev-non-norm-bigquery-etl:latest",
+    parallel=False,
 )
 
 clients_histogram_probe_counts = bigquery_etl_query(
@@ -359,30 +342,20 @@ clients_histogram_probe_counts = bigquery_etl_query(
 We will check the results in the destination tables.
 Besides, there's no dev bucket set up
 
-extract_counts = SubDagOperator(
-    subdag=extract_user_counts(
-        GLAM_DAG,
-        "extract_user_counts",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id,
-        "user_counts",
-        "counts"
-    ),
-    task_id="extract_user_counts",
-    dag=dag
+extract_counts = extract_user_counts(
+    "extract_user_counts",
+    dag,
+    default_args,
+    dev_dataset_id,
+    "user_counts",
+    "counts",
 )
 
-extracts_per_channel = SubDagOperator(
-    subdag=extracts_subdag(
-        GLAM_DAG,
-        "extracts",
-        default_args,
-        dag.schedule_interval,
-        dev_dataset_id
-    ),
-    task_id="extracts",
-    dag=dag,
+extracts_per_channel = extracts_task_group(
+    "extracts",
+    dag,
+    default_args,
+    dev_dataset_id,
 )
 
 # Move logic from Glam deployment's GKE Cronjob to this dag for better dependency timing

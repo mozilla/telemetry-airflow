@@ -3,24 +3,22 @@ Desktop ETL for https://glam.telemetry.mozilla.org/.
 
 Generates and runs a series of BQ queries, see
 [bigquery_etl/glam](https://github.com/mozilla/bigquery-etl/tree/main/bigquery_etl/glam)
-in bigquery-etl and the
-[glam_subdags](https://github.com/mozilla/telemetry-airflow/tree/main/dags/glam_subdags)
-in telemetry-airflow.
+in bigquery-etl and the `glam*` DAGs in
+[telemetry-airflow](https://github.com/mozilla/telemetry-airflow/tree/main/dags).
 """
 
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query, gke_command
-from utils.glam_subdags.extract import extract_user_counts, extracts_subdag
-from utils.glam_subdags.general import repeated_subdag
-from utils.glam_subdags.generate_query import generate_and_run_desktop_query
-from utils.glam_subdags.histograms import histogram_aggregates_subdag
+from utils.glam.extract import extract_user_counts, extracts_task_group
+from utils.glam.general import repeated_task_group
+from utils.glam.generate_query import generate_and_run_desktop_query
+from utils.glam.histograms import histogram_aggregates_task_group
 from utils.tags import Tag
 
 project_id = "moz-fx-data-shared-prod"
@@ -43,7 +41,7 @@ default_args = {
 }
 
 GLAM_DAG = "glam"
-GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG = "clients_histogram_aggregates"
+GLAM_CLIENTS_HISTOGRAM_AGGREGATES_TASK_GROUP = "clients_histogram_aggregates"
 PERCENT_RELEASE_WINDOWS_SAMPLING = "10"
 
 tags = [Tag.ImpactTier.tier_2]
@@ -204,17 +202,12 @@ clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
     dag=dag,
 )
 
-clients_histogram_aggregates = SubDagOperator(
-    subdag=histogram_aggregates_subdag(
-        GLAM_DAG,
-        GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    ),
-    task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-    dag=dag,
+clients_histogram_aggregates = histogram_aggregates_task_group(
+    GLAM_CLIENTS_HISTOGRAM_AGGREGATES_TASK_GROUP,
+    dag,
+    default_args,
+    dataset_id,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 )
 
 histogram_percentiles = bigquery_etl_query(
@@ -275,37 +268,27 @@ client_scalar_probe_counts = gke_command(
     dag=dag,
 )
 
-clients_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        20,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    ),
-    task_id="clients_histogram_bucket_counts",
-    dag=dag,
+clients_histogram_bucket_counts = repeated_task_group(
+    "clients_histogram_bucket_counts",
+    dag,
+    default_args,
+    dataset_id,
+    ("submission_date:DATE:{{ds}}",),
+    20,
+    None,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 )
 
-clients_non_norm_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_non_norm_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-        ("submission_date:DATE:{{ds}}",),
-        20,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        parallel=False,
-    ),
-    task_id="clients_non_norm_histogram_bucket_counts",
-    dag=dag,
+clients_non_norm_histogram_bucket_counts = repeated_task_group(
+    "clients_non_norm_histogram_bucket_counts",
+    dag,
+    default_args,
+    dataset_id,
+    ("submission_date:DATE:{{ds}}",),
+    20,
+    None,
+    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    parallel=False,
 )
 
 clients_histogram_probe_counts = bigquery_etl_query(
@@ -319,26 +302,18 @@ clients_histogram_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
-extract_counts = SubDagOperator(
-    subdag=extract_user_counts(
-        GLAM_DAG,
-        "extract_user_counts",
-        default_args,
-        dag.schedule_interval,
-        dataset_id,
-        "user_counts",
-        "counts",
-    ),
-    task_id="extract_user_counts",
-    dag=dag,
+extract_counts = extract_user_counts(
+    "extract_user_counts",
+    dag,
+    default_args,
+    dataset_id,
+    "user_counts",
+    "counts",
 )
 
 with dag as dag:
-    extracts_per_channel = SubDagOperator(
-        subdag=extracts_subdag(
-            GLAM_DAG, "extracts", default_args, dag.schedule_interval, dataset_id
-        ),
-        task_id="extracts",
+    extracts_per_channel = extracts_task_group(
+        "extracts", dag, default_args, dataset_id
     )
 
     with TaskGroup("glam_external") as glam_external:

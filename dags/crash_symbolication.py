@@ -8,7 +8,6 @@ Uses crash report data imported from Socorro.
 import datetime
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
@@ -69,68 +68,60 @@ with DAG(
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-    modules_with_missing_symbols = SubDagOperator(
-        task_id="modules_with_missing_symbols",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="modules_with_missing_symbols",
-            default_args=default_args,
-            cluster_name="modules-with-missing-symbols-{{ ds }}",
-            job_name="modules-with-missing-symbols",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/modules_with_missing_symbols.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-                "spark-env:AWS_ACCESS_KEY_ID": ses_access_key,
-                "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
-            },
-            py_args=["--run-on-days", "0", "--date", "{{ ds }}"],  # run monday
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-4",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
+    modules_with_missing_symbols = moz_dataproc_pyspark_runner(
+        image_version="1.5-debian10",
+        task_group_name="modules_with_missing_symbols",
+        default_args=default_args,
+        cluster_name="modules-with-missing-symbols-{{ ds }}",
+        job_name="modules-with-missing-symbols",
+        python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/modules_with_missing_symbols.py",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+        additional_properties={
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+            "spark-env:AWS_ACCESS_KEY_ID": ses_access_key,
+            "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
+        },
+        py_args=["--run-on-days", "0", "--date", "{{ ds }}"],  # run monday
+        idle_delete_ttl=14400,
+        num_workers=2,
+        worker_machine_type="n1-standard-4",
+        gcp_conn_id=params.conn_id,
+        service_account=params.client_email,
+        storage_bucket=params.storage_bucket,
     )
 
-    top_signatures_correlations = SubDagOperator(
-        task_id="top_signatures_correlations",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="top_signatures_correlations",
-            default_args=default_args,
-            cluster_name="top-signatures-correlations-{{ ds }}",
-            job_name="top-signatures-correlations",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            },
-            py_args=[
-                # run monday, wednesday, and friday
-                "--run-on-days",
-                "0",
-                "2",
-                "4",
-                "--date",
-                "{{ ds }}",
-            ],
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-8",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
+    top_signatures_correlations = moz_dataproc_pyspark_runner(
+        image_version="1.5-debian10",
+        task_group_name="top_signatures_correlations",
+        default_args=default_args,
+        cluster_name="top-signatures-correlations-{{ ds }}",
+        job_name="top-signatures-correlations",
+        python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
+        init_actions_uris=[
+            "gs://dataproc-initialization-actions/python/pip-install.sh"
+        ],
+        additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+        additional_properties={
+            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+        },
+        py_args=[
+            # run monday, wednesday, and friday
+            "--run-on-days",
+            "0",
+            "2",
+            "4",
+            "--date",
+            "{{ ds }}",
+        ],
+        idle_delete_ttl=14400,
+        num_workers=2,
+        worker_machine_type="n1-standard-8",
+        gcp_conn_id=params.conn_id,
+        service_account=params.client_email,
+        storage_bucket=params.storage_bucket,
     )
 
     wait_for_socorro_import >> modules_with_missing_symbols
