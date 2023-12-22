@@ -8,15 +8,6 @@ ENV AIRFLOW_HOME=$PROJECT_DIR
 
 USER root
 
-# This is a temporary workaround for MySQL invalid GPG Key errors
-# raised when attempting to update and install OS apps.
-# The fix removed mysql repo from the app sources. In our case
-# this is okay since we use Postgres.
-# Related Github issue: https://github.com/apache/airflow/issues/36231
-# Temporary fixed grabbed from this specific comment:
-# https://github.com/apache/airflow/issues/36231#issuecomment-1857798655
-RUN rm /etc/apt/sources.list.d/mysql.list
-
 RUN apt-get update \
   && apt-get install -y --no-install-recommends build-essential
 

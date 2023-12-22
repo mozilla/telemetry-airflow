@@ -164,7 +164,6 @@ with models.DAG(
         owner="akomarzewski@mozilla.com",
         email=[
             "telemetry-alerts@mozilla.com",
-            "relud@mozilla.com",
             "akomarzewski@mozilla.com",
         ],
     )
