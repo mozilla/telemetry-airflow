@@ -21,6 +21,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1775035
 This DAG requires following variables to be defined in Airflow:
 * dap_auth_token
 * dap_hpke_private_key
+* dap_task_config_url
 
 This job is under active development, occasional failures are expected.
 
