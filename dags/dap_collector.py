@@ -62,6 +62,7 @@ with DAG(
             "--date={{ ds }}",
             "--auth-token={{ var.value.dap_auth_token }}",
             "--hpke-private-key={{ var.value.dap_hpke_private_key }}",
+            "--task-config-url={{ var.value.dap_task_config_url }}",
             "--project",
             project_id,
             "--table-id",
