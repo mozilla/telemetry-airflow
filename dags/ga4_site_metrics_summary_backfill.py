@@ -54,7 +54,7 @@ with DAG(
             owner="kwindau@mozilla.com",
             email=["kwindau@mozilla.com", "telemetry-alerts@mozilla.com"],
             depends_on_past=False,
-            parameters=["date:DATE:{{ " + date_str + " }}"],
+            parameters=["submission_date:DATE:{{ " + date_str + " }}"],
             retries=0,
         )
 
@@ -68,7 +68,7 @@ with DAG(
             owner="kwindau@mozilla.com",
             email=["kwindau@mozilla.com", "telemetry-alerts@mozilla.com"],
             date_partition_parameter=None,
-            parameters=["date:DATE:{{ " + date_str + " }}"],
+            parameters=["submission_date:DATE:{{ " + date_str + " }}"],
             depends_on_past=False,
         )
 
