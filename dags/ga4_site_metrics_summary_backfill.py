@@ -60,7 +60,9 @@ with DAG(
 
         ga4_www_site_metrics_summary_v2 = bigquery_etl_query(
             task_id=task_id,
-            destination_table="www_site_metrics_summary_v2${{ " + date_str_no_dash + " }}",
+            destination_table="www_site_metrics_summary_v2${{ "
+            + date_str_no_dash
+            + " }}",
             dataset_id="ga_derived",
             project_id="moz-fx-data-marketing-prod",
             owner="kwindau@mozilla.com",
@@ -77,4 +79,8 @@ with DAG(
             execution_date="{{ (execution_date - macros.timedelta(days=-1, seconds=82800)).isoformat() }}",
         )
 
-        ga4_www_site_metrics_summary_v2 >> ga4_www_site_metrics_summary_v2_checks >> todays_ga4_www_site_metrics_summary_v2
+        (
+            ga4_www_site_metrics_summary_v2
+            >> ga4_www_site_metrics_summary_v2_checks
+            >> todays_ga4_www_site_metrics_summary_v2
+        )
