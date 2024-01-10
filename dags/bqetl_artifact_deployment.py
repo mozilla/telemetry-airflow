@@ -66,6 +66,9 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         command=[
             "script/bqetl generate all --use-cloud-function=false --ignore glean_usage && "
+            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
+            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
+            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
