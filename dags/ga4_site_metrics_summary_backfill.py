@@ -67,7 +67,7 @@ with DAG(
             project_id="moz-fx-data-marketing-prod",
             owner="kwindau@mozilla.com",
             email=["kwindau@mozilla.com", "telemetry-alerts@mozilla.com"],
-            date_partition_parameter=None,
+            date_partition_parameter="submission_date",
             parameters=["submission_date:DATE:{{ " + date_str + " }}"],
             depends_on_past=False,
         )
