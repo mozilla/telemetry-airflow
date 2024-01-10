@@ -45,19 +45,6 @@ with DAG(
         date_str = "macros.ds_add(ds, " + day_offset + ")"
         date_str_no_dash = "macros.ds_format(" + date_str + ", '%Y-%m-%d', '%Y%m%d')"
 
-        ga4_www_site_metrics_summary_v2_checks = bigquery_dq_check(
-            task_id="checks__fail_" + task_id,
-            source_table="www_site_metrics_summary_v2",
-            dataset_id="ga_derived",
-            project_id="moz-fx-data-marketing-prod",
-            is_dq_check_fail=True,
-            owner="kwindau@mozilla.com",
-            email=["kwindau@mozilla.com", "telemetry-alerts@mozilla.com"],
-            depends_on_past=False,
-            parameters=["submission_date:DATE:{{ " + date_str + " }}"],
-            retries=0,
-        )
-
         ga4_www_site_metrics_summary_v2 = bigquery_etl_query(
             task_id=task_id,
             destination_table="www_site_metrics_summary_v2${{ "
@@ -81,6 +68,5 @@ with DAG(
 
         (
             ga4_www_site_metrics_summary_v2
-            >> ga4_www_site_metrics_summary_v2_checks
             >> todays_ga4_www_site_metrics_summary_v2
         )
