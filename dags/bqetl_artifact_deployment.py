@@ -65,7 +65,7 @@ with DAG(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
         command=[
-            "script/bqetl generate all --use-cloud-function=false --ignore glean_usage && "
+            "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
