@@ -1,7 +1,5 @@
-"""
-This DAG detects and initiates backfills of BigQuery tables.
+"""DAG for initiating registered bigquery-etl backfills."""
 
-"""
 from datetime import datetime
 
 from airflow import DAG

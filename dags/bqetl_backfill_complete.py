@@ -1,7 +1,5 @@
-"""
-This DAG completes backfills of BigQuery tables.
+"""DAG for completing registered bigquery-etl backfills."""
 
-"""
 from datetime import datetime
 
 from airflow import DAG
@@ -51,7 +49,7 @@ with DAG(
         task_id="slack_notify_initate",
         username="Backfill",
         text=":hourglass_flowing_sand: Completing backfill of `{{ params.qualified_table_name }}`. A snapshot of the "
-             "current production data will be kept as a backup.",
+        "current production data will be kept as a backup.",
         slack_conn_id="slack_api",
     ).expand(channel=slack_users)
 
