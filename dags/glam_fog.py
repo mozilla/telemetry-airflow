@@ -168,6 +168,7 @@ with DAG(
             },
             command=["script/glam/export_csv"],
             docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+            aws_conn_id=None,
             gcp_conn_id="google_cloud_airflow_gke",
         )
 

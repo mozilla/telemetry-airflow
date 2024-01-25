@@ -56,6 +56,7 @@ def generate_and_run_desktop_query(
         env_vars=env_vars,
         command=command,
         docker_image=docker_image,
+        aws_conn_id=None,
         gcp_conn_id=gcp_conn_id,
         **kwargs,
     )
@@ -103,6 +104,7 @@ def generate_and_run_glean_queries(
         env_vars=env_vars,
         command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
         docker_image=docker_image,
+        aws_conn_id=None,
         gcp_conn_id=gcp_conn_id,
         **kwargs,
     )
@@ -159,6 +161,7 @@ def generate_and_run_glean_task(
             f"run_{task_type} {task_name}"
         ],
         docker_image=docker_image,
+        aws_conn_id=None,
         gcp_conn_id=gcp_conn_id,
         **kwargs,
     )

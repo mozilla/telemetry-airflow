@@ -147,6 +147,7 @@ scalar_percentiles = gke_command(
         dataset_id,
     ],
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    aws_conn_id=None,
     dag=dag,
 )
 
@@ -272,6 +273,7 @@ client_scalar_probe_counts = gke_command(
         dataset_id,
     ],
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    aws_conn_id=None,
     dag=dag,
 )
 
