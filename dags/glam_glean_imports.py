@@ -7,7 +7,7 @@ from airflow.models import Variable
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
-from operators.gcp_container_operator import GKENatPodOperator
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.tags import Tag
 
@@ -104,7 +104,7 @@ for env in ["Dev", "Prod"]:
 
     with dag as dag:  # noqa SIM117
         with TaskGroup(group_id=env + "_glean") as glean_env_task_group:
-            glam_import_glean_aggs_beta = GKENatPodOperator(
+            glam_import_glean_aggs_beta = GKEPodOperator(
                 reattach_on_restart=True,
                 task_id="glam_import_glean_aggs_beta",
                 name="glam_import_glean_aggs_beta",
@@ -113,7 +113,7 @@ for env in ["Dev", "Prod"]:
                 env_vars=env_vars,
             )
 
-            glam_import_glean_aggs_nightly = GKENatPodOperator(
+            glam_import_glean_aggs_nightly = GKEPodOperator(
                 reattach_on_restart=True,
                 task_id="glam_import_glean_aggs_nightly",
                 name="glam_import_glean_aggs_nightly",
@@ -122,7 +122,7 @@ for env in ["Dev", "Prod"]:
                 env_vars=env_vars,
             )
 
-            glam_import_glean_aggs_release = GKENatPodOperator(
+            glam_import_glean_aggs_release = GKEPodOperator(
                 reattach_on_restart=True,
                 task_id="glam_import_glean_aggs_release",
                 name="glam_import_glean_aggs_release",
@@ -131,7 +131,7 @@ for env in ["Dev", "Prod"]:
                 env_vars=env_vars,
             )
 
-            glam_import_glean_counts = GKENatPodOperator(
+            glam_import_glean_counts = GKEPodOperator(
                 reattach_on_restart=True,
                 task_id="glam_import_glean_counts",
                 name="glam_import_glean_counts",
@@ -166,7 +166,7 @@ for env in ["Dev", "Prod"]:
     }
 
     with dag as dag, TaskGroup(group_id=env + "_glam") as glam_env_task_group:
-        glam_import_desktop_aggs_beta = GKENatPodOperator(
+        glam_import_desktop_aggs_beta = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_desktop_aggs_beta",
             name="glam_import_desktop_aggs_beta",
@@ -175,7 +175,7 @@ for env in ["Dev", "Prod"]:
             env_vars=env_vars,
         )
 
-        glam_import_desktop_aggs_nightly = GKENatPodOperator(
+        glam_import_desktop_aggs_nightly = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_desktop_aggs_nightly",
             name="glam_import_desktop_aggs_nightly",
@@ -184,7 +184,7 @@ for env in ["Dev", "Prod"]:
             env_vars=env_vars,
         )
 
-        glam_import_desktop_aggs_release = GKENatPodOperator(
+        glam_import_desktop_aggs_release = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_desktop_aggs_release",
             name="glam_import_desktop_aggs_release",
@@ -193,7 +193,7 @@ for env in ["Dev", "Prod"]:
             env_vars=env_vars,
         )
 
-        glam_import_user_counts = GKENatPodOperator(
+        glam_import_user_counts = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_user_counts",
             name="glam_import_user_counts",
@@ -202,7 +202,7 @@ for env in ["Dev", "Prod"]:
             env_vars=env_vars,
         )
 
-        glam_import_probes = GKENatPodOperator(
+        glam_import_probes = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_probes",
             name="glam_import_probes",
