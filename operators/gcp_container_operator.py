@@ -7,7 +7,6 @@ class GKEPodOperator(UpstreamGKEPodOperator):
     """
     Based off GKEStartPodOperator.
 
-    - This will now have the same defaults as GkeNatPodOperator pointing to the newer GKE cluster
     - In 1.10.x this inherited from upstream GKEPodOperator, rather than GKEStartPodOperator(v2)
     - In 1.10.x we needed to override the execute and helper methods to set an environment
     variable for authentication to work (CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE). Fixed in v2
@@ -24,48 +23,6 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         instead of starting new one'.
 
     """
-
-    def __init__(
-        self,
-        image_pull_policy="Always",
-        in_cluster=False,
-        do_xcom_push=False,
-        reattach_on_restart=False,
-        # Defined in Airflow's UI -> Admin -> Connections
-        gcp_conn_id="google_cloud_airflow_gke",
-        project_id="moz-fx-data-airflow-gke-prod",
-        location="us-west1",
-        cluster_name="workloads-prod-v1",
-        namespace="default",
-        *args,
-        **kwargs
-    ):
-        # Hard set reattach_on_restart = False when do_xcom_push is enabled.
-        if do_xcom_push:
-            reattach_on_restart = False
-
-        # GKE node pool autoscaling is failing to scale down when completed pods exist on the node
-        # in Completed states, due to the pod not being replicated. E.g. behind an rc or deployment.
-        annotations = {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
-
-        super().__init__(
-            *args,
-            image_pull_policy=image_pull_policy,
-            in_cluster=in_cluster,
-            do_xcom_push=do_xcom_push,
-            reattach_on_restart=reattach_on_restart,
-            annotations=annotations,
-            gcp_conn_id=gcp_conn_id,
-            project_id=project_id,
-            location=location,
-            cluster_name=cluster_name,
-            namespace=namespace,
-            **kwargs
-        )
-
-
-class GKENatPodOperator(UpstreamGKEPodOperator):
-    """Similar to the one defined above but has defaults to use a different GKE Cluster With a NAT."""
 
     def __init__(
         self,
