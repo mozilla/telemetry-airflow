@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
-from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -94,8 +94,18 @@ for env in ["Dev", "Prod"]:
         glean_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
 
     # Fetch secrets from Google Secret Manager to be injected into the pod.
-    database_url_secret = Secret(deploy_type="env", deploy_target="DATABASE_URL", secret="airflow-gke-secrets", key=f"{env}_glam_secret__database_url")
-    django_secret = Secret(deploy_type="env", deploy_target="DJANGO_SECRET_KEY", secret="airflow-gke-secrets", key=f"{env}_glam_secret__django_secret_key")
+    database_url_secret = Secret(
+        deploy_type="env",
+        deploy_target="DATABASE_URL",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__database_url",
+    )
+    django_secret = Secret(
+        deploy_type="env",
+        deploy_target="DJANGO_SECRET_KEY",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__django_secret_key",
+    )
 
     env_vars = {
         # Tells Django what set of configs to load depending on the environment. Defaults to dev on the app.
@@ -164,8 +174,18 @@ for env in ["Dev", "Prod"]:
         glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
 
     # Fetch secrets from Google Secret Manager to be injected into the pod.
-    database_url_secret = Secret(deploy_type="env", deploy_target="DATABASE_URL", secret="airflow-gke-secrets", key=f"{env}_glam_secret__database_url")
-    django_secret = Secret(deploy_type="env", deploy_target="DJANGO_SECRET_KEY", secret="airflow-gke-secrets", key=f"{env}_glam_secret__django_secret_key")
+    database_url_secret = Secret(
+        deploy_type="env",
+        deploy_target="DATABASE_URL",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__database_url",
+    )
+    django_secret = Secret(
+        deploy_type="env",
+        deploy_target="DJANGO_SECRET_KEY",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__django_secret_key",
+    )
 
     env_vars = {
         "DJANGO_CONFIGURATION": env,
@@ -183,7 +203,6 @@ for env in ["Dev", "Prod"]:
             arguments=[*base_docker_args, "import_desktop_aggs", "beta"],
             env_vars=env_vars,
             secrets=[database_url_secret, django_secret],
-
         )
 
         glam_import_desktop_aggs_nightly = GKEPodOperator(
