@@ -399,7 +399,7 @@ env_vars = dict(
     GOOGLE_CLOUD_PROJECT = "moz-fx-data-glam-prod-fca7"
 )
 
-glam_import_desktop_aggs_beta = GKENatPodOperator(
+glam_import_desktop_aggs_beta = GKEPodOperator(
     task_id = 'glam_import_desktop_aggs_beta',
     name = 'glam_import_desktop_aggs_beta',
     image = glam_import_image,
@@ -407,7 +407,7 @@ glam_import_desktop_aggs_beta = GKENatPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_desktop_aggs_nightly = GKENatPodOperator(
+glam_import_desktop_aggs_nightly = GKEPodOperator(
     task_id = 'glam_import_desktop_aggs_nightly',
     name = 'glam_import_desktop_aggs_nightly',
     image = glam_import_image,
@@ -415,7 +415,7 @@ glam_import_desktop_aggs_nightly = GKENatPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_desktop_aggs_release = GKENatPodOperator(
+glam_import_desktop_aggs_release = GKEPodOperator(
     task_id = 'glam_import_desktop_aggs_release',
     name = 'glam_import_desktop_aggs_release',
     image = glam_import_image,
@@ -423,7 +423,7 @@ glam_import_desktop_aggs_release = GKENatPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_user_counts = GKENatPodOperator(
+glam_import_user_counts = GKEPodOperator(
     task_id = 'glam_import_user_counts',
     name = 'glam_import_user_counts',
     image = glam_import_image,
@@ -431,7 +431,7 @@ glam_import_user_counts = GKENatPodOperator(
     env_vars = env_vars,
     dag=dag)
 
-glam_import_probes = GKENatPodOperator(
+glam_import_probes = GKEPodOperator(
     task_id = 'glam_import_probes',
     name = 'glam_import_probes',
     image = glam_import_image,
