@@ -53,7 +53,7 @@ def generate_and_run_desktop_query(
         task_id=task_id,
         cmds=["bash"],
         env_vars=env_vars,
-        command=command,
+        arguments=command,
         image=docker_image,
         is_delete_operator_pod=False,
         **kwargs,
@@ -99,7 +99,7 @@ def generate_and_run_glean_queries(
         task_id=task_id,
         cmds=["bash", "-c"],
         env_vars=env_vars,
-        command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
+        arguments=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
         image=docker_image,
         is_delete_operator_pod=False,
         **kwargs,
@@ -150,7 +150,7 @@ def generate_and_run_glean_task(
         task_id=f"{task_type}_{task_name}",
         cmds=["bash", "-c"],
         env_vars=env_vars,
-        command=[
+        arguments=[
             "script/glam/generate_glean_sql && "
             "source script/glam/run_glam_sql && "
             f"run_{task_type} {task_name}"

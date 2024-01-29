@@ -133,7 +133,7 @@ clients_scalar_aggregates = bigquery_etl_query(
 scalar_percentiles = GKEPodOperator(
     reattach_on_restart=True,
     task_id="scalar_percentiles",
-    command=[
+    arguments=[
         "python3",
         "script/glam/run_scalar_agg_clustered_query.py",
         "--submission-date",
@@ -259,7 +259,7 @@ glam_sample_counts = bigquery_etl_query(
 client_scalar_probe_counts = GKEPodOperator(
     reattach_on_restart=True,
     task_id="client_scalar_probe_counts",
-    command=[
+    arguments=[
         "python3",
         "script/glam/run_scalar_agg_clustered_query.py",
         "--submission-date",

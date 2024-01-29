@@ -1,4 +1,6 @@
 {
+    "Dev_glam_project": "Dev_glam_project",
+    "Prod_glam_project": "Prod_glam_project",
     "app_store_connect_password": "password",
     "app_store_connect_username": "username",
     "bugzilla_probe_expiry_bot_api_key": "bugzilla-api-key",
