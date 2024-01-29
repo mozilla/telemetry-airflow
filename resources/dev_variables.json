@@ -1,10 +1,4 @@
 {
-    "Dev_glam_project": "Dev_glam_project",
-    "Dev_glam_secret__database_url": "Dev_glam_secret__database_url",
-    "Dev_glam_secret__django_secret_key": "Dev_glam_secret__django_secret_key",
-    "Prod_glam_project": "Prod_glam_project",
-    "Prod_glam_secret__database_url": "Prod_glam_secret__database_url",
-    "Prod_glam_secret__django_secret_key": "Prod_glam_secret__django_secret_key",
     "app_store_connect_password": "password",
     "app_store_connect_username": "username",
     "bugzilla_probe_expiry_bot_api_key": "bugzilla-api-key",

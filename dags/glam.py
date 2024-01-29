@@ -15,8 +15,9 @@ from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import bigquery_etl_query, gke_command
+from utils.gcp import bigquery_etl_query
 from utils.glam_subdags.extract import extract_user_counts, extracts_subdag
 from utils.glam_subdags.general import repeated_subdag
 from utils.glam_subdags.generate_query import generate_and_run_desktop_query
@@ -129,7 +130,7 @@ clients_scalar_aggregates = bigquery_etl_query(
     dag=dag,
 )
 
-scalar_percentiles = gke_command(
+scalar_percentiles = GKEPodOperator(
     reattach_on_restart=True,
     task_id="scalar_percentiles",
     command=[
@@ -146,8 +147,8 @@ scalar_percentiles = gke_command(
         "--dataset",
         dataset_id,
     ],
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    aws_conn_id=None,
+    image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    is_delete_operator_pod=False,
     dag=dag,
 )
 
@@ -255,7 +256,7 @@ glam_sample_counts = bigquery_etl_query(
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
 )
 
-client_scalar_probe_counts = gke_command(
+client_scalar_probe_counts = GKEPodOperator(
     reattach_on_restart=True,
     task_id="client_scalar_probe_counts",
     command=[
@@ -272,8 +273,8 @@ client_scalar_probe_counts = gke_command(
         "--dataset",
         dataset_id,
     ],
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    aws_conn_id=None,
+    image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    is_delete_operator_pod=False,
     dag=dag,
 )
 
