@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
@@ -92,10 +93,22 @@ for env in ["Dev", "Prod"]:
     elif env == "Prod":
         glean_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
 
+    # Fetch secrets from Google Secret Manager to be injected into the pod.
+    database_url_secret = Secret(
+        deploy_type="env",
+        deploy_target="DATABASE_URL",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__database_url",
+    )
+    django_secret = Secret(
+        deploy_type="env",
+        deploy_target="DJANGO_SECRET_KEY",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__django_secret_key",
+    )
+
     env_vars = {
-        "DATABASE_URL": Variable.get(env + "_glam_secret__database_url"),
-        "DJANGO_SECRET_KEY": Variable.get(env + "_glam_secret__django_secret_key"),
-        # Todo - what does this do?
+        # Tells Django what set of configs to load depending on the environment. Defaults to dev on the app.
         "DJANGO_CONFIGURATION": env,
         "DJANGO_DEBUG": "False",
         "DJANGO_SETTINGS_MODULE": "glam.settings",
@@ -111,6 +124,7 @@ for env in ["Dev", "Prod"]:
                 image=glean_import_image,
                 arguments=[*base_docker_args, "import_glean_aggs", "beta"],
                 env_vars=env_vars,
+                secrets=[database_url_secret, django_secret],
             )
 
             glam_import_glean_aggs_nightly = GKEPodOperator(
@@ -120,6 +134,7 @@ for env in ["Dev", "Prod"]:
                 image=glean_import_image,
                 arguments=[*base_docker_args, "import_glean_aggs", "nightly"],
                 env_vars=env_vars,
+                secrets=[database_url_secret, django_secret],
             )
 
             glam_import_glean_aggs_release = GKEPodOperator(
@@ -129,6 +144,7 @@ for env in ["Dev", "Prod"]:
                 image=glean_import_image,
                 arguments=[*base_docker_args, "import_glean_aggs", "release"],
                 env_vars=env_vars,
+                secrets=[database_url_secret, django_secret],
             )
 
             glam_import_glean_counts = GKEPodOperator(
@@ -138,6 +154,7 @@ for env in ["Dev", "Prod"]:
                 image=glean_import_image,
                 arguments=[*base_docker_args, "import_glean_counts"],
                 env_vars=env_vars,
+                secrets=[database_url_secret, django_secret],
             )
 
             # Fan in task dependencies so when both are satisfied, the task group will execute
@@ -156,9 +173,21 @@ for env in ["Dev", "Prod"]:
     elif env == "Prod":
         glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
 
+    # Fetch secrets from Google Secret Manager to be injected into the pod.
+    database_url_secret = Secret(
+        deploy_type="env",
+        deploy_target="DATABASE_URL",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__database_url",
+    )
+    django_secret = Secret(
+        deploy_type="env",
+        deploy_target="DJANGO_SECRET_KEY",
+        secret="airflow-gke-secrets",
+        key=f"{env}_glam_secret__django_secret_key",
+    )
+
     env_vars = {
-        "DATABASE_URL": Variable.get(env + "_glam_secret__database_url"),
-        "DJANGO_SECRET_KEY": Variable.get(env + "_glam_secret__django_secret_key"),
         "DJANGO_CONFIGURATION": env,
         "DJANGO_DEBUG": "False",
         "DJANGO_SETTINGS_MODULE": "glam.settings",
@@ -173,6 +202,7 @@ for env in ["Dev", "Prod"]:
             image=glam_import_image,
             arguments=[*base_docker_args, "import_desktop_aggs", "beta"],
             env_vars=env_vars,
+            secrets=[database_url_secret, django_secret],
         )
 
         glam_import_desktop_aggs_nightly = GKEPodOperator(
@@ -182,6 +212,7 @@ for env in ["Dev", "Prod"]:
             image=glam_import_image,
             arguments=[*base_docker_args, "import_desktop_aggs", "nightly"],
             env_vars=env_vars,
+            secrets=[database_url_secret, django_secret],
         )
 
         glam_import_desktop_aggs_release = GKEPodOperator(
@@ -191,6 +222,7 @@ for env in ["Dev", "Prod"]:
             image=glam_import_image,
             arguments=[*base_docker_args, "import_desktop_aggs", "release"],
             env_vars=env_vars,
+            secrets=[database_url_secret, django_secret],
         )
 
         glam_import_user_counts = GKEPodOperator(
@@ -200,6 +232,7 @@ for env in ["Dev", "Prod"]:
             image=glam_import_image,
             arguments=[*base_docker_args, "import_user_counts"],
             env_vars=env_vars,
+            secrets=[database_url_secret, django_secret],
         )
 
         glam_import_probes = GKEPodOperator(
@@ -209,6 +242,7 @@ for env in ["Dev", "Prod"]:
             image=glam_import_image,
             arguments=[*base_docker_args, "import_probes"],
             env_vars=env_vars,
+            secrets=[database_url_secret, django_secret],
         )
 
         wait_for_glam >> glam_env_task_group
