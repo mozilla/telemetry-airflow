@@ -98,12 +98,6 @@ frank@mozilla.com
             minimum=1,
             maximum=50,
         ),  # Frank made up this max!
-        "no_partition": Param(
-            False,
-            title="No Partition",
-            type="boolean",
-            description="(WARNING: Will overwrite table!) If True, disables writing results to a partition. Overwrites entire destination table.",
-        ),
         "destination_table": Param(
             None,
             title="Destination Table",
@@ -150,9 +144,6 @@ def bqetl_backfill_dag():
 
         if context["params"]["dry_run"]:
             cmd.append("--dry_run")
-
-        if context["params"]["no_partition"]:
-            cmd.append("--no_partition")
 
         if context["params"]["run_checks"]:
             cmd.append("--checks")

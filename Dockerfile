@@ -7,6 +7,7 @@ ENV PYTHONPATH="$PYTHONPATH:$PROJECT_DIR"
 ENV AIRFLOW_HOME=$PROJECT_DIR
 
 USER root
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends build-essential
 

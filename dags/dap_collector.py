@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -20,6 +21,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1775035
 This DAG requires following variables to be defined in Airflow:
 * dap_auth_token
 * dap_hpke_private_key
+* dap_task_config_url
 
 This job is under active development, occasional failures are expected.
 
@@ -39,8 +41,8 @@ default_args = {
     "retry_delay": timedelta(hours=2),
 }
 
-project_id = "mozdata"
-table_id = "analysis.sfriedberger_dap_test"
+project_id = "moz-fx-data-shared-prod"
+table_id = "dap_collector_derived.aggregates_v1"
 
 tags = [
     Tag.ImpactTier.tier_3,
@@ -62,6 +64,7 @@ with DAG(
             "--date={{ ds }}",
             "--auth-token={{ var.value.dap_auth_token }}",
             "--hpke-private-key={{ var.value.dap_hpke_private_key }}",
+            "--task-config-url={{ var.value.dap_task_config_url }}",
             "--project",
             project_id,
             "--table-id",
