@@ -1,4 +1,4 @@
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 
 
 def generate_and_run_desktop_query(
@@ -12,7 +12,6 @@ def generate_and_run_desktop_query(
     destination_dataset_id=None,
     process=None,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_airflow_gke",
     **kwargs,
 ):
     """
@@ -49,14 +48,14 @@ def generate_and_run_desktop_query(
     if process is not None:
         command.append(process)
 
-    return gke_command(
+    return GKEPodOperator(
         reattach_on_restart=reattach_on_restart,
         task_id=task_id,
         cmds=["bash"],
         env_vars=env_vars,
-        command=command,
-        docker_image=docker_image,
-        gcp_conn_id=gcp_conn_id,
+        arguments=command,
+        image=docker_image,
+        is_delete_operator_pod=False,
         **kwargs,
     )
 
@@ -68,7 +67,6 @@ def generate_and_run_glean_queries(
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_airflow_gke",
     env_vars=None,
     **kwargs,
 ):
@@ -96,14 +94,14 @@ def generate_and_run_glean_queries(
         **env_vars,
     }
 
-    return gke_command(
+    return GKEPodOperator(
         reattach_on_restart=True,
         task_id=task_id,
         cmds=["bash", "-c"],
         env_vars=env_vars,
-        command=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
-        docker_image=docker_image,
-        gcp_conn_id=gcp_conn_id,
+        arguments=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
+        image=docker_image,
+        is_delete_operator_pod=False,
         **kwargs,
     )
 
@@ -116,7 +114,6 @@ def generate_and_run_glean_task(
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    gcp_conn_id="google_cloud_airflow_gke",
     env_vars=None,
     **kwargs,
 ):
@@ -148,17 +145,17 @@ def generate_and_run_glean_task(
     if task_type not in ["view", "init", "query"]:
         raise ValueError("task_type must be either a view, init, or query")
 
-    return gke_command(
+    return GKEPodOperator(
         reattach_on_restart=True,
         task_id=f"{task_type}_{task_name}",
         cmds=["bash", "-c"],
         env_vars=env_vars,
-        command=[
+        arguments=[
             "script/glam/generate_glean_sql && "
             "source script/glam/run_glam_sql && "
             f"run_{task_type} {task_name}"
         ],
-        docker_image=docker_image,
-        gcp_conn_id=gcp_conn_id,
+        image=docker_image,
+        is_delete_operator_pod=False,
         **kwargs,
     )
