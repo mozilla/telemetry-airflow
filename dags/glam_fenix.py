@@ -16,8 +16,8 @@ from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import gke_command
 from utils.glam_subdags.generate_query import (
     generate_and_run_glean_queries,
     generate_and_run_glean_task,
@@ -176,18 +176,18 @@ with DAG(
 
         sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
 
-        export = gke_command(
+        export = GKEPodOperator(
             task_id=f"export_{product}",
-            cmds=["bash"],
+            image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+            arguments=["script/glam/export_csv"],
             env_vars={
                 "SRC_PROJECT": PROJECT,
                 "DATASET": "glam_etl",
                 "PRODUCT": product,
                 "BUCKET": BUCKET,
             },
-            command=["script/glam/export_csv"],
-            docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-            gcp_conn_id="google_cloud_airflow_gke",
+            is_delete_operator_pod=False,
+            cmds=["bash"],
         )
 
         # set all of the dependencies for all of the tasks
