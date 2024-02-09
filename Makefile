@@ -19,7 +19,7 @@ build:
 	docker-compose build
 
 pip-compile:
-	pip-compile
+	pip-compile --strip-extras
 
 fixes:
 	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
