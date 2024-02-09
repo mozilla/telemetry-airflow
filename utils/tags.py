@@ -30,7 +30,6 @@ class Tag(Enum):
         try:
             ret_val = getattr(self.value, item).value
         except AttributeError as _err:
-            raise InvalidTagError(_err) from None
             raise InvalidTagError() from _err
 
         return ret_val
