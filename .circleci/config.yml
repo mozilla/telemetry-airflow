@@ -100,7 +100,7 @@ jobs:
           name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
             pip install pip-tools
-            pip-compile --quiet --strip-extras
+            pip-compile --quiet --strip-extras --no-annotate
             git diff --exit-code requirements.txt
 
   docker-build-artifact:
