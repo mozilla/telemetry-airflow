@@ -100,6 +100,21 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
+    publish_metadata = gke_command(
+        task_id="publish_metadata",
+        cmds=["bash", "-x", "-c"],
+        command=[
+            "script/bqetl generate all --use-cloud-function=false && "
+            "script/bqetl metadata publish moz-fx-data-shared-prod.* --project_id=moz-fx-data-shared-prod && "
+            "script/bqetl metadata publish mozdata.* --project_id=mozdata && "
+            "script/bqetl metadata publish moz-fx-data-marketing-prod.* --project_id=moz-fx-data-marketing-prod && "
+            "script/bqetl metadata publish moz-fx-data-experiments.* --project_id=moz-fx-data-experiments"
+        ],
+        docker_image=docker_image,
+    )
+
     publish_views.set_upstream(publish_public_udfs)
     publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
+    publish_metadata.set_upstream(publish_views)
+
