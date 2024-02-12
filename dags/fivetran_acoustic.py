@@ -5,8 +5,8 @@ from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from fivetran_provider.operators.fivetran import FivetranOperator
-from fivetran_provider.sensors.fivetran import FivetranSensor
+from fivetran_provider_async.operators import FivetranOperator
+from fivetran_provider_async.sensors import FivetranSensor
 
 from utils.acoustic.acoustic_client import AcousticClient
 from utils.callbacks import retry_tasks_callback

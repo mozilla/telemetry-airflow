@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from fivetran_provider.operators.fivetran import FivetranOperator
-from fivetran_provider.sensors.fivetran import FivetranSensor
+from fivetran_provider_async.operators import FivetranOperator
+from fivetran_provider_async.sensors import FivetranSensor
 from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 
