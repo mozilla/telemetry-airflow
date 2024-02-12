@@ -4,7 +4,6 @@ from datetime import timedelta
 from typing import Any
 
 from airflow import models
-from airflow.configuration import conf
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
@@ -489,12 +488,12 @@ def bigquery_table_sensor(
     table_id: str,
     gcp_conn_id: str = "google_cloud_airflow_gke",
     deferrable: bool = True,
-    poke_interval: timedelta|float = 60,
-    timeout: timedelta|float = conf.getfloat("sensors", "default_timeout"),
-    **kwargs: dict[str, Any]
+    poke_interval: timedelta | float = 60,
+    timeout: timedelta | float | None = None,
+    **kwargs: dict[str, Any],
 ) -> BigQueryTableExistenceSensor:
     """
-    Creates a sensor that waits for a BigQuery table to exist.
+    Create a sensor that waits for a BigQuery table to exist.
 
     :param str task_id:                   [Required] ID to use for the Airflow task.
     :param str table_id:                  [Required] Fully qualified ID of the table to check.
@@ -514,6 +513,10 @@ def bigquery_table_sensor(
             " Table ID must be fully qualified with project and dataset."
         )
     project_id, dataset_name, table_name = table_id.split(".")
+
+    if timeout:
+        kwargs["timeout"] = timeout
+
     return BigQueryTableExistenceSensor(
         task_id=task_id,
         project_id=project_id,
@@ -522,8 +525,7 @@ def bigquery_table_sensor(
         gcp_conn_id=gcp_conn_id,
         deferrable=deferrable,
         poke_interval=poke_interval,
-        timeout=timeout,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -533,12 +535,12 @@ def bigquery_table_partition_sensor(
     partition_id: str,
     gcp_conn_id: str = "google_cloud_airflow_gke",
     deferrable: bool = True,
-    poke_interval: timedelta|float = 60,
-    timeout: timedelta|float = conf.getfloat("sensors", "default_timeout"),
-    **kwargs: dict[str, Any]
+    poke_interval: timedelta | float = 60,
+    timeout: timedelta | float | None = None,
+    **kwargs: dict[str, Any],
 ) -> BigQueryTablePartitionExistenceSensor:
     """
-    Creates a sensor that waits for a BigQuery table partition to exist.
+    Create a sensor that waits for a BigQuery table partition to exist.
 
     :param str task_id:                   [Required] ID to use for the Airflow task.
     :param str table_id:                  [Required] Fully qualified ID of the table to check.
@@ -559,6 +561,10 @@ def bigquery_table_partition_sensor(
             " Table ID must be fully qualified with project and dataset."
         )
     project_id, dataset_name, table_name = table_id.split(".")
+
+    if timeout:
+        kwargs["timeout"] = timeout
+
     return BigQueryTablePartitionExistenceSensor(
         task_id=task_id,
         project_id=project_id,
@@ -568,8 +574,7 @@ def bigquery_table_partition_sensor(
         gcp_conn_id=gcp_conn_id,
         deferrable=deferrable,
         poke_interval=poke_interval,
-        timeout=timeout,
-        **kwargs
+        **kwargs,
     )
 
 
