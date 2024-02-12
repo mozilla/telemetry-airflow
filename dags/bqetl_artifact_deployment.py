@@ -105,10 +105,10 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         arguments=[
             "script/bqetl generate all --use-cloud-function=false && "
-            "script/bqetl metadata publish moz-fx-data-shared-prod.* --project_id=moz-fx-data-shared-prod && "
-            "script/bqetl metadata publish mozdata.* --project_id=mozdata && "
-            "script/bqetl metadata publish moz-fx-data-marketing-prod.* --project_id=moz-fx-data-marketing-prod && "
-            "script/bqetl metadata publish moz-fx-data-experiments.* --project_id=moz-fx-data-experiments"
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
+            "script/bqetl metadata publish '*' --project_id=mozdata && "
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments"
         ],
         image=docker_image,
     )
