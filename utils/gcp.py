@@ -1,7 +1,10 @@
 import json
 import re
+from datetime import timedelta
+from typing import Any
 
 from airflow import models
+from airflow.configuration import conf
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
@@ -10,6 +13,10 @@ from airflow.providers.google.cloud.operators.dataproc import (
     DataprocSubmitPySparkJobOperator,
 )
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from airflow.providers.google.cloud.sensors.bigquery import (
+    BigQueryTableExistenceSensor,
+    BigQueryTablePartitionExistenceSensor,
+)
 from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
     BigQueryToGCSOperator,
 )
@@ -474,6 +481,95 @@ def bigquery_xcom_query(
         + list(arguments)
         + [query],
         **kwargs,
+    )
+
+
+def bigquery_table_sensor(
+    task_id: str,
+    table_id: str,
+    gcp_conn_id: str = "google_cloud_airflow_gke",
+    deferrable: bool = True,
+    poke_interval: timedelta|float = 60,
+    timeout: timedelta|float = conf.getfloat("sensors", "default_timeout"),
+    **kwargs: dict[str, Any]
+) -> BigQueryTableExistenceSensor:
+    """
+    Creates a sensor that waits for a BigQuery table to exist.
+
+    :param str task_id:                   [Required] ID to use for the Airflow task.
+    :param str table_id:                  [Required] Fully qualified ID of the table to check.
+    :param str gcp_conn_id:               Airflow connection ID for GCP access.
+    :param bool deferrable:               Whether to run sensor in deferrable mode (default is True).
+    :param timedelta|float poke_interval: Time that the sensor should wait in between each try.
+                                          Can be a `timedelta` or number of seconds (default is 60 seconds).
+    :param timedelta|float timeout:       Time allowed before the sensor times out and fails.
+                                          Can be a `timedelta` or number of seconds.
+    :param dict[str, Any] kwargs:         Additional keyword arguments for BigQueryTableExistenceSensor.
+
+    :return: BigQueryTableExistenceSensor
+    """
+    if not table_id or table_id.count(".") != 2:
+        raise ValueError(
+            f"Invalid table ID '{table_id}'."
+            " Table ID must be fully qualified with project and dataset."
+        )
+    project_id, dataset_name, table_name = table_id.split(".")
+    return BigQueryTableExistenceSensor(
+        task_id=task_id,
+        project_id=project_id,
+        dataset_id=dataset_name,
+        table_id=table_name,
+        gcp_conn_id=gcp_conn_id,
+        deferrable=deferrable,
+        poke_interval=poke_interval,
+        timeout=timeout,
+        **kwargs
+    )
+
+
+def bigquery_table_partition_sensor(
+    task_id: str,
+    table_id: str,
+    partition_id: str,
+    gcp_conn_id: str = "google_cloud_airflow_gke",
+    deferrable: bool = True,
+    poke_interval: timedelta|float = 60,
+    timeout: timedelta|float = conf.getfloat("sensors", "default_timeout"),
+    **kwargs: dict[str, Any]
+) -> BigQueryTablePartitionExistenceSensor:
+    """
+    Creates a sensor that waits for a BigQuery table partition to exist.
+
+    :param str task_id:                   [Required] ID to use for the Airflow task.
+    :param str table_id:                  [Required] Fully qualified ID of the table to check.
+    :param str partition_id:              [Required] ID of the partition to check.
+    :param str gcp_conn_id:               Airflow connection ID for GCP access.
+    :param bool deferrable:               Whether to run sensor in deferrable mode (default is True).
+    :param timedelta|float poke_interval: Time that the sensor should wait in between each try.
+                                          Can be a `timedelta` or number of seconds (default is 60 seconds).
+    :param timedelta|float timeout:       Time allowed before the sensor times out and fails.
+                                          Can be a `timedelta` or number of seconds.
+    :param dict[str, Any] kwargs:         Additional keyword arguments for BigQueryTablePartitionExistenceSensor.
+
+    :return: BigQueryTablePartitionExistenceSensor
+    """
+    if not table_id or table_id.count(".") != 2:
+        raise ValueError(
+            f"Invalid table ID '{table_id}'."
+            " Table ID must be fully qualified with project and dataset."
+        )
+    project_id, dataset_name, table_name = table_id.split(".")
+    return BigQueryTablePartitionExistenceSensor(
+        task_id=task_id,
+        project_id=project_id,
+        dataset_id=dataset_name,
+        table_id=table_name,
+        partition_id=partition_id,
+        gcp_conn_id=gcp_conn_id,
+        deferrable=deferrable,
+        poke_interval=poke_interval,
+        timeout=timeout,
+        **kwargs
     )
 
 
