@@ -486,7 +486,7 @@ def bigquery_xcom_query(
 def bigquery_table_sensor(
     task_id: str,
     table_id: str,
-    gcp_conn_id: str = "google_cloud_airflow_gke",
+    gcp_conn_id: str = "google_cloud_shared_prod",
     deferrable: bool = True,
     poke_interval: timedelta | float = 60,
     timeout: timedelta | float | None = None,
@@ -533,7 +533,7 @@ def bigquery_table_partition_sensor(
     task_id: str,
     table_id: str,
     partition_id: str,
-    gcp_conn_id: str = "google_cloud_airflow_gke",
+    gcp_conn_id: str = "google_cloud_shared_prod",
     deferrable: bool = True,
     poke_interval: timedelta | float = 60,
     timeout: timedelta | float | None = None,
