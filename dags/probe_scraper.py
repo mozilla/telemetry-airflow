@@ -8,6 +8,7 @@ from airflow.operators.branch import BaseBranchOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.utils.weekday import WeekDay
 
@@ -73,6 +74,55 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
+aws_access_key_secret = Secret(
+    deploy_type="env",
+    deploy_target="AWS_ACCESS_KEY_ID",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__aws_access_key",
+)
+aws_secret_key_secret = Secret(
+    deploy_type="env",
+    deploy_target="AWS_SECRET_ACCESS_KEY",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__aws_secret_key",
+)
+looker_repos_secret_git_ssh_key_b64 = Secret(
+    deploy_type="env",
+    deploy_target="GIT_SSH_KEY_BASE64",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__looker_repos_secret_git_ssh_key_b64",
+)
+looker_api_client_id_prod = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_API_CLIENT_ID",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__looker_api_client_id_prod",
+)
+looker_api_client_secret_prod = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_API_CLIENT_SECRET",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__looker_api_client_secret_prod",
+)
+looker_api_client_id_staging = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_API_CLIENT_ID",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__looker_api_client_id_staging",
+)
+looker_api_client_secret_staging = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_API_CLIENT_SECRET",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__looker_api_client_secret_staging",
+)
+dataops_looker_github_secret_access_token = Secret(
+    deploy_type="env",
+    deploy_target="GITHUB_ACCESS_TOKEN",
+    secret="airflow-gke-secrets",
+    key=f"probe_scraper_secret__dataops_looker_github_secret_access_token",
+)
+
 with DAG(
     "probe_scraper",
     doc_md=DOCS,
@@ -87,10 +137,6 @@ with DAG(
         "location": "us-west1",
         "cluster_name": "workloads-prod-v1",
     }
-    aws_conn_id = "aws_prod_probe_scraper"
-    aws_access_key, aws_secret_key, session = AwsBaseHook(
-        aws_conn_id=aws_conn_id, client_type="s3"
-    ).get_credentials()
 
     # Built from repo https://github.com/mozilla/probe-scraper
     probe_scraper_image = "gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest"
@@ -190,9 +236,8 @@ with DAG(
             ],
             env_vars={
                 "BOTO_PATH": ".gce_boto",
-                "AWS_ACCESS_KEY_ID": aws_access_key,
-                "AWS_SECRET_ACCESS_KEY": aws_secret_key,
             },
+            secrets=[aws_access_key_secret, aws_secret_key_secret],
             dag=dag,
             **airflow_gke_prod_kwargs,
         )
@@ -262,9 +307,8 @@ with DAG(
             ],
             env_vars={
                 "BOTO_PATH": ".gce_boto",
-                "AWS_ACCESS_KEY_ID": aws_access_key,
-                "AWS_SECRET_ACCESS_KEY": aws_secret_key,
             },
+            secrets=[aws_access_key_secret, aws_secret_key_secret],
             dag=dag,
             **airflow_gke_prod_kwargs,
         )
@@ -309,7 +353,9 @@ with DAG(
         name="schema-generator-1",
         image="mozilla/mozilla-schema-generator:latest",
         env_vars={
-            "MPS_SSH_KEY_BASE64": "{{ var.value.mozilla_pipeline_schemas_secret_git_sshkey_b64 }}",
+            "MPS_SSH_KEY_BASE64": Variable.get(
+                "mozilla_pipeline_schemas_secret_git_sshkey_b64"
+            ),
             "MPS_REPO_URL": "git@github.com:mozilla-services/mozilla-pipeline-schemas.git",
             "MPS_BRANCH_SOURCE": "main",
             "MPS_BRANCH_PUBLISH": "generated-schemas",
@@ -333,10 +379,7 @@ with DAG(
             "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
         ],
         email=["akomar@mozilla.com", "telemetry-alerts@mozilla.com"],
-        env_vars={
-            "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_key,
-        },
+        secrets=[aws_access_key_secret, aws_secret_key_secret],
         dag=dag,
     )
 
@@ -365,20 +408,20 @@ with DAG(
         startup_timeout_seconds=500,
         dag=dag,
         env_vars={
-            "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
             "HUB_BRANCH_SOURCE": "base",
             "HUB_BRANCH_PUBLISH": "main",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
             "SPOKE_BRANCH_PUBLISH": "main",
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_prod"),
-            "LOOKER_API_CLIENT_SECRET": Variable.get("looker_api_client_secret_prod"),
-            "GITHUB_ACCESS_TOKEN": Variable.get(
-                "dataops_looker_github_secret_access_token"
-            ),
             "UPDATE_SPOKE_BRANCHES": "true",
         },
+        secrets=[
+            looker_repos_secret_git_ssh_key_b64,
+            looker_api_client_id_prod,
+            looker_api_client_secret_prod,
+            dataops_looker_github_secret_access_token,
+        ],
         **airflow_gke_prod_kwargs,
     )
 
@@ -394,22 +437,20 @@ with DAG(
         image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
         dag=dag,
         env_vars={
-            "GIT_SSH_KEY_BASE64": Variable.get("looker_repos_secret_git_ssh_key_b64"),
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
             "HUB_BRANCH_SOURCE": "base",
             "HUB_BRANCH_PUBLISH": "main-stage",
             "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
             "SPOKE_BRANCH_PUBLISH": "main-stage",
             "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
-            "LOOKER_API_CLIENT_ID": Variable.get("looker_api_client_id_staging"),
-            "LOOKER_API_CLIENT_SECRET": Variable.get(
-                "looker_api_client_secret_staging"
-            ),
-            "GITHUB_ACCESS_TOKEN": Variable.get(
-                "dataops_looker_github_secret_access_token"
-            ),
             "UPDATE_SPOKE_BRANCHES": "true",
         },
+        secrets=[
+            looker_repos_secret_git_ssh_key_b64,
+            looker_api_client_id_staging,
+            looker_api_client_secret_staging,
+            dataops_looker_github_secret_access_token,
+        ],
         **airflow_gke_prod_kwargs,
     )
 
