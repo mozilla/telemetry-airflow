@@ -7,7 +7,6 @@ from airflow.models.param import Param
 from airflow.operators.branch import BaseBranchOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.utils.weekday import WeekDay
@@ -78,49 +77,49 @@ aws_access_key_secret = Secret(
     deploy_type="env",
     deploy_target="AWS_ACCESS_KEY_ID",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__aws_access_key",
+    key="probe_scraper_secret__aws_access_key",
 )
 aws_secret_key_secret = Secret(
     deploy_type="env",
     deploy_target="AWS_SECRET_ACCESS_KEY",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__aws_secret_key",
+    key="probe_scraper_secret__aws_secret_key",
 )
 looker_repos_secret_git_ssh_key_b64 = Secret(
     deploy_type="env",
     deploy_target="GIT_SSH_KEY_BASE64",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__looker_repos_secret_git_ssh_key_b64",
+    key="probe_scraper_secret__looker_repos_secret_git_ssh_key_b64",
 )
 looker_api_client_id_prod = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_ID",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__looker_api_client_id_prod",
+    key="probe_scraper_secret__looker_api_client_id_prod",
 )
 looker_api_client_secret_prod = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_SECRET",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__looker_api_client_secret_prod",
+    key="probe_scraper_secret__looker_api_client_secret_prod",
 )
 looker_api_client_id_staging = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_ID",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__looker_api_client_id_staging",
+    key="probe_scraper_secret__looker_api_client_id_staging",
 )
 looker_api_client_secret_staging = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_SECRET",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__looker_api_client_secret_staging",
+    key="probe_scraper_secret__looker_api_client_secret_staging",
 )
 dataops_looker_github_secret_access_token = Secret(
     deploy_type="env",
     deploy_target="GITHUB_ACCESS_TOKEN",
     secret="airflow-gke-secrets",
-    key=f"probe_scraper_secret__dataops_looker_github_secret_access_token",
+    key="probe_scraper_secret__dataops_looker_github_secret_access_token",
 )
 
 with DAG(
