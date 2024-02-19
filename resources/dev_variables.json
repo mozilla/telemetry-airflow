@@ -12,6 +12,7 @@
     "jetstream_cluster_cert": "cert",
     "jetstream_cluster_ip": "127.0.0.1",
     "lookml_generator_release_str": "v0.0.0",
+    "mozilla_pipeline_schemas_secret_git_sshkey_b64": "mozilla_pipeline_schemas_secret_git_sshkey_b64",
     "slack_secret_token": "slack_secret_token",
     "surveygizmo_api_secret": "tapsekret",
     "surveygizmo_api_token": "tokentokentoken",
