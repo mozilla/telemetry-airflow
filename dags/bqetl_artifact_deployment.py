@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.utils.trigger_rule import TriggerRule
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
@@ -45,26 +45,26 @@ with DAG(
 ) as dag:
     docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
-    publish_public_udfs = gke_command(
+    publish_public_udfs = GKEPodOperator(
         task_id="publish_public_udfs",
-        command=["script/publish_public_udfs"],
-        docker_image=docker_image,
+        arguments=["script/publish_public_udfs"],
+        image=docker_image,
     )
 
-    publish_persistent_udfs = gke_command(
+    publish_persistent_udfs = GKEPodOperator(
         task_id="publish_persistent_udfs",
         cmds=["bash", "-x", "-c"],
-        command=[
+        arguments=[
             "script/publish_persistent_udfs --project-id=moz-fx-data-shared-prod && "
             "script/publish_persistent_udfs --project-id=mozdata"
         ],
-        docker_image=docker_image,
+        image=docker_image,
     )
 
-    publish_new_tables = gke_command(
+    publish_new_tables = GKEPodOperator(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
-        command=[
+        arguments=[
             "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
@@ -74,15 +74,17 @@ with DAG(
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod"
+            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
+            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7 && "
+            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7"
         ],
-        docker_image=docker_image,
+        image=docker_image,
     )
 
-    publish_views = gke_command(
+    publish_views = GKEPodOperator(
         task_id="publish_views",
         cmds=["bash", "-x", "-c"],
-        command=[
+        arguments=[
             "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
@@ -91,15 +93,30 @@ with DAG(
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
+            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-glam-prod-fca7 --project-id=moz-fx-data-glam-prod-fca7 && "
             "script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only && "
             "script/publish_public_data_views --target-project=moz-fx-data-shared-prod && "
             "script/publish_public_data_views --target-project=mozdata"
         ],
-        docker_image=docker_image,
+        image=docker_image,
         get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
+    )
+
+    publish_metadata = GKEPodOperator(
+        task_id="publish_metadata",
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "script/bqetl generate all --use-cloud-function=false && "
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
+            "script/bqetl metadata publish '*' --project_id=mozdata && "
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments"
+        ],
+        image=docker_image,
     )
 
     publish_views.set_upstream(publish_public_udfs)
     publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
+    publish_metadata.set_upstream(publish_views)
