@@ -121,6 +121,12 @@ dataops_looker_github_secret_access_token = Secret(
     secret="airflow-gke-secrets",
     key="probe_scraper_secret__dataops_looker_github_secret_access_token",
 )
+mozilla_pipeline_schemas_secret_git_sshkey_b64 = Secret(
+    deploy_type="env",
+    deploy_target="MPS_SSH_KEY_BASE64",
+    secret="airflow-gke-secrets",
+    key="probe_scraper_secret__mozilla_pipeline_schemas_secret_git_sshkey_b64",
+)
 
 with DAG(
     "probe_scraper",
@@ -352,13 +358,11 @@ with DAG(
         name="schema-generator-1",
         image="mozilla/mozilla-schema-generator:latest",
         env_vars={
-            "MPS_SSH_KEY_BASE64": Variable.get(
-                "mozilla_pipeline_schemas_secret_git_sshkey_b64"
-            ),
             "MPS_REPO_URL": "git@github.com:mozilla-services/mozilla-pipeline-schemas.git",
             "MPS_BRANCH_SOURCE": "main",
             "MPS_BRANCH_PUBLISH": "generated-schemas",
         },
+        secrets=[mozilla_pipeline_schemas_secret_git_sshkey_b64],
         dag=dag,
     )
 
