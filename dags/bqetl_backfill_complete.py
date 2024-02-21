@@ -8,7 +8,7 @@ from airflow.models import Param
 from airflow.operators.python import get_current_context
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCKER_IMAGE = "mozilla/bigquery-etl:latest"
@@ -53,12 +53,12 @@ with DAG(
         slack_conn_id="slack_api",
     ).expand(channel=slack_users)
 
-    complete_backfill = gke_command(
+    complete_backfill = GKEPodOperator(
         task_id="complete_backfill",
+        name="complete_backfill",
         cmds=["bash", "-x", "-c"],
-        command=["script/bqetl backfill complete {{ params.qualified_table_name }}"],
-        docker_image=DOCKER_IMAGE,
-        gcp_conn_id="google_cloud_airflow_gke",
+        arguments=["script/bqetl backfill complete {{ params.qualified_table_name }}"],
+        image=DOCKER_IMAGE,
     )
 
     notify_processing_complete = SlackAPIPostOperator.partial(

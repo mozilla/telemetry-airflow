@@ -8,6 +8,7 @@ from airflow.models import Param
 from airflow.operators.python import get_current_context
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import gke_command
 from utils.tags import Tag
 
@@ -57,12 +58,12 @@ with DAG(
         slack_conn_id="slack_api",
     ).expand(channel=slack_users)
 
-    process_backfill = gke_command(
+    process_backfill = GKEPodOperator(
         task_id="process_backfill",
+        name="process_backfill",
         cmds=["bash", "-x", "-c"],
-        command=["script/bqetl backfill process {{ params.qualified_table_name }}"],
-        docker_image=DOCKER_IMAGE,
-        gcp_conn_id="google_cloud_airflow_gke",
+        arguments=["script/bqetl backfill process {{ params.qualified_table_name }}"],
+        image=DOCKER_IMAGE,
     )
 
     @task
