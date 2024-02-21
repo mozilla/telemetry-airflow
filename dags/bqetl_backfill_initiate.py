@@ -9,7 +9,6 @@ from airflow.operators.python import get_current_context
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 
 from operators.gcp_container_operator import GKEPodOperator
-from utils.gcp import gke_command
 from utils.tags import Tag
 
 DOCKER_IMAGE = "mozilla/bigquery-etl:latest"
