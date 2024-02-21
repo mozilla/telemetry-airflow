@@ -59,16 +59,6 @@
     "schema": null,
     "extra": "{\"aws_access_key_id\": \"dummy_access_key_id\", \"aws_secret_access_key\": \"dummy_secret_access_key\"}"
   },
-  "aws_prod_probe_scraper": {
-    "conn_type": "s3",
-    "description": null,
-    "login": null,
-    "password": null,
-    "host": null,
-    "port": null,
-    "schema": null,
-    "extra": "{\"aws_access_key_id\": \"dummy_access_key_id\", \"aws_secret_access_key\": \"dummy_secret_access_key\"}"
-  },
   "aws_socorro_readonly_s3": {
     "conn_type": "s3",
     "description": null,

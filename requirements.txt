@@ -7,7 +7,7 @@
 aiofiles==23.2.1
 aiohttp==3.8.6
 aiosignal==1.3.1
-airflow-provider-fivetran==1.1.2
+airflow-provider-fivetran-async==2.0.2
 alembic==1.12.1
 amqp==5.1.1
 annotated-types==0.6.0
