@@ -194,6 +194,7 @@ for report_type, _config in REPORTS_CONFIG.items():
         sync_trigger = FivetranOperator(
             task_id="trigger_fivetran_connector",
             connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
+            task_concurrency=1,
         )
 
         load_completed = EmptyOperator(
