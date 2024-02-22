@@ -89,6 +89,7 @@ with DAG(
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-glam-prod-fca7 && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
