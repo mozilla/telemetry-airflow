@@ -2,6 +2,7 @@ import datetime
 
 from airflow import DAG
 from airflow.hooks.base import BaseHook
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -34,6 +35,13 @@ default_args = {
 dag_name = "adm_export"
 tags = [Tag.ImpactTier.tier_3]
 
+adm_sftp_secret = Secret(
+    deploy_type="env",
+    deploy_target="SFTP_PASSWORD",
+    secret="airflow-gke-secrets",
+    key="adm_export_secret__sftp_password",
+)
+
 with DAG(
     dag_name,
     schedule_interval="0 5 * * *",
@@ -54,7 +62,6 @@ with DAG(
         location="us-west1",
         env_vars={
             "SFTP_USERNAME": conn.login,
-            "SFTP_PASSWORD": conn.password,
             "SFTP_HOST": conn.host,
             "SFTP_PORT": str(conn.port),
             "KNOWN_HOSTS": conn.extra_dejson["known_hosts"],
@@ -64,6 +71,7 @@ with DAG(
             "DST_PATH": 'files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
             "SUBMISSION_DATE": "{{ ds }}",
         },
+        secrets=[adm_sftp_secret],
         email=[
             "telemetry-alerts@mozilla.com",
         ],
