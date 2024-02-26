@@ -6,10 +6,8 @@ from airflow.hooks.base import BaseHook
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from fivetran_provider_async.operators import FivetranOperator
-from fivetran_provider_async.sensors import FivetranSensor
 
 from utils.acoustic.acoustic_client import AcousticClient
-from utils.callbacks import retry_tasks_callback
 from utils.tags import Tag
 
 
@@ -196,20 +194,12 @@ for report_type, _config in REPORTS_CONFIG.items():
         sync_trigger = FivetranOperator(
             task_id="trigger_fivetran_connector",
             connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
-        )
-
-        sync_wait = FivetranSensor(
-            task_id="wait_for_fivetran_connector_completion",
-            connector_id=f"{{{{ var.value.fivetran_acoustic_{report_type}_connector_id }}}}",
-            poke_interval=30,
-            xcom="{{ task_instance.xcom_pull('trigger_fivetran_connector') }}",
-            on_retry_callback=retry_tasks_callback,
-            params={"retry_tasks": ["trigger_fivetran_connector"]},
+            task_concurrency=1,
         )
 
         load_completed = EmptyOperator(
             task_id="fivetran_load_completed",
         )
 
-        generate_report >> sync_trigger >> sync_wait >> load_completed
+        generate_report >> sync_trigger >> load_completed
         globals()[dag_id] = dag

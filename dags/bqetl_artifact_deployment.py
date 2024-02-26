@@ -86,10 +86,11 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         arguments=[
             "script/bqetl generate all --use-cloud-function=false && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-shared-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --target-project=mozdata --user-facing-only && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-glam-prod-fca7 && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
