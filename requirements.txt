@@ -21,7 +21,6 @@ apache-airflow-providers-ftp==3.6.0
 apache-airflow-providers-google==10.11.0
 apache-airflow-providers-http==4.6.0
 apache-airflow-providers-imap==3.4.0
-apache-airflow-providers-jdbc==4.1.0
 apache-airflow-providers-postgres==5.7.1
 apache-airflow-providers-redis==3.4.0
 apache-airflow-providers-slack==8.3.0
@@ -32,7 +31,6 @@ asgiref==3.7.2
 asn1crypto==1.5.1
 async-timeout==4.0.3
 attrs==23.1.0
-authlib==1.2.1
 babel==2.13.1
 backoff==1.10.0
 bcrypt==4.0.1
@@ -160,10 +158,8 @@ importlib-resources==6.1.0
 inflection==0.5.1
 iniconfig==2.0.0
 itsdangerous==2.1.2
-jaydebeapi==1.2.3
 jinja2==3.1.2
 jmespath==0.10.0
-jpype1==1.4.1
 json-merge-patch==0.2
 jsonpath-ng==1.6.0
 jsonschema==4.19.2
