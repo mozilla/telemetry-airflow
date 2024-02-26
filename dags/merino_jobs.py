@@ -4,7 +4,7 @@ from typing import Any
 from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.operators.email import EmailOperator
-from airflow.providers.cncf.kubernetes.operators.pod import Secret
+from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
