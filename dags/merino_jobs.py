@@ -4,6 +4,7 @@ from typing import Any
 from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.operators.email import EmailOperator
+from airflow.providers.cncf.kubernetes.operators.pod import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -61,6 +62,20 @@ tags = [
     Tag.Triage.no_triage,
 ]
 
+elasticsearch_stage_apikey_secret = Secret(
+    deploy_type="env",
+    deploy_target="MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY",
+    secret="airflow-gke-secrets",
+    key="merino_elasticsearch_secret__stage_api_key",
+)
+
+elasticsearch_prod_apikey_secret = Secret(
+    deploy_type="env",
+    deploy_target="MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY",
+    secret="airflow-gke-secrets",
+    key="merino_elasticsearch_secret__prod_api_key",
+)
+
 # Run weekly on Tuesdays at 5am UTC
 with DAG(
     "merino_jobs",
@@ -100,10 +115,7 @@ with DAG(
             "--gcp-project",
             "moz-fx-data-shared-prod",
         ],
-        env_vars={
-            # Using the API key in the argument list leaks the sensitive data into the airflow UI.
-            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": es_staging_connection.password,
-        },
+        secrets=[elasticsearch_stage_apikey_secret],
     )
 
     wikipedia_indexer_build_index_for_prod = merino_job(
@@ -122,10 +134,7 @@ with DAG(
             "--gcp-project",
             "moz-fx-data-shared-prod",
         ],
-        env_vars={
-            # Using the API key in the argument list leaks the sensitive data into the airflow UI.
-            "MERINO_JOBS__WIKIPEDIA_INDEXER__ES_API_KEY": es_prod_connection.password,
-        },
+        secrets=[elasticsearch_prod_apikey_secret],
     )
 
     wikipedia_indexer_copy_export >> [
