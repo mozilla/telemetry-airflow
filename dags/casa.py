@@ -41,5 +41,6 @@ with DAG(
     casa_sync_start = FivetranOperator(
         connector_id="{{ var.value.fivetran_casa_connector_id }}",
         task_id="casa-task",
+        deferrable=False,
         task_concurrency=1,
     )
