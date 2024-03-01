@@ -42,6 +42,7 @@ default_args = {
     "email": [
         "ascholtz@mozilla.com",
         "telemetry-alerts@mozilla.com",
+        "anicholson@mozilla.com",
     ],
     "depends_on_past": False,
     "start_date": datetime(2022, 12, 6),
@@ -135,7 +136,18 @@ with DAG(
         image=docker_image,
     )
 
+    publish_static_tables = GKEPodOperator(
+        task_id="publish_static_tables",
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "script/bqetl static publish --project_id=moz-fx-data-shared-prod && "
+            "script/bqetl static publish --project_id=mozdata"
+        ],
+        image=docker_image,
+    )
+
     publish_views.set_upstream(publish_public_udfs)
     publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
     publish_metadata.set_upstream(publish_views)
+    publish_metadata.set_upstream(publish_static_tables)
