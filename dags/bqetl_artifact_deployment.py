@@ -5,11 +5,28 @@ Nightly deploy of bigquery etl views.
 
 The DAG always re-deploys all bqetl views. So as long as the most recent DAG run
 is successful the job can be considered healthy. This means previous failed DAG runs
-can be ignored or marked as successful.
+can be ignored.
 
 `publish_views` doesn't show any logs due to spitting out invalid unicode.
-To view relevant errors, either check the [Kubernetes pods](https://console.cloud.google.com/kubernetes/workload/overview?project=moz-fx-data-airflow-gke-prod)
-or go to [GCP console and check the query "Project History" tab at the bottom of the page](https://console.cloud.google.com/bigquery?project=moz-fx-data-airflow-gke-prod&ws=!1m0).
+
+Logs can be viewed in the [GCP logs explorer](https://console.cloud.google.com/logs?project=moz-fx-data-airflow-gke-prod)
+with the following query:
+```
+resource.type="k8s_container"
+resource.labels.project_id="moz-fx-data-airflow-gke-prod"
+resource.labels.location="us-west1"
+resource.labels.cluster_name="workloads-prod-v1"
+resource.labels.namespace_name="default"
+resource.labels.pod_name=~"publish-views-.+"
+severity>=DEFAULT
+```
+This link leads to a
+prepopulated query for the last 12 hours: https://cloudlogging.app.goo.gl/vTs1R7fCMQnLxFtV8
+
+To view logs of a specific task run, replace the pod_name value with the pod name that can be
+found at the start of the logs in Airflow, e.g. `INFO - Found matching pod publish-views-abcd1234`.
+
+To find logs for specific datasets/views, add a string to search for to the end of the query.
 """
 
 from datetime import datetime, timedelta

@@ -32,14 +32,14 @@ and the task re-run.
 ## Debugging failures
 
 probe_scraper and probe_scraper_moz_central task logs aren't available via the Airflow web console. In
-order to access them, go to [GCP Logs Explorer](https://cloudlogging.app.goo.gl/qqvCsTbFGCiFmG7L7).
+order to access them, go to [GCP Logs Explorer](https://cloudlogging.app.goo.gl/sLyJuaPmVM6SnKtu7).
 This link should get you directly to the last 12 hours of probe_scraper pod logs. If necessary, replace
-`"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` in the query field.
+`"probe-scraper.+"` with `"probe-scraper-moz-central.+"` in the query field.
 If the above link fails, do the following:
 
 1. Navigate to the [Google Cloud Logging console](https://console.cloud.google.com/logs/query?project=moz-fx-data-airflow-gke-prod)
 If you can't access these logs but think you should be able to, [contact Data SRE](https://mana.mozilla.org/wiki/pages/viewpage.action?spaceKey=DOPS&title=Contacting+Data+SRE).
-2. Search for the following, replacing `"probe-scraper[.]"` with `"probe-scraper-moz-central[.]"` if necessary (make sure to put this in the raw query field - you might need to click the "Show query" button for it to appear):
+2. Search for the following, replacing `"probe-scraper.+"` with `"probe-scraper-moz-central.+"` if necessary (make sure to put this in the raw query field - you might need to click the "Show query" button for it to appear):
 
 ```
 resource.type="k8s_container"
@@ -47,7 +47,7 @@ resource.labels.project_id="moz-fx-data-airflow-gke-prod"
 resource.labels.location="us-west1"
 resource.labels.cluster_name="workloads-prod-v1"
 resource.labels.namespace_name="default"
-resource.labels.pod_name=~"probe-scraper[.]"
+resource.labels.pod_name=~"probe-scraper.+"
 severity>=DEFAULT
 ```
 
