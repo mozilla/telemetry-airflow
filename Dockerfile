@@ -1,4 +1,4 @@
-FROM apache/airflow:slim-2.7.3-python3.10
+FROM apache/airflow:slim-2.8.2-python3.10
 
 ARG PROJECT_DIR="/opt/airflow"
 
