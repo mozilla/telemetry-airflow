@@ -14,6 +14,7 @@ apache-airflow-providers-postgres
 apache-airflow-providers-redis
 apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
+authlib
 
 # Code quality
 pytest==7.4.4
