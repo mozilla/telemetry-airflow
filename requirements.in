@@ -4,7 +4,7 @@
 --constraint ./constraints.txt
 
 # Airflow dependencies
-apache-airflow[async,password,statsd]==2.8.2
+apache-airflow[async,google-auth,password,statsd]==2.8.2
 apache-airflow-providers-amazon
 apache-airflow-providers-celery
 apache-airflow-providers-cncf-kubernetes
@@ -14,7 +14,6 @@ apache-airflow-providers-postgres
 apache-airflow-providers-redis
 apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
-authlib
 
 # Code quality
 pytest==7.4.4
