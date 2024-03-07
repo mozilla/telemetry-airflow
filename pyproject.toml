@@ -1,8 +1,10 @@
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-third-party = ["airflow"]
 
 [tool.ruff]
 target-version = "py310"
+
+[tool.ruff.lint]
 select = [
     "E", # pycodestyle
     "W", # pycodestyle
