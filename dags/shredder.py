@@ -72,8 +72,7 @@ base_command = [
     # start date should be two schedule intervals before end date, to avoid
     # race conditions with downstream tables and pings received shortly after a
     # deletion request. schedule intervals are 4 weeks = 28 days.
-    # This is temporarily increased to 4 intervals, in order handle outstanding backlog
-    "--start-date={{macros.ds_add(ds, 27-28*4)}}",
+    "--start-date={{macros.ds_add(ds, 27-28*2)}}",
     # non-dml statements use LEFT JOIN instead of IN to filter rows, which takes about
     # half as long as of 2022-02-14, and reduces cost by using less flat rate slot time
     "--no-use-dml",
