@@ -83,7 +83,6 @@ with DAG(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
@@ -103,7 +102,6 @@ with DAG(
         task_id="publish_views",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
@@ -126,7 +124,6 @@ with DAG(
         task_id="publish_metadata",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl generate all --use-cloud-function=false && "
             "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
             "script/bqetl metadata publish '*' --project_id=mozdata && "
             "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
