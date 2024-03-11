@@ -1,6 +1,6 @@
 # Official Airflow constraints file
 # Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
-# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.8.2/constraints-3.10.txt
+# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.8.2/constraints-3.11.txt
 --constraint ./constraints.txt
 
 # Airflow dependencies

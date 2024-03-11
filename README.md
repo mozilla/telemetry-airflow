@@ -1,7 +1,7 @@
 # Telemetry-Airflow
 
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/mozilla/telemetry-airflow/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/mozilla/telemetry-airflow/tree/main)
-[![Python 3.10](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/)
+[![Python 3.11.8](https://img.shields.io/badge/python-3.11.8-blue)](https://www.python.org/)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
@@ -25,10 +25,10 @@ Some links relevant to users and developers of WTMO:
 ## Writing DAGs
 See the Airflow's [Best Practices guide](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#best-practices) to help you write DAGs.
 
-### **⚠ Warning: Do not import resources from the `dags` directory in DAGs definition files ⚠** 
+### **⚠ Warning: Do not import resources from the `dags` directory in DAGs definition files ⚠**
 As an example, if you have `dags/dag_a.py` and `dags/dag_b.py` and want to use a helper
 function in both DAG definition files, define the helper function in the `utils` directory
-such as: 
+such as:
 
 #### `utils/helper.py`
 ```python
@@ -56,8 +56,8 @@ with DAG("dag_b", ...):
     ...
 ```
 
-WTMO deployments use git-sync sidecars to synchronize DAG files from multiple 
-repositories via [telemetry-airflow-dags](https://github.com/mozilla/telemetry-airflow-dags/) 
+WTMO deployments use git-sync sidecars to synchronize DAG files from multiple
+repositories via [telemetry-airflow-dags](https://github.com/mozilla/telemetry-airflow-dags/)
 using git submodules. Git-sync sidecar pattern results in the following directory structure
 once deployed.
 ```
@@ -79,8 +79,8 @@ airflow
 └─ plugins
    └── ...
 ```
-Hence, defining `helper_function()` in `dags/dag_a.py` and 
-importing the function in `dags/dag_b.py` as `from dags.dag_a import helper_function` 
+Hence, defining `helper_function()` in `dags/dag_a.py` and
+importing the function in `dags/dag_b.py` as `from dags.dag_a import helper_function`
 **will not work after deployment** because of the directory structured required for
 git-sync sidecars.
 
@@ -98,8 +98,8 @@ You'll also need to install PostgreSQL to build the database container.
 ### Installing dependencies locally
 **_⚠ Make sure you use the right Python version. Refer to Dockerfile for current supported Python Version ⚠_**
 
-You can install the project dependencies locally to run tests with Pytest. We use the 
-[official Airflow constraints](https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files) file to simplify 
+You can install the project dependencies locally to run tests with Pytest. We use the
+[official Airflow constraints](https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files) file to simplify
 Airflow dependency management. Install dependencies locally using the following command:
 
 ```bash
