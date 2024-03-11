@@ -1,10 +1,10 @@
 # Official Airflow constraints file
 # Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
-# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.5.3/constraints-3.10.txt
+# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.8.2/constraints-3.10.txt
 --constraint ./constraints.txt
 
 # Airflow dependencies
-apache-airflow[async,password,statsd]==2.7.3
+apache-airflow[async,google-auth,password,statsd]==2.8.2
 apache-airflow-providers-amazon
 apache-airflow-providers-celery
 apache-airflow-providers-cncf-kubernetes
@@ -16,10 +16,10 @@ apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
 
 # Code quality
-pytest==7.4.3
+pytest==7.4.4
 pytest-mock==3.12.0
-black==23.10.1
-ruff==0.1.3
+black==24.2.0
+ruff==0.2.1
 
 # Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
 xmltodict
