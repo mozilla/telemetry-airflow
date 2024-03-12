@@ -5,13 +5,14 @@ The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/search-alert)
 """
 
+from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
-from datetime import datetime, timedelta
-from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import gke_command
-from utils.tags import Tag
 
+from operators.gcp_container_operator import GKEPodOperator
+from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.tags import Tag
 
 default_args = {
     "owner": "akomar@mozilla.com",
@@ -29,7 +30,8 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
-with DAG("search_alert",
+with DAG(
+    "search_alert",
     default_args=default_args,
     doc_md=__doc__,
     schedule_interval="0 4 * * *",
@@ -53,14 +55,15 @@ with DAG("search_alert",
         dag=dag,
     )
 
-    search_alert = gke_command(
+    search_alert = GKEPodOperator(
         task_id="search_alert",
-        command=[
-            "python", "search_alert/main.py",
+        arguments=[
+            "python",
+            "search_alert/main.py",
             "--submission_date={{ ds }}",
             "--project_id=mozdata",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 

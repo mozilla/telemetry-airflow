@@ -2,7 +2,7 @@ from datetime import datetime
 
 from airflow import DAG
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """
@@ -45,9 +45,9 @@ with DAG(
     tags=tags,
     catchup=False,
 ) as dag:
-    broken_site_report_ml = gke_command(
+    broken_site_report_ml = GKEPodOperator(
         task_id="broken_site_report_ml",
-        command=[
+        arguments=[
             "python",
             "broken_site_report_ml/main.py",
             "--bq_project_id",
@@ -55,6 +55,6 @@ with DAG(
             "--bq_dataset_id",
             "webcompat_user_reports",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/broken-site-report-ml_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/broken-site-report-ml_docker_etl:latest",
         dag=dag,
     )

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
@@ -39,9 +39,9 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-    search_term_data_validation = gke_command(
+    search_term_data_validation = GKEPodOperator(
         task_id="search_term_data_validation_v2",
-        command=[
+        arguments=[
             "python",
             "search_term_data_validation_v2/main.py",
             "--data_validation_origin",
@@ -49,6 +49,6 @@ with DAG(
             "--data_validation_reporting_destination",
             "moz-fx-data-shared-prod.search_terms_derived.search_term_data_validation_reports_v1",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/search-term-data-validation-v2_docker_etl:latest",
         dag=dag,
     )

@@ -5,6 +5,7 @@ This DAG runs the forecast Desktop DAU and Mobile DAU. The output powers KPI das
 
 This DAG is high priority for week 1 of the month and low priority otherwise.
 """
+
 import os
 from collections import namedtuple
 from datetime import datetime, timedelta
@@ -12,8 +13,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import gke_command
 from utils.tags import Tag
 
 default_args = {
@@ -66,10 +67,10 @@ with DAG(
         if not isinstance(config.wait_tasks, list):
             wait_tasks = [wait_tasks]
 
-        forecast_task = gke_command(
+        forecast_task = GKEPodOperator(
             task_id=f"kpi_forecasting_{id}",
-            command=["python", script_path, "-c", config_path],
-            docker_image=IMAGE,
+            arguments=["python", script_path, "-c", config_path],
+            image=IMAGE,
             dag=dag,
         )
 
