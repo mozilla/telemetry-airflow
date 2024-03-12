@@ -1,16 +1,16 @@
 """
-Runs a Docker image that imports Quicksuggest suggestions
-from Remote Settings to BigQuery.
+Runs a Docker image that imports Quicksuggest suggestions from Remote Settings to BigQuery.
 
 See the [`quicksuggest2bq`](https://github.com/mozilla/docker-etl/tree/main/jobs/quicksuggest2bq)
 docker image defined in `docker-etl`.
 """
 
-from airflow import DAG
 from datetime import datetime, timedelta
-from utils.gcp import gke_command
-from utils.tags import Tag
 
+from airflow import DAG
+
+from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 default_args = {
     "owner": "wstuckey@mozilla.com",
@@ -35,14 +35,17 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    quicksuggest2bq = gke_command(
+    quicksuggest2bq = GKEPodOperator(
         task_id="quicksuggest2bq",
-        command=[
-            "python", "quicksuggest2bq/main.py",
-            "--destination-project", project_id,
-            "--destination-table-id", table_id,
+        arguments=[
+            "python",
+            "quicksuggest2bq/main.py",
+            "--destination-project",
+            project_id,
+            "--destination-table-id",
+            table_id,
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/quicksuggest2bq_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/quicksuggest2bq_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[
