@@ -1,8 +1,6 @@
-import json
 import re
 
 from airflow import models
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
     DataprocCreateClusterOperator,
@@ -490,70 +488,3 @@ def normalize_table_id(table_name):
         raise ValueError("table_name cannot contain more than 1024 characters")
     else:
         return re.sub("\\W+", "_", table_name).lower()
-
-
-def gke_command(
-    task_id,
-    command,
-    docker_image,
-    aws_conn_id="aws_dev_iam_s3",
-    gcp_conn_id="google_cloud_airflow_gke",
-    gke_project_id=GCP_PROJECT_ID,
-    gke_location="us-west1",
-    gke_cluster_name="workloads-prod-v1",
-    gke_namespace="default",
-    xcom_push=False,
-    reattach_on_restart=False,
-    env_vars=None,
-    is_delete_operator_pod=False,
-    **kwargs,
-):
-    """
-    Run a docker command on GKE.
-
-    :param str task_id:            [Required] ID for the task
-    :param List[str] command:      [Required] Command to run
-    :param str docker_image:       [Required] docker image to use
-    :param str aws_conn_id:        Airflow connection id for AWS access
-    :param str gcp_conn_id:        Airflow connection id for GCP access
-    :param str gke_project_id:     GKE cluster project id
-    :param str gke_location:       GKE cluster location
-    :param str gke_cluster_name:   GKE cluster name
-    :param str gke_namespace:      GKE cluster namespace
-    :param bool xcom_push:         Return the output of this command as an xcom
-    :param Dict[str, Any] kwargs:  Additional keyword arguments for
-                                   GKEPodOperator
-
-    :return: GKEPodOperator
-    """
-    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
-    context_env_vars = {
-        key: value
-        for key, value in zip(
-            ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"),
-            AwsBaseHook(aws_conn_id=aws_conn_id, client_type="s3").get_credentials()
-            if aws_conn_id
-            else (),
-        )
-        if value is not None
-    }
-    context_env_vars["XCOM_PUSH"] = json.dumps(xcom_push)
-
-    if env_vars:
-        context_env_vars.update(env_vars)
-
-    return GKEPodOperator(
-        task_id=task_id,
-        gcp_conn_id=gcp_conn_id,
-        project_id=gke_project_id,
-        location=gke_location,
-        cluster_name=gke_cluster_name,
-        namespace=gke_namespace,
-        image=docker_image,
-        arguments=command,
-        do_xcom_push=xcom_push,
-        reattach_on_restart=reattach_on_restart,
-        env_vars=context_env_vars,
-        is_delete_operator_pod=is_delete_operator_pod,
-        **kwargs,
-    )

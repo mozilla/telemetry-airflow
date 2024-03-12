@@ -4,10 +4,10 @@ from airflow import models
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
-    gke_command,
 )
 from utils.tags import Tag
 
@@ -378,15 +378,15 @@ with models.DAG(
         'AS "refusing to archive empty partition"'
     )
     main_v5 = "moz-fx-data-shared-prod:telemetry_stable.main_v5"
-    archive_main = gke_command(
+    archive_main = GKEPodOperator(
         reattach_on_restart=True,
         task_id="archive_main",
         cmds=["bash", "-x", "-c"],
-        command=[
+        arguments=[
             f"bq query '{precheck_query}' &&"
             f"bq cp -f {main_v5}'$'{archive_partition_id} "
             f"{main_v5}_archive'$'{archive_partition_id} && "
             f"bq rm -f {main_v5}'$'{archive_partition_id}"
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     )

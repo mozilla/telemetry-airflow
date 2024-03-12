@@ -3,7 +3,7 @@ import datetime
 from airflow.decorators import dag, task
 from airflow.models.param import Param
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 doc_md = """
@@ -159,11 +159,11 @@ def bqetl_backfill_dag():
 
         return cmd
 
-    gke_command(
+    GKEPodOperator(
         reattach_on_restart=True,
         task_id="bqetl_backfill",
-        command=generate_backfill_command(),
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+        arguments=generate_backfill_command(),
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 

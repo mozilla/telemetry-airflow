@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """
@@ -56,9 +56,9 @@ with DAG(
     schedule_interval="@daily",
     tags=tags,
 ) as dag:
-    dap_collector = gke_command(
+    dap_collector = GKEPodOperator(
         task_id="dap_collector",
-        command=[
+        arguments=[
             "python",
             "dap_collector/main.py",
             "--date={{ ds }}",
@@ -70,6 +70,6 @@ with DAG(
             "--table-id",
             table_id,
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/dap-collector_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/dap-collector_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )

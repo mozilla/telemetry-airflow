@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
@@ -48,17 +48,17 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-    mad_server_pull = gke_command(
+    mad_server_pull = GKEPodOperator(
         task_id="mad_server_pull",
         # Controls the entrypoint of the container, which for mad-server
         # defaults to bin/run rather than a shell.
         cmds=[
             "/bin/bash",
         ],
-        command=[
+        arguments=[
             "bin/airflow-pull",
         ],
-        docker_image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
+        image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
         startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
         gke_project_id="moz-fx-data-airflow-gke-prod",
@@ -77,18 +77,18 @@ with DAG(
             "gleonard@mozilla.com",
         ],
     )
-    mad_train_model = gke_command(
+    mad_train_model = GKEPodOperator(
         task_id="train_model",
         cmds=[
             "/bin/bash",
         ],
-        command=[
+        arguments=[
             "bin/train_model",
             "--publish",
             "--publish-as-latest",
             "./working",
         ],
-        docker_image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
+        image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
         startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
         gke_project_id="moz-fx-data-airflow-gke-prod",
@@ -107,18 +107,18 @@ with DAG(
             "gleonard@mozilla.com",
         ],
     )
-    new_data_eval = gke_command(
+    new_data_eval = GKEPodOperator(
         task_id="evaluate_new_data",
         cmds=[
             "/bin/bash",
         ],
-        command=[
+        arguments=[
             "bin/evaluate_new_data",
             "--publish",
             "--publish-as-latest",
             "./working",
         ],
-        docker_image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
+        image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
         startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
         gke_project_id="moz-fx-data-airflow-gke-prod",
