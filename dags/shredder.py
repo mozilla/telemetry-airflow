@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from timetable import MultiWeekTimetable
 
-from utils.gcp import gke_command
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 docs = """
@@ -83,41 +83,41 @@ base_command = [
 # and don't slow down other tables. run them in a separate project with their own slot
 # reservation to ensure they can finish on time, because they use more slots than
 # everything else combined
-telemetry_main = gke_command(
+telemetry_main = GKEPodOperator(
     task_id="telemetry_main",
     name="shredder-telemetry-main",
-    command=[
+    arguments=[
         *base_command,
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v5",
     ],
-    docker_image=docker_image,
+    image=docker_image,
     is_delete_operator_pod=True,
     reattach_on_restart=True,
     dag=dag,
 )
 
-telemetry_main_use_counter = gke_command(
+telemetry_main_use_counter = GKEPodOperator(
     task_id="telemetry_main_use_counter",
     name="shredder-telemetry-main-use-counter",
-    command=[
+    arguments=[
         *base_command,
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_use_counter_v4",
     ],
-    docker_image=docker_image,
+    image=docker_image,
     is_delete_operator_pod=True,
     reattach_on_restart=True,
     dag=dag,
 )
 
 # everything else
-flat_rate = gke_command(
+flat_rate = GKEPodOperator(
     task_id="all",
     name="shredder-all",
-    command=[
+    arguments=[
         *base_command,
         "--parallelism=4",
         "--billing-project=moz-fx-data-bq-batch-prod",
@@ -125,7 +125,7 @@ flat_rate = gke_command(
         "telemetry_stable.main_v5",
         "telemetry_stable.main_use_counter_v4",
     ],
-    docker_image=docker_image,
+    image=docker_image,
     is_delete_operator_pod=True,
     reattach_on_restart=True,
     # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling

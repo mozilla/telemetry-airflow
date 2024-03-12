@@ -14,8 +14,9 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+
+from operators.gcp_container_operator import GKEPodOperator
 from utils.dataproc import copy_artifacts_dev, moz_dataproc_pyspark_runner
-from utils.gcp import gke_command
 from utils.tags import Tag
 
 EXPORT_TO_AVRO = True
@@ -91,9 +92,7 @@ mobile_aggregate_view_dataproc = SubDagOperator(
         additional_metadata={
             "PIP_PACKAGES": "git+https://github.com/mozilla/python_mozaggregator.git@pbd_fix_2"
         },
-        python_driver_code="gs://{}/jobs/mozaggregator_runner.py".format(
-            artifact_bucket
-        ),
+        python_driver_code=f"gs://{artifact_bucket}/jobs/mozaggregator_runner.py",
         py_args=[
             "mobile",
             "--date",
@@ -123,10 +122,10 @@ mobile_aggregate_view_dataproc = SubDagOperator(
 
 # export to avro, if necessary
 if EXPORT_TO_AVRO:
-    gke_command(
+    GKEPodOperator(
         task_id="export_mobile_metrics_avro",
         cmds=["bash"],
-        command=[
+        arguments=[
             "bin/export-avro.sh",
             "moz-fx-data-shared-prod",
             "moz-fx-data-shared-prod:analysis",
@@ -135,7 +134,7 @@ if EXPORT_TO_AVRO:
             '""',
             "{{ ds }}",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/python_mozaggregator:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/python_mozaggregator:latest",
         dag=dag,
     ).set_downstream(mobile_aggregate_view_dataproc)
 

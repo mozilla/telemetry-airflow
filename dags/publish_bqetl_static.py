@@ -4,9 +4,11 @@ Daily deployment of static bigquery-etl data to various projects.
 See the publish command [here](https://github.com/mozilla/bigquery-etl/blob/main/bigquery_etl/static/__init__.py).
 """
 
+from datetime import datetime, timedelta
+
 from airflow import DAG
-from datetime import timedelta, datetime
-from utils.gcp import gke_command
+
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
@@ -35,20 +37,20 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    publish_static_mozdata = gke_command(
+    publish_static_mozdata = GKEPodOperator(
         task_id="publish_static_mozdata",
-        command=[
-            "script/bqetl", "static", "publish",
-            "--project_id", "mozdata"
-        ],
-        docker_image=IMAGE,
+        arguments=["script/bqetl", "static", "publish", "--project_id", "mozdata"],
+        image=IMAGE,
     )
 
-    publish_static_shared_prod = gke_command(
+    publish_static_shared_prod = GKEPodOperator(
         task_id="publish_static_shared_prod",
-        command=[
-            "script/bqetl", "static", "publish",
-            "--project_id", "moz-fx-data-shared-prod"
+        arguments=[
+            "script/bqetl",
+            "static",
+            "publish",
+            "--project_id",
+            "moz-fx-data-shared-prod",
         ],
-        docker_image=IMAGE,
+        image=IMAGE,
     )

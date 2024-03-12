@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from airflow import DAG
-from utils.gcp import gke_command
+
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """
@@ -44,9 +45,9 @@ with DAG(
     tags=tags,
     catchup=False,
 ) as dag:
-    webcompat_kb_import = gke_command(
+    webcompat_kb_import = GKEPodOperator(
         task_id="webcompat_kb",
-        command=[
+        arguments=[
             "python",
             "webcompat_kb/main.py",
             "--bq_project_id",
@@ -54,6 +55,6 @@ with DAG(
             "--bq_dataset_id",
             "webcompat_knowledge_base",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
         dag=dag,
     )

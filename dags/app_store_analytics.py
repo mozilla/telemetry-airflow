@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from utils.gcp import bigquery_etl_query, gke_command
+
+from operators.gcp_container_operator import GKEPodOperator
+from utils.gcp import bigquery_etl_query
 from utils.tags import Tag
 
 default_args = {
@@ -76,10 +78,10 @@ with DAG(
         if i == 0:
             commands.append("--overwrite")
 
-        app_store_analytics = gke_command(
+        app_store_analytics = GKEPodOperator(
             task_id=f"app_store_analytics_{app_name}",
-            command=commands,
-            docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/app-store-analytics-export:latest",
+            arguments=commands,
+            image="gcr.io/moz-fx-data-airflow-prod-88e0/app-store-analytics-export:latest",
             gcp_conn_id="google_cloud_airflow_gke",
             dag=dag,
         )
