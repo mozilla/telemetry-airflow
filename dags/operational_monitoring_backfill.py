@@ -50,6 +50,12 @@ tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
             format="date",
             description="[Required] Last date to be backfilled, inclusive",
         ),
+        "args": Param(
+            None,
+            title="Additional Arguments",
+            type="string",
+            description="[Optional] Additional command line arguments",
+        ),
     },
 )
 def operational_monitoring_backfill_dag():
@@ -64,6 +70,10 @@ def operational_monitoring_backfill_dag():
             "--end_date",
             context["params"]["end_date"],
         ]
+
+        if args := context["params"]["args"]:
+            cmd.append(args)
+
         return cmd
 
     # Built from repo https://github.com/mozilla/opmon
