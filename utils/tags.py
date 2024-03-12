@@ -47,3 +47,10 @@ class Tag(Enum):
         confidential: str = "triage/confidential"
         record_only: str = "triage/record_only"
         no_triage: str = "triage/no_triage"
+
+    class Repo(Enum):
+        """Valid options for Repo tag."""
+
+        bigquery_etl: str = "repo/bigquery-etl"
+        telemetry_airflow: str = "repo/telemetry_airflow"
+        
