@@ -18,11 +18,12 @@ and not action is required for failed DAG runs.
 from datetime import datetime, timedelta
 
 from airflow import DAG
+
 from utils.gcp import gke_command
 from utils.tags import Tag
 
 default_args = {
-    "owner": "gleonard@mozilla.com",
+    "owner": "dzeber@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2021, 4, 15),
     "email_on_failure": True,
