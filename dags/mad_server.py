@@ -61,9 +61,6 @@ with DAG(
         image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
         startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
-        gke_project_id="moz-fx-data-airflow-gke-prod",
-        gke_cluster_name="workloads-prod-v1",
-        gke_location="us-west1",
         env_vars={
             "GCS_BUCKET": gcs_bucket,
             "GCS_ROOT_TRAINING": gcs_root_training,
@@ -90,10 +87,6 @@ with DAG(
         ],
         image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
         startup_timeout_seconds=500,
-        gcp_conn_id="google_cloud_airflow_gke",
-        gke_project_id="moz-fx-data-airflow-gke-prod",
-        gke_cluster_name="workloads-prod-v1",
-        gke_location="us-west1",
         env_vars={
             "GCS_BUCKET": gcs_bucket,
             "GCS_ROOT_TRAINING": gcs_root_training,
@@ -121,9 +114,6 @@ with DAG(
         image="us-west1-docker.pkg.dev/moz-fx-data-airflow-prod-88e0/data-science-artifacts/mad-server:latest",
         startup_timeout_seconds=500,
         gcp_conn_id="google_cloud_airflow_gke",
-        gke_project_id="moz-fx-data-airflow-gke-prod",
-        gke_cluster_name="workloads-prod-v1",
-        gke_location="us-west1",
         env_vars={
             "GCS_BUCKET": gcs_bucket,
             "GCS_ROOT_TRAINING": gcs_root_training,
