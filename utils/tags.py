@@ -51,6 +51,6 @@ class Tag(Enum):
     class Repo(Enum):
         """Valid options for Repo tag."""
 
-        bigquery_etl: str = "repo/bigquery-etl"
-        telemetry_airflow: str = "repo/telemetry_airflow"
-        
+        bqetl: str = "repo/bigquery-etl"
+        airflow: str = "repo/telemetry_airflow"
+        private_bqetl: str = "repo/private-bigquery-etl"
