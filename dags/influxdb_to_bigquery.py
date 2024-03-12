@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from utils.gcp import gke_command
+
+from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """
@@ -53,9 +54,9 @@ with DAG(
     schedule_interval="@daily",
     tags=tags,
 ) as dag:
-    contile_adm_request = gke_command(
+    contile_adm_request = GKEPodOperator(
         task_id="contile_adm_request",
-        command=[
+        arguments=[
             "python",
             "influxdb_to_bigquery/main.py",
             "--date={{ ds }}",
@@ -67,12 +68,12 @@ with DAG(
             "--bq_dataset_id=telemetry_derived",
             "--bq_table_id=contile_tiles_adm_request",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
-    adm_response_tiles_count = gke_command(
+    adm_response_tiles_count = GKEPodOperator(
         task_id="adm_response_tiles_count",
-        command=[
+        arguments=[
             "python",
             "influxdb_to_bigquery/main.py",
             "--date={{ ds }}",
@@ -84,12 +85,12 @@ with DAG(
             "--bq_dataset_id=telemetry_derived",
             "--bq_table_id=contile_tiles_adm_response_tiles_count",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
-    adm_empty_response = gke_command(
+    adm_empty_response = GKEPodOperator(
         task_id="adm_empty_response",
-        command=[
+        arguments=[
             "python",
             "influxdb_to_bigquery/main.py",
             "--date={{ ds }}",
@@ -101,7 +102,7 @@ with DAG(
             "--bq_dataset_id=telemetry_derived",
             "--bq_table_id=contile_filter_adm_empty_response",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/influxdb-to-bigquery_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 
