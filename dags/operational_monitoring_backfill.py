@@ -53,7 +53,7 @@ tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
         "args": Param(
             None,
             title="Additional Arguments",
-            type="string",
+            type=["null", "string"],
             description="[Optional] Additional command line arguments",
         ),
     },
