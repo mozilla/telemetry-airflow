@@ -19,6 +19,7 @@ build:
 	docker-compose build
 
 pip-compile:
+	pip install -q pip-tools
 	pip-compile --strip-extras --no-annotate
 
 fixes:
