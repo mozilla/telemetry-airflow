@@ -3,6 +3,9 @@
 # File: https://raw.githubusercontent.com/apache/airflow/constraints-2.8.2/constraints-3.11.txt
 --constraint ./constraints.txt
 
+# Package management
+pip-tools
+
 # Airflow dependencies
 apache-airflow[async,google-auth,password,statsd]==2.8.2
 apache-airflow-providers-amazon
