@@ -1,4 +1,4 @@
-.PHONY: build clean redis-cli run shell stop up
+.PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local redis-cli run shell stop test up
 
 
 help:
