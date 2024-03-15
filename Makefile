@@ -19,7 +19,8 @@ build:
 	docker-compose build
 
 pip-compile:
-	pip-compile --strip-extras --no-annotate
+	pip-compile --strip-extras --no-annotate requirements.in
+	pip-compile --strip-extras --no-annotate requirements-dev.in
 
 fixes:
 	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
@@ -32,7 +33,7 @@ clean: stop
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
 pip-install-local: pip-compile
-	pip install -r requirements.txt
+	pip install -r requirements.txt -r requirements-dev.txt
 
 shell:
 	docker-compose run airflow-webserver bash
