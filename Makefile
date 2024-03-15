@@ -4,18 +4,18 @@
 help:
 	@echo "Welcome to the Telemetry Airflow\n"
 	@echo "The list of commands for local development:\n"
-	@echo "  build      		Builds the docker images for the docker-compose setup"
-	@echo "  clean      		Stops and removes all docker containers"
+	@echo "  build              Builds the docker images for the docker-compose setup"
+	@echo "  clean              Stops and removes all docker containers"
 	@echo "  fixes              Applies Black and Ruff fixes to Python files"
-	@echo "  pip-compile      	Compile dependencies from 'requirements.in' into 'requirements.txt'"
-	@echo "  pip-install-local	Install pip project requirements to your local environment"
-	@echo "  redis-cli  		Opens a Redis CLI"
-	@echo "  shell      		Opens a Bash shell"
+	@echo "  pip-compile        Compile dependencies from 'requirements.in' into 'requirements.txt'"
+	@echo "  pip-install-local  Install pip project requirements to your local environment"
+	@echo "  redis-cli          Opens a Redis CLI"
+	@echo "  shell              Opens a Bash shell"
 	@echo "  test               Runs pytest"
-	@echo "  up         		Runs the whole stack, served under http://localhost:8080/"
-	@echo "  gke        		Create a sandbox gke cluster for testing"
-	@echo "  clean-gke  		Delete the sandbox gke cluster"
-	@echo "  stop       		Stops the docker containers"
+	@echo "  up                 Runs the whole stack, served under http://localhost:8080/"
+	@echo "  gke                Create a sandbox gke cluster for testing"
+	@echo "  clean-gke          Delete the sandbox gke cluster"
+	@echo "  stop               Stops the docker containers"
 
 build:
 	docker-compose build
