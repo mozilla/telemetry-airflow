@@ -153,6 +153,7 @@ class AcousticClient:
         supported_report_types = (
             "raw_recipient_export",
             "contact_export",
+            "suppression_export",
         )
         if report_type not in supported_report_types:
             err_msg = f"{report_type} is not a valid option, supported types are: {supported_report_types}"
@@ -183,6 +184,9 @@ class AcousticClient:
             report_loc = data["Envelope"]["Body"]["RESULT"]["FILE_PATH"]
         elif report_type == "raw_recipient_export":
             job_id, report_loc = data["Envelope"]["Body"]["RESULT"]["MAILING"].values()
+        elif report_type == "suppression_export":
+            job_id = data["Envelope"]["Body"]["RESULT"]["JOB_ID"]
+            report_loc = data["Envelope"]["Body"]["RESULT"]["FILE_PATH"]
 
         while not self._is_job_complete(job_id=job_id, extra_info=report_type):
             sleep(sleep_delay)
