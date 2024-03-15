@@ -108,7 +108,12 @@ make pip-install-local
 
 ### Updating Python dependencies
 
-Add new Python dependencies into `requirements.in` or `requirements-dev.in` and execute `make pip-install-local`
+Add new Python dependencies into `requirements.in` or `requirements-dev.in` then execute the following commands:
+
+```bash
+make pip-compile
+make pip-install-local
+```
 
 ### Build Container
 

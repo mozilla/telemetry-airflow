@@ -32,7 +32,7 @@ clean: stop
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
-pip-install-local: pip-compile
+pip-install-local:
 	pip install -r requirements.txt -r requirements-dev.txt
 
 shell:
