@@ -101,6 +101,16 @@ CONTACT_COLUMNS = [
     "Last Modified Date",
 ]
 
+SUPPRESSION_COLUMNS = [
+    "Email",
+    "Opt In Date",
+    "Opted Out",
+    "Opt In Details",
+    "Email Type",
+    "Opted Out Date",
+    "Opt Out Details",
+]
+
 REPORTS_CONFIG = {
     "raw_recipient_export": {
         "request_template": """
@@ -153,6 +163,39 @@ REPORTS_CONFIG = {
             "date_end": EXEC_END,
             "columns": "\n".join(
                 [f"<COLUMN>{column}</COLUMN>" for column in CONTACT_COLUMNS]
+            ),
+        },
+    },
+    "suppression_export": {
+        "request_template": """
+    <!-- https://developer.goacoustic.com/acoustic-campaign/reference/export-from-a-database -->
+    <!-- date_format: 07/25/2011 12:12:11 (time is optional) -->
+    <Envelope>
+    <Body>
+        <ExportList>
+        <LIST_ID>{list_id}</LIST_ID>
+        <EXPORT_TYPE>{export_type}</EXPORT_TYPE>
+        <EXPORT_FORMAT>{export_format}</EXPORT_FORMAT>
+        <INCLUDE_RECIPIENT_ID></INCLUDE_RECIPIENT_ID>
+        <EXPORT_COLUMNS>
+            {columns}
+        </EXPORT_COLUMNS>
+        <DATE_START>{date_start}</DATE_START>
+        <DATE_END>{date_end}</DATE_END>
+        <VISIBILITY>{visibility}</VISIBILITY>
+        </ExportList>
+    </Body>
+    </Envelope>
+    """,
+        "request_params": {
+            "list_id": "{{ var.value.fivetran_acoustic_suppression_export_list_id }}",  # list_name: "MAIN SUPPRESSION LIST - All"
+            "export_type": "ALL",
+            "export_format": "CSV",
+            "visibility": 1,  # 0 (Private) or 1 (Shared)
+            "date_start": EXEC_START,
+            "date_end": EXEC_END,
+            "columns": "\n".join(
+                [f"<COLUMN>{column}</COLUMN>" for column in SUPPRESSION_COLUMNS]
             ),
         },
     },
