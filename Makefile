@@ -18,11 +18,11 @@ help:
 build:
 	docker-compose build
 
-pip-compile:
+pip-compile: pip-install-local
 	pip-compile --strip-extras --no-annotate requirements.in
 	pip-compile --strip-extras --no-annotate requirements-dev.in
 
-fixes:
+fixes: pip-install-local
 	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
 	black $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
 
@@ -32,8 +32,9 @@ clean: stop
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
+# Install Python packages in the local environment, but ignore pip's "Requirement already satisfied" messages.
 pip-install-local:
-	pip install -r requirements.txt -r requirements-dev.txt
+	set -o pipefail; pip install -r requirements.txt -r requirements-dev.txt | { grep -v 'already satisfied' || test $$? = 1; }
 
 shell:
 	docker-compose run airflow-webserver bash
@@ -58,5 +59,5 @@ gke:
 clean-gke:
 	bin/stop_gke
 
-test:
+test: pip-install-local
 	python -m pytest tests/
