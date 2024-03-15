@@ -183,6 +183,7 @@ REPORTS_CONFIG = {
         <DATE_START>{date_start}</DATE_START>
         <DATE_END>{date_end}</DATE_END>
         <VISIBILITY>{visibility}</VISIBILITY>
+        <LIST_DATE_FORMAT>"yyyy-MM-dd"</LIST_DATE_FORMAT>
         </ExportList>
     </Body>
     </Envelope>
