@@ -1,6 +1,9 @@
 --constraint ./constraints.txt
 --constraint ./requirements.txt
 
+# Package management
+pip-tools==7.4.1
+
 # Code quality
 pytest==7.4.4
 pytest-mock==3.12.0

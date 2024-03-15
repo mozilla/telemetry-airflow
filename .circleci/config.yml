@@ -104,10 +104,12 @@ jobs:
     executor: *python-executor
     steps:
       - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
       - run:
           name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
-            pip install pip-tools
             pip-compile --quiet --strip-extras --no-annotate requirements.in
             pip-compile --quiet --strip-extras --no-annotate requirements-dev.in
             git diff --exit-code requirements.txt requirements-dev.txt
