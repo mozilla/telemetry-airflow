@@ -81,7 +81,7 @@ jobs:
             grep -Ff diff.txt lint_checks.txt > lint_errors.txt || true
             if [ -s lint_errors.txt ]; then
               cat lint_errors.txt
-              printf 'Run the following command to fix your branch:\n make fixes'
+              printf 'Run the following commands to fix your branch:\n  make pip-install-local\n  make fixes'
               exit 1
             fi
 
