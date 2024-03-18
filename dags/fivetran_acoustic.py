@@ -169,7 +169,7 @@ REPORTS_CONFIG = {
     "suppression_export": {
         "request_template": """
     <!-- https://developer.goacoustic.com/acoustic-campaign/reference/export-from-a-database -->
-    <!-- date_format: 07/25/2011 12:12:11 (time is optional) -->
+    <!-- date_format: 2011-12-20 12:12 PM (time is optional) -->
     <Envelope>
     <Body>
         <ExportList>
@@ -180,10 +180,10 @@ REPORTS_CONFIG = {
         <EXPORT_COLUMNS>
             {columns}
         </EXPORT_COLUMNS>
-        <DATE_START>{date_start}</DATE_START>
+        <DATE_START>datetime(2024, 3, 13)</DATE_START>
         <DATE_END>{date_end}</DATE_END>
         <VISIBILITY>{visibility}</VISIBILITY>
-        <LIST_DATE_FORMAT>"yyyy-MM-dd"</LIST_DATE_FORMAT>
+        <LIST_DATE_FORMAT>yyyy-MM-dd</LIST_DATE_FORMAT>
         </ExportList>
     </Body>
     </Envelope>
