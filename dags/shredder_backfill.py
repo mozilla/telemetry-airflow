@@ -12,14 +12,14 @@ docs = """
 
 #### Description
 
-Manually triggered DAG that handles deletion requests from a specified time period 
+Manually triggered DAG that handles deletion requests from a specified time period
 for a list of given tables.
 
 `target_tables` is a list of tables formatted as `dataset.table_name` with one table per line.
-The moz-fx-data-shared-prod project is assumed because shredder currently only runs 
+The moz-fx-data-shared-prod project is assumed because shredder currently only runs
 on tables in this project.
 
-Use the dry run parameter run shredder with the --dry-run option to validate parameters.  
+Use the dry run parameter run shredder with the --dry-run option to validate parameters.
 Note that the shredder dry run will still dry run queries against every partition of each table
 so it may take a long time to finish if a lot of tables are given.
 
