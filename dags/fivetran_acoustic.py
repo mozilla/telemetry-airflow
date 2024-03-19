@@ -180,7 +180,7 @@ REPORTS_CONFIG = {
         <EXPORT_COLUMNS>
             {columns}
         </EXPORT_COLUMNS>
-        <DATE_START>datetime(2024, 3, 13)</DATE_START>
+        <DATE_START>{date_start}</DATE_START>
         <DATE_END>{date_end}</DATE_END>
         <VISIBILITY>{visibility}</VISIBILITY>
         <LIST_DATE_FORMAT>yyyy-MM-dd</LIST_DATE_FORMAT>
@@ -207,7 +207,7 @@ DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": [DAG_OWNER],
     "depends_on_past": True,
-    "start_date": datetime(2023, 5, 26),
+    "start_date": datetime(2024, 3, 13),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 1,  # at this point we can probably be confident user intervention is required
