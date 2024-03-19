@@ -1,25 +1,28 @@
-.PHONY: build clean redis-cli run shell stop up
+.PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local redis-cli run shell stop test up
 
 
 help:
 	@echo "Welcome to the Telemetry Airflow\n"
 	@echo "The list of commands for local development:\n"
-	@echo "  build      		Builds the docker images for the docker-compose setup"
-	@echo "  clean      		Stops and removes all docker containers"
-	@echo "  pip-compile      	Compile dependencies from 'requirements.in' into 'requirements.txt'"
-	@echo "  pip-install-local	Install pip project requirements to your local environment"
-	@echo "  redis-cli  		Opens a Redis CLI"
-	@echo "  shell      		Opens a Bash shell"
-	@echo "  up         		Runs the whole stack, served under http://localhost:8080/"
-	@echo "  gke        		Create a sandbox gke cluster for testing"
-	@echo "  clean-gke  		Delete the sandbox gke cluster"
-	@echo "  stop       		Stops the docker containers"
+	@echo "  build              Builds the docker images for the docker-compose setup"
+	@echo "  clean              Stops and removes all docker containers"
+	@echo "  fixes              Applies Black and Ruff fixes to Python files"
+	@echo "  pip-compile        Compile dependencies from 'requirements.in' into 'requirements.txt'"
+	@echo "  pip-install-local  Install pip project requirements to your local environment"
+	@echo "  redis-cli          Opens a Redis CLI"
+	@echo "  shell              Opens a Bash shell"
+	@echo "  test               Runs pytest"
+	@echo "  up                 Runs the whole stack, served under http://localhost:8080/"
+	@echo "  gke                Create a sandbox gke cluster for testing"
+	@echo "  clean-gke          Delete the sandbox gke cluster"
+	@echo "  stop               Stops the docker containers"
 
 build:
 	docker-compose build
 
 pip-compile:
-	pip-compile --strip-extras --no-annotate
+	pip-compile --strip-extras --no-annotate requirements.in
+	pip-compile --strip-extras --no-annotate requirements-dev.in
 
 fixes:
 	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
@@ -31,8 +34,8 @@ clean: stop
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
-pip-install-local: pip-compile
-	pip install -r requirements.txt
+pip-install-local:
+	pip install -r requirements.txt -r requirements-dev.txt
 
 shell:
 	docker-compose run airflow-webserver bash

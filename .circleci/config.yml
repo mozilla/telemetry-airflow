@@ -29,6 +29,9 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements.txt
           pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
       - run:
           name: 🧪 Pytest
           command: python -m pytest --junitxml=test-results/junit.xml
@@ -64,7 +67,7 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-          pip-dependency-file: requirements.txt
+          pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
       - run: &git-diff-py-files
           name: List added, copied, modified, and renamed *py files
@@ -78,7 +81,7 @@ jobs:
             grep -Ff diff.txt lint_checks.txt > lint_errors.txt || true
             if [ -s lint_errors.txt ]; then
               cat lint_errors.txt
-              printf 'Run the following command to fix your branch:\n make fixes'
+              printf 'Run the following commands to fix your branch:\n  make pip-install-local\n  make fixes'
               exit 1
             fi
 
@@ -87,7 +90,7 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-          pip-dependency-file: requirements.txt
+          pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
       - run: *git-diff-py-files
       - run:
@@ -101,12 +104,15 @@ jobs:
     executor: *python-executor
     steps:
       - checkout
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
       - run:
           name: 🧪 Verify requirements.txt is sync'ed with requirements.in
           command: |
-            pip install pip-tools
-            pip-compile --quiet --strip-extras --no-annotate
-            git diff --exit-code requirements.txt
+            pip-compile --quiet --strip-extras --no-annotate requirements.in
+            pip-compile --quiet --strip-extras --no-annotate requirements-dev.in
+            git diff --exit-code requirements.txt requirements-dev.txt
 
   docker-build-artifact:
     executor: docker/machine
