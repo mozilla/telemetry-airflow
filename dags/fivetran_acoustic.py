@@ -169,7 +169,7 @@ REPORTS_CONFIG = {
     "suppression_export": {
         "request_template": """
     <!-- https://developer.goacoustic.com/acoustic-campaign/reference/export-from-a-database -->
-    <!-- date_format: 07/25/2011 12:12:11 (time is optional) -->
+    <!-- date_format: 2011-12-20 12:12 PM (time is optional) -->
     <Envelope>
     <Body>
         <ExportList>
@@ -183,7 +183,7 @@ REPORTS_CONFIG = {
         <DATE_START>{date_start}</DATE_START>
         <DATE_END>{date_end}</DATE_END>
         <VISIBILITY>{visibility}</VISIBILITY>
-        <LIST_DATE_FORMAT>"yyyy-MM-dd"</LIST_DATE_FORMAT>
+        <LIST_DATE_FORMAT>yyyy-MM-dd</LIST_DATE_FORMAT>
         </ExportList>
     </Body>
     </Envelope>
@@ -207,7 +207,7 @@ DEFAULT_ARGS = {
     "owner": DAG_OWNER,
     "email": [DAG_OWNER],
     "depends_on_past": True,
-    "start_date": datetime(2023, 5, 26),
+    "start_date": datetime(2024, 3, 13),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 1,  # at this point we can probably be confident user intervention is required
