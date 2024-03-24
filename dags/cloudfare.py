@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.empty import EmptyOperator
 
 from utils.cloudfare.cloudfare_functions import *
 
@@ -14,13 +15,12 @@ Owner: kwindau@mozilla.com
 """
 
 end_date = '{{ macros.ds_format(ds, "%Y-%m-%d") }}'
-start_date = # end_date - 7 #FIX LATER
+#start_date = # end_date - 7 #FIX LATER
 
 ##FIX BELOW 
 def retrieve_cloudfare_browser_usg_data():
     #???
     return None
-
 
 def retrieve_cloudfare_device_usg_data():
     #???
@@ -33,11 +33,11 @@ def retrieve_cloudfare_os_usg_data():
 #Set default arguments
 DEFAULT_ARGS = {
     "owner": "kwindau@mozilla.com",
-    "start_date": datetime.datetime(2024, 3, 23, 0, 0),
+    "start_date": datetime(2024, 3, 23, 0, 0),
     "end_date": None,
     "email": ["kwindau@mozilla.com", "telemetry-alerts@mozilla.com"],
     "depends_on_past": False,
-    "retry_delay": datetime.timedelta(seconds=1800),
+    "retry_delay": timedelta(seconds=1800),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 2,
