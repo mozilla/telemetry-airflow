@@ -18,7 +18,7 @@ and not action is required for failed DAG runs.
 from datetime import datetime, timedelta
 
 from airflow import DAG
-
+from airflow.providers.cncf.kubernetes.secret import Secret
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -40,6 +40,18 @@ cloud_service = "GCS"
 customs_training_allow_overwrite = "True"
 gcloud_project = "mad-model-training"
 gcs_report_bucket = "mad-reports"
+amo_cred_issuer_secret = Secret(
+    deploy_type="env",
+    deploy_target="AMO_CRED_ISSUER",
+    secret="airflow-gke-secrets",
+    key="mad_server_secret__amo_cred_issuer"
+)
+amo_cred_secret_secret = Secret(
+    deploy_type="env",
+    deploy_target="AMO_CRED_SECRET",
+    secret="airflow-gke-secrets",
+    key="mad_server_secret__amo_cred_secret"
+)
 
 with DAG(
     "mad_server",
@@ -66,13 +78,12 @@ with DAG(
             "GCS_ROOT_TRAINING": gcs_root_training,
             "CLOUD_SERVICE": cloud_service,
             "CUSTOMS_TRAINING_ALLOW_OVERWRITE": customs_training_allow_overwrite,
-            "AMO_CRED_ISSUER": "{{ var.value.AMO_CRED_ISSUER }}",
-            "AMO_CRED_SECRET": "{{ var.value.AMO_CRED_SECRET }}",
         },
         email=[
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
         ],
+        secrets=[amo_cred_issuer_secret, amo_cred_secret_secret],
     )
     mad_train_model = GKEPodOperator(
         task_id="train_model",
