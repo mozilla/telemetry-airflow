@@ -10,6 +10,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 AUTOMATION_SLACK_CHANNEL = "#dataops-alerts"
+SLACK_CONNECTION_ID = "overwatch_slack"
 DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
 tags = [Tag.ImpactTier.tier_3]
@@ -45,7 +46,7 @@ with DAG(
         notify_initiate = SlackAPIPostOperator(
             task_id="slack_notify_initate",
             username="Backfill",
-            slack_conn_id="slack_api",
+            slack_conn_id=SLACK_CONNECTION_ID,
             text=prepare_slack_initiate_message(backfill),
             channel=AUTOMATION_SLACK_CHANNEL,
         )
@@ -78,7 +79,7 @@ with DAG(
         notify_processing_complete = SlackAPIPostOperator(
             task_id="slack_notify_processing_complete",
             username="Backfill",
-            slack_conn_id="slack_api",
+            slack_conn_id=SLACK_CONNECTION_ID,
             text=prepare_slack_processing_complete_parameters(backfill),
             channel=AUTOMATION_SLACK_CHANNEL,
         )
