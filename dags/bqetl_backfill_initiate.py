@@ -73,7 +73,7 @@ with DAG(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
 
-            return f"{watcher_text} :white_check_mark: Backfill processing is complete. Staging location: `{staging_location}` Please validate that your data has changed as you expect and complete your backfill by updating the Backfill entry's status to Complete in the bigquery-etl repository."
+            return f"{watcher_text} :white_check_mark: Backfill processing is done. Staging location: `{staging_location}` Please validate that your data has changed as you expect and complete your backfill by updating the Backfill entry's status to Complete in the bigquery-etl repository."
 
         notify_processing_complete = SlackAPIPostOperator(
             task_id="slack_notify_processing_complete",
