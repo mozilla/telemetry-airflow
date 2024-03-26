@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
+
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -44,13 +45,13 @@ amo_cred_issuer_secret = Secret(
     deploy_type="env",
     deploy_target="AMO_CRED_ISSUER",
     secret="airflow-gke-secrets",
-    key="mad_server_secret__amo_cred_issuer"
+    key="mad_server_secret__amo_cred_issuer",
 )
 amo_cred_secret_secret = Secret(
     deploy_type="env",
     deploy_target="AMO_CRED_SECRET",
     secret="airflow-gke-secrets",
-    key="mad_server_secret__amo_cred_secret"
+    key="mad_server_secret__amo_cred_secret",
 )
 
 with DAG(
