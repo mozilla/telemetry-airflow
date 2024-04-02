@@ -15,6 +15,13 @@ DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
 tags = [Tag.ImpactTier.tier_3]
 
+default_args = {
+    "email": [
+        "anicholson@mozilla.com",
+        "wichan@mozilla.com",
+    ]
+}
+
 with DAG(
     "bqetl_backfill_initiate",
     doc_md=__doc__,
@@ -22,6 +29,7 @@ with DAG(
     schedule_interval="@hourly",
     start_date=datetime(2024, 1, 1),
     catchup=False,
+    default_args=default_args,
 ) as dag:
     detect_backfills = GKEPodOperator(
         task_id="detect_backfills",
