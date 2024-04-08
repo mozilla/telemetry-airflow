@@ -182,7 +182,7 @@ def bigquery_etl_query(
     arguments=(),
     project_id=None,
     sql_file_path=None,
-    reattach_on_restart=False,
+    reattach_on_restart=True,
     gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
     gke_location="us-west1",
