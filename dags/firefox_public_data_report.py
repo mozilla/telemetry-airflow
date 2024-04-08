@@ -16,7 +16,7 @@ from utils.gcp import bigquery_etl_query
 from utils.tags import Tag
 
 default_args = {
-    "owner": "akomar@mozilla.com",
+    "owner": "bewu@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2020, 4, 6),
     "email": [
