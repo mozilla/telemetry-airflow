@@ -1,6 +1,5 @@
 """Braze exports data via currents to Google Cloud Storage. This airflow job imports the data from there into BigQuery tables for future use."""
 
-
 doc_md_DAG = """
 # braze_gcs_to_bigquery
 Build from telemetry-airflow repo, [dags/braze_gcs_to_bigquery.py](https://github.com/mozilla/telemetry-airflow/blob/main/dags/braze_gcs_to_bigquery.py)
