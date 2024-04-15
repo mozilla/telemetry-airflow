@@ -59,4 +59,5 @@ with DAG(
         ],
         destination_project_dataset_table=f"{project_id}.{dataset_id}.hard_bounces",
         write_disposition="WRITE_TRUNCATE",
+        source_format="AVRO",
     )
