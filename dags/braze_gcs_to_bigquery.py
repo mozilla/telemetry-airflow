@@ -60,5 +60,5 @@ with DAG(
         destination_project_dataset_table=f"{project_id}.{dataset_id}.hard_bounces",
         write_disposition="WRITE_TRUNCATE",
         source_format="AVRO",
-        gcp_conn_id="google_cloud_airflow_gke"
+        gcp_conn_id="google_cloud_airflow_gke",
     )
