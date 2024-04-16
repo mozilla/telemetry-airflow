@@ -61,4 +61,5 @@ with DAG(
         write_disposition="WRITE_TRUNCATE",
         source_format="AVRO",
         project_id="moz-fx-data-shared-prod",
+        gcp_conn_id="google_cloud_airflow_gke",
     )
