@@ -366,7 +366,7 @@ grpcio-gcp==0.2.2
 grpcio-status==1.62.0
 grpcio==1.62.0
 gssapi==1.8.3
-gunicorn==21.2.0
+gunicorn==22.0.0
 h11==0.14.0
 hatch==1.9.3
 hatchling==1.21.1
