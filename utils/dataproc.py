@@ -299,8 +299,8 @@ def moz_dataproc_pyspark_runner(
                                           needs to be whitelisted. To use a NAT'd cluster, set
                                           subnetwork_uri='default', internal_ip_only=True, and
                                           region=us-west2-a|b|c
-    :param str idle_delete_ttl:           The duration in seconds to keep idle cluster alive.
-    :param str auto_delete_ttl:           The duration in seconds that the cluster will live.
+    :param int idle_delete_ttl:           The duration in seconds to keep idle cluster alive.
+    :param int auto_delete_ttl:           The duration in seconds that the cluster will live.
     :param str master_machine_type:       Compute engine machine type to use for master.
     :param str worker_machine_type:       Compute engine machine type to use for the workers.
     :param int num_preemptible_workers:   Number of preemptible worker nodes to spin up.

@@ -91,6 +91,8 @@ with DAG(
             },
             additional_properties={
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+                "spark:spark.driver.memory": "12g",
+                "spark:spark.executor.memory": "15g",
             },
             py_args=[
                 "--date",
@@ -100,6 +102,7 @@ with DAG(
                 "--use_gcs",
             ],
             idle_delete_ttl=14400,
+            auto_delete_ttl=28800,
             num_workers=6,
             worker_machine_type="n1-highmem-4",
             gcp_conn_id=params.conn_id,
