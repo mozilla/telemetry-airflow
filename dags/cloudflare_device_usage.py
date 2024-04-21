@@ -51,5 +51,5 @@ with DAG(
     get_device_usage_data = EmptyOperator(task_id="get_device_usage_data")
     load_device_usage_data_to_gcs = EmptyOperator(task_id="load_device_usage_data_to_gcs")
     load_device_usage_data_to_bq = EmptyOperator(task_id="load_device_usage_data_to_bq")
-
-get_device_usage_data >> load_device_usage_data_to_gcs >> load_device_usage_data_to_bq
+    run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
+get_device_usage_data >> load_device_usage_data_to_gcs >> load_device_usage_data_to_bq >> run_device_qa_checks

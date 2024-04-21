@@ -55,7 +55,7 @@ with DAG(
     get_browser_usage_data = EmptyOperator(task_id="get_browser_usage_data")
     load_browser_usage_data_to_gcs = EmptyOperator(task_id="load_browser_usage_data_to_gcs")
     load_browser_usage_data_to_bq = EmptyOperator(task_id="load_browser_usage_data_to_bq")
+    run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
 
 
-
-get_browser_usage_data >> load_browser_usage_data_to_gcs >> load_browser_usage_data_to_bq
+get_browser_usage_data >> load_browser_usage_data_to_gcs >> load_browser_usage_data_to_bq >> run_browser_qa_checks
