@@ -49,6 +49,9 @@ bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
 #Calculate start date and end date from the DAG run date
+start_date = {{ ds }}
+
+#Define function to pull browser data from the cloudflare API
 def get_browser_data():
     """ Pull browser data for each combination of the configs from the Cloudflare API """
     for device_type in browser_usage_configs['device_types']:
