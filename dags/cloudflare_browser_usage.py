@@ -78,7 +78,8 @@ def get_browser_data(**kwargs):
                         
                     #Generate the URL
                     browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
-
+                    print('browser_usage_api_url: ', browser_usage_api_url) #TEMP FOR TESTING
+                    
                     #Make the API call
 
                     #Save the results to GCS
