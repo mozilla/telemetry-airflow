@@ -7,6 +7,7 @@ from utils.cloudflare import *
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
 
 #Define DOC string
 DOCS = """
