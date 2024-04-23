@@ -8,6 +8,8 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 
 #Define DOC string
 DOCS = """
@@ -41,10 +43,11 @@ browser_usage_configs = {"timeout_limit": 2000,
                                       #"LU","HU","MT","MX","NL","AT","PL","PT","RO",
                                       #"SI","SK","US","SE","GR"],
                         "user_types": ["LIKELY_HUMAN", "ALL"],
-                        "results_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/browser_usage/RESULTS_STAGING/%s/",
-                        "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/browser_usage/RESULTS_ARCHIVE/%s/",
-                        "errors_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/browser_usage/ERRORS_STAGING/%s/",
-                        "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/browser_usage/ERRORS_ARCHIVE/%s/"
+                        "bucket": "gs://moz-fx-data-prod-external-data/",
+                        "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s/",
+                        "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s/",
+                        "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s/",
+                        "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s/"
                         }
 
 auth_token = '' #TO DO pull from secret manager
@@ -55,21 +58,20 @@ headers = {'Authorization': bearer_string}
 
 #Define function to pull browser data from the cloudflare API
 def get_browser_data(**kwargs):
+    """ Pull browser data for each combination of the configs from the Cloudflare API, always runs with a lag of 4 days"""
     #Calculate start date and end date
     logical_dag_dt = kwargs.get('ds')
     logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, '%Y-%m-%d').date()
     start_date = logical_dag_dt_as_date - timedelta(days=4)
-    #Calculate the end date to be the start_date + 1
     end_date = start_date + timedelta(days=1)
-    print('start_date: ', start_date)
-    print('end_date: ', end_date)
+    print('Start Date: ', start_date)
+    print('End Date: ', end_date)
 
     #Initialize the empty results and errors dataframes
     browser_results_df = initialize_browser_results_df()
     browser_errors_df = initialize_browser_errors_df()
 
     #Loop through the combinations
-    """ Pull browser data for each combination of the configs from the Cloudflare API """
     for device_type in browser_usage_configs['device_types']:
         for loc in browser_usage_configs['locations']:
             for os in browser_usage_configs['operating_systems']:
@@ -123,11 +125,11 @@ def get_browser_data(**kwargs):
                                                             'OperatingSystem': [os]})
                         browser_errors_df = pd.concat([browser_errors_df,new_browser_error_df])
 
-
-
     #LOAD RESULTS & ERRORS TO STAGING GCS
-    browser_results_df.to_csv(browser_usage_configs["results_staging_gcs_fpath"])
-    browser_errors_df.to_csv(browser_usage_configs["errors_staging_gcs_fpath"])
+    result_fpath = browser_usage_configs["bucket"] + browser_usage_configs["results_staging_gcs_fpath"] % start_date
+    error_fpath = browser_usage_configs["bucket"] + browser_usage_configs["errors_staging_gcs_fpath"] % start_date
+    browser_results_df.to_csv(result_fpath, index=False)
+    browser_errors_df.to_csv(error_fpath, index=False)
 
     #Return a summary to the console
     len_results = str(len(browser_results_df))
@@ -142,7 +144,7 @@ with DAG(
     default_args=default_args,
     catchup=False,
     doc_md=DOCS,
-    schedule_interval="0 5 * * *",
+    schedule_interval="0 5 * * *", #Daily at 5am
     tags=TAGS,
 ) as dag:
 
@@ -156,13 +158,34 @@ with DAG(
     load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
 
     #Archive the result files by moving them out of staging and into archive
-    archive_results = EmptyOperator(task_id="archive_results")
-    archive_errors = EmptyOperator(task_id="archive_errors")
+    archive_results = GCSToGCSOperator(task_id="archive_results",
+                                       source_bucket = browser_usage_configs["bucket"],
+                                       source_object = browser_usage_configs["results_staging_gcs_fpath"] % '{{ ds }}', 
+                                       destination_bucket = browser_usage_configs["bucket"],
+                                       destination_object = browser_usage_configs["results_archive_gcs_fpath"] % '{{ ds }}',
+                                       exact_match = True)
+    
+    archive_errors = GCSToGCSOperator(task_id="archive_errors",
+                                      source_bucket = browser_usage_configs["bucket"],
+                                       source_object = browser_usage_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
+                                       destination_bucket = browser_usage_configs["bucket"],
+                                       destination_object = browser_usage_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
+                                       exact_match = True)
+
+    del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
+                                                        bucket_name = browser_usage_configs["bucket"],
+                                                        objects = [ browser_usage_configs["results_staging_gcs_fpath"] % '{{ ds }}' ],
+                                                        prefix=None)
+    
+    del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
+                                                       bucket_name = browser_usage_configs["bucket"],
+                                                        objects = [ browser_usage_configs["errors_staging_gcs_fpath"] % '{{ ds }}' ],
+                                                        prefix=None)
 
     #Run browser QA checks
     run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
 
 
-get_data >> load_results_to_bq >> archive_results
-get_data >> load_errors_to_bq >> archive_errors
-[ archive_results, archive_errors] >> run_browser_qa_checks
+get_data >> load_results_to_bq >> archive_results >> del_results_from_gcs_stg
+get_data >> load_errors_to_bq >> archive_errors >> del_errors_from_gcs_stg
+[ del_results_from_gcs_stg, del_errors_from_gcs_stg] >> run_browser_qa_checks
