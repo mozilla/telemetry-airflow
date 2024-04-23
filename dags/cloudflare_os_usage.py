@@ -51,6 +51,7 @@ headers = {'Authorization': bearer_string}
 with DAG(
     "cloudflare_os_usage",
     default_args=default_args,
+    catchup=False,
     doc_md=DOCS,
     schedule_interval="0 5 * * *",
     tags=TAGS,
@@ -59,7 +60,9 @@ with DAG(
     #Define OS usage task
     get_os_usage_data = EmptyOperator(task_id="get_os_usage_data")
     load_os_usage_data_to_gcs = EmptyOperator(task_id="load_os_usage_data_to_gcs")
-    load_os_usage_data_to_bq = EmptyOperator(task_id="load_os_usage_data_to_bq")
+    load_os_usage_results_to_bq = EmptyOperator(task_id="load_os_usage_results_to_bq")
+    load_os_usage_errors_to_bq = EmptyOperator(task_id="load_os_usage_errors_to_bq")
     run_os_qa_checks = EmptyOperator(task_id="run_os_qa_checks")
 
-get_os_usage_data >> load_os_usage_data_to_gcs >> load_os_usage_data_to_bq >> run_os_qa_checks
+get_os_usage_data >> load_os_usage_data_to_gcs >> load_os_usage_results_to_bq 
+load_os_usage_results_to_bq >> load_os_usage_errors_to_bq >> run_os_qa_checks

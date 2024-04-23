@@ -56,11 +56,17 @@ def get_browser_data():
                 print('location: ', location)
                 print('os: ', os)
 
+                #Initialize the results dataframe
+
+                #Initialize the errors dataframe
+
                 #Generate the URL call
 
                 #Make the API call
 
                 #Save the results to GCS
+
+                #Save the errors to GCS
 
     combo = "device_type: "+device_type+" loc"+location+" os: "+os
     return combo
@@ -83,8 +89,10 @@ with DAG(
     
 
     load_browser_usage_data_to_gcs = EmptyOperator(task_id="load_browser_usage_data_to_gcs")
-    load_browser_usage_data_to_bq = EmptyOperator(task_id="load_browser_usage_data_to_bq")
+    load_browser_usage_results_to_bq = EmptyOperator(task_id="load_browser_usage_results_to_bq")
+    load_browser_usage_errors_to_bq = EmptyOperator(task_id="load_browser_usage_errors_to_bq")
     run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
 
 
-get_browser_usage_data >> load_browser_usage_data_to_gcs >> load_browser_usage_data_to_bq >> run_browser_qa_checks
+get_browser_usage_data >> load_browser_usage_data_to_gcs >> load_browser_usage_results_to_bq 
+load_browser_usage_results_to_bq >> load_browser_usage_errors_to_bq >> run_browser_qa_checks

@@ -41,6 +41,10 @@ auth_token = '' #pull from secret manager
 bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
+def get_device_usage_data():
+    for loc in device_usage_configs['locations']:
+        return 'loc: '+location
+
 #Calculate start date and end date from the DAG run date
 
 
@@ -54,8 +58,14 @@ with DAG(
 ) as dag:
 
     #Define OS usage task
-    get_device_usage_data = EmptyOperator(task_id="get_device_usage_data")
+    get_device_usage_data = PythonOperator(task_id="get_device_usage_data",
+                                python_callable=get_device_usage_data,
+                                #op_args=[device_type, location],
+                                execution_timeout=timedelta(minutes=20))
     load_device_usage_data_to_gcs = EmptyOperator(task_id="load_device_usage_data_to_gcs")
-    load_device_usage_data_to_bq = EmptyOperator(task_id="load_device_usage_data_to_bq")
+    load_device_usage_results_to_bq = EmptyOperator(task_id="load_device_usage_results_to_bq")
+    load_device_usage_errors_to_bq = EmptyOperator(task_id="load_device_usage_errors_to_bq")
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
-get_device_usage_data >> load_device_usage_data_to_gcs >> load_device_usage_data_to_bq >> run_device_qa_checks
+
+get_device_usage_data >> load_device_usage_data_to_gcs >> load_device_usage_results_to_bq 
+load_device_usage_results_to_bq >> load_device_usage_errors_to_bq >> run_device_qa_checks
