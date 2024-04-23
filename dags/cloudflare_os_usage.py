@@ -35,7 +35,11 @@ os_usage_configs = {"timeout_limit": 2000,
                     "device_types":  ["DESKTOP", "MOBILE", "OTHER", "ALL"],
                     "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                                   "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
-                                  "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"]}
+                                  "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+                    "results_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s/",
+                    "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s/",
+                    "errors_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s/",
+                    "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s/"}
 
 
 auth_token = '' #pull from secret manager
