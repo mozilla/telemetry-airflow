@@ -53,9 +53,9 @@ headers = {'Authorization': bearer_string}
 #Define function to pull browser data from the cloudflare API
 def get_browser_data(**kwargs):
     #Calculate start date and end date
-    logical_dag_date = kwargs.get('ds')
-    logical_dag_date_as_date = datetime.strptime(logical_dag_date, '%Y-%m-%d').date()
-    start_date = logical_dag_date_as_date - timedelta(days=4)
+    logical_dag_dt = kwargs.get('ds')
+    logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, '%Y-%m-%d').date()
+    start_date = logical_dag_dt_as_date - timedelta(days=4)
     #Calculate the end date to be the start_date + 1
     end_date = start_date + timedelta(days=1)
     print('start_date: ', start_date)
@@ -71,39 +71,21 @@ def get_browser_data(**kwargs):
                     print('location: ', loc)
                     print('os: ', os)
                     print('user_type: ', user_type)
+                    
+                    #Initialize the empty results and errors dataframes
+                    browser_results_df = initialize_browser_results_df()
+                    browser_errors_df = initialize_browser_errors_df()
+                        
+                    #Generate the URL
+                    browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
 
-                    #Initialize the results dataframe
-                    final_result_df = pd.DataFrame({'StartTime': [],
-                                        'EndTime': [],
-                                        'DeviceType': [] ,
-                                        'Location': [] ,
-                                        'UserType': [],
-                                        'Browser': [],
-                                        'OperatingSystem': [],
-                                        'PercentShare': [],
-                                        'ConfLevel': [],
-                                        'Normalization': [],
-                                        'LastUpdated': []})
+                    #Make the API call
 
-                    #Initialize the errors dataframe
-                    final_errors_df = pd.DataFrame({'StartTime': [],
-                                    'EndTime': [],
-                                    'Location': [],
-                                    'UserType': [],
-                                    'DeviceType': [],
-                                    'OperatingSystem': []})
+                    #Save the results to GCS
 
-                #Generate the URL ## FIX BELOW - add user type to the function
-                browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
-
-                #Make the API call
-
-                #Save the results to GCS
-
-                #Save the errors to GCS
+                    #Save the errors to GCS
 
 
-    return browser_usage_api_url #Temp for testing
 
 #Define DAG
 with DAG(

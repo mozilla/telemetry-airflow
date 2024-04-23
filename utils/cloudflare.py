@@ -55,6 +55,32 @@ def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system,
 
 
 #### PART 2 - FUNCTIONS FOR PARSING RESPONSE JSON
+def initialize_browser_results_df():
+    """Returns an empty browser results DF"""
+    browser_results_df = pd.DataFrame({'StartTime': [],
+                    'EndTime': [],
+                    'DeviceType': [] ,
+                    'Location': [] ,
+                    'UserType': [],
+                    'Browser': [],
+                    'OperatingSystem': [],
+                    'PercentShare': [],
+                    'ConfLevel': [],
+                    'Normalization': [],
+                    'LastUpdated': []})
+    
+    return browser_results_df
+
+def initialize_browser_errors_df():
+    """Returns an empty browser errors DF"""
+    browser_errors_df = pd.DataFrame({'StartTime': [],
+                'EndTime': [],
+                'Location': [],
+                'UserType': [],
+                'DeviceType': [],
+                'OperatingSystem': []})
+    return browser_errors_df
+
 def parse_device_type_timeseries_response_human(result):
     """ Takes the response JSON and returns parsed information"""
     ### HUMAN
