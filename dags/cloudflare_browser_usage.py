@@ -42,20 +42,14 @@ browser_usage_configs = {"timeout_limit": 2000,
                                       #"FI","FR","GB","HR","IE","IT","CY","LV","LT",
                                       #"LU","HU","MT","MX","NL","AT","PL","PT","RO",
                                       #"SI","SK","US","SE","GR"],
-                        "user_types": ["LIKELY_HUMAN", "ALL"],
+                        "user_types": ["ALL"],
                         "bucket": "gs://moz-fx-data-prod-external-data/",
-                        "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s/",
-                        "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s/",
-                        "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s/",
-                        "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s/",
+                        "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
+                        "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s_results.csv",
+                        "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
+                        "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
                         "gcp_conn_id": "google_cloud_gke_sandbox"
                         }
-
-auth_token = '' #TO DO pull from secret manager
-
-#Configure request headers
-bearer_string = 'Bearer %s' % auth_token
-headers = {'Authorization': bearer_string}
 
 #Define function to pull browser data from the cloudflare API
 def get_browser_data(**kwargs):
@@ -67,6 +61,11 @@ def get_browser_data(**kwargs):
     end_date = start_date + timedelta(days=1)
     print('Start Date: ', start_date)
     print('End Date: ', end_date)
+
+    #Configure request headers
+    auth_token = '' #TO DO pull from secret manager
+    bearer_string = 'Bearer %s' % auth_token
+    headers = {'Authorization': bearer_string}
 
     #Initialize the empty results and errors dataframes
     browser_results_df = initialize_browser_results_df()
@@ -86,6 +85,11 @@ def get_browser_data(**kwargs):
                     browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
                     response = requests.get(browser_usage_api_url, headers=headers, timeout = browser_usage_configs['timeout_limit'])
                     response_json = json.loads(response.text)
+
+                    #TEMP FOR TESTING
+                    print('response_json')
+                    print(response_json)
+                    #TEMP 
 
                     #if the response was successful, get the result and append it to the results dataframe
                     if response_json['success'] is True:
@@ -128,7 +132,11 @@ def get_browser_data(**kwargs):
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
     result_fpath = browser_usage_configs["bucket"] + browser_usage_configs["results_staging_gcs_fpath"] % start_date
+    print('Writing results to: ', result_fpath)
+
     error_fpath = browser_usage_configs["bucket"] + browser_usage_configs["errors_staging_gcs_fpath"] % start_date
+    print('Writing errors to: ', error_fpath)
+
     browser_results_df.to_csv(result_fpath, index=False)
     browser_errors_df.to_csv(error_fpath, index=False)
 
