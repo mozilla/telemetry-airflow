@@ -8,10 +8,12 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
+from datetime import datetime, timedelta
 
 #Define DOC string
 DOCS = """
 ### Pulls browser usage data from the Cloudflare API 
+Note - each execution runs for the time period 4 days prior
 
 #### Owner
 kwindau@mozilla.com
@@ -49,14 +51,16 @@ bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
 #Define function to pull browser data from the cloudflare API
-def get_browser_data():
+def get_browser_data(**kwargs):
     #Calculate start date and end date
-    start_date = "{{ ds }}"
-    end_date = "{{ next_ds }}"
-    print('start date')
-    print(start_date)
-    print('end_date')
-    print(end_date)
+    logical_dag_date = kwargs.get('ds')
+    logical_dag_date_as_date = datetime.strptime(logical_dag_date, '%Y-%m-%d').date()
+    start_date = logical_dag_date_as_date - timedelta(days=4)
+    #Calculate the end date to be the start_date + 1
+    end_date = start_date + timedelta(days=1)
+    print('start_date: ', start_date)
+    print('end_date: ', end_date)
+
     #Loop through the combinations
     """ Pull browser data for each combination of the configs from the Cloudflare API """
     for device_type in browser_usage_configs['device_types']:
@@ -114,7 +118,7 @@ with DAG(
     #get_browser_usage_data = EmptyOperator(task_id="get_browser_usage_data")
     get_browser_usage_data = PythonOperator(task_id="get_browser_usage_data",
                                 python_callable=get_browser_data,
-                                #op_args=[device_type, location],
+                                op_args=[], ##how to add start date
                                 execution_timeout=timedelta(minutes=20))
     
     
