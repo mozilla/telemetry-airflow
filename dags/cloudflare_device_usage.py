@@ -43,7 +43,7 @@ headers = {'Authorization': bearer_string}
 
 def get_device_usage_data():
     for loc in device_usage_configs['locations']:
-        return 'loc: '+location
+        return 'loc: '+loc
 
 #Calculate start date and end date from the DAG run date
 
@@ -52,6 +52,7 @@ def get_device_usage_data():
 with DAG(
     "cloudflare_device_usage",
     default_args=default_args,
+    catchup=False,
     doc_md=DOCS,
     schedule_interval="0 5 * * *",
     tags=TAGS,

@@ -26,32 +26,31 @@ def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_t
     return os_usage_api_url
 
 
-def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system):
+def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system, user_typ):
     """ Generates the API URL"""
-    #Combo 1 = ALL, ALL, ALL
-    if location == 'ALL' and device_type == 'ALL' and op_system == 'ALL':
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&format=json" % (strt_dt, end_dt)
-    #Combo 2 - ALL, ALL, NOT ALL
-    elif location =='ALL' and device_type =='ALL' and op_system != 'ALL':
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&os=%s&format=json" % (strt_dt, end_dt, op_system)
-    #Combo 3 - ALL, NOT ALL, ALL
-    elif location == 'ALL' and device_type != 'ALL' and op_system == 'ALL':
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&deviceType=%s&format=json" % (strt_dt, end_dt, device_type)
-    #Combo 4 - ALL, NOT ALL, NOT ALL 
-    elif location == 'ALL' and device_type != 'ALL' and op_system !='ALL': 
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&os=%s&deviceType=%s&format=json" % (strt_dt, end_dt, op_system, device_type)
-    #Combo 5 - NOT ALL, ALL, ALL
-    elif location != 'ALL' and device_type =='ALL' and op_system == 'ALL':
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&format=json" % (strt_dt, end_dt, location)
-    #Combo 6 - NOT ALL, ALL, NOT ALL
-    elif location != 'ALL' and device_type == 'ALL' and op_system !='ALL':
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&os=%sformat=json" % (strt_dt, end_dt, location, op_system)
-    #Combo 7 - NOT ALL, NOT ALL, ALL
-    elif location != 'ALL' and device_type != 'ALL' and op_system == 'ALL':
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&deviceType=%s&location=%s&format=json" % (strt_dt, end_dt, device_type, location)
-    #Combo 8 - NOT ALL, NOT ALL, NOT ALL
+    #USER TYPE
+    if user_typ == 'ALL':
+        user_type_string = ''
     else:
-        browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&deviceType=%s&location=%s&os=%s&format=json" % (strt_dt, end_dt, device_type, location, op_system)
+        user_type_string = '&botClass=%s' % user_typ
+    #LOCATION
+    if location == 'ALL':
+        location_string = ''
+    else:
+        location_string = '&location=%s' % location
+    #OP SYSTEM
+    if op_system == 'ALL':
+        op_system_string = ''
+    else:
+        op_system_string = '&os=%s' % op_system
+    
+    #Device type
+    if device_type == 'ALL':
+        device_type_string = ''
+    else:
+        device_type_string = '&deviceType=%s' % device_type
+
+    browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z%s%s%s%s&format=json" % (strt_dt, end_dt, device_type_string, location_string, op_system_string, user_type_string)
     return browser_api_url
 
 

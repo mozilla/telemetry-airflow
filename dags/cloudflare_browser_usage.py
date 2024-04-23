@@ -38,7 +38,9 @@ browser_usage_configs = {"timeout_limit": 2000,
                         "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES",
                                       "FI","FR","GB","HR","IE","IT","CY","LV","LT",
                                       "LU","HU","MT","MX","NL","AT","PL","PT","RO",
-                                      "SI","SK","US","SE","GR"]}
+                                      "SI","SK","US","SE","GR"],
+                        "user_types": ["ALL"]
+                        }
 
 auth_token = '' #pull from secret manager
 
@@ -50,17 +52,37 @@ headers = {'Authorization': bearer_string}
 def get_browser_data():
     """ Pull browser data for each combination of the configs from the Cloudflare API """
     for device_type in browser_usage_configs['device_types']:
-        for location in browser_usage_configs['locations']:
+        for loc in browser_usage_configs['locations']:
             for os in browser_usage_configs['operating_systems']:
-                print('device type: ', device_type)
-                print('location: ', location)
-                print('os: ', os)
+                for user_type in browser_usage_configs["user_types"]:
+                    print('device type: ', device_type)
+                    print('location: ', loc)
+                    print('os: ', os)
+                    print('user_type: ', user_type)
 
-                #Initialize the results dataframe
+                    #Initialize the results dataframe
+                    final_result_df = pd.DataFrame({'StartTime': [],
+                                        'EndTime': [],
+                                        'DeviceType': [] ,
+                                        'Location': [] ,
+                                        'UserType': [],
+                                        'Browser': [],
+                                        'OperatingSystem': [],
+                                        'PercentShare': [],
+                                        'ConfLevel': [],
+                                        'Normalization': [],
+                                        'LastUpdated': []})
 
-                #Initialize the errors dataframe
+                    #Initialize the errors dataframe
+                    final_errors_df = pd.DataFrame({'StartTime': [],
+                                    'EndTime': [],
+                                    'Location': [],
+                                    'UserType': [],
+                                    'DeviceType': [],
+                                    'OperatingSystem': []})
 
-                #Generate the URL call
+                #Generate the URL ## FIX BELOW - add user type to the function
+                browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
 
                 #Make the API call
 
@@ -75,6 +97,7 @@ def get_browser_data():
 with DAG(
     "cloudflare_browser_usage",
     default_args=default_args,
+    catchup=False,
     doc_md=DOCS,
     schedule_interval="0 5 * * *",
     tags=TAGS,
