@@ -47,7 +47,8 @@ browser_usage_configs = {"timeout_limit": 2000,
                         "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s/",
                         "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s/",
                         "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s/",
-                        "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s/"
+                        "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s/",
+                        "gcp_conn_id": "google_cloud_gke_sandbox"
                         }
 
 auth_token = '' #TO DO pull from secret manager
@@ -163,6 +164,7 @@ with DAG(
                                        source_object = browser_usage_configs["results_staging_gcs_fpath"] % '{{ ds }}', 
                                        destination_bucket = browser_usage_configs["bucket"],
                                        destination_object = browser_usage_configs["results_archive_gcs_fpath"] % '{{ ds }}',
+                                       gcp_conn_id=browser_usage_configs["gcp_conn_id"], 
                                        exact_match = True)
     
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
@@ -170,19 +172,22 @@ with DAG(
                                        source_object = browser_usage_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
                                        destination_bucket = browser_usage_configs["bucket"],
                                        destination_object = browser_usage_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
+                                       gcp_conn_id=browser_usage_configs["gcp_conn_id"],
                                        exact_match = True)
 
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = browser_usage_configs["bucket"],
                                                         objects = [ browser_usage_configs["results_staging_gcs_fpath"] % '{{ ds }}' ],
-                                                        prefix=None)
+                                                        prefix=None,
+                                                        gcp_conn_id=browser_usage_configs["gcp_conn_id"])
     
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = browser_usage_configs["bucket"],
                                                         objects = [ browser_usage_configs["errors_staging_gcs_fpath"] % '{{ ds }}' ],
-                                                        prefix=None)
+                                                        prefix=None,
+                                                        gcp_conn_id=browser_usage_configs["gcp_conn_id"])
 
-    #Run browser QA checks
+    #Run browser QA checks - make sure there is only 1 row per primary key, error if PKs have more than 1 row
     run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
 
 
