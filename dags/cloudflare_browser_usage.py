@@ -79,14 +79,22 @@ def get_browser_data(**kwargs):
                     #Generate the URL
                     browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
                     print('browser_usage_api_url: ', browser_usage_api_url) #TEMP FOR TESTING
-                    
+
                     #Make the API call
+                    response = requests.get(browser_usage_api_url, headers=headers, timeout = browser_usage_configs['timeout_limit'])
+                    response_json = json.loads(response.text)
 
-                    #Save the results to GCS
+                    #if the response was successful, get the result
+                    if response_json['success'] is True:
+                        #Save the results to GCS
+                        print('we will parse the result and save to results folder in GCS')
+                        
+                    else:
+                        #Save the errors to GCS
+                        print('we will parse the result and save to errors folder in GCS')
 
-                    #Save the errors to GCS
-
-
+    #Make this eventually print # of success vs # of errors
+    return None
 
 #Define DAG
 with DAG(
