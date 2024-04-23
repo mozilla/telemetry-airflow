@@ -6,7 +6,7 @@ import pandas as pd
 from utils.cloudflare import * 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-
+from airflow.operators.python import PythonOperator
 
 #Define DOC string
 DOCS = """
@@ -34,6 +34,12 @@ device_usage_configs = {"timeout_limit": 2000,
                         "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                                       "GB","HR","IE","IT","CY","LV","LT","LU","HU",
                                       "MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"]}
+
+auth_token = '' #pull from secret manager
+
+#Configure request headers
+bearer_string = 'Bearer %s' % auth_token
+headers = {'Authorization': bearer_string}
 
 #Calculate start date and end date from the DAG run date
 
