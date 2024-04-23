@@ -146,17 +146,20 @@ with DAG(
     tags=TAGS,
 ) as dag:
 
-    #get_browser_usage_data = EmptyOperator(task_id="get_browser_usage_data")
+    #Call the API and save the results to GCS
     get_data = PythonOperator(task_id="get_browser_usage_data",
                                 python_callable=get_browser_data,
                                 execution_timeout=timedelta(minutes=20))
     
+    #Load the results in GCS to the BQ tables
     load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
     load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
 
-    #If 
+    #Archive the result files by moving them out of staging and into archive
     archive_results = EmptyOperator(task_id="archive_results")
     archive_errors = EmptyOperator(task_id="archive_errors")
+
+    #Run browser QA checks
     run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
 
 
