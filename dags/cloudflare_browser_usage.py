@@ -48,11 +48,16 @@ auth_token = '' #pull from secret manager
 bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
-#Calculate start date and end date from the DAG run date
-start_date = {{ ds }}
-
 #Define function to pull browser data from the cloudflare API
 def get_browser_data():
+    #Calculate start date and end date
+    start_date = "{{ ds }}"
+    end_date = "{{ next_ds }}"
+    print('start date')
+    print(start_date)
+    print('end_date')
+    print(end_date)
+    #Loop through the combinations
     """ Pull browser data for each combination of the configs from the Cloudflare API """
     for device_type in browser_usage_configs['device_types']:
         for loc in browser_usage_configs['locations']:
@@ -93,8 +98,8 @@ def get_browser_data():
 
                 #Save the errors to GCS
 
-    combo = "device_type: "+device_type+" loc"+location+" os: "+os
-    return combo
+
+    return browser_usage_api_url #Temp for testing
 
 #Define DAG
 with DAG(
