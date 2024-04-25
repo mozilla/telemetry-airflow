@@ -114,7 +114,7 @@ frank@mozilla.com
             [],
             title="Scheduling Parameters Override",
             type=["null", "array"],
-            description="Pass a list of parameters to override query's existing scheduling parameters"
+            description="Pass a list of parameters to override query's existing scheduling parameters",
         ),
     },
 )
