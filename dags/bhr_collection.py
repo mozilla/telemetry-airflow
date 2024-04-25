@@ -104,7 +104,6 @@ with DAG(
                 "Gecko",
                 "--output-tag",
                 "main",
-
             ],
             idle_delete_ttl=14400,
             num_workers=6,
@@ -147,7 +146,6 @@ with DAG(
                 "Gecko_Child",
                 "--output-tag",
                 "child",
-
             ],
             idle_delete_ttl=14400,
             num_workers=6,
