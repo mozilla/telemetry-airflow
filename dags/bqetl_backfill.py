@@ -110,6 +110,12 @@ frank@mozilla.com
             type="boolean",
             description="Whether to run checks during backfill.",
         ),
+        "scheduling_parameters_override": Param(
+            [],
+            title="Scheduling Parameters Override",
+            type=["null", "array"],
+            description="Pass a list of parameters to override query's existing scheduling parameters"
+        ),
     },
 )
 def bqetl_backfill_dag():
@@ -141,6 +147,10 @@ def bqetl_backfill_dag():
         if excludes := context["params"]["exclude"]:
             for exclude in excludes:
                 cmd.extend(["--exclude", exclude])
+
+        if scheduling_parameters := context["params"]["scheduling_parameters_override"]:
+            for spo in scheduling_parameters:
+                cmd.extend(["--scheduling_parameters_override", spo])
 
         if context["params"]["dry_run"]:
             cmd.append("--dry_run")
