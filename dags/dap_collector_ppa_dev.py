@@ -32,11 +32,10 @@ default_args = {
     "owner": "bbirdsong@mozilla.com",
     "email": ["ads-eng@mozilla.com", "bbirdsong@mozilla.com"],
     "depends_on_past": False,
-    "start_date": datetime(2024, 4, 19),
+    "start_date": datetime(2024, 4, 30),
     "email_on_failure": True,
-    "email_on_retry": True,
-    "retries": 1,
-    "retry_delay": timedelta(minutes=15),
+    "email_on_retry": False,
+    "retries": 0,
 }
 
 project_id = "moz-fx-ads-nonprod"
@@ -55,6 +54,7 @@ with DAG(
     doc_md=DOCS,
     schedule_interval="*/15 * * * *",
     tags=tags,
+    catchup=False,
 ) as dag:
     dap_collector = GKEPodOperator(
         task_id="dap_collector_ppa_dev",
