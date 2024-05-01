@@ -17,12 +17,8 @@ from utils.tags import Tag
 auth_token = Variable.get('cloudflare_auth_token')
 
 #Define DOC string
-DOCS = """
-### Pulls OS usage data from the Cloudflare API 
-
-#### Owner
-kwindau@mozilla.com
-"""
+DOCS = """Pulls OS usage data from the Cloudflare API; Owner: kwindau@mozilla.com
+Note: Each run pulls data for the date 3 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -32,7 +28,7 @@ default_args = {
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retry_delay": timedelta(minutes=30)
 }
 
 TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
@@ -50,10 +46,7 @@ os_usg_configs = {"timeout_limit": 2000,
                 "errors_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv",
                 "gcp_conn_id": "google_cloud_gke_sandbox"}
 
-#Configure request headers
-bearer_string = 'Bearer %s' % auth_token
-headers = {'Authorization': bearer_string}
-
+#Function to configure the API URL 
 def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_type):
     """ Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL """
     if location == 'ALL' and device_type == 'ALL':
@@ -67,53 +60,95 @@ def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_t
     return os_usage_api_url
 
 
-###NOTE - this function should be used in device & OS but not browser
-def get_timeseries_api_call_date_ranges(start_date, end_date, max_days_interval): 
-    """ Input start date, end date as string in YYYY-MM-DD format, max days interval as int, and returns a dataframe of intervals to use"""
-
-    #Initialize arrays we will later use to make the dataframe
-    sd_array = []
-    ed_array = []
-
-    #Convert the start date and end date to date objects
-    start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
-    end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-    #Calculate # of days between start date and end date
-    days_between_start_dt_and_end_dt = (end_dt - start_dt).days
-
-    #Divide the # of days by how the max # of days you want in each API request
-    nbr_iterations = int(days_between_start_dt_and_end_dt/max_days_interval) - 1
-
-    #Initialize the current start date with the start date
-    current_start_dt = start_dt
-
-    #For each iteration
-    for i in range(nbr_iterations):        
-        #Append current start dt 
-        sd_array.append(str(current_start_dt))
-        #Calculate end date
-        current_end_date = current_start_dt + timedelta(days=max_days_interval)
-        if current_end_date <= end_dt:
-            ed_array.append(str(current_end_date))
-        else: 
-            ed_array.append(str(end_dt))
-
-        #Update the current start date to be 1 day after the last end date
-        current_start_dt = current_end_date + timedelta(days = 1)
-
-    dates_df = pd.DataFrame({"Start_Date": sd_array,
-                             "End_Date": ed_array})
-    return dates_df
-
 def get_os_usage_data(**kwargs):
+    """ Pull OS usage data from the Cloudflare API and save errors & results to GCS """
+    #Calculate start date and end date
+    logical_dag_dt = kwargs.get('ds')
+    logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, '%Y-%m-%d').date()
+    start_date = logical_dag_dt_as_date - timedelta(days=4)
+    end_date = start_date + timedelta(days=1)
+    print('Start Date: ', start_date)
+    print('End Date: ', end_date)
 
+    #Configure request headers
+    bearer_string = 'Bearer %s' % auth_token
+    headers = {'Authorization': bearer_string}
 
+    #Initialize the empty results & errors dataframe
+    result_df = pd.DataFrame({'Timestamps': [],
+                                    'OS': [],
+                                    'Location': [],
+                                    'DeviceType': [], 
+                                    'Share': [],
+                                    'ConfidenceLevel': [],
+                                    'AggrInterval': [],
+                                    'Normalization': [],
+                                    'LastUpdatedTS': []})
 
+    #Initialize an errors dataframe
+    errors_df = pd.DataFrame({'StartTime': [],
+                                'EndTime': [],
+                                'Location': [],
+                                'DeviceType': []})
+    
+    #Go through all combinations, submit API requests
+    for device_type in os_usg_configs["device_types"]:
+        for loc in os_usg_configs["locations"]:
+            print('Device Type: ', device_type)
+            print('Loc: ', loc)
 
-    #LOAD RESULTS & ERRORS TO STAGING GCS
+            #Generate the URL with given parameters
+            os_usage_api_url = generate_os_timeseries_api_call(start_date, end_date, "1d", loc, device_type)
 
-#Calculate start date and end date from the DAG run date
+            #Call the API and save the response as JSON
+            response = requests.get(os_usage_api_url, headers=headers, timeout = os_usg_configs["timeout_limit"])
+            response_json = json.loads(response.text)
+
+            #If response was successful, get the result
+            if response_json['success'] is True:
+                result = response_json['result']
+                #Parse metadata
+                conf_lvl = result['meta']['confidenceInfo']['level']
+                aggr_intvl = result['meta']['aggInterval']
+                nrmlztn = result['meta']['normalization']
+                lst_upd = result['meta']['lastUpdated']
+                data_dict = result['serie_0']
+
+                for key, val in data_dict.items():
+                    new_result_df = pd.DataFrame({'Timestamps': data_dict['timestamps'],
+                                                'OS': [key] * len(val),
+                                                'Location': [loc]*len(val),
+                                                'DeviceType': [device_type]*len(val), 
+                                                'Share': val,
+                                                'ConfidenceLevel': [conf_lvl]* len(val),
+                                                'AggrInterval': [aggr_intvl]* len(val),
+                                                'Normalization': [nrmlztn] * len(val),
+                                                'LastUpdatedTS': [lst_upd] * len(val)
+                                                })
+                    result_df = pd.concat([result_df, new_result_df])
+            
+            #If response was not successful, get the errors
+        else:
+            errors = response_json['errors'] #Maybe add to capture, right now not using this
+            new_errors_df = pd.DataFrame({'StartTime': [start_date],
+                                    'EndTime': [end_date],
+                                    'Location': [loc],
+                                    'DeviceType': [device_type]})
+            errors_df = pd.concat([errors_df, new_errors_df])
+
+    result_fpath = os_usg_configs["bucket"] + os_usg_configs[""] % ? #FIX
+    errors_fpath = os_usg_configs["bucket"] + os_usg_configs[""] % ? #FIX
+
+    result_df.to_csv(result_fpath, index=False)
+    errors_df.to_csv(errors_fpath, index=False)
+    print('Wrote errors to: ', errors_fpath)
+    print('Wrote results to: ', result_fpath)
+
+    #Write a summary to the logs
+    len_results = str(len(result_df))
+    len_errors = str(len(errors_df))
+    result_summary = "# Result Rows: %s; # of Error Rows: %s" % (len_results, len_errors)
+    return result_summary
 
 
 #Define DAG
@@ -153,8 +188,29 @@ with DAG(
                                                gcp_conn_id=os_usg_configs["gcp_conn_id"],
                                                allow_jagged_rows = False)
 
-    load_results_to_bq_gold = ?
-    load_errors_to_bq_gold = #?
+    load_results_to_bq_gold =  BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
+                                                        configuration={
+                                                            "query": "load_cf_os_usg_results_from_stg_to_gld.sql",
+                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
+                                                                                 'datasetId': 'cloudflare_derived',
+                                                                                 'tableId': 'os_usage_v1'},
+                                                            "createDisposition": "CREATE_NEVER",
+                                                            "writeDisposition": "WRITE_APPEND"
+                                                            },
+                                                        project_id="moz-fx-data-shared-prod",
+                                                        gcp_conn_id = os_usg_configs["gcp_conn_id"])
+    
+    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
+                                                       configuration={
+                                                           "query": "load_cf_browser_usg_errors_from_stg_to_gld.sql",
+                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
+                                                                                 'datasetId': 'cloudflare_derived',
+                                                                                 'tableId': 'os_usage_errors_v1'},
+                                                            "createDisposition": "CREATE_NEVER",
+                                                            "writeDisposition": "WRITE_APPEND"
+                                                           },
+                                                         project_id="moz-fx-data-shared-prod",
+                                                        gcp_conn_id = os_usg_configs["gcp_conn_id"])
 
     #Copy the result files from staging path into archive path after they are processed
     archive_results = GCSToGCSOperator(task_id="archive_results",

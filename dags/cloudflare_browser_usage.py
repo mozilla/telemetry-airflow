@@ -17,13 +17,8 @@ from utils.tags import Tag
 auth_token = Variable.get('cloudflare_auth_token')
 
 #Define DOC string
-DOCS = """
-### Pulls browser usage data from the Cloudflare API 
-Note - each execution runs for the time period 4 days prior
-
-#### Owner
-kwindau@mozilla.com
-"""
+DOCS = """Pulls browser usage data from the Cloudflare API; Owner: kwindau@mozilla.com
+Note: Each run pulls data for the date 3 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -33,7 +28,7 @@ default_args = {
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retry_delay": timedelta(minutes=30)
 }
 
 TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
