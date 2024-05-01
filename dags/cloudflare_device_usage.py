@@ -106,24 +106,85 @@ def get_device_usage_data(**kwargs):
     headers = {'Authorization': bearer_string}
 
     #Initialize the empty results & errors dataframe
+    results_df = pd.DataFrame({'Timestamp': [],
+                        'UserType': [],
+                        'Location': [],
+                        'DesktopUsagePct': [],
+                        'MobileUsagePct': [],
+                        'OtherUsagePct': [],
+                        'ConfLevel': [],
+                        'AggInterval': [],
+                        'NormalizationType': [],
+                        'LastUpdated': []})
 
+    errors_df = pd.DataFrame({'StartTime': [],
+                            'EndTime': [],
+                            'Location': []})
 
-
+    #For each location, call the API to get device usage data
     for loc in device_usg_configs['locations']:
-        return 'loc: '+loc
+        print('Loc: ', loc)
 
+        #Generate the URL
+        device_usage_api_url = generate_device_type_timeseries_api_call(start_date, end_date, "1d", loc)
 
+        #Call the API and save the response as JSON
+        response = requests.get(device_usage_api_url, headers=headers, timeout = timeout_time)
+        response_json = json.loads(response.text)
 
+        #If response was successful, get the result
+        if response_json['success'] is True:
+            result = response_json['result']
+            human_ts, human_dsktp, human_mbl, human_othr = parse_device_type_timeseries_response_human(result)
+            bot_ts, bot_dsktp, bot_mbl, bot_othr = parse_device_type_timeseries_response_bot(result)
+            conf_lvl = result['meta']['confidenceInfo']['level']
+            aggr_intvl = result['meta']['aggInterval']
+            nrmlztn = result['meta']['normalization']
+            lst_upd = result['meta']['lastUpdated']
 
+            #Save to the results dataframe
+
+        #If response was not successful, save to the errors dataframe
+        else:
+            errors = response_json['errors']
+            new_errors_df = pd.DataFrame({'StartTime': [start_date],
+                                        'EndTime': [end_date],
+                                        'Location': [loc]})
+            errors_df = pd.concat([errors_df, new_errors_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
     result_fpath = device_usg_configs["bucket"] + device_usg_configs["results_stg_gcs_fpth"] % start_date
-    print('Writing results to: ', result_fpath)
-
     error_fpath = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % start_date
-    print('Writing errors to: ', error_fpath)
-#Calculate start date and end date from the DAG run date
+    results_df.to_csv(result_fpath, index=False)
+    errors_df.to_csv(error_fpath, index=False)
+    print('Wrote errors to: ', error_fpath)
+    print('Wrote results to: ', result_fpath)
 
+    #Print a summary to the console
+    len_results = str(len(results_df))
+    len_errors = str(len(errors_df))
+    result_summary = "# Result Rows: %s; # of Error Rows: %s" % (len_results, len_errors)
+    return result_summary
+
+
+device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1` 
+SELECT 
+CAST(StartTime as date) AS dte,
+user_type,
+location,
+desktop_usage_pct,
+mobile_usage_pct,
+other_usage_pct,
+aggregation_interval,
+normalization_type,
+last_updated_ts
+FROM `moz-fx-data-shared-prod.cloudflare_derived.device_results_stg` """
+
+device_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
+SELECT 
+CAST(StartTime as date) AS dte,
+location
+FROM `moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg`  """
 
 #Define DAG
 with DAG(
