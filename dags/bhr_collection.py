@@ -80,8 +80,8 @@ with DAG(
             image_version="1.5-debian10",
             dag_name="bhr_collection",
             default_args=default_args,
-            cluster_name="bhr-collection-{{ ds }}",
-            job_name="bhr-collection",
+            cluster_name="bhr-collection-main-{{ ds }}",
+            job_name="bhr-collection-main",
             python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/bhr_collection/bhr_collection.py",
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
@@ -100,9 +100,12 @@ with DAG(
                 "--sample-size",
                 "0.5",
                 "--use_gcs",
+                "--thread-filter",
+                "Gecko",
+                "--output-tag",
+                "main",
             ],
             idle_delete_ttl=14400,
-            auto_delete_ttl=28800,
             num_workers=6,
             worker_machine_type="n1-highmem-4",
             gcp_conn_id=params.conn_id,
@@ -111,4 +114,49 @@ with DAG(
         ),
     )
 
-    wait_for_bhr_ping >> bhr_collection
+    bhr_collection_child = SubDagOperator(
+        task_id="bhr_collection_child",
+        dag=dag,
+        subdag=moz_dataproc_pyspark_runner(
+            parent_dag_name=dag.dag_id,
+            image_version="1.5-debian10",
+            dag_name="bhr_collection_child",
+            default_args=default_args,
+            cluster_name="bhr-collection-child-{{ ds }}",
+            job_name="bhr-collection-child",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/bhr_collection/bhr_collection.py",
+            init_actions_uris=[
+                "gs://dataproc-initialization-actions/python/pip-install.sh"
+            ],
+            additional_metadata={
+                "PIP_PACKAGES": "boto3==1.16.20 click==7.1.2 google-cloud-storage==2.7.0"
+            },
+            additional_properties={
+                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+                "spark:spark.driver.memory": "12g",
+                "spark:spark.executor.memory": "15g",
+            },
+            py_args=[
+                "--date",
+                "{{ ds }}",
+                "--sample-size",
+                "0.1",
+                "--use_gcs",
+                "--thread-filter",
+                "Gecko_Child",
+                "--output-tag",
+                "child",
+            ],
+            idle_delete_ttl=14400,
+            num_workers=6,
+            worker_machine_type="n1-highmem-4",
+            gcp_conn_id=params.conn_id,
+            service_account=params.client_email,
+            storage_bucket=params.storage_bucket,
+        ),
+    )
+
+    wait_for_bhr_ping >> [
+        bhr_collection,
+        bhr_collection_child,
+    ]
