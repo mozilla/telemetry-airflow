@@ -26,60 +26,10 @@ def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_t
     return os_usage_api_url
 
 
-def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system, user_typ):
-    """ Generates the API URL"""
-    #USER TYPE
-    if user_typ == 'ALL':
-        user_type_string = ''
-    else:
-        user_type_string = '&botClass=%s' % user_typ
-    #LOCATION
-    if location == 'ALL':
-        location_string = ''
-    else:
-        location_string = '&location=%s' % location
-    #OP SYSTEM
-    if op_system == 'ALL':
-        op_system_string = ''
-    else:
-        op_system_string = '&os=%s' % op_system
-    
-    #Device type
-    if device_type == 'ALL':
-        device_type_string = ''
-    else:
-        device_type_string = '&deviceType=%s' % device_type
-
-    browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z%s%s%s%s&format=json" % (strt_dt, end_dt, device_type_string, location_string, op_system_string, user_type_string)
-    return browser_api_url
 
 
 #### PART 2 - FUNCTIONS FOR PARSING RESPONSE JSON
-def initialize_browser_results_df():
-    """Returns an empty browser results DF"""
-    browser_results_df = pd.DataFrame({'StartTime': [],
-                    'EndTime': [],
-                    'DeviceType': [] ,
-                    'Location': [] ,
-                    'UserType': [],
-                    'Browser': [],
-                    'OperatingSystem': [],
-                    'PercentShare': [],
-                    'ConfLevel': [],
-                    'Normalization': [],
-                    'LastUpdated': []})
-    
-    return browser_results_df
 
-def initialize_browser_errors_df():
-    """Returns an empty browser errors DF"""
-    browser_errors_df = pd.DataFrame({'StartTime': [],
-                'EndTime': [],
-                'Location': [],
-                'UserType': [],
-                'DeviceType': [],
-                'OperatingSystem': []})
-    return browser_errors_df
 
 def parse_device_type_timeseries_response_human(result):
     """ Takes the response JSON and returns parsed information"""
@@ -119,12 +69,6 @@ def parse_response_metadata(result):
     last_updated = result['meta']['lastUpdated']
     return confidence_level, normalization, last_updated
 
-
-def parse_browser_usg_start_and_end_time(result):
-    """ HELLO """
-    strt_time = result['meta']['dateRange'][0]['startTime']
-    end_time = result['meta']['dateRange'][0]['endTime']
-    return strt_time, end_time
 
 
 #Generate the result dataframe

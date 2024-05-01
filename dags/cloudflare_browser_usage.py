@@ -46,6 +46,34 @@ brwsr_usg_configs = {"timeout_limit": 2000,
                     "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
                     "gcp_conn_id": "google_cloud_gke_sandbox"}
 
+
+def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system, user_typ):
+    """ Generates the API URL"""
+    #USER TYPE
+    if user_typ == 'ALL':
+        user_type_string = ''
+    else:
+        user_type_string = '&botClass=%s' % user_typ
+    #LOCATION
+    if location == 'ALL':
+        location_string = ''
+    else:
+        location_string = '&location=%s' % location
+    #OP SYSTEM
+    if op_system == 'ALL':
+        op_system_string = ''
+    else:
+        op_system_string = '&os=%s' % op_system
+    
+    #Device type
+    if device_type == 'ALL':
+        device_type_string = ''
+    else:
+        device_type_string = '&deviceType=%s' % device_type
+
+    browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z%s%s%s%s&format=json" % (strt_dt, end_dt, device_type_string, location_string, op_system_string, user_type_string)
+    return browser_api_url
+
 #Define function to pull browser data from the cloudflare API
 def get_browser_data(**kwargs):
     """ Pull browser data for each combination of the configs from the Cloudflare API, always runs with a lag of 4 days"""
@@ -63,8 +91,24 @@ def get_browser_data(**kwargs):
     headers = {'Authorization': bearer_string}
 
     #Initialize the empty results and errors dataframes
-    browser_results_df = initialize_browser_results_df()
-    browser_errors_df = initialize_browser_errors_df()
+    browser_results_df = pd.DataFrame({'StartTime': [],
+                                    'EndTime': [],
+                                    'DeviceType': [] ,
+                                    'Location': [] ,
+                                    'UserType': [],
+                                    'Browser': [],
+                                    'OperatingSystem': [],
+                                    'PercentShare': [],
+                                    'ConfLevel': [],
+                                    'Normalization': [],
+                                    'LastUpdated': []})
+    
+    browser_errors_df = pd.DataFrame({'StartTime': [],
+                                    'EndTime': [],
+                                    'Location': [],
+                                    'UserType': [],
+                                    'DeviceType': [],
+                                    'OperatingSystem': []})
 
     #Loop through the combinations
     for device_type in brwsr_usg_configs['device_types']:
@@ -90,11 +134,12 @@ def get_browser_data(**kwargs):
                     if response_json['success'] is True:
                         #Save the results to GCS
                         result = response_json['result']
-                        confidence_level, normalization, last_updated =  parse_response_metadata(result)
-                        startTime, endTime = parse_browser_usg_start_and_end_time(result)
-
+                        confidence_level = result['meta']['confidenceInfo']['level']
+                        normalization = result['meta']['normalization']
+                        last_updated = result['meta']['lastUpdated']
+                        startTime = result['meta']['dateRange'][0]['startTime']
+                        endTime = result['meta']['dateRange'][0]['endTime']
                         data = result['top_0']
-
                         browser_lst = []
                         browser_share_lst = []
 
