@@ -167,7 +167,17 @@ with DAG(
     #Run a query to process data from staging and insert it into the production gold table
     load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold")
 
-    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold")
+    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
+                                                       configuration={
+                                                           "query": "load_cf_device_usg_errors_from_stg_to_gld.sql",
+                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
+                                                                                 'datasetId': 'cloudflare_derived',
+                                                                                 'tableId': 'os_usage_errors_v1'},
+                                                            "createDisposition": "CREATE_NEVER",
+                                                            "writeDisposition": "WRITE_APPEND"
+                                                           },
+                                                         project_id="moz-fx-data-shared-prod",
+                                                        gcp_conn_id = os_usg_configs["gcp_conn_id"])
 
     #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
@@ -203,5 +213,4 @@ with DAG(
 
 get_device_usage_data >> load_results_to_bq_stg >> load_results_to_bq_gold >> archive_results >> del_results_from_gcs_stg
 get_device_usage_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
-
 [del_results_from_gcs_stg , del_errors_from_gcs_stg] >> run_device_qa_checks

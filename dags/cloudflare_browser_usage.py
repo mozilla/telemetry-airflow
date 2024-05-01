@@ -259,13 +259,13 @@ with DAG(
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                        exact_match = True)
     
-    #Delete the results from staging GCS 
+    #Delete the results from staging GCS
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = brwsr_usg_configs["bucket"],
                                                         objects = [ brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
                                                         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
     
-    #Delete the errors from staging GCS 
+    #Delete the errors from staging GCS
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = brwsr_usg_configs["bucket"],
                                                         objects = [ brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],

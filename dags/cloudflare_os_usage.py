@@ -246,5 +246,4 @@ with DAG(
 
 get_data >> load_results_to_bq_stg >> load_results_to_bq_gold >>  archive_results >> del_results_from_gcs_stg
 get_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
-
 [del_results_from_gcs_stg,del_errors_from_gcs_stg] >> run_os_qa_checks
