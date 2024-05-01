@@ -188,8 +188,17 @@ with DAG(
                                        gcp_conn_id=device_usg_configs["gcp_conn_id"],
                                        exact_match = True)
 
-    del_results_from_gcs_stg = EmptyOperator(task_id="delete_results_from_gcs_stg") #GCSDeleteObjectsOperator
-    del_errors_from_gcs_stg = EmptyOperator(task_id="delete_errors_from_gcs_stg") #GCSDeleteObjectsOperator
+    del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
+                                                        bucket_name = device_usg_configs["bucket"],
+                                                        objects = [ device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        prefix=None,
+                                                        gcp_conn_id=device_usg_configs["gcp_conn_id"])
+    
+    del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
+                                                       bucket_name = device_usg_configs["bucket"],
+                                                        objects = [ device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        prefix=None,
+                                                        gcp_conn_id=device_usg_configs["gcp_conn_id"])
 
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
 
