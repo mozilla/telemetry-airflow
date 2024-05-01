@@ -164,8 +164,8 @@ def get_browser_data(**kwargs):
                         browser_errors_df = pd.concat([browser_errors_df,new_browser_error_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
-    result_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % start_date
-    error_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_stg_gcs_fpth"] % start_date
+    result_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % logical_dag_dt
+    error_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     browser_results_df.to_csv(result_fpath, index=False)
     browser_errors_df.to_csv(error_fpath, index=False)
     print('Wrote errors to: ', error_fpath)
@@ -220,6 +220,7 @@ with DAG(
                                                    bucket= brwsr_usg_configs["bucket"],
                                                     destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg",
                                                     source_format = 'CSV',
+                                                    source_objects = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}',
                                                     compression='NONE',
                                                     create_disposition="CREATE_IF_NEEDED",
                                                     skip_leading_rows=1,
@@ -232,6 +233,7 @@ with DAG(
                                                 bucket= brwsr_usg_configs["bucket"],
                                                destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg",
                                                source_format = 'CSV',
+                                               source_objects = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
                                                compression='NONE',
                                                create_disposition="CREATE_IF_NEEDED",
                                                skip_leading_rows=1,
