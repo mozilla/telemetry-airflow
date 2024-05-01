@@ -167,15 +167,14 @@ with DAG(
 ) as dag:
 
     #Define OS usage task
-    get_data = PythonOperator(task_id="get_device_usage_data",
+    get_device_usage_data = PythonOperator(task_id="get_device_usage_data",
                                 python_callable=get_device_usage_data,
-                                #op_args=[device_type, location],
-                                execution_timeout=timedelta(minutes=20))
+                                execution_timeout=timedelta(minutes=55)) 
     
-    #Load the results in GCS to temporary staging BQ tables (these tables get overwritten each run)
+    #Load the results from GCS to a temporary staging table in BQ (overwritten each run)
     load_results_to_bq_stg = GCSToBigQueryOperator(task_id = "load_results_to_bq_stg",
                                                bucket = device_usg_configs["bucket"],
-                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_results_usage_stg",
+                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.device_results_stg",
                                                source_format = 'CSV',
                                                compression='NONE',
                                                create_disposition="CREATE_IF_NEEDED",
@@ -184,9 +183,10 @@ with DAG(
                                                gcp_conn_id = device_usg_configs["gcp_conn_id"],
                                                allow_jagged_rows = False)
     
+    #Load the errors from GCS to a temporary staging table in BQ (overwritten each run)
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= device_usg_configs["bucket"],
-                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_errors_usage_stg",
+                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg",
                                                source_format = 'CSV',
                                                compression='NONE',
                                                create_disposition="CREATE_IF_NEEDED",
@@ -232,7 +232,7 @@ with DAG(
 
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
 
-get_data >> load_results_to_bq_stg >> load_results_to_bq_gold >> archive_results >> del_results_from_gcs_stg
-get_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
+get_device_usage_data >> load_results_to_bq_stg >> load_results_to_bq_gold >> archive_results >> del_results_from_gcs_stg
+get_device_usage_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
 
 [del_results_from_gcs_stg , del_errors_from_gcs_stg] >> run_device_qa_checks

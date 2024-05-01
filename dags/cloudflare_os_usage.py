@@ -127,10 +127,34 @@ with DAG(
 ) as dag:
 
     #Define OS usage task
-    get_data = EmptyOperator(task_id="get_os_usage_data")
+    get_data = PythonOperator(task_id="get_os_usage_data",
+                                python_callable=get_os_usage_data,
+                                execution_timeout=timedelta(minutes=55))
 
-    load_results_to_bq = GCSToBigQueryOperator(task_id="load_results_to_bq")
-    load_errors_to_bq = GCSToBigQueryOperator(task_id="load_errors_to_bq")
+    load_results_to_bq_stg = GCSToBigQueryOperator(task_id="load_results_to_bq_stg",
+                                                   bucket= os_usg_configs["bucket"],
+                                                    destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.os_results_stg",
+                                                    source_format = 'CSV',
+                                                    compression='NONE',
+                                                    create_disposition="CREATE_IF_NEEDED",
+                                                    skip_leading_rows=1,
+                                                    write_disposition="WRITE_TRUNCATE",
+                                                    gcp_conn_id=os_usg_configs["gcp_conn_id"],
+                                                    allow_jagged_rows = False)
+    
+    load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
+                                                bucket= os_usg_configs["bucket"],
+                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg",
+                                               source_format = 'CSV',
+                                               compression='NONE',
+                                               create_disposition="CREATE_IF_NEEDED",
+                                               skip_leading_rows=1,
+                                               write_disposition="WRITE_TRUNCATE",
+                                               gcp_conn_id=os_usg_configs["gcp_conn_id"],
+                                               allow_jagged_rows = False)
+
+    load_results_to_bq_gold = ?
+    load_errors_to_bq_gold = #?
 
     #Copy the result files from staging path into archive path after they are processed
     archive_results = GCSToGCSOperator(task_id="archive_results",
@@ -164,7 +188,7 @@ with DAG(
     #Run QA checks
     run_os_qa_checks = EmptyOperator(task_id="run_os_qa_checks")
 
-get_data >> load_results_to_bq >> archive_results >> del_results_from_gcs_stg
-get_data >> load_errors_to_bq >> archive_errors >> del_errors_from_gcs_stg
+get_data >> load_results_to_bq_stg >> load_results_to_bq_gold >>  archive_results >> del_results_from_gcs_stg
+get_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
 
 [del_results_from_gcs_stg,del_errors_from_gcs_stg] >> run_os_qa_checks

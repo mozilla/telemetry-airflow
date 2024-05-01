@@ -194,12 +194,12 @@ with DAG(
     #Call the API and save the results to GCS
     get_browser_usage_data = PythonOperator(task_id="get_browser_usage_data",
                                 python_callable=get_browser_data,
-                                execution_timeout=timedelta(minutes=20))
+                                execution_timeout=timedelta(minutes=55))
     
-    #Load the results in GCS to temporary staging BQ tables (get created and overwritten each run)
-    load_results_to_bq_stg = GCSToBigQueryOperator(task_id="load_results_to_bq",
+    #Load the results from GCS to a temporary staging table in BQ (overwritten each run)
+    load_results_to_bq_stg = GCSToBigQueryOperator(task_id="load_results_to_bq_stg",
                                                    bucket= brwsr_usg_configs["bucket"],
-                                                    destination_project_dataset_table = "",
+                                                    destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg",
                                                     source_format = 'CSV',
                                                     compression='NONE',
                                                     create_disposition="CREATE_IF_NEEDED",
@@ -208,9 +208,10 @@ with DAG(
                                                     gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                                     allow_jagged_rows = False)
     
+    #Load the errors from GCS to a temporary staging table in BQ (overwritten each run)
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= brwsr_usg_configs["bucket"],
-                                               destination_project_dataset_table = "",
+                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg",
                                                source_format = 'CSV',
                                                compression='NONE',
                                                create_disposition="CREATE_IF_NEEDED",
@@ -220,9 +221,29 @@ with DAG(
                                                allow_jagged_rows = False)
     
     #Run a query to process data from staging and insert it into the production gold table
-    load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold")
+    load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
+                                                        configuration={
+                                                            "query": "load_cf_browser_usg_results_from_stg_to_gld.sql",
+                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
+                                                                                 'datasetId': 'cloudflare_derived',
+                                                                                 'tableId': 'browser_usage_v1'},
+                                                            "createDisposition": "CREATE_NEVER",
+                                                            "writeDisposition": "WRITE_APPEND"
+                                                            },
+                                                        project_id="moz-fx-data-shared-prod",
+                                                        gcp_conn_id = brwsr_usg_configs["gcp_conn_id"])
 
-    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold")
+    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
+                                                       configuration={
+                                                           "query": "load_cf_browser_usg_errors_from_stg_to_gld.sql",
+                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
+                                                                                 'datasetId': 'cloudflare_derived',
+                                                                                 'tableId': 'browser_usage_errors_v1'},
+                                                            "createDisposition": "CREATE_NEVER",
+                                                            "writeDisposition": "WRITE_APPEND"
+                                                           },
+                                                         project_id="moz-fx-data-shared-prod",
+                                                        gcp_conn_id = brwsr_usg_configs["gcp_conn_id"])
 
     #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
