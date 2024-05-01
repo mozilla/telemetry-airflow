@@ -51,6 +51,51 @@ auth_token = Variable.get('cloudflare_auth_token')
 bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
+
+###NOTE - this function should be used in device & OS but not browser
+def get_timeseries_api_call_date_ranges(start_date, end_date, max_days_interval): 
+    """ Input start date, end date as string in YYYY-MM-DD format, max days interval as int, and returns a dataframe of intervals to use"""
+
+    #Initialize arrays we will later use to make the dataframe
+    sd_array = []
+    ed_array = []
+
+    #Convert the start date and end date to date objects
+    start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+    #Calculate # of days between start date and end date
+    days_between_start_dt_and_end_dt = (end_dt - start_dt).days
+
+    #Divide the # of days by how the max # of days you want in each API request
+    nbr_iterations = int(days_between_start_dt_and_end_dt/max_days_interval) - 1
+
+    #Initialize the current start date with the start date
+    current_start_dt = start_dt
+
+    #For each iteration
+    for i in range(nbr_iterations):        
+        #Append current start dt 
+        sd_array.append(str(current_start_dt))
+        #Calculate end date
+        current_end_date = current_start_dt + timedelta(days=max_days_interval)
+        if current_end_date <= end_dt:
+            ed_array.append(str(current_end_date))
+        else: 
+            ed_array.append(str(end_dt))
+
+        #Update the current start date to be 1 day after the last end date
+        current_start_dt = current_end_date + timedelta(days = 1)
+
+    dates_df = pd.DataFrame({"Start_Date": sd_array,
+                             "End_Date": ed_array})
+    return dates_df
+
+def get_os_usage_data(**kwargs):
+
+
+
+
 #Calculate start date and end date from the DAG run date
 
 
