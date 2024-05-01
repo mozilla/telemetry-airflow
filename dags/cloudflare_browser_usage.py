@@ -44,6 +44,7 @@ brwsr_usg_configs = {"timeout_limit": 2000,
                     "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s_results.csv",
                     "errors_stg_gcs_fpth": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
                     "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                    "gcp_project_id": "moz-fx-data-shared-prod",
                     "gcp_conn_id": "google_cloud_gke_sandbox"}
 
 #Function to generate API call based on configs passed
@@ -225,7 +226,7 @@ with DAG(
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                             },
-                                                        project_id="moz-fx-data-shared-prod",
+                                                        project_id=brwsr_usg_configs["gcp_project_id"],
                                                         gcp_conn_id = brwsr_usg_configs["gcp_conn_id"])
 
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
@@ -237,7 +238,7 @@ with DAG(
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                            },
-                                                         project_id="moz-fx-data-shared-prod",
+                                                         project_id=brwsr_usg_configs["gcp_project_id"],
                                                         gcp_conn_id = brwsr_usg_configs["gcp_conn_id"])
 
     #Archive the result files by moving them out of staging path and into archive path
@@ -246,7 +247,7 @@ with DAG(
                                        source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
                                        destination_bucket = brwsr_usg_configs["bucket"],
                                        destination_object = brwsr_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
-                                       gcp_conn_id=brwsr_usg_configs["gcp_conn_id"], 
+                                       gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                        exact_match = True)
     
     #Archive the error files by moving them out of staging path and into archive path
