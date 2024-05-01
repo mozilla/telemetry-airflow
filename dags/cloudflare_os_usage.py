@@ -109,6 +109,8 @@ def get_os_usage_data(**kwargs):
 
 
 
+    #LOAD RESULTS & ERRORS TO STAGING GCS
+
 #Calculate start date and end date from the DAG run date
 
 
