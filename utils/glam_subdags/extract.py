@@ -13,7 +13,14 @@ glam_bucket = "moz-fx-data-glam-prod-fca7-etl-data"
 
 
 def extracts_subdag(
-    parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id
+    parent_dag_name,
+    child_dag_name,
+    default_args,
+    schedule_interval,
+    table_project_id,
+    billing_project_id,
+    fully_qualified_dataset,
+    dataset_id
 ):
     dag_id = f"{parent_dag_name}.{child_dag_name}"
     dag = DAG(
@@ -27,6 +34,9 @@ def extracts_subdag(
                 f"extract_{channel}",
                 default_args,
                 schedule_interval,
+                table_project_id,
+                billing_project_id,
+                fully_qualified_dataset,
                 dataset_id,
                 channel,
             ),
@@ -42,6 +52,9 @@ def extract_channel_subdag(
     child_dag_name,
     default_args,
     schedule_interval,
+    table_project_id,
+    billing_project_id,
+    fully_qualified_dataset,
     dataset_id,
     channel,
 ):
@@ -55,8 +68,8 @@ def extract_channel_subdag(
     etl_query = bigquery_etl_query(
         task_id=f"glam_client_probe_counts_{channel}_extract",
         destination_table=bq_extract_table,
-        dataset_id=dataset_id,
-        project_id=project_id,
+        dataset_id=fully_qualified_dataset,
+        project_id=billing_project_id,
         date_partition_parameter=None,
         arguments=("--replace",),
         sql_file_path="sql/moz-fx-data-shared-prod/{}/glam_client_probe_counts_extract_v1/query.sql".format(
@@ -99,6 +112,9 @@ def extract_user_counts(
     child_dag_name,
     default_args,
     schedule_interval,
+    table_project_id,
+    billing_project_id,
+    fully_qualified_dataset,
     dataset_id,
     task_prefix,
     file_prefix,
@@ -113,8 +129,9 @@ def extract_user_counts(
     etl_query = bigquery_etl_query(
         task_id=f"glam_{task_prefix}_extract",
         destination_table=bq_extract_table,
-        dataset_id=dataset_id,
-        project_id=project_id,
+        dataset_id=fully_qualified_dataset,
+        sql_file_path=f"sql/{table_project_id}/{dataset_id}/{bq_extract_table}/query.sql",
+        project_id=billing_project_id,
         date_partition_parameter=None,
         arguments=("--replace",),
         dag=dag,
