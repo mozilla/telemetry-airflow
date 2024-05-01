@@ -51,6 +51,18 @@ auth_token = Variable.get('cloudflare_auth_token')
 bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
+def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_type):
+    """ Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL """
+    if location == 'ALL' and device_type == 'ALL':
+        os_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&format=json&aggInterval=%s" % (strt_dt, end_dt, agg_int)
+    elif location != 'ALL' and device_type == 'ALL':
+        os_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&format=json&aggInterval=%s" % (strt_dt, end_dt, location, agg_int)
+    elif location == 'ALL' and device_type != 'ALL':
+        os_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&deviceType=%s&format=json&aggInterval=%s" % (strt_dt, end_dt, device_type, agg_int)
+    else:
+        os_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&deviceType=%s&format=json&aggInterval=%s" % (strt_dt, end_dt, location, device_type, agg_int)
+    return os_usage_api_url
+
 
 ###NOTE - this function should be used in device & OS but not browser
 def get_timeseries_api_call_date_ranges(start_date, end_date, max_days_interval): 
