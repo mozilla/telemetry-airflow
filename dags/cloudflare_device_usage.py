@@ -34,14 +34,15 @@ default_args = {
 TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
-device_usage_configs = {"timeout_limit": 2000,
+device_usg_configs = {"timeout_limit": 2000,
                         "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                                       "GB","HR","IE","IT","CY","LV","LT","LU","HU",
                                       "MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
                         "results_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
                         "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
                         "errors_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
-                        "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv"}
+                        "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                        "gcp_conn_id": "google_cloud_gke_sandbox"}
 
 auth_token = Variable.get('cloudflare_auth_token')
 
@@ -135,7 +136,7 @@ def make_device_usage_result_df(user_type, desktop, mobile, other, timestamps, l
                 })
 
 def get_device_usage_data(**kwargs):
-    for loc in device_usage_configs['locations']:
+    for loc in device_usg_configs['locations']:
         return 'loc: '+loc
 
 #Calculate start date and end date from the DAG run date
@@ -159,8 +160,21 @@ with DAG(
     load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
     load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
 
-    archive_results = EmptyOperator(task_id="archive_results") #GCSToGCSOperator
-    archive_errors = EmptyOperator(task_id="archive_errors") #GCSToGCSOperator
+    archive_results = GCSToGCSOperator(task_id="archive_results",
+                                       source_bucket = device_usg_configs["bucket"],
+                                       source_object = device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
+                                       destination_bucket = device_usg_configs["bucket"],
+                                       destination_object = device_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
+                                       gcp_conn_id=device_usg_configs["gcp_conn_id"], 
+                                       exact_match = True)
+    
+    archive_errors = GCSToGCSOperator(task_id="archive_errors",
+                                      source_bucket = device_usg_configs["bucket"],
+                                       source_object = device_usg_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
+                                       destination_bucket = device_usg_configs["bucket"],
+                                       destination_object = device_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
+                                       gcp_conn_id=device_usg_configs["gcp_conn_id"],
+                                       exact_match = True)
 
     del_results_from_gcs_stg = EmptyOperator(task_id="delete_results_from_gcs_stg") #GCSDeleteObjectsOperator
     del_errors_from_gcs_stg = EmptyOperator(task_id="delete_errors_from_gcs_stg") #GCSDeleteObjectsOperator
