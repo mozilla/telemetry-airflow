@@ -34,22 +34,17 @@ default_args = {
 TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
-browser_usage_configs = {"timeout_limit": 2000,
-                         "device_types": ["DESKTOP"], #["DESKTOP", "MOBILE", "OTHER", "ALL"],
-                        "operating_systems": ["ALL"], ##["ALL", "WINDOWS", "MACOSX", "IOS",
-                                             #"ANDROID", "CHROMEOS", "LINUX", "SMART_TV"],
-                        "locations": ["US"], #["ALL","BE","BG","CA","CZ","DE","DK","EE","ES",
-                                      #"FI","FR","GB","HR","IE","IT","CY","LV","LT",
-                                      #"LU","HU","MT","MX","NL","AT","PL","PT","RO",
-                                      #"SI","SK","US","SE","GR"],
-                        "user_types": ["ALL"],
-                        "bucket": "gs://moz-fx-data-prod-external-data/",
-                        "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
-                        "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s_results.csv",
-                        "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
-                        "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
-                        "gcp_conn_id": "google_cloud_gke_sandbox"
-                        }
+brwsr_usg_configs = {"timeout_limit": 2000,
+                    "device_types": ["DESKTOP"], 
+                    "operating_systems": ["ALL"], 
+                    "locations": ["US"], 
+                    "user_types": ["ALL"],
+                    "bucket": "gs://moz-fx-data-prod-external-data/",
+                    "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
+                    "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s_results.csv",
+                    "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
+                    "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                    "gcp_conn_id": "google_cloud_gke_sandbox"}
 
 #Define function to pull browser data from the cloudflare API
 def get_browser_data(**kwargs):
@@ -72,10 +67,10 @@ def get_browser_data(**kwargs):
     browser_errors_df = initialize_browser_errors_df()
 
     #Loop through the combinations
-    for device_type in browser_usage_configs['device_types']:
-        for loc in browser_usage_configs['locations']:
-            for os in browser_usage_configs['operating_systems']:
-                for user_type in browser_usage_configs["user_types"]:
+    for device_type in brwsr_usg_configs['device_types']:
+        for loc in brwsr_usg_configs['locations']:
+            for os in brwsr_usg_configs['operating_systems']:
+                for user_type in brwsr_usg_configs["user_types"]:
                     print('device type: ', device_type)
                     print('location: ', loc)
                     print('os: ', os)
@@ -83,13 +78,13 @@ def get_browser_data(**kwargs):
                         
                     #Generate the URL & call the API
                     browser_usage_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
-                    response = requests.get(browser_usage_api_url, headers=headers, timeout = browser_usage_configs['timeout_limit'])
+                    response = requests.get(browser_usage_api_url, headers=headers, timeout = brwsr_usg_configs['timeout_limit'])
                     response_json = json.loads(response.text)
 
                     #TEMP FOR TESTING
                     print('response_json')
                     print(response_json)
-                    #TEMP 
+                    #TEMP FOR TESTING
 
                     #if the response was successful, get the result and append it to the results dataframe
                     if response_json['success'] is True:
@@ -131,10 +126,10 @@ def get_browser_data(**kwargs):
                         browser_errors_df = pd.concat([browser_errors_df,new_browser_error_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
-    result_fpath = browser_usage_configs["bucket"] + browser_usage_configs["results_staging_gcs_fpath"] % start_date
+    result_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_staging_gcs_fpath"] % start_date
     print('Writing results to: ', result_fpath)
 
-    error_fpath = browser_usage_configs["bucket"] + browser_usage_configs["errors_staging_gcs_fpath"] % start_date
+    error_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_staging_gcs_fpath"] % start_date
     print('Writing errors to: ', error_fpath)
 
     browser_results_df.to_csv(result_fpath, index=False)
@@ -143,8 +138,7 @@ def get_browser_data(**kwargs):
     #Return a summary to the console
     len_results = str(len(browser_results_df))
     len_errors = str(len(browser_errors_df))
-    result_summary = "# of Rows in Results DF: %s; # of Rows in Errors DF: %s" % (len_results, len_errors)
-
+    result_summary = "# Result Rows: %s; # of Error Rows: %s" % (len_results, len_errors)
     return result_summary
 
 #Define DAG
@@ -168,32 +162,34 @@ with DAG(
 
     #Archive the result files by moving them out of staging and into archive
     archive_results = GCSToGCSOperator(task_id="archive_results",
-                                       source_bucket = browser_usage_configs["bucket"],
-                                       source_object = browser_usage_configs["results_staging_gcs_fpath"] % '{{ ds }}', 
-                                       destination_bucket = browser_usage_configs["bucket"],
-                                       destination_object = browser_usage_configs["results_archive_gcs_fpath"] % '{{ ds }}',
-                                       gcp_conn_id=browser_usage_configs["gcp_conn_id"], 
+                                       source_bucket = brwsr_usg_configs["bucket"],
+                                       source_object = brwsr_usg_configs["results_staging_gcs_fpath"] % '{{ ds }}', 
+                                       destination_bucket = brwsr_usg_configs["bucket"],
+                                       destination_object = brwsr_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
+                                       gcp_conn_id=brwsr_usg_configs["gcp_conn_id"], 
                                        exact_match = True)
     
+    #Archive the error files by moving them out of staging and into archive
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
-                                      source_bucket = browser_usage_configs["bucket"],
-                                       source_object = browser_usage_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
-                                       destination_bucket = browser_usage_configs["bucket"],
-                                       destination_object = browser_usage_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
-                                       gcp_conn_id=browser_usage_configs["gcp_conn_id"],
+                                      source_bucket = brwsr_usg_configs["bucket"],
+                                       source_object = brwsr_usg_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
+                                       destination_bucket = brwsr_usg_configs["bucket"],
+                                       destination_object = brwsr_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
+                                       gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                        exact_match = True)
-
+    #Delete the results from staging GCS 
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
-                                                        bucket_name = browser_usage_configs["bucket"],
-                                                        objects = [ browser_usage_configs["results_staging_gcs_fpath"] % '{{ ds }}' ],
+                                                        bucket_name = brwsr_usg_configs["bucket"],
+                                                        objects = [ brwsr_usg_configs["results_staging_gcs_fpath"] % '{{ ds }}' ],
                                                         prefix=None,
-                                                        gcp_conn_id=browser_usage_configs["gcp_conn_id"])
+                                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
     
+    #Delete the errors from staging GCS 
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
-                                                       bucket_name = browser_usage_configs["bucket"],
-                                                        objects = [ browser_usage_configs["errors_staging_gcs_fpath"] % '{{ ds }}' ],
+                                                       bucket_name = brwsr_usg_configs["bucket"],
+                                                        objects = [ brwsr_usg_configs["errors_staging_gcs_fpath"] % '{{ ds }}' ],
                                                         prefix=None,
-                                                        gcp_conn_id=browser_usage_configs["gcp_conn_id"])
+                                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
 
     #Run browser QA checks - make sure there is only 1 row per primary key, error if PKs have more than 1 row
     run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
