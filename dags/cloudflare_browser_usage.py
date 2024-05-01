@@ -177,6 +177,29 @@ def get_browser_data(**kwargs):
     result_summary = "# Result Rows: %s; # of Error Rows: %s" % (len_results, len_errors)
     return result_summary
 
+browser_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1` 
+SELECT 
+CAST(StartTime as date) AS dte,
+device_type,
+location,
+user_type,
+browser,
+operating_system.
+percent_share,
+normalization,
+last_updated_ts
+FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg` """
+
+browser_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_errors_v1`
+SELECT 
+CAST(StartTime as date) AS dte,
+location,
+user_type,
+device_type,
+operating_system
+FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg`  """
+
+
 #Define DAG
 with DAG(
     "cloudflare_browser_usage",
@@ -219,7 +242,7 @@ with DAG(
     #Run a query to process data from staging and insert it into the production gold table
     load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
                                                         configuration={
-                                                            "query": "load_cf_browser_usg_results_from_stg_to_gld.sql",
+                                                            "query": browser_usg_stg_to_gold_query,
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
                                                                                  'tableId': 'browser_usage_v1'},
@@ -231,7 +254,7 @@ with DAG(
 
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
-                                                           "query": "load_cf_browser_usg_errors_from_stg_to_gld.sql",
+                                                           "query": browser_usg_errors_stg_to_gold_query,
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
                                                                                  'tableId': 'browser_usage_errors_v1'},
