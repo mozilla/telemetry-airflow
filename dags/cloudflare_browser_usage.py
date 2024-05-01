@@ -86,8 +86,10 @@ def get_browser_data(**kwargs):
     print('Start Date: ', start_date)
     print('End Date: ', end_date)
 
-    #Configure request headers
+    #Get the auth token from an Airflow variable
     auth_token = Variable.get('cloudflare_auth_token')
+
+    #Configure request headers
     bearer_string = 'Bearer %s' % auth_token
     headers = {'Authorization': bearer_string}
 
@@ -173,13 +175,11 @@ def get_browser_data(**kwargs):
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
     result_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % start_date
-    print('Writing results to: ', result_fpath)
-
     error_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_staging_gcs_fpath"] % start_date
-    print('Writing errors to: ', error_fpath)
-
     browser_results_df.to_csv(result_fpath, index=False)
     browser_errors_df.to_csv(error_fpath, index=False)
+    print('Wrote errors to: ', error_fpath)
+    print('Wrote results to: ', result_fpath)
 
     #Return a summary to the console
     len_results = str(len(browser_results_df))

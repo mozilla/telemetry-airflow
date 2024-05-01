@@ -34,18 +34,18 @@ default_args = {
 TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
-os_usage_configs = {"timeout_limit": 2000,
-                    "device_types":  ["DESKTOP", "MOBILE", "OTHER", "ALL"],
-                    "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
-                                  "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
-                                  "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
-                    "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
-                    "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
-                    "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
-                    "errors_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv",
-                    "gcp_conn_id": "google_cloud_gke_sandbox"}
+os_usg_configs = {"timeout_limit": 2000,
+                 "device_types":  ["DESKTOP", "MOBILE", "OTHER", "ALL"],
+                "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
+                            "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
+                            "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+                "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
+                "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
+                "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
+                "errors_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                "gcp_conn_id": "google_cloud_gke_sandbox"}
 
-
+#Get the auth token from an Airflow variable
 auth_token = Variable.get('cloudflare_auth_token')
 
 #Configure request headers

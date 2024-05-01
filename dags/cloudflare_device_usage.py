@@ -38,20 +38,20 @@ device_usg_configs = {"timeout_limit": 2000,
                         "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                                       "GB","HR","IE","IT","CY","LV","LT","LU","HU",
                                       "MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
-                        "results_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
+                        "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
                         "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
-                        "errors_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
+                        "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
                         "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
                         "gcp_conn_id": "google_cloud_gke_sandbox"}
 
+#Get the auth token from an Airflow variable
 auth_token = Variable.get('cloudflare_auth_token')
 
 #Configure request headers
 bearer_string = 'Bearer %s' % auth_token
 headers = {'Authorization': bearer_string}
 
-#Define generate device API URL
-#### PART 1 - FUNCTIONS FOR GENERATING URL TO HIT 
+
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
     """ Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL """
     if location == 'ALL':
@@ -139,6 +139,16 @@ def get_device_usage_data(**kwargs):
     for loc in device_usg_configs['locations']:
         return 'loc: '+loc
 
+
+
+
+
+    #LOAD RESULTS & ERRORS TO STAGING GCS
+    result_fpath = device_usg_configs["bucket"] + device_usg_configs["results_stg_gcs_fpth"] % start_date
+    print('Writing results to: ', result_fpath)
+
+    error_fpath = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % start_date
+    print('Writing errors to: ', error_fpath)
 #Calculate start date and end date from the DAG run date
 
 
