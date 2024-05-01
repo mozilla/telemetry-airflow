@@ -44,6 +44,7 @@ os_usg_configs = {"timeout_limit": 2000,
                 "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
                 "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
                 "errors_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                "gcp_project_id": "moz-fx-data-shared-prod",
                 "gcp_conn_id": "google_cloud_gke_sandbox"}
 
 #Function to configure the API URL 

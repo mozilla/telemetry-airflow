@@ -43,6 +43,7 @@ device_usg_configs = {"timeout_limit": 2000,
                     "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
                     "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
                     "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                    "gcp_project_id": "moz-fx-data-shared-prod",
                     "gcp_conn_id": "google_cloud_gke_sandbox"}
 
 
@@ -228,19 +229,29 @@ with DAG(
                                                allow_jagged_rows = False)
 
     #Run a query to process data from staging and insert it into the production gold table
-    load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold")
+    load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
+                                                        configuration = {
+                                                           "query": "load_cf_device_usg_errors_from_stg_to_gld.sql",
+                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
+                                                                                 'datasetId': 'cloudflare_derived',
+                                                                                 'tableId': 'device_usage_v1'},
+                                                            "createDisposition": "CREATE_NEVER",
+                                                            "writeDisposition": "WRITE_APPEND"
+                                                        },
+                                                        project_id= device_usg_configs["gcp_project_id"],
+                                                        gcp_conn_id = device_usg_configs["gcp_conn_id"])
 
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
                                                            "query": "load_cf_device_usg_errors_from_stg_to_gld.sql",
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
-                                                                                 'tableId': 'os_usage_errors_v1'},
+                                                                                 'tableId': 'device_usage_errors_v1'},
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                            },
-                                                         project_id="moz-fx-data-shared-prod",
-                                                        gcp_conn_id = os_usg_configs["gcp_conn_id"])
+                                                         project_id=device_usg_configs["gcp_project_id"],
+                                                        gcp_conn_id = device_usg_configs["gcp_conn_id"])
 
     #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
@@ -270,7 +281,7 @@ with DAG(
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = device_usg_configs["bucket"],
                                                         objects = [ device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        gcp_conn_id=device_usg_configs["gcp_conn_id"])
+                                                        gcp_conn_id = device_usg_configs["gcp_conn_id"])
 
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
 
