@@ -10,6 +10,7 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from airflow.models import Variable
 
 #Define DOC string
 DOCS = """
@@ -40,7 +41,7 @@ brwsr_usg_configs = {"timeout_limit": 2000,
                     "locations": ["US"], 
                     "user_types": ["ALL"],
                     "bucket": "gs://moz-fx-data-prod-external-data/",
-                    "results_staging_gcs_fpath": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
+                    "results_stg_gcs_fpth": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
                     "results_archive_gcs_fpath": "cloudflare/browser_usage/RESULTS_ARCHIVE/%s_results.csv",
                     "errors_staging_gcs_fpath": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
                     "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
@@ -86,7 +87,7 @@ def get_browser_data(**kwargs):
     print('End Date: ', end_date)
 
     #Configure request headers
-    auth_token = '' #TO DO pull from secret manager
+    auth_token = Variable.get('cloudflare_auth_token')
     bearer_string = 'Bearer %s' % auth_token
     headers = {'Authorization': bearer_string}
 
@@ -171,7 +172,7 @@ def get_browser_data(**kwargs):
                         browser_errors_df = pd.concat([browser_errors_df,new_browser_error_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
-    result_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_staging_gcs_fpath"] % start_date
+    result_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % start_date
     print('Writing results to: ', result_fpath)
 
     error_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_staging_gcs_fpath"] % start_date
@@ -208,7 +209,7 @@ with DAG(
     #Archive the result files by moving them out of staging and into archive
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = brwsr_usg_configs["bucket"],
-                                       source_object = brwsr_usg_configs["results_staging_gcs_fpath"] % '{{ ds }}', 
+                                       source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
                                        destination_bucket = brwsr_usg_configs["bucket"],
                                        destination_object = brwsr_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"], 
@@ -225,7 +226,7 @@ with DAG(
     #Delete the results from staging GCS 
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = brwsr_usg_configs["bucket"],
-                                                        objects = [ brwsr_usg_configs["results_staging_gcs_fpath"] % '{{ ds }}' ],
+                                                        objects = [ brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
                                                         prefix=None,
                                                         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
     

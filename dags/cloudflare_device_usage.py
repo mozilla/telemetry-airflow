@@ -8,6 +8,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
+from airflow.models import Variable
 
 #Define DOC string
 DOCS = """
@@ -40,7 +41,7 @@ device_usage_configs = {"timeout_limit": 2000,
                         "errors_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
                         "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv"}
 
-auth_token = '' #pull from secret manager
+auth_token = Variable.get('cloudflare_auth_token')
 
 #Configure request headers
 bearer_string = 'Bearer %s' % auth_token

@@ -8,6 +8,9 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
+from airflow.models import Variable
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 
 #Define DOC string
 DOCS = """
@@ -36,13 +39,13 @@ os_usage_configs = {"timeout_limit": 2000,
                     "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                                   "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
                                   "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
-                    "results_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
-                    "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
-                    "errors_staging_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
-                    "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv"}
+                    "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
+                    "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
+                    "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
+                    "errors_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv"}
 
 
-auth_token = '' #pull from secret manager
+auth_token = Variable.get('cloudflare_auth_token')
 
 #Configure request headers
 bearer_string = 'Bearer %s' % auth_token
