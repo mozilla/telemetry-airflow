@@ -159,11 +159,11 @@ with DAG(
     load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
     load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
 
-    archive_results = EmptyOperator(task_id="archive_results")
-    archive_errors = EmptyOperator(task_id="archive_errors")
+    archive_results = EmptyOperator(task_id="archive_results") #GCSToGCSOperator
+    archive_errors = EmptyOperator(task_id="archive_errors") #GCSToGCSOperator
 
-    del_results_from_gcs_stg = EmptyOperator(task_id="delete_results_from_gcs_stg")
-    del_errors_from_gcs_stg = EmptyOperator(task_id="delete_errors_from_gcs_stg")
+    del_results_from_gcs_stg = EmptyOperator(task_id="delete_results_from_gcs_stg") #GCSDeleteObjectsOperator
+    del_errors_from_gcs_stg = EmptyOperator(task_id="delete_errors_from_gcs_stg") #GCSDeleteObjectsOperator
 
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
 

@@ -122,11 +122,20 @@ with DAG(
 ) as dag:
 
     #Define OS usage task
-    get_os_usage_data = EmptyOperator(task_id="get_os_usage_data")
-    load_os_usage_data_to_gcs = EmptyOperator(task_id="load_os_usage_data_to_gcs")
-    load_os_usage_results_to_bq = EmptyOperator(task_id="load_os_usage_results_to_bq")
-    load_os_usage_errors_to_bq = EmptyOperator(task_id="load_os_usage_errors_to_bq")
+    get_data = EmptyOperator(task_id="get_os_usage_data")
+
+    load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
+    load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
+
+    archive_results = EmptyOperator(task_id="archive_results") #GCSToGCSOperator
+    archive_errors = EmptyOperator(task_id="archive_errors") #GCSToGCSOperator
+
+    del_results_from_gcs_stg = EmptyOperator(task_id="del_results_from_gcs_stg") #GCSDeleteObjectsOperator
+    del_errors_from_gcs_stg = EmptyOperator(task_id="del_errors_from_gcs_stg") #GCSDeleteObjectsOperator
+    
     run_os_qa_checks = EmptyOperator(task_id="run_os_qa_checks")
 
-get_os_usage_data >> load_os_usage_data_to_gcs >> load_os_usage_results_to_bq 
-load_os_usage_results_to_bq >> load_os_usage_errors_to_bq >> run_os_qa_checks
+get_data >> load_results_to_bq >> archive_results >> del_results_from_gcs_stg
+get_data >> load_errors_to_bq >> archive_errors >> del_errors_from_gcs_stg
+
+[del_results_from_gcs_stg,del_errors_from_gcs_stg] >> run_os_qa_checks
