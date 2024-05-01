@@ -1,16 +1,17 @@
 #Load libraries
 import requests
 import json
-from utils.tags import Tag
 import pandas as pd
-from utils.cloudflare import * 
+from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
 from airflow.models import Variable
 from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from utils.tags import Tag
 
 #Get the auth token from an Airflow variable
 auth_token = Variable.get('cloudflare_auth_token')
@@ -38,14 +39,15 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
 device_usg_configs = {"timeout_limit": 2000,
-                        "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
+                    "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                                       "GB","HR","IE","IT","CY","LV","LT","LU","HU",
                                       "MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
-                        "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
-                        "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
-                        "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
-                        "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
-                        "gcp_conn_id": "google_cloud_gke_sandbox"}
+                    "bucket": "gs://moz-fx-data-prod-external-data/",
+                    "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
+                    "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
+                    "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
+                    "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
+                    "gcp_conn_id": "google_cloud_gke_sandbox"}
 
 
 
@@ -169,9 +171,36 @@ with DAG(
                                 python_callable=get_device_usage_data,
                                 #op_args=[device_type, location],
                                 execution_timeout=timedelta(minutes=20))
-    load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
-    load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
+    
+    #Load the results in GCS to temporary staging BQ tables (these tables get overwritten each run)
+    load_results_to_bq_stg = GCSToBigQueryOperator(task_id = "load_results_to_bq_stg",
+                                               bucket = device_usg_configs["bucket"],
+                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_results_usage_stg",
+                                               source_format = 'CSV',
+                                               compression='NONE',
+                                               create_disposition="CREATE_IF_NEEDED",
+                                               skip_leading_rows=1,
+                                               write_disposition = "WRITE_TRUNCATE",
+                                               gcp_conn_id = device_usg_configs["gcp_conn_id"],
+                                               allow_jagged_rows = False)
+    
+    load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
+                                                bucket= device_usg_configs["bucket"],
+                                               destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_errors_usage_stg",
+                                               source_format = 'CSV',
+                                               compression='NONE',
+                                               create_disposition="CREATE_IF_NEEDED",
+                                               skip_leading_rows=1,
+                                               write_disposition="WRITE_TRUNCATE",
+                                               gcp_conn_id= device_usg_configs["gcp_conn_id"],
+                                               allow_jagged_rows = False)
 
+    #Run a query to process data from staging and insert it into the production gold table
+    load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold")
+
+    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold")
+
+    #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = device_usg_configs["bucket"],
                                        source_object = device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
@@ -180,6 +209,7 @@ with DAG(
                                        gcp_conn_id=device_usg_configs["gcp_conn_id"], 
                                        exact_match = True)
     
+    #Archive the error files by moving them out of staging path and into archive path
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = device_usg_configs["bucket"],
                                        source_object = device_usg_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
@@ -187,22 +217,22 @@ with DAG(
                                        destination_object = device_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
                                        gcp_conn_id=device_usg_configs["gcp_conn_id"],
                                        exact_match = True)
-
+    
+    #Delete the result file from the staging path
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = device_usg_configs["bucket"],
                                                         objects = [ device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        prefix=None,
                                                         gcp_conn_id=device_usg_configs["gcp_conn_id"])
     
+    #Delete the error file from the staging path
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = device_usg_configs["bucket"],
                                                         objects = [ device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        prefix=None,
                                                         gcp_conn_id=device_usg_configs["gcp_conn_id"])
 
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")
 
-get_data >> load_results_to_bq >> archive_results >> del_results_from_gcs_stg
-get_data >> load_errors_to_bq >> archive_errors >> del_errors_from_gcs_stg
+get_data >> load_results_to_bq_stg >> load_results_to_bq_gold >> archive_results >> del_results_from_gcs_stg
+get_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
 
 [del_results_from_gcs_stg , del_errors_from_gcs_stg] >> run_device_qa_checks

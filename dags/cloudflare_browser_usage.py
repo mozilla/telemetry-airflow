@@ -1,16 +1,17 @@
 #Load libraries
 import requests
 import json
-from utils.tags import Tag
 import pandas as pd
-from utils.cloudflare import * 
+from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
 from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.models import Variable
+from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from utils.tags import Tag
 
 #Load auth token
 auth_token = Variable.get('cloudflare_auth_token')
@@ -195,11 +196,35 @@ with DAG(
                                 python_callable=get_browser_data,
                                 execution_timeout=timedelta(minutes=20))
     
-    #Load the results in GCS to the BQ tables
-    load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
-    load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
+    #Load the results in GCS to temporary staging BQ tables (get created and overwritten each run)
+    load_results_to_bq_stg = GCSToBigQueryOperator(task_id="load_results_to_bq",
+                                                   bucket= brwsr_usg_configs["bucket"],
+                                                    destination_project_dataset_table = "",
+                                                    source_format = 'CSV',
+                                                    compression='NONE',
+                                                    create_disposition="CREATE_IF_NEEDED",
+                                                    skip_leading_rows=1,
+                                                    write_disposition="WRITE_TRUNCATE",
+                                                    gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
+                                                    allow_jagged_rows = False)
+    
+    load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
+                                                bucket= brwsr_usg_configs["bucket"],
+                                               destination_project_dataset_table = "",
+                                               source_format = 'CSV',
+                                               compression='NONE',
+                                               create_disposition="CREATE_IF_NEEDED",
+                                               skip_leading_rows=1,
+                                               write_disposition="WRITE_TRUNCATE",
+                                               gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
+                                               allow_jagged_rows = False)
+    
+    #Run a query to process data from staging and insert it into the production gold table
+    load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold")
 
-    #Archive the result files by moving them out of staging and into archive
+    load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold")
+
+    #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = brwsr_usg_configs["bucket"],
                                        source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
@@ -208,7 +233,7 @@ with DAG(
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"], 
                                        exact_match = True)
     
-    #Archive the error files by moving them out of staging and into archive
+    #Archive the error files by moving them out of staging path and into archive path
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = brwsr_usg_configs["bucket"],
                                        source_object = brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
@@ -216,24 +241,23 @@ with DAG(
                                        destination_object = brwsr_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                        exact_match = True)
+    
     #Delete the results from staging GCS 
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = brwsr_usg_configs["bucket"],
                                                         objects = [ brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        prefix=None,
                                                         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
     
     #Delete the errors from staging GCS 
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = brwsr_usg_configs["bucket"],
                                                         objects = [ brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        prefix=None,
                                                         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
 
     #Run browser QA checks - make sure there is only 1 row per primary key, error if PKs have more than 1 row
     run_browser_qa_checks = EmptyOperator(task_id="run_browser_qa_checks")
 
 
-get_browser_usage_data >> load_results_to_bq >> archive_results >> del_results_from_gcs_stg
-get_browser_usage_data >> load_errors_to_bq >> archive_errors >> del_errors_from_gcs_stg
+get_browser_usage_data >> load_results_to_bq_stg >> load_results_to_bq_gold >> archive_results >> del_results_from_gcs_stg
+get_browser_usage_data >> load_errors_to_bq_stg >> load_errors_to_bq_gold >> archive_errors >> del_errors_from_gcs_stg
 [ del_results_from_gcs_stg, del_errors_from_gcs_stg] >> run_browser_qa_checks

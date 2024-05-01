@@ -1,16 +1,17 @@
 #Load libraries
 import requests
 import json
-from utils.tags import Tag
 import pandas as pd
-from utils.cloudflare import * 
+from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
 from airflow.models import Variable
 from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
+from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from utils.tags import Tag
 
 #Get the auth token from an Airflow variable
 auth_token = Variable.get('cloudflare_auth_token')
@@ -42,6 +43,7 @@ os_usg_configs = {"timeout_limit": 2000,
                 "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
                             "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
                             "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+                "bucket": "gs://moz-fx-data-prod-external-data/",
                 "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
                 "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
                 "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
@@ -127,9 +129,10 @@ with DAG(
     #Define OS usage task
     get_data = EmptyOperator(task_id="get_os_usage_data")
 
-    load_results_to_bq = EmptyOperator(task_id="load_results_to_bq")
-    load_errors_to_bq = EmptyOperator(task_id="load_errors_to_bq")
+    load_results_to_bq = GCSToBigQueryOperator(task_id="load_results_to_bq")
+    load_errors_to_bq = GCSToBigQueryOperator(task_id="load_errors_to_bq")
 
+    #Copy the result files from staging path into archive path after they are processed
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = os_usg_configs["bucket"],
                                        source_object = os_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
@@ -138,6 +141,7 @@ with DAG(
                                        gcp_conn_id=os_usg_configs["gcp_conn_id"], 
                                        exact_match = True)
     
+    #Copy the error files from staging path into archive path after they are processed
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = os_usg_configs["bucket"],
                                        source_object = os_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
@@ -146,18 +150,18 @@ with DAG(
                                        gcp_conn_id=os_usg_configs["gcp_conn_id"],
                                        exact_match = True)
 
+    #Delete the result file from the staging path
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = os_usg_configs["bucket"],
                                                         objects = [ os_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        prefix=None,
                                                         gcp_conn_id=os_usg_configs["gcp_conn_id"])
     
+    #Delete the error file from the staging path
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = os_usg_configs["bucket"],
                                                         objects = [ os_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
-                                                        prefix=None,
                                                         gcp_conn_id=os_usg_configs["gcp_conn_id"])
-    
+    #Run QA checks
     run_os_qa_checks = EmptyOperator(task_id="run_os_qa_checks")
 
 get_data >> load_results_to_bq >> archive_results >> del_results_from_gcs_stg
