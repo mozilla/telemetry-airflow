@@ -35,9 +35,9 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
 brwsr_usg_configs = {"timeout_limit": 2000,
-                    "device_types": ["DESKTOP"], #, "MOBILE", "OTHER", "ALL"], 
-                    "operating_systems": ["ALL"], #, "WINDOWS", "MACOSX", "IOS", "ANDROID", "CHROMEOS", "LINUX", "SMART_TV"], 
-                    "locations": ["ALL"], #,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"], 
+                    "device_types": ["DESKTOP"], #, "MOBILE", "OTHER", "ALL"],
+                    "operating_systems": ["ALL"], #, "WINDOWS", "MACOSX", "IOS", "ANDROID", "CHROMEOS", "LINUX", "SMART_TV"],
+                    "locations": ["ALL"], #,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
                     "user_types": ["ALL"],
                     "bucket": "gs://moz-fx-data-prod-external-data/",
                     "results_stg_gcs_fpth": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
@@ -49,27 +49,27 @@ brwsr_usg_configs = {"timeout_limit": 2000,
 
 #Function to generate API call based on configs passed
 def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system, user_typ):
-    """ Generates the API URL"""
+    """Generates the API URL."""
     #USER TYPE
-    if user_typ == 'ALL':
-        user_type_string = ''
+    if user_typ == "ALL":
+        user_type_string = ""
     else:
-        user_type_string = '&botClass=%s' % user_typ
+        user_type_string = "&botClass=%s" % user_typ
     #LOCATION
-    if location == 'ALL':
-        location_string = ''
+    if location == "ALL":
+        location_string = ""
     else:
-        location_string = '&location=%s' % location
+        location_string = "&location=%s" % location
     #OP SYSTEM
-    if op_system == 'ALL':
-        op_system_string = ''
+    if op_system == "ALL":
+        op_system_string = ""
     else:
-        op_system_string = '&os=%s' % op_system
+        op_system_string = "&os=%s" % op_system
     #Device type
-    if device_type == 'ALL':
-        device_type_string = ''
+    if device_type == "ALL":
+        device_type_string = ""
     else:
-        device_type_string = '&deviceType=%s' % device_type
+        device_type_string = "&deviceType=%s" % device_type
     browser_api_url = "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z%s%s%s%s&format=json" % (strt_dt, end_dt, device_type_string, location_string, op_system_string, user_type_string)
     return browser_api_url
 
@@ -77,90 +77,90 @@ def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system,
 def get_browser_data(**kwargs):
     """ Pull browser data for each combination of the configs from the Cloudflare API, always runs with a lag of 4 days"""
     #Calculate start date and end date
-    logical_dag_dt = kwargs.get('ds')
-    logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, '%Y-%m-%d').date()
+    logical_dag_dt = kwargs.get("ds")
+    logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, "%Y-%m-%d").date()
     start_date = logical_dag_dt_as_date - timedelta(days=4)
     end_date = start_date + timedelta(days=1)
-    print('Start Date: ', start_date)
-    print('End Date: ', end_date)
+    print("Start Date: ", start_date)
+    print("End Date: ", end_date)
 
     #Configure request headers
-    bearer_string = 'Bearer %s' % auth_token
-    headers = {'Authorization': bearer_string}
+    bearer_string = "Bearer %s" % auth_token
+    headers = {"Authorization": bearer_string}
 
     #Initialize the empty results and errors dataframes
-    browser_results_df = pd.DataFrame({'StartTime': [],
-                                    'EndTime': [],
-                                    'DeviceType': [] ,
-                                    'Location': [] ,
-                                    'UserType': [],
-                                    'Browser': [],
-                                    'OperatingSystem': [],
-                                    'PercentShare': [],
-                                    'ConfLevel': [],
-                                    'Normalization': [],
-                                    'LastUpdated': []})
+    browser_results_df = pd.DataFrame({"StartTime": [],
+                                    "EndTime": [],
+                                    "DeviceType": [] ,
+                                    "Location": [] ,
+                                    "UserType": [],
+                                    "Browser": [],
+                                    "OperatingSystem": [],
+                                    "PercentShare": [],
+                                    "ConfLevel": [],
+                                    "Normalization": [],
+                                    "LastUpdated": []})
     
-    browser_errors_df = pd.DataFrame({'StartTime': [],
-                                    'EndTime': [],
-                                    'Location': [],
-                                    'UserType': [],
-                                    'DeviceType': [],
-                                    'OperatingSystem': []})
+    browser_errors_df = pd.DataFrame({"StartTime": [],
+                                    "EndTime": [],
+                                    "Location": [],
+                                    "UserType": [],
+                                    "DeviceType": [],
+                                    "OperatingSystem": []})
 
     #Loop through the combinations
-    for device_type in brwsr_usg_configs['device_types']:
-        for loc in brwsr_usg_configs['locations']:
-            for os in brwsr_usg_configs['operating_systems']:
+    for device_type in brwsr_usg_configs["device_types"]:
+        for loc in brwsr_usg_configs["locations"]:
+            for os in brwsr_usg_configs["operating_systems"]:
                 for user_type in brwsr_usg_configs["user_types"]:
-                    print('device type: ', device_type)
-                    print('location: ', loc)
-                    print('os: ', os)
-                    print('user_type: ', user_type)
-                        
+                    print("device type: ", device_type)
+                    print("location: ", loc)
+                    print("os: ", os)
+                    print("user_type: ", user_type)
+
                     #Generate the URL & call the API
                     brwsr_usg_api_url = generate_browser_api_call(start_date, end_date, device_type, loc, os, user_type)
-                    response = requests.get(brwsr_usg_api_url, headers=headers, timeout = brwsr_usg_configs['timeout_limit'])
+                    response = requests.get(brwsr_usg_api_url, headers=headers, timeout = brwsr_usg_configs["timeout_limit"])
                     response_json = json.loads(response.text)
 
                     #if the response was successful, get the result and append it to the results dataframe
-                    if response_json['success'] is True:
+                    if response_json["success"] is True:
                         #Save the results to GCS
-                        result = response_json['result']
-                        confidence_level = result['meta']['confidenceInfo']['level']
-                        normalization = result['meta']['normalization']
-                        last_updated = result['meta']['lastUpdated']
-                        startTime = result['meta']['dateRange'][0]['startTime']
-                        endTime = result['meta']['dateRange'][0]['endTime']
-                        data = result['top_0']
+                        result = response_json["result"]
+                        confidence_level = result["meta"]["confidenceInfo"]["level"]
+                        normalization = result["meta"]["normalization"]
+                        last_updated = result["meta"]["lastUpdated"]
+                        startTime = result["meta"]["dateRange"][0]["startTime"]
+                        endTime = result["meta"]["dateRange"][0]["endTime"]
+                        data = result["top_0"]
                         browser_lst = []
                         browser_share_lst = []
 
                         for browser in data:
-                            browser_lst.append(browser['name'])
-                            browser_share_lst.append(browser['value'])
+                            browser_lst.append(browser["name"])
+                            browser_share_lst.append(browser["value"])
 
-                        new_browser_results_df = pd.DataFrame({'StartTime': [startTime]* len(browser_lst),
-                                            'EndTime': [endTime] * len(browser_lst),
-                                            'DeviceType': [device_type] * len(browser_lst) ,
-                                            'Location': [loc] * len(browser_lst) ,
-                                            'UserType': [user_type] * len(browser_lst),
-                                            'Browser': browser_lst,
-                                            'OperatingSystem': [os] * len(browser_lst),
-                                            'PercentShare': browser_share_lst,
-                                            'ConfLevel': [confidence_level] * len(browser_lst),
-                                            'Normalization': [normalization] * len(browser_lst),
-                                            'LastUpdated': [last_updated] * len(browser_lst)})
+                        new_browser_results_df = pd.DataFrame({"StartTime": [startTime]* len(browser_lst),
+                                            "EndTime": [endTime] * len(browser_lst),
+                                            "DeviceType": [device_type] * len(browser_lst) ,
+                                            "Location": [loc] * len(browser_lst) ,
+                                            "UserType": [user_type] * len(browser_lst),
+                                            "Browser": browser_lst,
+                                            "OperatingSystem": [os] * len(browser_lst),
+                                            "PercentShare": browser_share_lst,
+                                            "ConfLevel": [confidence_level] * len(browser_lst),
+                                            "Normalization": [normalization] * len(browser_lst),
+                                            "LastUpdated": [last_updated] * len(browser_lst)})
                         browser_results_df = pd.concat([browser_results_df, new_browser_results_df])
 
                     #If there were errors, save them to the errors dataframe
                     else:
-                        new_browser_error_df = pd.DataFrame({'StartTime': [start_date],
-                                                            'EndTime': [end_date],
-                                                            'Location': [loc],
-                                                            'UserType': [user_type],
-                                                            'DeviceType': [device_type],
-                                                            'OperatingSystem': [os]})
+                        new_browser_error_df = pd.DataFrame({"StartTime": [start_date],
+                                                            "EndTime": [end_date],
+                                                            "Location": [loc],
+                                                            "UserType": [user_type],
+                                                            "DeviceType": [device_type],
+                                                            "OperatingSystem": [os]})
                         browser_errors_df = pd.concat([browser_errors_df,new_browser_error_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
@@ -168,8 +168,8 @@ def get_browser_data(**kwargs):
     error_fpath = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     browser_results_df.to_csv(result_fpath, index=False)
     browser_errors_df.to_csv(error_fpath, index=False)
-    print('Wrote errors to: ', error_fpath)
-    print('Wrote results to: ', result_fpath)
+    print("Wrote errors to: ", error_fpath)
+    print("Wrote results to: ", result_fpath)
 
     #Return a summary to the console
     len_results = str(len(browser_results_df))
@@ -219,9 +219,9 @@ with DAG(
     load_results_to_bq_stg = GCSToBigQueryOperator(task_id="load_results_to_bq_stg",
                                                    bucket= brwsr_usg_configs["bucket"],
                                                     destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg",
-                                                    source_format = 'CSV',
-                                                    source_objects = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}',
-                                                    compression='NONE',
+                                                    source_format = "CSV",
+                                                    source_objects = brwsr_usg_configs["bucket"] + brwsr_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
+                                                    compression="NONE",
                                                     create_disposition="CREATE_IF_NEEDED",
                                                     skip_leading_rows=1,
                                                     write_disposition="WRITE_TRUNCATE",
@@ -232,9 +232,9 @@ with DAG(
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= brwsr_usg_configs["bucket"],
                                                destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg",
-                                               source_format = 'CSV',
-                                               source_objects = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
-                                               compression='NONE',
+                                               source_format = "CSV",
+                                               source_objects = brwsr_usg_configs["bucket"] + brwsr_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
+                                               compression="NONE",
                                                create_disposition="CREATE_IF_NEEDED",
                                                skip_leading_rows=1,
                                                write_disposition="WRITE_TRUNCATE",
