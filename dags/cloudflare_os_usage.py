@@ -79,7 +79,7 @@ def get_os_usage_data(**kwargs):
     result_df = pd.DataFrame({"Timestamps": [],
                                     "OS": [],
                                     "Location": [],
-                                    "DeviceType": [], 
+                                    "DeviceType": [],
                                     "Share": [],
                                     "ConfidenceLevel": [],
                                     "AggrInterval": [],
@@ -91,7 +91,7 @@ def get_os_usage_data(**kwargs):
                                 "EndTime": [],
                                 "Location": [],
                                 "DeviceType": []})
-    
+
     #Go through all combinations, submit API requests
     for device_type in os_usg_configs["device_types"]:
         for loc in os_usg_configs["locations"]:
@@ -119,7 +119,7 @@ def get_os_usage_data(**kwargs):
                     new_result_df = pd.DataFrame({"Timestamps": data_dict["timestamps"],
                                                 "OS": [key] * len(val),
                                                 "Location": [loc]*len(val),
-                                                "DeviceType": [device_type]*len(val), 
+                                                "DeviceType": [device_type]*len(val),
                                                 "Share": val,
                                                 "ConfidenceLevel": [conf_lvl]* len(val),
                                                 "AggrInterval": [aggr_intvl]* len(val),
@@ -127,7 +127,7 @@ def get_os_usage_data(**kwargs):
                                                 "LastUpdatedTS": [lst_upd] * len(val)
                                                 })
                     result_df = pd.concat([result_df, new_result_df])
-            
+
             #If response was not successful, get the errors
             else:
                 errors = response_json["errors"] #Maybe add to capture, right now not using this
@@ -182,7 +182,7 @@ with DAG(
                                                     write_disposition="WRITE_TRUNCATE",
                                                     gcp_conn_id=os_usg_configs["gcp_conn_id"],
                                                     allow_jagged_rows = False)
-    
+
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= os_usg_configs["bucket"],
                                                destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg",
@@ -206,7 +206,7 @@ with DAG(
                                                             },
                                                         project_id="moz-fx-data-shared-prod",
                                                         gcp_conn_id = os_usg_configs["gcp_conn_id"])
-    
+
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
                                                            "query": os_usage_errors_stg_to_gold_query,
@@ -222,12 +222,12 @@ with DAG(
     #Copy the result files from staging path into archive path after they are processed
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = os_usg_configs["bucket"],
-                                       source_object = os_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}", 
+                                       source_object = os_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
                                        destination_bucket = os_usg_configs["bucket"],
                                        destination_object = os_usg_configs["results_archive_gcs_fpth"] % "{{ ds }}",
-                                       gcp_conn_id=os_usg_configs["gcp_conn_id"], 
+                                       gcp_conn_id=os_usg_configs["gcp_conn_id"],
                                        exact_match = True)
-    
+
     #Copy the error files from staging path into archive path after they are processed
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = os_usg_configs["bucket"],
@@ -242,7 +242,7 @@ with DAG(
                                                         bucket_name = os_usg_configs["bucket"],
                                                         objects = [ os_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id=os_usg_configs["gcp_conn_id"])
-    
+
     #Delete the error file from the staging path
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = os_usg_configs["bucket"],
