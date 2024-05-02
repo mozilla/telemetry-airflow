@@ -235,8 +235,8 @@ def get_browser_data(**kwargs):
     return result_summary
 
 
-browser_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1` 
-SELECT 
+browser_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1`
+SELECT
 CAST(StartTime as date) AS dte,
 device_type,
 location,
@@ -249,7 +249,7 @@ last_updated_ts
 FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg` """
 
 browser_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_errors_v1`
-SELECT 
+SELECT
 CAST(StartTime as date) AS dte,
 location,
 user_type,
