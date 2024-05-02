@@ -3,16 +3,18 @@ import json
 from datetime import datetime, timedelta
 import pandas as pd
 import requests
+
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
-from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
-from airflow.models import Variable
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
     GCSToBigQueryOperator,
 )
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from airflow.models import Variable
+
 from utils.tags import Tag
 
 # Load auth token
@@ -60,7 +62,7 @@ brwsr_usg_configs = {
 def generate_browser_api_call(
     strt_dt, end_dt, device_type, location, op_system, user_typ
 ):
-    """Generates the API URL."""
+    """Create the API url based on the input parameters."""
     # USER TYPE
     if user_typ == "ALL":
         user_type_string = ""
