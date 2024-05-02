@@ -89,7 +89,7 @@ def generate_browser_api_call(
             device_type_string,
             location_string,
             op_system_string,
-            user_type_string,
+            user_type_string
         )
     )
     return browser_api_url
