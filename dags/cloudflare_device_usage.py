@@ -1,18 +1,20 @@
 # Load libraries
 import json
 from datetime import datetime, timedelta
+
 import pandas as pd
 import requests
 from airflow import DAG
+from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from airflow.models import Variable
-from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
     GCSToBigQueryOperator,
 )
-from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+
 from utils.tags import Tag
 
 # Get the auth token from an Airflow variable
@@ -53,15 +55,15 @@ device_usg_configs = {
 
 
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
-    """Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL."""
+    """Calculate API to call based on given parameters."""
     if location == "ALL":
         device_usage_api_url = (
-            "https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&format=json&aggInterval=%s"
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart={2}T00:00:00.000Z&dateEnd={3}T00:00:00.000Z&format=json&aggInterval={4}"
             % (strt_dt, end_dt, strt_dt, end_dt, agg_int)
         )
     else:
         device_usage_api_url = (
-            "https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&name=bot&botClass=LIKELY_AUTOMATED&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&format=json&aggInterval=%s"
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&name=bot&botClass=LIKELY_AUTOMATED&dateStart={3}T00:00:00.000Z&dateEnd={4}T00:00:00.000Z&location={5}&format=json&aggInterval={6}"
             % (strt_dt, end_dt, location, strt_dt, end_dt, location, agg_int)
         )
     return device_usage_api_url
@@ -160,7 +162,9 @@ def get_device_usage_data(**kwargs):
 
         # Call the API and save the response as JSON
         response = requests.get(
-            device_usage_api_url, headers=headers, timeout=device_usg_configs["timeout_limit"]
+            device_usage_api_url,
+            headers=headers,
+            timeout=device_usg_configs["timeout_limit"],
         )
         response_json = json.loads(response.text)
 
@@ -179,10 +183,42 @@ def get_device_usage_data(**kwargs):
             lst_upd = result["meta"]["lastUpdated"]
 
             # Save to the results dataframe ### FIX BELOW HERE ####
+            human_result_df = make_device_usage_result_df(
+                "Human",
+                human_dsktp,
+                human_mbl,
+                human_othr,
+                human_ts,
+                lst_upd,
+                nrmlztn,
+                conf_lvl,
+                aggr_intvl,
+                loc,
+            )
+            bot_result_df = make_device_usage_result_df(
+                "Bot",
+                bot_dsktp,
+                bot_mbl,
+                bot_othr,
+                bot_ts,
+                lst_upd,
+                nrmlztn,
+                conf_lvl,
+                aggr_intvl,
+                loc,
+            )
+
+            # Union the results
+            new_result_df = pd.concat(
+                [human_result_df, bot_result_df], ignore_index=True, sort=False
+            )
+
+            # Add results to the results dataframe
+            results_df = pd.concat([results_df, new_result_df])
 
         # If response was not successful, save to the errors dataframe
         else:
-            errors = response_json["errors"]
+            #errors = response_json["errors"]
             new_errors_df = pd.DataFrame(
                 {"StartTime": [start_date], "EndTime": [end_date], "Location": [loc]}
             )
