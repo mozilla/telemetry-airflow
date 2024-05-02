@@ -48,7 +48,7 @@ device_usg_configs = {"timeout_limit": 2000,
 
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
     """ Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL """
-    if location == 'ALL':
+    if location == "ALL":
         device_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&format=json&aggInterval=%s" % (strt_dt, end_dt, strt_dt, end_dt, agg_int)
     else:
         device_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&name=bot&botClass=LIKELY_AUTOMATED&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&format=json&aggInterval=%s" % (strt_dt, end_dt, location, strt_dt, end_dt, location, agg_int)
@@ -58,71 +58,71 @@ def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location)
 def parse_device_type_timeseries_response_human(result):
     """ Takes the response JSON and returns parsed information"""
     ### HUMAN
-    human_timestamps = result['human']['timestamps']
-    human_desktop = result['human']['desktop']
-    human_mobile = result['human']['mobile']
-    human_other = result['human']['other']
+    human_timestamps = result["human"]["timestamps"]
+    human_desktop = result["human"]["desktop"]
+    human_mobile = result["human"]["mobile"]
+    human_other = result["human"]["other"]
     return human_timestamps, human_desktop, human_mobile, human_other
 
 
 def parse_device_type_timeseries_response_bot(result):
     """ Takes the response JSON and returns parsed information"""
     ### BOT 
-    bot_timestamps = result['bot']['timestamps']
-    bot_desktop = result['bot']['desktop']
-    bot_mobile = result['bot']['mobile']
-    bot_other = result['bot']['other']
+    bot_timestamps = result["bot"]["timestamps"]
+    bot_desktop = result["bot"]["desktop"]
+    bot_mobile = result["bot"]["mobile"]
+    bot_other = result["bot"]["other"]
     return bot_timestamps, bot_desktop, bot_mobile, bot_other
 
 
 #Generate the result dataframe
 def make_device_usage_result_df(user_type, desktop, mobile, other, timestamps, last_upd, norm, conf, agg_interval, location):
     """ User type = string, desktop, mobile, other, timestamps, arrays, """
-    return pd.DataFrame({'Timestamp': timestamps,
-                'UserType': [user_type] * len(timestamps),
-                'Location': [location] * len(timestamps),
-                'DesktopUsagePct': desktop,
-                'MobileUsagePct': mobile,
-                'OtherUsagePct': other,
-                'ConfLevel': [conf]* len(timestamps),
-                'AggInterval': [agg_interval] * len(timestamps),
-                'NormalizationType': [norm] * len(timestamps),
-                'LastUpdated': [last_upd] * len(timestamps)
+    return pd.DataFrame({"Timestamp": timestamps,
+                "UserType": [user_type] * len(timestamps),
+                "Location": [location] * len(timestamps),
+                "DesktopUsagePct": desktop,
+                "MobileUsagePct": mobile,
+                "OtherUsagePct": other,
+                "ConfLevel": [conf]* len(timestamps),
+                "AggInterval": [agg_interval] * len(timestamps),
+                "NormalizationType": [norm] * len(timestamps),
+                "LastUpdated": [last_upd] * len(timestamps)
                 })
 
 def get_device_usage_data(**kwargs):
     """ Call API and retrieve device usage data and save both errors & results to GCS"""
     #Calculate start date and end date
-    logical_dag_dt = kwargs.get('ds')
-    logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, '%Y-%m-%d').date()
+    logical_dag_dt = kwargs.get("ds")
+    logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, "%Y-%m-%d").date()
     start_date = logical_dag_dt_as_date - timedelta(days=4)
     end_date = start_date + timedelta(days=1)
-    print('Start Date: ', start_date)
-    print('End Date: ', end_date)
+    print("Start Date: ", start_date)
+    print("End Date: ", end_date)
 
     #Configure request headers
-    bearer_string = 'Bearer %s' % auth_token
-    headers = {'Authorization': bearer_string}
+    bearer_string = "Bearer %s" % auth_token
+    headers = {"Authorization": bearer_string}
 
     #Initialize the empty results & errors dataframe
-    results_df = pd.DataFrame({'Timestamp': [],
-                        'UserType': [],
-                        'Location': [],
-                        'DesktopUsagePct': [],
-                        'MobileUsagePct': [],
-                        'OtherUsagePct': [],
-                        'ConfLevel': [],
-                        'AggInterval': [],
-                        'NormalizationType': [],
-                        'LastUpdated': []})
+    results_df = pd.DataFrame({"Timestamp": [],
+                        "UserType": [],
+                        "Location": [],
+                        "DesktopUsagePct": [],
+                        "MobileUsagePct": [],
+                        "OtherUsagePct": [],
+                        "ConfLevel": [],
+                        "AggInterval": [],
+                        "NormalizationType": [],
+                        "LastUpdated": []})
 
-    errors_df = pd.DataFrame({'StartTime': [],
-                            'EndTime': [],
-                            'Location': []})
+    errors_df = pd.DataFrame({"StartTime": [],
+                            "EndTime": [],
+                            "Location": []})
 
     #For each location, call the API to get device usage data
-    for loc in device_usg_configs['locations']:
-        print('Loc: ', loc)
+    for loc in device_usg_configs["locations"]:
+        print("Loc: ", loc)
 
         #Generate the URL
         device_usage_api_url = generate_device_type_timeseries_api_call(start_date, end_date, "1d", loc)
@@ -132,23 +132,23 @@ def get_device_usage_data(**kwargs):
         response_json = json.loads(response.text)
 
         #If response was successful, get the result
-        if response_json['success'] is True:
-            result = response_json['result']
+        if response_json["success"] is True:
+            result = response_json["result"]
             human_ts, human_dsktp, human_mbl, human_othr = parse_device_type_timeseries_response_human(result)
             bot_ts, bot_dsktp, bot_mbl, bot_othr = parse_device_type_timeseries_response_bot(result)
-            conf_lvl = result['meta']['confidenceInfo']['level']
-            aggr_intvl = result['meta']['aggInterval']
-            nrmlztn = result['meta']['normalization']
-            lst_upd = result['meta']['lastUpdated']
+            conf_lvl = result["meta"]["confidenceInfo"]["level"]
+            aggr_intvl = result["meta"]["aggInterval"]
+            nrmlztn = result["meta"]["normalization"]
+            lst_upd = result["meta"]["lastUpdated"]
 
             #Save to the results dataframe
 
         #If response was not successful, save to the errors dataframe
         else:
-            errors = response_json['errors']
-            new_errors_df = pd.DataFrame({'StartTime': [start_date],
-                                        'EndTime': [end_date],
-                                        'Location': [loc]})
+            errors = response_json["errors"]
+            new_errors_df = pd.DataFrame({"StartTime": [start_date],
+                                        "EndTime": [end_date],
+                                        "Location": [loc]})
             errors_df = pd.concat([errors_df, new_errors_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
@@ -156,8 +156,8 @@ def get_device_usage_data(**kwargs):
     error_fpath = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     results_df.to_csv(result_fpath, index=False)
     errors_df.to_csv(error_fpath, index=False)
-    print('Wrote errors to: ', error_fpath)
-    print('Wrote results to: ', result_fpath)
+    print("Wrote errors to: ", error_fpath)
+    print("Wrote results to: ", result_fpath)
 
     #Print a summary to the console
     len_results = str(len(results_df))
@@ -206,9 +206,9 @@ with DAG(
     load_results_to_bq_stg = GCSToBigQueryOperator(task_id = "load_results_to_bq_stg",
                                                bucket = device_usg_configs["bucket"],
                                                destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.device_results_stg",
-                                               source_format = 'CSV',
-                                               source_objects = device_usg_configs["bucket"] + device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}',
-                                               compression='NONE',
+                                               source_format = "CSV",
+                                               source_objects = device_usg_configs["bucket"] + device_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
+                                               compression="NONE",
                                                create_disposition="CREATE_IF_NEEDED",
                                                skip_leading_rows=1,
                                                write_disposition = "WRITE_TRUNCATE",
@@ -219,9 +219,9 @@ with DAG(
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= device_usg_configs["bucket"],
                                                destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg",
-                                               source_format = 'CSV',
-                                               source_objects = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
-                                               compression='NONE',
+                                               source_format = "CSV",
+                                               source_objects = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
+                                               compression="NONE",
                                                create_disposition="CREATE_IF_NEEDED",
                                                skip_leading_rows=1,
                                                write_disposition="WRITE_TRUNCATE",
@@ -232,9 +232,9 @@ with DAG(
     load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
                                                         configuration = {
                                                            "query": device_usg_stg_to_gold_query,
-                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
-                                                                                 'datasetId': 'cloudflare_derived',
-                                                                                 'tableId': 'device_usage_v1'},
+                                                            "destinationTable": {"projectId": "moz-fx-data-shared-prod",
+                                                                                 "datasetId": "cloudflare_derived",
+                                                                                 "tableId": "device_usage_v1"},
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                         },
@@ -244,9 +244,9 @@ with DAG(
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
                                                            "query": device_usg_errors_stg_to_gold_query,
-                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
-                                                                                 'datasetId': 'cloudflare_derived',
-                                                                                 'tableId': 'device_usage_errors_v1'},
+                                                            "destinationTable": {"projectId": "moz-fx-data-shared-prod",
+                                                                                 "datasetId": "cloudflare_derived",
+                                                                                 "tableId": "device_usage_errors_v1"},
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                            },
