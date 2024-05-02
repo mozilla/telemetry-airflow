@@ -65,24 +65,24 @@ def generate_browser_api_call(
     if user_typ == "ALL":
         user_type_string = ""
     else:
-        user_type_string = "&botClass=%s" % user_typ
+        user_type_string = f"&botClass={0}" % (user_typ)
     # LOCATION
     if location == "ALL":
         location_string = ""
     else:
-        location_string = "&location=%s" % location
+        location_string = f"&location={0}" % (location)
     # OP SYSTEM
     if op_system == "ALL":
         op_system_string = ""
     else:
-        op_system_string = "&os=%s" % op_system
+        op_system_string = f"&os={0}" % (op_system)
     # Device type
     if device_type == "ALL":
         device_type_string = ""
     else:
-        device_type_string = "&deviceType=%s" % device_type
+        device_type_string = f"&deviceType={0}" % (device_type)
     browser_api_url = (
-        "https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z%s%s%s%s&format=json"
+        f"https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z{2}{3}{4}{5}&format=json"
         % (
             strt_dt,
             end_dt,
