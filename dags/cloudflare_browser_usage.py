@@ -35,9 +35,9 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
 brwsr_usg_configs = {"timeout_limit": 2000,
-                    "device_types": ["DESKTOP", "MOBILE", "OTHER", "ALL"], 
-                    "operating_systems": ["ALL", "WINDOWS", "MACOSX", "IOS", "ANDROID", "CHROMEOS", "LINUX", "SMART_TV"], 
-                    "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"], 
+                    "device_types": ["DESKTOP"], #, "MOBILE", "OTHER", "ALL"], 
+                    "operating_systems": ["ALL"], #, "WINDOWS", "MACOSX", "IOS", "ANDROID", "CHROMEOS", "LINUX", "SMART_TV"], 
+                    "locations": ["ALL"], #,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"], 
                     "user_types": ["ALL"],
                     "bucket": "gs://moz-fx-data-prod-external-data/",
                     "results_stg_gcs_fpth": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
