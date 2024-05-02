@@ -68,7 +68,7 @@ def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location)
 
 
 def parse_device_type_timeseries_response_human(result):
-    """Takes the response JSON and returns parsed information."""
+    """Take the response JSON and returns parsed information."""
     ### HUMAN
     human_timestamps = result["human"]["timestamps"]
     human_desktop = result["human"]["desktop"]
@@ -78,7 +78,7 @@ def parse_device_type_timeseries_response_human(result):
 
 
 def parse_device_type_timeseries_response_bot(result):
-    """Takes the response JSON and returns parsed information."""
+    """Take the response JSON and returns parsed information."""
     ### BOT
     bot_timestamps = result["bot"]["timestamps"]
     bot_desktop = result["bot"]["desktop"]
@@ -100,7 +100,7 @@ def make_device_usage_result_df(
     agg_interval,
     location,
 ):
-    """User type = string, desktop, mobile, other, timestamps, arrays,"""
+    """Initialize a result dataframe for device usage data."""
     return pd.DataFrame(
         {
             "Timestamp": timestamps,
@@ -128,7 +128,7 @@ def get_device_usage_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = "Bearer %s" % auth_token
+    bearer_string = f"Bearer {0}" % (auth_token)
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results & errors dataframe
@@ -160,7 +160,7 @@ def get_device_usage_data(**kwargs):
 
         # Call the API and save the response as JSON
         response = requests.get(
-            device_usage_api_url, headers=headers, timeout=timeout_time
+            device_usage_api_url, headers=headers, timeout=device_usg_configs["timeout_limit"]
         )
         response_json = json.loads(response.text)
 
@@ -205,7 +205,7 @@ def get_device_usage_data(**kwargs):
     # Print a summary to the console
     len_results = str(len(results_df))
     len_errors = str(len(errors_df))
-    result_summary = "# Result Rows: %s; # of Error Rows: %s" % (
+    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
         len_results,
         len_errors,
     )
@@ -213,8 +213,7 @@ def get_device_usage_data(**kwargs):
 
 
 device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
-
-SELECT 
+SELECT
 CAST(StartTime as date) AS dte,
 user_type,
 location,
@@ -227,8 +226,7 @@ last_updated_ts
 FROM `moz-fx-data-shared-prod.cloudflare_derived.device_results_stg` """
 
 device_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
-
-SELECT 
+SELECT
 CAST(StartTime as date) AS dte,
 location
 FROM `moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg`  """
