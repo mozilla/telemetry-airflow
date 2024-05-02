@@ -1,19 +1,19 @@
 # Load libraries
 import json
 from datetime import datetime, timedelta
+
 import pandas as pd
 import requests
-
 from airflow import DAG
+from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
     GCSToBigQueryOperator,
 )
-from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
-from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
-from airflow.models import Variable
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
 
 from utils.tags import Tag
 
@@ -269,7 +269,6 @@ with DAG(
     schedule_interval="0 5 * * *",  # Daily at 5am
     tags=TAGS,
 ) as dag:
-
     # Call the API and save the results to GCS
     get_browser_usage_data = PythonOperator(
         task_id="get_browser_usage_data",
