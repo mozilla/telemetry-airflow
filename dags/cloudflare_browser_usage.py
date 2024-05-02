@@ -97,7 +97,7 @@ def generate_browser_api_call(
 
 # Define function to pull browser data from the cloudflare API
 def get_browser_data(**kwargs):
-    """Pull browser data for each combination of the configs from the Cloudflare API, always runs with a lag of 4 days"""
+    """Pull browser data for each combination of the configs from the Cloudflare API, always runs with a lag of 4 days."""
     # Calculate start date and end date
     logical_dag_dt = kwargs.get("ds")
     logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, "%Y-%m-%d").date()
