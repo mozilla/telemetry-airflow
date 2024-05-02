@@ -35,10 +35,10 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 
 #Configurations
 os_usg_configs = {"timeout_limit": 2000,
-                 "device_types":  ["DESKTOP", "MOBILE", "OTHER", "ALL"],
-                "locations": ["ALL","BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
-                            "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
-                            "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+                 "device_types":  ["DESKTOP"], #, "MOBILE", "OTHER", "ALL"],
+                "locations": ["ALL"], #,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
+                            #"GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
+                            #"NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
                 "bucket": "gs://moz-fx-data-prod-external-data/",
                 "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
                 "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
