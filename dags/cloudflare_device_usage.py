@@ -256,31 +256,31 @@ with DAG(
     #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = device_usg_configs["bucket"],
-                                       source_object = device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
+                                       source_object = device_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}", 
                                        destination_bucket = device_usg_configs["bucket"],
-                                       destination_object = device_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
+                                       destination_object = device_usg_configs["results_archive_gcs_fpath"] % "{{ ds }}",
                                        gcp_conn_id=device_usg_configs["gcp_conn_id"], 
                                        exact_match = True)
     
     #Archive the error files by moving them out of staging path and into archive path
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = device_usg_configs["bucket"],
-                                       source_object = device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
+                                       source_object = device_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
                                        destination_bucket = device_usg_configs["bucket"],
-                                       destination_object = device_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
+                                       destination_object = device_usg_configs["errors_archive_gcs_fpath"] % "{{ ds }}",
                                        gcp_conn_id=device_usg_configs["gcp_conn_id"],
                                        exact_match = True)
     
     #Delete the result file from the staging path
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = device_usg_configs["bucket"],
-                                                        objects = [ device_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        objects = [ device_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id=device_usg_configs["gcp_conn_id"])
     
     #Delete the error file from the staging path
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = device_usg_configs["bucket"],
-                                                        objects = [ device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        objects = [ device_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id = device_usg_configs["gcp_conn_id"])
 
     run_device_qa_checks = EmptyOperator(task_id="run_device_qa_checks")

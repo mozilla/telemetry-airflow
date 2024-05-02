@@ -227,7 +227,7 @@ with DAG(
                                                     write_disposition="WRITE_TRUNCATE",
                                                     gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                                     allow_jagged_rows = False)
-    
+ 
     #Load the errors from GCS to a temporary staging table in BQ (overwritten each run)
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= brwsr_usg_configs["bucket"],
@@ -240,14 +240,14 @@ with DAG(
                                                write_disposition="WRITE_TRUNCATE",
                                                gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                                allow_jagged_rows = False)
-    
+
     #Run a query to process data from staging and insert it into the production gold table
     load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
                                                         configuration={
                                                             "query": browser_usg_stg_to_gold_query,
-                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
-                                                                                 'datasetId': 'cloudflare_derived',
-                                                                                 'tableId': 'browser_usage_v1'},
+                                                            "destinationTable": {"projectId": "moz-fx-data-shared-prod",
+                                                                                 "datasetId": "cloudflare_derived",
+                                                                                 "tableId": "browser_usage_v1"},
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                             },
@@ -257,9 +257,9 @@ with DAG(
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
                                                            "query": browser_usg_errors_stg_to_gold_query,
-                                                            "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
-                                                                                 'datasetId': 'cloudflare_derived',
-                                                                                 'tableId': 'browser_usage_errors_v1'},
+                                                            "destinationTable": {"projectId": "moz-fx-data-shared-prod",
+                                                                                 "datasetId": "cloudflare_derived",
+                                                                                 "tableId": "browser_usage_errors_v1"},
                                                             "createDisposition": "CREATE_NEVER",
                                                             "writeDisposition": "WRITE_APPEND"
                                                            },
@@ -269,31 +269,31 @@ with DAG(
     #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = brwsr_usg_configs["bucket"],
-                                       source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}',
+                                       source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
                                        destination_bucket = brwsr_usg_configs["bucket"],
-                                       destination_object = brwsr_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
+                                       destination_object = brwsr_usg_configs["results_archive_gcs_fpath"] % "{{ ds }}",
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                        exact_match = True)
-    
+
     #Archive the error files by moving them out of staging path and into archive path
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = brwsr_usg_configs["bucket"],
-                                       source_object = brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
+                                       source_object = brwsr_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
                                        destination_bucket = brwsr_usg_configs["bucket"],
-                                       destination_object = brwsr_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
+                                       destination_object = brwsr_usg_configs["errors_archive_gcs_fpath"] % "{{ ds }}",
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
                                        exact_match = True)
-    
+
     #Delete the results from staging GCS
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = brwsr_usg_configs["bucket"],
-                                                        objects = [ brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        objects = [ brwsr_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
-    
+
     #Delete the errors from staging GCS
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = brwsr_usg_configs["bucket"],
-                                                        objects = [ brwsr_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        objects = [ brwsr_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"])
 
     #Run browser QA checks - make sure there is only 1 row per primary key, error if PKs have more than 1 row
