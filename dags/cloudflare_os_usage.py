@@ -152,6 +152,10 @@ def get_os_usage_data(**kwargs):
     return result_summary
 
 
+os_usage_stg_to_gold_query = """ """
+
+os_usage_errors_stg_to_gold_query = """ """
+
 #Define DAG
 with DAG(
     "cloudflare_os_usage",
@@ -193,7 +197,7 @@ with DAG(
 
     load_results_to_bq_gold =  BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
                                                         configuration={
-                                                            "query": "load_cf_os_usg_results_from_stg_to_gld.sql",
+                                                            "query": os_usage_stg_to_gold_query,
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
                                                                                  'tableId': 'os_usage_v1'},
@@ -205,7 +209,7 @@ with DAG(
     
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
-                                                           "query": "load_cf_browser_usg_errors_from_stg_to_gld.sql",
+                                                           "query": os_usage_errors_stg_to_gold_query,
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
                                                                                  'tableId': 'os_usage_errors_v1'},
