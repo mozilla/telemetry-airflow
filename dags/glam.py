@@ -377,7 +377,7 @@ with dag as dag:
             table_project_id,
             billing_project_id,
             fully_qualified_dataset,
-            dataset_id
+            dataset_id,
         ),
         task_id="extracts",
     )

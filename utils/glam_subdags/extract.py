@@ -20,7 +20,7 @@ def extracts_subdag(
     table_project_id,
     billing_project_id,
     fully_qualified_dataset,
-    dataset_id
+    dataset_id,
 ):
     dag_id = f"{parent_dag_name}.{child_dag_name}"
     dag = DAG(
@@ -87,14 +87,10 @@ def extract_channel_subdag(
         dag=dag,
     )
 
-    gcs_destination = "gs://{bucket}/aggs-desktop-{channel}-*.csv".format(
-        bucket=glam_bucket, channel=channel
-    )
+    gcs_destination = f"gs://{glam_bucket}/aggs-desktop-{channel}-*.csv"
     bq2gcs = BigQueryToGCSOperator(
         task_id=f"glam_extract_{channel}_to_csv",
-        source_project_dataset_table="{}.{}.{}".format(
-            project_id, dataset_id, bq_extract_table
-        ),
+        source_project_dataset_table=f"{project_id}.{dataset_id}.{bq_extract_table}",
         destination_cloud_storage_uris=gcs_destination,
         gcp_conn_id=gcp_conn_id,
         export_format="CSV",
@@ -146,19 +142,13 @@ def extract_user_counts(
     )
 
     if file_prefix == "sample-counts":
-        gcs_destination = "gs://{}/glam-extract-firefox-{}-*.csv".format(
-            glam_bucket, file_prefix
-        )
+        gcs_destination = f"gs://{glam_bucket}/glam-extract-firefox-{file_prefix}-*.csv"
     else:
-        gcs_destination = "gs://{}/glam-extract-firefox-{}.csv".format(
-            glam_bucket, file_prefix
-        )
+        gcs_destination = f"gs://{glam_bucket}/glam-extract-firefox-{file_prefix}.csv"
 
     bq2gcs = BigQueryToGCSOperator(
         task_id=f"glam_extract_{task_prefix}_to_csv",
-        source_project_dataset_table="{}.{}.{}".format(
-            project_id, dataset_id, bq_extract_table
-        ),
+        source_project_dataset_table=f"{project_id}.{dataset_id}.{bq_extract_table}",
         destination_cloud_storage_uris=gcs_destination,
         gcp_conn_id=gcp_conn_id,
         export_format="CSV",
