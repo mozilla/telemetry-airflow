@@ -1,18 +1,20 @@
 # Load libraries
 import json
 from datetime import datetime, timedelta
+
 import pandas as pd
 import requests
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
     GCSToBigQueryOperator,
 )
-from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+
 from utils.tags import Tag
 
 # Get the auth token from an Airflow variable
@@ -54,32 +56,32 @@ os_usg_configs = {
 
 # Function to configure the API URL
 def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_type):
-    """Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL"""
+    """Generate the API call for Operating System Usage Data."""
     if location == "ALL" and device_type == "ALL":
         os_usage_api_url = (
-            "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&format=json&aggInterval=%s"
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&format=json&aggInterval={2}"
             % (strt_dt, end_dt, agg_int)
         )
     elif location != "ALL" and device_type == "ALL":
         os_usage_api_url = (
-            "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&format=json&aggInterval=%s"
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&format=json&aggInterval={3}"
             % (strt_dt, end_dt, location, agg_int)
         )
     elif location == "ALL" and device_type != "ALL":
         os_usage_api_url = (
-            "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&deviceType=%s&format=json&aggInterval=%s"
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&deviceType={2}&format=json&aggInterval={3}"
             % (strt_dt, end_dt, device_type, agg_int)
         )
     else:
         os_usage_api_url = (
-            "https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&location=%s&deviceType=%s&format=json&aggInterval=%s"
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&deviceType={3}&format=json&aggInterval={4}"
             % (strt_dt, end_dt, location, device_type, agg_int)
         )
     return os_usage_api_url
 
 
 def get_os_usage_data(**kwargs):
-    """Pull OS usage data from the Cloudflare API and save errors & results to GCS"""
+    """Pull OS usage data from the Cloudflare API and save errors & results to GCS."""
     # Calculate start date and end date
     logical_dag_dt = kwargs.get("ds")
     logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, "%Y-%m-%d").date()
@@ -89,7 +91,7 @@ def get_os_usage_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = "Bearer %s" % auth_token
+    bearer_string = f"Bearer {0}" % (auth_token)
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results & errors dataframe
@@ -159,9 +161,7 @@ def get_os_usage_data(**kwargs):
 
             # If response was not successful, get the errors
             else:
-                errors = response_json[
-                    "errors"
-                ]  # Maybe add to capture, right now not using this
+                # errors = response_json["errors"]  # Maybe add to capture, right now not using this
                 new_errors_df = pd.DataFrame(
                     {
                         "StartTime": [start_date],
@@ -189,7 +189,7 @@ def get_os_usage_data(**kwargs):
     # Write a summary to the logs
     len_results = str(len(result_df))
     len_errors = str(len(errors_df))
-    result_summary = "# Result Rows: %s; # of Error Rows: %s" % (
+    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
         len_results,
         len_errors,
     )

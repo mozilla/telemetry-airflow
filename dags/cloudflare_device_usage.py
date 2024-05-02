@@ -218,7 +218,7 @@ def get_device_usage_data(**kwargs):
 
         # If response was not successful, save to the errors dataframe
         else:
-            #errors = response_json["errors"]
+            # errors = response_json["errors"]
             new_errors_df = pd.DataFrame(
                 {"StartTime": [start_date], "EndTime": [end_date], "Location": [loc]}
             )
