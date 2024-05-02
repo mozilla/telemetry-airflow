@@ -24,7 +24,7 @@ default_args = {
     "owner": "kwindau@mozilla.com",
     "email": ["kwindau@mozilla.com"],
     "depends_on_past": False,
-    "start_date": datetime(2024, 4, 21),
+    "start_date": datetime(2024, 5, 1),
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
