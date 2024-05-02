@@ -1,8 +1,8 @@
 #Load libraries
-import requests
 import json
-import pandas as pd
 from datetime import datetime, timedelta
+import pandas as pd
+import requests
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
@@ -14,7 +14,7 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from utils.tags import Tag
 
 #Get the auth token from an Airflow variable
-auth_token = Variable.get('cloudflare_auth_token')
+auth_token = Variable.get("cloudflare_auth_token")
 
 #Define DOC string
 DOCS = """Pulls OS usage data from the Cloudflare API; Owner: kwindau@mozilla.com
@@ -222,31 +222,31 @@ with DAG(
     #Copy the result files from staging path into archive path after they are processed
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = os_usg_configs["bucket"],
-                                       source_object = os_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
+                                       source_object = os_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}", 
                                        destination_bucket = os_usg_configs["bucket"],
-                                       destination_object = os_usg_configs["results_archive_gcs_fpth"] % '{{ ds }}',
+                                       destination_object = os_usg_configs["results_archive_gcs_fpth"] % "{{ ds }}",
                                        gcp_conn_id=os_usg_configs["gcp_conn_id"], 
                                        exact_match = True)
     
     #Copy the error files from staging path into archive path after they are processed
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = os_usg_configs["bucket"],
-                                       source_object = os_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
+                                       source_object = os_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
                                        destination_bucket = os_usg_configs["bucket"],
-                                       destination_object = os_usg_configs["errors_archive_gcs_fpth"] % '{{ ds }}',
+                                       destination_object = os_usg_configs["errors_archive_gcs_fpth"] % "{{ ds }}",
                                        gcp_conn_id=os_usg_configs["gcp_conn_id"],
                                        exact_match = True)
 
     #Delete the result file from the staging path
     del_results_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_results_from_gcs_stg",
                                                         bucket_name = os_usg_configs["bucket"],
-                                                        objects = [ os_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        objects = [ os_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id=os_usg_configs["gcp_conn_id"])
     
     #Delete the error file from the staging path
     del_errors_from_gcs_stg = GCSDeleteObjectsOperator(task_id="del_errors_from_gcs_stg",
                                                        bucket_name = os_usg_configs["bucket"],
-                                                        objects = [ os_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}' ],
+                                                        objects = [ os_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}" ],
                                                         gcp_conn_id=os_usg_configs["gcp_conn_id"])
     #Run QA checks
     run_os_qa_checks = EmptyOperator(task_id="run_os_qa_checks")

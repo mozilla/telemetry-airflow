@@ -1,8 +1,8 @@
 #Load libraries
-import requests
 import json
-import pandas as pd
 from datetime import datetime, timedelta
+import pandas as pd
+import requests
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
@@ -14,7 +14,7 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from utils.tags import Tag
 
 #Get the auth token from an Airflow variable
-auth_token = Variable.get('cloudflare_auth_token')
+auth_token = Variable.get("cloudflare_auth_token")
 
 #Define DOC string
 DOCS = """Pulls device usage data from the Cloudflare API; Owner: kwindau@mozilla.com
@@ -166,7 +166,8 @@ def get_device_usage_data(**kwargs):
     return result_summary
 
 
-device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1` 
+device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
+
 SELECT 
 CAST(StartTime as date) AS dte,
 user_type,
@@ -180,6 +181,7 @@ last_updated_ts
 FROM `moz-fx-data-shared-prod.cloudflare_derived.device_results_stg` """
 
 device_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
+
 SELECT 
 CAST(StartTime as date) AS dte,
 location

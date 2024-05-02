@@ -1,8 +1,8 @@
 #Load libraries
-import requests
 import json
-import pandas as pd
 from datetime import datetime, timedelta
+import pandas as pd
+import requests
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
@@ -14,7 +14,7 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from utils.tags import Tag
 
 #Load auth token
-auth_token = Variable.get('cloudflare_auth_token')
+auth_token = Variable.get("cloudflare_auth_token")
 
 #Define DOC string
 DOCS = """Pulls browser usage data from the Cloudflare API; Owner: kwindau@mozilla.com
@@ -214,7 +214,7 @@ with DAG(
     get_browser_usage_data = PythonOperator(task_id="get_browser_usage_data",
                                 python_callable=get_browser_data,
                                 execution_timeout=timedelta(minutes=55))
-    
+
     #Load the results from GCS to a temporary staging table in BQ (overwritten each run)
     load_results_to_bq_stg = GCSToBigQueryOperator(task_id="load_results_to_bq_stg",
                                                    bucket= brwsr_usg_configs["bucket"],
@@ -269,7 +269,7 @@ with DAG(
     #Archive the result files by moving them out of staging path and into archive path
     archive_results = GCSToGCSOperator(task_id="archive_results",
                                        source_bucket = brwsr_usg_configs["bucket"],
-                                       source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}', 
+                                       source_object = brwsr_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}',
                                        destination_bucket = brwsr_usg_configs["bucket"],
                                        destination_object = brwsr_usg_configs["results_archive_gcs_fpath"] % '{{ ds }}',
                                        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
