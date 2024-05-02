@@ -63,26 +63,12 @@ def generate_browser_api_call(
     strt_dt, end_dt, device_type, location, op_system, user_typ
 ):
     """Create the API url based on the input parameters."""
-    # USER TYPE
-    if user_typ == "ALL":
-        user_type_string = ""
-    else:
-        user_type_string = f"&botClass={0}" % (user_typ)
-    # LOCATION
-    if location == "ALL":
-        location_string = ""
-    else:
-        location_string = f"&location={0}" % (location)
-    # OP SYSTEM
-    if op_system == "ALL":
-        op_system_string = ""
-    else:
-        op_system_string = f"&os={0}" % (op_system)
-    # Device type
-    if device_type == "ALL":
-        device_type_string = ""
-    else:
-        device_type_string = f"&deviceType={0}" % (device_type)
+    user_type_string = "" if user_typ == "ALL" else f"&botClass={0}" % (user_typ)
+    location_string = "" if location == "ALL" else f"&location={0}" % (location)
+    op_system_string = "" if op_system == "ALL" else f"&os={0}" % (op_system)
+    device_type_string = (
+        "" if device_type == "ALL" else f"&deviceType={0}" % (device_type)
+    )
     browser_api_url = (
         f"https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z{2}{3}{4}{5}&format=json"
         % (
