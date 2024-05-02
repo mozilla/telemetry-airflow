@@ -89,7 +89,7 @@ def generate_browser_api_call(
             device_type_string,
             location_string,
             op_system_string,
-            user_type_string
+            user_type_string,
         )
     )
     return browser_api_url
@@ -107,7 +107,7 @@ def get_browser_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = "Bearer %s" % auth_token
+    bearer_string = f"Bearer {0}" % (auth_token)
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results and errors dataframes
@@ -228,7 +228,7 @@ def get_browser_data(**kwargs):
     # Return a summary to the console
     len_results = str(len(browser_results_df))
     len_errors = str(len(browser_errors_df))
-    result_summary = "# Result Rows: %s; # of Error Rows: %s" % (
+    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
         len_results,
         len_errors,
     )
