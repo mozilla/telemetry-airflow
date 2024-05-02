@@ -154,8 +154,8 @@ def get_device_usage_data(**kwargs):
             errors_df = pd.concat([errors_df, new_errors_df])
 
     #LOAD RESULTS & ERRORS TO STAGING GCS
-    result_fpath = device_usg_configs["bucket"] + device_usg_configs["results_stg_gcs_fpth"] % start_date
-    error_fpath = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % start_date
+    result_fpath = device_usg_configs["bucket"] + device_usg_configs["results_stg_gcs_fpth"] % logical_dag_dt
+    error_fpath = device_usg_configs["bucket"] + device_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     results_df.to_csv(result_fpath, index=False)
     errors_df.to_csv(error_fpath, index=False)
     print('Wrote errors to: ', error_fpath)
@@ -265,7 +265,7 @@ with DAG(
     #Archive the error files by moving them out of staging path and into archive path
     archive_errors = GCSToGCSOperator(task_id="archive_errors",
                                       source_bucket = device_usg_configs["bucket"],
-                                       source_object = device_usg_configs["errors_staging_gcs_fpath"] % '{{ ds }}',
+                                       source_object = device_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
                                        destination_bucket = device_usg_configs["bucket"],
                                        destination_object = device_usg_configs["errors_archive_gcs_fpath"] % '{{ ds }}',
                                        gcp_conn_id=device_usg_configs["gcp_conn_id"],

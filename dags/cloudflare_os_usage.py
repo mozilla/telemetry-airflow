@@ -129,16 +129,16 @@ def get_os_usage_data(**kwargs):
                     result_df = pd.concat([result_df, new_result_df])
             
             #If response was not successful, get the errors
-        else:
-            errors = response_json['errors'] #Maybe add to capture, right now not using this
-            new_errors_df = pd.DataFrame({'StartTime': [start_date],
+            else:
+                errors = response_json['errors'] #Maybe add to capture, right now not using this
+                new_errors_df = pd.DataFrame({'StartTime': [start_date],
                                     'EndTime': [end_date],
                                     'Location': [loc],
                                     'DeviceType': [device_type]})
-            errors_df = pd.concat([errors_df, new_errors_df])
+                errors_df = pd.concat([errors_df, new_errors_df])
 
-    result_fpath = os_usg_configs["bucket"] + os_usg_configs[""] % ? #FIX
-    errors_fpath = os_usg_configs["bucket"] + os_usg_configs[""] % ? #FIX
+    result_fpath = os_usg_configs["bucket"] + os_usg_configs["results_stg_gcs_fpth"] % logical_dag_dt
+    errors_fpath = os_usg_configs["bucket"] + os_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
 
     result_df.to_csv(result_fpath, index=False)
     errors_df.to_csv(errors_fpath, index=False)
@@ -171,6 +171,7 @@ with DAG(
                                                    bucket= os_usg_configs["bucket"],
                                                     destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.os_results_stg",
                                                     source_format = 'CSV',
+                                                    source_objects = os_usg_configs["bucket"] + os_usg_configs["results_stg_gcs_fpth"] % '{{ ds }}',
                                                     compression='NONE',
                                                     create_disposition="CREATE_IF_NEEDED",
                                                     skip_leading_rows=1,
@@ -182,6 +183,7 @@ with DAG(
                                                 bucket= os_usg_configs["bucket"],
                                                destination_project_dataset_table = "moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg",
                                                source_format = 'CSV',
+                                               source_objects = os_usg_configs["bucket"] + os_usg_configs["errors_stg_gcs_fpth"] % '{{ ds }}',
                                                compression='NONE',
                                                create_disposition="CREATE_IF_NEEDED",
                                                skip_leading_rows=1,
