@@ -42,7 +42,7 @@ device_usg_configs = {"timeout_limit": 2000,
                     "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
                     "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
                     "gcp_project_id": "moz-fx-data-shared-prod",
-                    "gcp_conn_id": "google_cloud_gke_sandbox"}
+                    "gcp_conn_id": "google_cloud_airflow_dataproc"}
 
 
 

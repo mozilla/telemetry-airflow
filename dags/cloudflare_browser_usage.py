@@ -45,7 +45,7 @@ brwsr_usg_configs = {"timeout_limit": 2000,
                     "errors_stg_gcs_fpth": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
                     "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
                     "gcp_project_id": "moz-fx-data-shared-prod",
-                    "gcp_conn_id": "google_cloud_gke_sandbox"}
+                    "gcp_conn_id": "google_cloud_airflow_dataproc"}
 
 #Function to generate API call based on configs passed
 def generate_browser_api_call(strt_dt, end_dt, device_type, location, op_system, user_typ):
