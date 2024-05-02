@@ -47,7 +47,7 @@ device_usg_configs = {"timeout_limit": 2000,
 
 
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
-    """ Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL """
+    """Inputs: Start Date in YYYY-MM-DD format, End Date in YYYY-MM-DD format, and desired agg_interval; Returns API URL."""
     if location == "ALL":
         device_usage_api_url = "https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart=%sT00:00:00.000Z&dateEnd=%sT00:00:00.000Z&format=json&aggInterval=%s" % (strt_dt, end_dt, strt_dt, end_dt, agg_int)
     else:
@@ -56,7 +56,7 @@ def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location)
 
 
 def parse_device_type_timeseries_response_human(result):
-    """ Takes the response JSON and returns parsed information"""
+    """Takes the response JSON and returns parsed information."""
     ### HUMAN
     human_timestamps = result["human"]["timestamps"]
     human_desktop = result["human"]["desktop"]
@@ -66,8 +66,8 @@ def parse_device_type_timeseries_response_human(result):
 
 
 def parse_device_type_timeseries_response_bot(result):
-    """ Takes the response JSON and returns parsed information"""
-    ### BOT 
+    """Takes the response JSON and returns parsed information."""
+    ### BOT
     bot_timestamps = result["bot"]["timestamps"]
     bot_desktop = result["bot"]["desktop"]
     bot_mobile = result["bot"]["mobile"]
@@ -91,7 +91,7 @@ def make_device_usage_result_df(user_type, desktop, mobile, other, timestamps, l
                 })
 
 def get_device_usage_data(**kwargs):
-    """ Call API and retrieve device usage data and save both errors & results to GCS"""
+    """ Call API and retrieve device usage data and save both errors & results to GCS."""
     #Calculate start date and end date
     logical_dag_dt = kwargs.get("ds")
     logical_dag_dt_as_date = datetime.strptime(logical_dag_dt, "%Y-%m-%d").date()
@@ -141,7 +141,7 @@ def get_device_usage_data(**kwargs):
             nrmlztn = result["meta"]["normalization"]
             lst_upd = result["meta"]["lastUpdated"]
 
-            #Save to the results dataframe
+            #Save to the results dataframe ### FIX BELOW HERE ####
 
         #If response was not successful, save to the errors dataframe
         else:
@@ -201,7 +201,7 @@ with DAG(
     get_device_usage_data = PythonOperator(task_id="get_device_usage_data",
                                 python_callable=get_device_usage_data,
                                 execution_timeout=timedelta(minutes=55)) 
-    
+
     #Load the results from GCS to a temporary staging table in BQ (overwritten each run)
     load_results_to_bq_stg = GCSToBigQueryOperator(task_id = "load_results_to_bq_stg",
                                                bucket = device_usg_configs["bucket"],
@@ -214,7 +214,7 @@ with DAG(
                                                write_disposition = "WRITE_TRUNCATE",
                                                gcp_conn_id = device_usg_configs["gcp_conn_id"],
                                                allow_jagged_rows = False)
-    
+
     #Load the errors from GCS to a temporary staging table in BQ (overwritten each run)
     load_errors_to_bq_stg = GCSToBigQueryOperator(task_id="load_errors_to_bq_stg",
                                                 bucket= device_usg_configs["bucket"],
