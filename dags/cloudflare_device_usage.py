@@ -231,7 +231,7 @@ with DAG(
     #Run a query to process data from staging and insert it into the production gold table
     load_results_to_bq_gold = BigQueryInsertJobOperator(task_id="load_results_to_bq_gold",
                                                         configuration = {
-                                                           "query": "load_cf_device_usg_errors_from_stg_to_gld.sql",
+                                                           "query": device_usg_stg_to_gold_query,
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
                                                                                  'tableId': 'device_usage_v1'},
@@ -243,7 +243,7 @@ with DAG(
 
     load_errors_to_bq_gold = BigQueryInsertJobOperator(task_id="load_errors_to_bq_gold",
                                                        configuration={
-                                                           "query": "load_cf_device_usg_errors_from_stg_to_gld.sql",
+                                                           "query": device_usg_errors_stg_to_gold_query,
                                                             "destinationTable": {'projectId': 'moz-fx-data-shared-prod',
                                                                                  'datasetId': 'cloudflare_derived',
                                                                                  'tableId': 'device_usage_errors_v1'},
