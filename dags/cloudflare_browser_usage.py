@@ -131,10 +131,11 @@ def get_browser_data(**kwargs):
         for loc in brwsr_usg_configs["locations"]:
             for os in brwsr_usg_configs["operating_systems"]:
                 for user_type in brwsr_usg_configs["user_types"]:
-                    print("device type: ", device_type)
-                    print("location: ", loc)
-                    print("os: ", os)
-                    print("user_type: ", user_type)
+                    curr_combo = (
+                        f"Device Type: {0}, Location: {1}, OS: {2}, User Type: {3}"
+                        % (device_type, loc, os, user_type)
+                    )
+                    print(curr_combo)
 
                     # Generate the URL & call the API
                     brwsr_usg_api_url = generate_browser_api_call(
