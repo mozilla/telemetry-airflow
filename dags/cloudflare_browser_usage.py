@@ -63,23 +63,11 @@ def generate_browser_api_call(
     strt_dt, end_dt, device_type, location, op_system, user_typ
 ):
     """Create the API url based on the input parameters."""
-    user_type_string = "" if user_typ == "ALL" else f"&botClass={0}" % (user_typ)
-    location_string = "" if location == "ALL" else f"&location={0}" % (location)
-    op_system_string = "" if op_system == "ALL" else f"&os={0}" % (op_system)
-    device_type_string = (
-        "" if device_type == "ALL" else f"&deviceType={0}" % (device_type)
-    )
-    browser_api_url = (
-        f"https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z{2}{3}{4}{5}&format=json"
-        % (
-            strt_dt,
-            end_dt,
-            device_type_string,
-            location_string,
-            op_system_string,
-            user_type_string,
-        )
-    )
+    user_type_string = "" if user_typ == "ALL" else f"&botClass={user_typ}"
+    location_string = "" if location == "ALL" else f"&location={location}"
+    op_system_string = "" if op_system == "ALL" else f"&os={op_system}"
+    device_type_string = "" if device_type == "ALL" else f"&deviceType={device_type}"
+    browser_api_url = f"https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z{device_type_string}{location_string}{op_system_string}{user_type_string}&format=json"
     return browser_api_url
 
 
@@ -95,7 +83,7 @@ def get_browser_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = f"Bearer {0}" % (auth_token)
+    bearer_string = f"Bearer {auth_token}"
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results and errors dataframes
@@ -131,10 +119,7 @@ def get_browser_data(**kwargs):
         for loc in brwsr_usg_configs["locations"]:
             for os in brwsr_usg_configs["operating_systems"]:
                 for user_type in brwsr_usg_configs["user_types"]:
-                    curr_combo = (
-                        f"Device Type: {0}, Location: {1}, OS: {2}, User Type: {3}"
-                        % (device_type, loc, os, user_type)
-                    )
+                    curr_combo = f"Device Type: {device_type}, Location: {loc}, OS: {os}, User Type: {user_type}"
                     print(curr_combo)
 
                     # Generate the URL & call the API
@@ -217,10 +202,7 @@ def get_browser_data(**kwargs):
     # Return a summary to the console
     len_results = str(len(browser_results_df))
     len_errors = str(len(browser_errors_df))
-    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
-        len_results,
-        len_errors,
-    )
+    result_summary = f"# Result Rows: {len_results}; # of Error Rows: {len_errors}"
     return result_summary
 
 
