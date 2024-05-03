@@ -19,6 +19,8 @@ from utils.tags import Tag
 
 # Get the auth token from an Airflow variable
 auth_token = Variable.get("cloudflare_auth_token")
+if auth_token is None:
+    auth_token = "AUTH_TOKEN"
 
 # Define DOC string
 DOCS = """Pulls OS usage data from the Cloudflare API; Owner: kwindau@mozilla.com

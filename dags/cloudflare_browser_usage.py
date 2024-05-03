@@ -19,6 +19,8 @@ from utils.tags import Tag
 
 # Load auth token
 auth_token = Variable.get("cloudflare_auth_token")
+if auth_token is None:
+    auth_token = "AUTH_TOKEN"
 
 # Define DOC string
 DOCS = """Pulls browser usage data from the Cloudflare API; Owner: kwindau@mozilla.com
