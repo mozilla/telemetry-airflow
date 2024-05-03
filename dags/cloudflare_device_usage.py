@@ -70,8 +70,7 @@ def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location)
 
 
 def parse_device_type_timeseries_response_human(result):
-    """Take the response JSON and returns parsed information."""
-    ### HUMAN
+    """Take the response JSON and returns parsed human traffic information."""
     human_timestamps = result["human"]["timestamps"]
     human_desktop = result["human"]["desktop"]
     human_mobile = result["human"]["mobile"]
@@ -80,8 +79,7 @@ def parse_device_type_timeseries_response_human(result):
 
 
 def parse_device_type_timeseries_response_bot(result):
-    """Take the response JSON and returns parsed information."""
-    ### BOT
+    """Take the response JSON and returns parsed bot traffic information."""
     bot_timestamps = result["bot"]["timestamps"]
     bot_desktop = result["bot"]["desktop"]
     bot_mobile = result["bot"]["mobile"]
