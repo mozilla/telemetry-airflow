@@ -18,7 +18,7 @@ from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
 from utils.tags import Tag
 
 # Get the auth token from an Airflow variable
-auth_token = Variable.get("cloudflare_auth_token", default_var = 'abc')
+auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls device usage data from the Cloudflare API; Owner: kwindau@mozilla.com
