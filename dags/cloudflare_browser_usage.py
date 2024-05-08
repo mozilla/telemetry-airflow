@@ -22,7 +22,7 @@ auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls browser usage data from the Cloudflare API; Owner: kwindau@mozilla.com
-Note: Each run pulls data for the date 3 days prior"""
+Note: Each run pulls data for the date 4 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -40,13 +40,51 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 # Configurations
 brwsr_usg_configs = {
     "timeout_limit": 2000,
-    "device_types": ["DESKTOP"],  # , "MOBILE", "OTHER", "ALL"],
+    "device_types": ["DESKTOP", "MOBILE", "OTHER", "ALL"],
     "operating_systems": [
-        "ALL"
-    ],  # , "WINDOWS", "MACOSX", "IOS", "ANDROID", "CHROMEOS", "LINUX", "SMART_TV"],
+        "ALL",
+        "WINDOWS",
+        "MACOSX",
+        "IOS",
+        "ANDROID",
+        "CHROMEOS",
+        "LINUX",
+        "SMART_TV",
+    ],
     "locations": [
-        "ALL"
-    ],  # ,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+        "ALL",
+        "BE",
+        "BG",
+        "CA",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HR",
+        "IE",
+        "IT",
+        "CY",
+        "LV",
+        "LT",
+        "LU",
+        "HU",
+        "MT",
+        "MX",
+        "NL",
+        "AT",
+        "PL",
+        "PT",
+        "RO",
+        "SI",
+        "SK",
+        "US",
+        "SE",
+        "GR",
+    ],
     "user_types": ["ALL"],
     "bucket": "gs://moz-fx-data-prod-external-data/",
     "results_stg_gcs_fpth": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
@@ -224,6 +262,12 @@ def get_browser_data(**kwargs):
     return result_summary
 
 
+del_any_existing_browser_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1`
+WHERE dte = {{ ds }} """
+
+del_any_existing_browser_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_errors_v1`
+WHERE dte = {{ ds }} """
+
 browser_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1`
 SELECT
 CAST(StartTime as date) AS dte,
@@ -268,6 +312,19 @@ with DAG(
         task_id="load_results_to_bq_stg",
         bucket=brwsr_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "DeviceType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "UserType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "Browser", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "OperatingSystem", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "PercentShare", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "ConfLevel", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "Normalization", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "LastUpdated", "type": "TIMESTAMP", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=brwsr_usg_configs["bucket"]
         + brwsr_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
@@ -284,6 +341,14 @@ with DAG(
         task_id="load_errors_to_bq_stg",
         bucket=brwsr_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "UserType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "DeviceType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "OperatingSystem", "type": "STRING", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=brwsr_usg_configs["bucket"]
         + brwsr_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
@@ -293,6 +358,28 @@ with DAG(
         write_disposition="WRITE_TRUNCATE",
         gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
         allow_jagged_rows=False,
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_res_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_res_for_date_if_any",
+        configuration={
+            "query": del_any_existing_browser_gold_results_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_err_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_err_for_date_if_any",
+        configuration={
+            "query": del_any_existing_browser_gold_errors_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=brwsr_usg_configs["gcp_conn_id"],
     )
 
     # Run a query to process data from staging and insert it into the production gold table
@@ -373,6 +460,7 @@ with DAG(
 (
     get_browser_usage_data
     >> load_results_to_bq_stg
+    >> delete_bq_gold_res_for_date_if_any
     >> load_results_to_bq_gold
     >> archive_results
     >> del_results_from_gcs_stg
@@ -380,6 +468,7 @@ with DAG(
 (
     get_browser_usage_data
     >> load_errors_to_bq_stg
+    >> delete_bq_gold_err_for_date_if_any
     >> load_errors_to_bq_gold
     >> archive_errors
     >> del_errors_from_gcs_stg

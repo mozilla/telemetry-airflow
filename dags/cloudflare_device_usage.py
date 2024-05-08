@@ -22,7 +22,7 @@ auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls device usage data from the Cloudflare API; Owner: kwindau@mozilla.com
-Note: Each run pulls data for the date 3 days prior"""
+Note: Each run pulls data for the date 4 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -43,7 +43,37 @@ device_usg_configs = {
     "locations": [
         "ALL",
         "BE",
-    ],  # "BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+        "BG",
+        "CA",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HR",
+        "IE",
+        "IT",
+        "CY",
+        "LV",
+        "LT",
+        "LU",
+        "HU",
+        "MT",
+        "MX",
+        "NL",
+        "AT",
+        "PL",
+        "PT",
+        "RO",
+        "SI",
+        "SK",
+        "US",
+        "SE",
+        "GR",
+    ],
     "bucket": "gs://moz-fx-data-prod-external-data/",
     "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
     "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
@@ -246,6 +276,12 @@ def get_device_usage_data(**kwargs):
     return result_summary
 
 
+del_any_existing_device_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
+WHERE dte = {{ ds }} """
+
+del_any_existing_device_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
+WHERE dte = {{ ds }} """
+
 device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
 SELECT
 CAST(StartTime as date) AS dte,
@@ -287,6 +323,18 @@ with DAG(
         task_id="load_results_to_bq_stg",
         bucket=device_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.device_results_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "DesktopUsagePct", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "MobileUsagePct", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "OtherUsagePct", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "ConfLevel", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "AggInterval", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "NormalizationType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "LastUpdated", "type": "TIMESTAMP", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=device_usg_configs["bucket"]
         + device_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
@@ -303,6 +351,11 @@ with DAG(
         task_id="load_errors_to_bq_stg",
         bucket=device_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=device_usg_configs["bucket"]
         + device_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
@@ -312,6 +365,28 @@ with DAG(
         write_disposition="WRITE_TRUNCATE",
         gcp_conn_id=device_usg_configs["gcp_conn_id"],
         allow_jagged_rows=False,
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_res_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_res_for_date_if_any",
+        configuration={
+            "query": del_any_existing_device_gold_results_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=device_usg_configs["gcp_conn_id"],
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_err_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_err_for_date_if_any",
+        configuration={
+            "query": del_any_existing_device_gold_errors_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=device_usg_configs["gcp_conn_id"],
     )
 
     # Run a query to process data from staging and insert it into the production gold table
@@ -390,6 +465,7 @@ with DAG(
 (
     get_device_usage_data
     >> load_results_to_bq_stg
+    >> delete_bq_gold_res_for_date_if_any
     >> load_results_to_bq_gold
     >> archive_results
     >> del_results_from_gcs_stg
@@ -397,6 +473,7 @@ with DAG(
 (
     get_device_usage_data
     >> load_errors_to_bq_stg
+    >> delete_bq_gold_err_for_date_if_any
     >> load_errors_to_bq_gold
     >> archive_errors
     >> del_errors_from_gcs_stg

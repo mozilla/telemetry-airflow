@@ -22,7 +22,7 @@ auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls OS usage data from the Cloudflare API; Owner: kwindau@mozilla.com
-Note: Each run pulls data for the date 3 days prior"""
+Note: Each run pulls data for the date 4 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -40,10 +40,41 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 # Configurations
 os_usg_configs = {
     "timeout_limit": 2000,
-    "device_types": ["DESKTOP"],  # , "MOBILE", "OTHER", "ALL"],
-    "locations": ["ALL"],  # ,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
-    # "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
-    # "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+    "device_types": ["DESKTOP", "MOBILE", "OTHER", "ALL"],
+    "locations": [
+        "ALL",
+        "BE",
+        "BG",
+        "CA",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HR",
+        "IE",
+        "IT",
+        "CY",
+        "LV",
+        "LT",
+        "LU",
+        "HU",
+        "MT",
+        "MX",
+        "NL",
+        "AT",
+        "PL",
+        "PT",
+        "RO",
+        "SI",
+        "SK",
+        "US",
+        "SE",
+        "GR",
+    ],
     "bucket": "gs://moz-fx-data-prod-external-data/",
     "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
     "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
@@ -196,9 +227,29 @@ def get_os_usage_data(**kwargs):
     return result_summary
 
 
-os_usage_stg_to_gold_query = """ """
+del_any_existing_op_sys_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.os_usage_v1`
+WHERE dte = {{ ds }} """
 
-os_usage_errors_stg_to_gold_query = """ """
+del_any_existing_op_sys_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.os_usage_errors_v1`
+WHERE dte = {{ ds }} """
+
+os_usage_stg_to_gold_query = """INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.os_usage_v1`
+SELECT
+CAST(Timestamps AS DATE) AS dte,
+OS AS os,
+Location AS location,
+DeviceType AS device_type,
+Share AS os_share,
+Normalization AS normalization_type,
+CAST(LastUpdatedTS as TIMESTAMP) AS last_updated_ts
+FROM `moz-fx-data-shared-prod.cloudflare_derived.os_results_stg`"""
+
+os_usage_errors_stg_to_gold_query = """INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.os_usage_errors_v1`
+SELECT
+CAST(StartTime AS DATE) AS dte,
+Location AS location,
+DeviceType AS device_type
+FROM `moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg`  """
 
 # Define DAG
 with DAG(
@@ -221,6 +272,17 @@ with DAG(
         task_id="load_results_to_bq_stg",
         bucket=os_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.os_results_stg",
+        schema_fields=[
+            {"name": "Timestamps", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "OS", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "DeviceType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "Share", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "ConfidenceLevel", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "AggrInterval", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "Normalization", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "LastUpdatedTS", "type": "TIMESTAMP", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=os_usg_configs["bucket"]
         + os_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
@@ -236,6 +298,12 @@ with DAG(
         task_id="load_errors_to_bq_stg",
         bucket=os_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "DeviceType", "type": "STRING", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=os_usg_configs["bucket"]
         + os_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
@@ -245,6 +313,28 @@ with DAG(
         write_disposition="WRITE_TRUNCATE",
         gcp_conn_id=os_usg_configs["gcp_conn_id"],
         allow_jagged_rows=False,
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_res_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_res_for_date_if_any",
+        configuration={
+            "query": del_any_existing_op_sys_gold_results_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=os_usg_configs["gcp_conn_id"],
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_err_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_err_for_date_if_any",
+        configuration={
+            "query": del_any_existing_op_sys_gold_errors_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=os_usg_configs["gcp_conn_id"],
     )
 
     load_results_to_bq_gold = BigQueryInsertJobOperator(
@@ -322,6 +412,7 @@ with DAG(
 (
     get_data
     >> load_results_to_bq_stg
+    >> delete_bq_gold_res_for_date_if_any
     >> load_results_to_bq_gold
     >> archive_results
     >> del_results_from_gcs_stg
@@ -329,6 +420,7 @@ with DAG(
 (
     get_data
     >> load_errors_to_bq_stg
+    >> delete_bq_gold_err_for_date_if_any
     >> load_errors_to_bq_gold
     >> archive_errors
     >> del_errors_from_gcs_stg
