@@ -87,15 +87,9 @@ device_usg_configs = {
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
     """Calculate API to call based on given parameters."""
     if location == "ALL":
-        device_usage_api_url = (
-            f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart={2}T00:00:00.000Z&dateEnd={3}T00:00:00.000Z&format=json&aggInterval={4}"
-            % (strt_dt, end_dt, strt_dt, end_dt, agg_int)
-        )
+        device_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&format=json&aggInterval={agg_int}"
     else:
-        device_usage_api_url = (
-            f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&name=bot&botClass=LIKELY_AUTOMATED&dateStart={3}T00:00:00.000Z&dateEnd={4}T00:00:00.000Z&location={5}&format=json&aggInterval={6}"
-            % (strt_dt, end_dt, location, strt_dt, end_dt, location, agg_int)
-        )
+        device_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&location={location}&name=bot&botClass=LIKELY_AUTOMATED&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&location={location}&format=json&aggInterval={agg_int}"
     return device_usage_api_url
 
 
@@ -158,7 +152,7 @@ def get_device_usage_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = f"Bearer {0}" % (auth_token)
+    bearer_string = f"Bearer {auth_token}"
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results & errors dataframe
@@ -269,10 +263,7 @@ def get_device_usage_data(**kwargs):
     # Print a summary to the console
     len_results = str(len(results_df))
     len_errors = str(len(errors_df))
-    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
-        len_results,
-        len_errors,
-    )
+    result_summary = f"# Result Rows: {len_results}; # of Error Rows: {len_errors}"
     return result_summary
 
 
