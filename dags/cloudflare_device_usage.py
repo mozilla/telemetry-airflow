@@ -284,13 +284,15 @@ other_usage_pct,
 aggregation_interval,
 normalization_type,
 last_updated_ts
-FROM `moz-fx-data-shared-prod.cloudflare_derived.device_results_stg` """
+FROM `moz-fx-data-shared-prod.cloudflare_derived.device_results_stg`
+WHERE CAST(StartTime as date) = {{ ds }}"""
 
 device_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
 SELECT
 CAST(StartTime as date) AS dte,
 location
-FROM `moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg`  """
+FROM `moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg`
+WHERE CAST(StartTime as date) = {{ ds }}"""
 
 # Define DAG
 with DAG(

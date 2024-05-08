@@ -261,7 +261,8 @@ operating_system.
 percent_share,
 normalization,
 last_updated_ts
-FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg` """
+FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_results_stg`
+WHERE CAST(StartTime as date) = {{ ds }}"""
 
 browser_usg_errors_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_errors_v1`
 SELECT
@@ -270,7 +271,8 @@ location,
 user_type,
 device_type,
 operating_system
-FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg`  """
+FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_errors_stg`
+WHERE CAST(StartTime as date) = {{ ds }}"""
 
 
 # Define DAG

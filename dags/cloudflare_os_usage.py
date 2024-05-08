@@ -227,14 +227,16 @@ DeviceType AS device_type,
 Share AS os_share,
 Normalization AS normalization_type,
 CAST(LastUpdatedTS as TIMESTAMP) AS last_updated_ts
-FROM `moz-fx-data-shared-prod.cloudflare_derived.os_results_stg`"""
+FROM `moz-fx-data-shared-prod.cloudflare_derived.os_results_stg`
+WHERE CAST(Timestamps as date) = {{ ds }}"""
 
 os_usage_errors_stg_to_gold_query = """INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.os_usage_errors_v1`
 SELECT
 CAST(StartTime AS DATE) AS dte,
 Location AS location,
 DeviceType AS device_type
-FROM `moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg`  """
+FROM `moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg`
+WHERE CAST(StartTime AS DATE) = {{ ds }}"""
 
 # Define DAG
 with DAG(
