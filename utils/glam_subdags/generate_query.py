@@ -4,6 +4,7 @@ from operators.gcp_container_operator import GKEPodOperator
 def generate_and_run_desktop_query(
     task_id,
     project_id,
+    billing_project_id,
     source_dataset_id,
     sample_size,
     overwrite,
@@ -19,6 +20,7 @@ def generate_and_run_desktop_query(
 
     :param task_id:                     Airflow task id
     :param project_id:                  GCP project to write to
+    :param billing_project_id:          Project to run query on and used for billing
     :param source_dataset_id:           Bigquery dataset to read from in queries
     :param sample_size:                 Value to use for windows release client sampling
     :param overwrite:                   Overwrite the destination table
@@ -32,6 +34,7 @@ def generate_and_run_desktop_query(
         destination_dataset_id = source_dataset_id
     env_vars = {
         "PROJECT": project_id,
+        "BILLING_PROJECT": billing_project_id,
         "PROD_DATASET": source_dataset_id,
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",

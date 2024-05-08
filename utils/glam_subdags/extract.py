@@ -13,7 +13,14 @@ glam_bucket = "moz-fx-data-glam-prod-fca7-etl-data"
 
 
 def extracts_subdag(
-    parent_dag_name, child_dag_name, default_args, schedule_interval, dataset_id
+    parent_dag_name,
+    child_dag_name,
+    default_args,
+    schedule_interval,
+    table_project_id,
+    billing_project_id,
+    fully_qualified_dataset,
+    dataset_id,
 ):
     dag_id = f"{parent_dag_name}.{child_dag_name}"
     dag = DAG(
@@ -27,6 +34,9 @@ def extracts_subdag(
                 f"extract_{channel}",
                 default_args,
                 schedule_interval,
+                table_project_id,
+                billing_project_id,
+                fully_qualified_dataset,
                 dataset_id,
                 channel,
             ),
@@ -42,6 +52,9 @@ def extract_channel_subdag(
     child_dag_name,
     default_args,
     schedule_interval,
+    table_project_id,
+    billing_project_id,
+    fully_qualified_dataset,
     dataset_id,
     channel,
 ):
@@ -55,8 +68,8 @@ def extract_channel_subdag(
     etl_query = bigquery_etl_query(
         task_id=f"glam_client_probe_counts_{channel}_extract",
         destination_table=bq_extract_table,
-        dataset_id=dataset_id,
-        project_id=project_id,
+        dataset_id=fully_qualified_dataset,
+        project_id=billing_project_id,
         date_partition_parameter=None,
         arguments=("--replace",),
         sql_file_path="sql/moz-fx-data-shared-prod/{}/glam_client_probe_counts_extract_v1/query.sql".format(
@@ -74,14 +87,10 @@ def extract_channel_subdag(
         dag=dag,
     )
 
-    gcs_destination = "gs://{bucket}/aggs-desktop-{channel}-*.csv".format(
-        bucket=glam_bucket, channel=channel
-    )
+    gcs_destination = f"gs://{glam_bucket}/aggs-desktop-{channel}-*.csv"
     bq2gcs = BigQueryToGCSOperator(
         task_id=f"glam_extract_{channel}_to_csv",
-        source_project_dataset_table="{}.{}.{}".format(
-            project_id, dataset_id, bq_extract_table
-        ),
+        source_project_dataset_table=f"{project_id}.{dataset_id}.{bq_extract_table}",
         destination_cloud_storage_uris=gcs_destination,
         gcp_conn_id=gcp_conn_id,
         export_format="CSV",
@@ -99,6 +108,9 @@ def extract_user_counts(
     child_dag_name,
     default_args,
     schedule_interval,
+    table_project_id,
+    billing_project_id,
+    fully_qualified_dataset,
     dataset_id,
     task_prefix,
     file_prefix,
@@ -113,8 +125,9 @@ def extract_user_counts(
     etl_query = bigquery_etl_query(
         task_id=f"glam_{task_prefix}_extract",
         destination_table=bq_extract_table,
-        dataset_id=dataset_id,
-        project_id=project_id,
+        dataset_id=fully_qualified_dataset,
+        sql_file_path=f"sql/{table_project_id}/{dataset_id}/{bq_extract_table}/query.sql",
+        project_id=billing_project_id,
         date_partition_parameter=None,
         arguments=("--replace",),
         dag=dag,
@@ -129,19 +142,13 @@ def extract_user_counts(
     )
 
     if file_prefix == "sample-counts":
-        gcs_destination = "gs://{}/glam-extract-firefox-{}-*.csv".format(
-            glam_bucket, file_prefix
-        )
+        gcs_destination = f"gs://{glam_bucket}/glam-extract-firefox-{file_prefix}-*.csv"
     else:
-        gcs_destination = "gs://{}/glam-extract-firefox-{}.csv".format(
-            glam_bucket, file_prefix
-        )
+        gcs_destination = f"gs://{glam_bucket}/glam-extract-firefox-{file_prefix}.csv"
 
     bq2gcs = BigQueryToGCSOperator(
         task_id=f"glam_extract_{task_prefix}_to_csv",
-        source_project_dataset_table="{}.{}.{}".format(
-            project_id, dataset_id, bq_extract_table
-        ),
+        source_project_dataset_table=f"{project_id}.{dataset_id}.{bq_extract_table}",
         destination_cloud_storage_uris=gcs_destination,
         gcp_conn_id=gcp_conn_id,
         export_format="CSV",
