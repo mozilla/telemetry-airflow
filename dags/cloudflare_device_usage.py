@@ -22,7 +22,7 @@ auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls device usage data from the Cloudflare API; Owner: kwindau@mozilla.com
-Note: Each run pulls data for the date 3 days prior"""
+Note: Each run pulls data for the date 4 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -43,7 +43,37 @@ device_usg_configs = {
     "locations": [
         "ALL",
         "BE",
-    ],  # "BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+        "BG",
+        "CA",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HR",
+        "IE",
+        "IT",
+        "CY",
+        "LV",
+        "LT",
+        "LU",
+        "HU",
+        "MT",
+        "MX",
+        "NL",
+        "AT",
+        "PL",
+        "PT",
+        "RO",
+        "SI",
+        "SK",
+        "US",
+        "SE",
+        "GR",
+    ],
     "bucket": "gs://moz-fx-data-prod-external-data/",
     "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_STAGING/%s_results.csv",
     "results_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/RESULTS_ARCHIVE/%s_results.csv",
@@ -57,9 +87,15 @@ device_usg_configs = {
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
     """Calculate API to call based on given parameters."""
     if location == "ALL":
-        device_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&format=json&aggInterval={agg_int}"
+        device_usage_api_url = (
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&name=bot&botClass=LIKELY_AUTOMATED&dateStart={2}T00:00:00.000Z&dateEnd={3}T00:00:00.000Z&format=json&aggInterval={4}"
+            % (strt_dt, end_dt, strt_dt, end_dt, agg_int)
+        )
     else:
-        device_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&location={location}&name=bot&botClass=LIKELY_AUTOMATED&dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&location={location}&format=json&aggInterval={agg_int}"
+        device_usage_api_url = (
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries/device_type?name=human&botClass=LIKELY_HUMAN&dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&name=bot&botClass=LIKELY_AUTOMATED&dateStart={3}T00:00:00.000Z&dateEnd={4}T00:00:00.000Z&location={5}&format=json&aggInterval={6}"
+            % (strt_dt, end_dt, location, strt_dt, end_dt, location, agg_int)
+        )
     return device_usage_api_url
 
 
@@ -122,7 +158,7 @@ def get_device_usage_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = f"Bearer {auth_token}"
+    bearer_string = f"Bearer {0}" % (auth_token)
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results & errors dataframe
@@ -233,9 +269,19 @@ def get_device_usage_data(**kwargs):
     # Print a summary to the console
     len_results = str(len(results_df))
     len_errors = str(len(errors_df))
-    result_summary = f"# Result Rows: {len_results}; # of Error Rows: {len_errors}"
+    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
+        len_results,
+        len_errors,
+    )
     return result_summary
 
+
+## BELOW IS NEW
+del_any_existing_device_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
+WHERE dte = ? """
+del_any_existing_device_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
+WHERE dte = ? """
+## ABOVE IS NEW
 
 device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
 SELECT

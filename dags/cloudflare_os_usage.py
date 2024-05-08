@@ -22,7 +22,7 @@ auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls OS usage data from the Cloudflare API; Owner: kwindau@mozilla.com
-Note: Each run pulls data for the date 3 days prior"""
+Note: Each run pulls data for the date 4 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -40,10 +40,41 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 # Configurations
 os_usg_configs = {
     "timeout_limit": 2000,
-    "device_types": ["DESKTOP"],  # , "MOBILE", "OTHER", "ALL"],
-    "locations": ["ALL"],  # ,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR",
-    # "GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX",
-    # "NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+    "device_types": ["DESKTOP", "MOBILE", "OTHER", "ALL"],
+    "locations": [
+        "ALL",
+        "BE",
+        "BG",
+        "CA",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HR",
+        "IE",
+        "IT",
+        "CY",
+        "LV",
+        "LT",
+        "LU",
+        "HU",
+        "MT",
+        "MX",
+        "NL",
+        "AT",
+        "PL",
+        "PT",
+        "RO",
+        "SI",
+        "SK",
+        "US",
+        "SE",
+        "GR",
+    ],
     "bucket": "gs://moz-fx-data-prod-external-data/",
     "results_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_STAGING/%s_results.csv",
     "results_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/RESULTS_ARCHIVE/%s_results.csv",
@@ -58,13 +89,25 @@ os_usg_configs = {
 def generate_os_timeseries_api_call(strt_dt, end_dt, agg_int, location, device_type):
     """Generate the API call for Operating System Usage Data."""
     if location == "ALL" and device_type == "ALL":
-        os_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&format=json&aggInterval={agg_int}"
+        os_usage_api_url = (
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&format=json&aggInterval={2}"
+            % (strt_dt, end_dt, agg_int)
+        )
     elif location != "ALL" and device_type == "ALL":
-        os_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&location={location}&format=json&aggInterval={agg_int}"
+        os_usage_api_url = (
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&format=json&aggInterval={3}"
+            % (strt_dt, end_dt, location, agg_int)
+        )
     elif location == "ALL" and device_type != "ALL":
-        os_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&deviceType={device_type}&format=json&aggInterval={agg_int}"
+        os_usage_api_url = (
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&deviceType={2}&format=json&aggInterval={3}"
+            % (strt_dt, end_dt, device_type, agg_int)
+        )
     else:
-        os_usage_api_url = f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z&location={location}&deviceType={device_type}&format=json&aggInterval={agg_int}"
+        os_usage_api_url = (
+            f"https://api.cloudflare.com/client/v4/radar/http/timeseries_groups/os?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z&location={2}&deviceType={3}&format=json&aggInterval={4}"
+            % (strt_dt, end_dt, location, device_type, agg_int)
+        )
     return os_usage_api_url
 
 
@@ -79,7 +122,7 @@ def get_os_usage_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = f"Bearer {auth_token}"
+    bearer_string = f"Bearer {0}" % (auth_token)
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results & errors dataframe
@@ -177,13 +220,30 @@ def get_os_usage_data(**kwargs):
     # Write a summary to the logs
     len_results = str(len(result_df))
     len_errors = str(len(errors_df))
-    result_summary = f"# Result Rows: {len_results}; # of Error Rows: {len_errors}"
+    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
+        len_results,
+        len_errors,
+    )
     return result_summary
 
 
-os_usage_stg_to_gold_query = """ """
+## BELOW IS NEW
+del_any_existing_op_sys_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.os_usage_v1`
+WHERE dte = ? """
+del_any_existing_op_sys_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.os_usage_errors_v1`
+WHERE dte = ? """
+## ABOVE IS NEW
 
-os_usage_errors_stg_to_gold_query = """ """
+os_usage_stg_to_gold_query = """INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.os_usage_v1`
+SELECT
+FROM `moz-fx-data-shared-prod.cloudflare_derived.os_results_stg`"""
+
+os_usage_errors_stg_to_gold_query = """INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.os_usage_errors_v1`
+SELECT
+? AS dte,
+? AS location,
+? AS device_type
+FROM `moz-fx-data-shared-prod.cloudflare_derived.os_errors_stg`  """
 
 # Define DAG
 with DAG(

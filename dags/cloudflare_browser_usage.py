@@ -22,7 +22,7 @@ auth_token = Variable.get("cloudflare_auth_token", default_var="abc")
 
 # Define DOC string
 DOCS = """Pulls browser usage data from the Cloudflare API; Owner: kwindau@mozilla.com
-Note: Each run pulls data for the date 3 days prior"""
+Note: Each run pulls data for the date 4 days prior"""
 
 default_args = {
     "owner": "kwindau@mozilla.com",
@@ -40,13 +40,51 @@ TAGS = [Tag.ImpactTier.tier_3, Tag.Repo.airflow]
 # Configurations
 brwsr_usg_configs = {
     "timeout_limit": 2000,
-    "device_types": ["DESKTOP"],  # , "MOBILE", "OTHER", "ALL"],
+    "device_types": ["DESKTOP", "MOBILE", "OTHER", "ALL"],
     "operating_systems": [
-        "ALL"
-    ],  # , "WINDOWS", "MACOSX", "IOS", "ANDROID", "CHROMEOS", "LINUX", "SMART_TV"],
+        "ALL",
+        "WINDOWS",
+        "MACOSX",
+        "IOS",
+        "ANDROID",
+        "CHROMEOS",
+        "LINUX",
+        "SMART_TV",
+    ],
     "locations": [
-        "ALL"
-    ],  # ,"BE","BG","CA","CZ","DE","DK","EE","ES","FI","FR","GB","HR","IE","IT","CY","LV","LT","LU","HU","MT","MX","NL","AT","PL","PT","RO","SI","SK","US","SE","GR"],
+        "ALL",
+        "BE",
+        "BG",
+        "CA",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HR",
+        "IE",
+        "IT",
+        "CY",
+        "LV",
+        "LT",
+        "LU",
+        "HU",
+        "MT",
+        "MX",
+        "NL",
+        "AT",
+        "PL",
+        "PT",
+        "RO",
+        "SI",
+        "SK",
+        "US",
+        "SE",
+        "GR",
+    ],
     "user_types": ["ALL"],
     "bucket": "gs://moz-fx-data-prod-external-data/",
     "results_stg_gcs_fpth": "cloudflare/browser_usage/RESULTS_STAGING/%s_results.csv",
@@ -63,11 +101,23 @@ def generate_browser_api_call(
     strt_dt, end_dt, device_type, location, op_system, user_typ
 ):
     """Create the API url based on the input parameters."""
-    user_type_string = "" if user_typ == "ALL" else f"&botClass={user_typ}"
-    location_string = "" if location == "ALL" else f"&location={location}"
-    op_system_string = "" if op_system == "ALL" else f"&os={op_system}"
-    device_type_string = "" if device_type == "ALL" else f"&deviceType={device_type}"
-    browser_api_url = f"https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart={strt_dt}T00:00:00.000Z&dateEnd={end_dt}T00:00:00.000Z{device_type_string}{location_string}{op_system_string}{user_type_string}&format=json"
+    user_type_string = "" if user_typ == "ALL" else f"&botClass={0}" % (user_typ)
+    location_string = "" if location == "ALL" else f"&location={0}" % (location)
+    op_system_string = "" if op_system == "ALL" else f"&os={0}" % (op_system)
+    device_type_string = (
+        "" if device_type == "ALL" else f"&deviceType={0}" % (device_type)
+    )
+    browser_api_url = (
+        f"https://api.cloudflare.com/client/v4/radar/http/top/browsers?dateStart={0}T00:00:00.000Z&dateEnd={1}T00:00:00.000Z{2}{3}{4}{5}&format=json"
+        % (
+            strt_dt,
+            end_dt,
+            device_type_string,
+            location_string,
+            op_system_string,
+            user_type_string,
+        )
+    )
     return browser_api_url
 
 
@@ -83,7 +133,7 @@ def get_browser_data(**kwargs):
     print("End Date: ", end_date)
 
     # Configure request headers
-    bearer_string = f"Bearer {auth_token}"
+    bearer_string = f"Bearer {0}" % (auth_token)
     headers = {"Authorization": bearer_string}
 
     # Initialize the empty results and errors dataframes
@@ -119,7 +169,10 @@ def get_browser_data(**kwargs):
         for loc in brwsr_usg_configs["locations"]:
             for os in brwsr_usg_configs["operating_systems"]:
                 for user_type in brwsr_usg_configs["user_types"]:
-                    curr_combo = f"Device Type: {device_type}, Location: {loc}, OS: {os}, User Type: {user_type}"
+                    curr_combo = (
+                        f"Device Type: {0}, Location: {1}, OS: {2}, User Type: {3}"
+                        % (device_type, loc, os, user_type)
+                    )
                     print(curr_combo)
 
                     # Generate the URL & call the API
@@ -202,9 +255,19 @@ def get_browser_data(**kwargs):
     # Return a summary to the console
     len_results = str(len(browser_results_df))
     len_errors = str(len(browser_errors_df))
-    result_summary = f"# Result Rows: {len_results}; # of Error Rows: {len_errors}"
+    result_summary = f"# Result Rows: {0}; # of Error Rows: {1}" % (
+        len_results,
+        len_errors,
+    )
     return result_summary
 
+
+## BELOW IS NEW
+del_any_existing_browser_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1`
+WHERE dte = ? """
+del_any_existing_browser_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_errors_v1`
+WHERE dte = ? """
+## ABOVE IS NEW
 
 browser_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.browser_usage_v1`
 SELECT
