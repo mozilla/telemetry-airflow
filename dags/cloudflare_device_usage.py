@@ -276,12 +276,11 @@ def get_device_usage_data(**kwargs):
     return result_summary
 
 
-## BELOW IS NEW
 del_any_existing_device_gold_results_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
-WHERE dte = ? """
+WHERE dte = {{ ds }} """
+
 del_any_existing_device_gold_errors_for_date = """DELETE FROM `moz-fx-data-shared-prod.cloudflare_derived.device_usage_errors_v1`
-WHERE dte = ? """
-## ABOVE IS NEW
+WHERE dte = {{ ds }} """
 
 device_usg_stg_to_gold_query = """ INSERT INTO `moz-fx-data-shared-prod.cloudflare_derived.device_usage_v1`
 SELECT
@@ -324,6 +323,18 @@ with DAG(
         task_id="load_results_to_bq_stg",
         bucket=device_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.device_results_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "DesktopUsagePct", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "MobileUsagePct", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "OtherUsagePct", "type": "NUMERIC", "mode": "NULLABLE"},
+            {"name": "ConfLevel", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "AggInterval", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "NormalizationType", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "LastUpdated", "type": "TIMESTAMP", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=device_usg_configs["bucket"]
         + device_usg_configs["results_stg_gcs_fpth"] % "{{ ds }}",
@@ -340,6 +351,11 @@ with DAG(
         task_id="load_errors_to_bq_stg",
         bucket=device_usg_configs["bucket"],
         destination_project_dataset_table="moz-fx-data-shared-prod.cloudflare_derived.device_errors_stg",
+        schema_fields=[
+            {"name": "StartTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "EndTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+            {"name": "Location", "type": "STRING", "mode": "NULLABLE"},
+        ],
         source_format="CSV",
         source_objects=device_usg_configs["bucket"]
         + device_usg_configs["errors_stg_gcs_fpth"] % "{{ ds }}",
@@ -349,6 +365,28 @@ with DAG(
         write_disposition="WRITE_TRUNCATE",
         gcp_conn_id=device_usg_configs["gcp_conn_id"],
         allow_jagged_rows=False,
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_res_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_res_for_date_if_any",
+        configuration={
+            "query": del_any_existing_device_gold_results_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=device_usg_configs["gcp_conn_id"],
+    )
+
+    # This will delete anything if the DAG is ever run multiple times for the same date
+    delete_bq_gold_err_for_date_if_any = BigQueryInsertJobOperator(
+        task_id="delete_bq_gold_err_for_date_if_any",
+        configuration={
+            "query": del_any_existing_device_gold_errors_for_date,
+            "useLegacySql": False,
+        },
+        project_id="moz-fx-data-shared-prod",
+        gcp_conn_id=device_usg_configs["gcp_conn_id"],
     )
 
     # Run a query to process data from staging and insert it into the production gold table
@@ -427,6 +465,7 @@ with DAG(
 (
     get_device_usage_data
     >> load_results_to_bq_stg
+    >> delete_bq_gold_res_for_date_if_any
     >> load_results_to_bq_gold
     >> archive_results
     >> del_results_from_gcs_stg
@@ -434,6 +473,7 @@ with DAG(
 (
     get_device_usage_data
     >> load_errors_to_bq_stg
+    >> delete_bq_gold_err_for_date_if_any
     >> load_errors_to_bq_gold
     >> archive_errors
     >> del_errors_from_gcs_stg
