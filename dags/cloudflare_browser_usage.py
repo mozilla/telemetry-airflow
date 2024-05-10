@@ -92,7 +92,7 @@ brwsr_usg_configs = {
     "errors_stg_gcs_fpth": "cloudflare/browser_usage/ERRORS_STAGING/%s_errors.csv",
     "errors_archive_gcs_fpath": "cloudflare/browser_usage/ERRORS_ARCHIVE/%s_errors.csv",
     "gcp_project_id": "moz-fx-data-shared-prod",
-    "gcp_conn_id": "google_cloud_airflow_dataproc",
+    "gcp_conn_id": "google_cloud_shared_prod",
 }
 
 
