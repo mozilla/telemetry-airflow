@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 from airflow import DAG
-from airflow.models import Variable
+from airflow.hooks.base_hook import BaseHook
+from airflow.models import Connection, Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
@@ -83,6 +84,11 @@ os_usg_configs = {
     "gcp_project_id": "moz-fx-data-shared-prod",
     "gcp_conn_id": "google_cloud_shared_prod",
 }
+
+# Get the connection from the gcp_conn_id to use in storage_options
+gcp_strg_tkn = BaseHook.get_connection(os_usg_configs["gcp_conn_id"]).extras[
+    "extra__google_cloud_platform__keyfile_dict"
+]
 
 
 # Function to configure the API URL
@@ -200,8 +206,8 @@ def get_os_usage_data(**kwargs):
         + os_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     )
 
-    result_df.to_csv(result_fpath, index=False)
-    errors_df.to_csv(errors_fpath, index=False)
+    result_df.to_csv(result_fpath, index=False, storage_options={"token": gcp_strg_tkn})
+    errors_df.to_csv(errors_fpath, index=False, storage_options={"token": gcp_strg_tkn})
     print("Wrote errors to: ", errors_fpath)
     print("Wrote results to: ", result_fpath)
 
