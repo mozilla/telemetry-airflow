@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
-from airflow.models import Connection, Variable
+from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
