@@ -226,6 +226,7 @@ clients_histogram_aggregates = SubDagOperator(
         GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
         default_args,
         dag.schedule_interval,
+        fully_qualified_dataset,
         dataset_id,
         billing_project_id,
         table_project_id,
