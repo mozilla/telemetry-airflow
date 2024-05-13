@@ -222,14 +222,14 @@ clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
 
 clients_histogram_aggregates = SubDagOperator(
     subdag=histogram_aggregates_subdag(
-        GLAM_DAG,
-        GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
-        default_args,
-        dag.schedule_interval,
-        fully_qualified_dataset,
-        dataset_id,
-        billing_project_id,
-        table_project_id,
+        parent_dag_name=GLAM_DAG,
+        child_dag_name=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
+        default_args=default_args,
+        schedule_interval=dag.schedule_interval,
+        dataset_id=dataset_id,
+        fully_qualified_dataset=fully_qualified_dataset,
+        billing_project_id=billing_project_id,
+        table_project_id=table_project_id,
         docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     ),
     task_id=GLAM_CLIENTS_HISTOGRAM_AGGREGATES_SUBDAG,
