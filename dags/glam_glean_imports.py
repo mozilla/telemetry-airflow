@@ -33,7 +33,7 @@ tags = [Tag.ImpactTier.tier_2]
 dag = DAG(
     "glam_glean_imports",
     default_args=default_args,
-    schedule_interval="0 5 * * *",
+    schedule_interval="0 16 * * *",
     doc_md=__doc__,
     tags=tags,
 )
@@ -43,7 +43,7 @@ wait_for_fenix = ExternalTaskSensor(
     task_id="wait_for_fenix",
     external_dag_id="glam_fenix",
     external_task_id="pre_import",
-    execution_delta=timedelta(hours=3),
+    execution_delta=timedelta(hours=14),
     check_existence=True,
     mode="reschedule",
     allowed_states=ALLOWED_STATES,
@@ -57,7 +57,7 @@ wait_for_fog = ExternalTaskSensor(
     task_id="wait_for_fog",
     external_dag_id="glam_fog",
     external_task_id="pre_import",
-    execution_delta=timedelta(hours=3),
+    execution_delta=timedelta(hours=14),
     check_existence=True,
     mode="reschedule",
     allowed_states=ALLOWED_STATES,
@@ -117,36 +117,6 @@ for env in ["Dev", "Prod"]:
 
     with dag as dag:  # noqa SIM117
         with TaskGroup(group_id=env + "_glean") as glean_env_task_group:
-            glam_import_glean_aggs_beta = GKEPodOperator(
-                reattach_on_restart=True,
-                task_id="glam_import_glean_aggs_beta",
-                name="glam_import_glean_aggs_beta",
-                image=glean_import_image,
-                arguments=[*base_docker_args, "import_glean_aggs", "beta"],
-                env_vars=env_vars,
-                secrets=[database_url_secret, django_secret],
-            )
-
-            glam_import_glean_aggs_nightly = GKEPodOperator(
-                reattach_on_restart=True,
-                task_id="glam_import_glean_aggs_nightly",
-                name="glam_import_glean_aggs_nightly",
-                image=glean_import_image,
-                arguments=[*base_docker_args, "import_glean_aggs", "nightly"],
-                env_vars=env_vars,
-                secrets=[database_url_secret, django_secret],
-            )
-
-            glam_import_glean_aggs_release = GKEPodOperator(
-                reattach_on_restart=True,
-                task_id="glam_import_glean_aggs_release",
-                name="glam_import_glean_aggs_release",
-                image=glean_import_image,
-                arguments=[*base_docker_args, "import_glean_aggs", "release"],
-                env_vars=env_vars,
-                secrets=[database_url_secret, django_secret],
-            )
-
             glam_import_glean_counts = GKEPodOperator(
                 reattach_on_restart=True,
                 task_id="glam_import_glean_counts",
@@ -195,36 +165,6 @@ for env in ["Dev", "Prod"]:
     }
 
     with dag as dag, TaskGroup(group_id=env + "_glam") as glam_env_task_group:
-        glam_import_desktop_aggs_beta = GKEPodOperator(
-            reattach_on_restart=True,
-            task_id="glam_import_desktop_aggs_beta",
-            name="glam_import_desktop_aggs_beta",
-            image=glam_import_image,
-            arguments=[*base_docker_args, "import_desktop_aggs", "beta"],
-            env_vars=env_vars,
-            secrets=[database_url_secret, django_secret],
-        )
-
-        glam_import_desktop_aggs_nightly = GKEPodOperator(
-            reattach_on_restart=True,
-            task_id="glam_import_desktop_aggs_nightly",
-            name="glam_import_desktop_aggs_nightly",
-            image=glam_import_image,
-            arguments=[*base_docker_args, "import_desktop_aggs", "nightly"],
-            env_vars=env_vars,
-            secrets=[database_url_secret, django_secret],
-        )
-
-        glam_import_desktop_aggs_release = GKEPodOperator(
-            reattach_on_restart=True,
-            task_id="glam_import_desktop_aggs_release",
-            name="glam_import_desktop_aggs_release",
-            image=glam_import_image,
-            arguments=[*base_docker_args, "import_desktop_aggs", "release"],
-            env_vars=env_vars,
-            secrets=[database_url_secret, django_secret],
-        )
-
         glam_import_user_counts = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_user_counts",
