@@ -66,7 +66,7 @@ wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
-    execution_delta=timedelta(hours=1),
+    execution_delta=timedelta(hours=16),
     check_existence=True,
     mode="reschedule",
     allowed_states=ALLOWED_STATES,
