@@ -174,7 +174,11 @@ def bqetl_backfill_dag():
         task_id="bqetl_backfill",
         arguments=generate_backfill_command(),
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        gcp_conn_id="google_cloud_airflow_gke",
+        # gcp_conn_id="google_cloud_airflow_gke",
+        gcp_conn_id="google_cloud_gke_sandbox",
+        project_id="moz-fx-data-gke-sandbox",
+        location="us-west1",
+        cluster_name="breyes-gke-sandbox",
     )
 
 
