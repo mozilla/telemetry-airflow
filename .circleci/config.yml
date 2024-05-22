@@ -251,6 +251,7 @@ jobs:
 workflows:
   ci:
     jobs:
+      - docker-build-artifact-orb
       - validate-requirements:
           name: 🧪 Validate requirements
           filters: &ci-filter
