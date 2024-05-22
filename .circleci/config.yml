@@ -156,7 +156,7 @@ jobs:
   publish-registry:
     executor: docker/machine
     parameters:
-      image_tags:
+      image_tag:
         type: string
       registry:
         type: string
