@@ -148,13 +148,12 @@ jobs:
     executor: gcp-gcr/default
     steps:
       - checkout
-      - gcp-cli/setup:
-          version: 404.0.0
       - run:
           name: Setup Service Key
           command: echo "export GCLOUD_SERVICE_KEY=$(echo $GAR_SERVICE_KEY | base64 -d)" >> "$BASH_ENV"
       - gcp-gcr/gcr-auth:
           registry-url: us-docker.pkg.dev
+          version: 476.0.0
 
   publish-registry:
     executor: docker/machine
