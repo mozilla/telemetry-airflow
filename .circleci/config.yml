@@ -191,7 +191,6 @@ jobs:
                   #!/bin/bash 
 
                   IFS="," read -ra DOCKER_TAGS \<<< "$EVAL_TAG"
-                  PROJECT_ID="${!ORB_ENV_PROJECT_ID}"
 
                   for tag_to_eval in "${DOCKER_TAGS[@]}"; do
                       TAG=$(eval echo "$tag_to_eval")
