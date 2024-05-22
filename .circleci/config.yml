@@ -180,27 +180,22 @@ jobs:
           image: $IMAGE_NAME
           tag: $DEFAULT_TAG
           registry: $PARAM_REGISTRY
-#      - run:
-#          name: Re-tag as `latest` in GAR
-#          command: gcloud artifacts docker tags add $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $PARAM_REGISTRY/$IMAGE_NAME:sha-aaa-latest
-      - when:
-          condition: <<parameters.image_tag>>
-          steps:
-            - run:
-                command: |
-                  #!/bin/bash 
-
-                  IFS="," read -ra DOCKER_TAGS \<<< "$EVAL_TAG"
-
-                  for tag_to_eval in "${DOCKER_TAGS[@]}"; do
-                      TAG=$(eval echo "$tag_to_eval")
-                      set -x
-                      gcloud artifacts docker tags add $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $PARAM_REGISTRY/$IMAGE_NAME:$TAG
-                      set +x
-                  done
-                environment:
-                  EVAL_TAG: << parameters.image_tag >>
-                name: Re-tag image in GAR
+      - run:
+          # Inspired from https://github.com/CircleCI-Public/gcp-gcr-orb/blob/a0d81fc37bca851ad9b2faf0eae6a26a7205e11d/src/scripts/push-image.sh
+          command: |
+            #!/bin/bash 
+      
+            IFS="," read -ra DOCKER_TAGS \<<< "$EVAL_TAG"
+      
+            for tag_to_eval in "${DOCKER_TAGS[@]}"; do
+                TAG=$(eval echo "$tag_to_eval")
+                set -x
+                gcloud artifacts docker tags add $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $PARAM_REGISTRY/$IMAGE_NAME:$TAG
+                set +x
+            done
+          environment:
+            EVAL_TAG: << parameters.image_tag >>
+          name: Add tags to image in GAR
 
   sync_gcs:
     docker:
