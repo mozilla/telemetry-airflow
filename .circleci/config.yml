@@ -12,6 +12,7 @@
 version: 2.1
 orbs:
   docker: circleci/docker@2.5.0
+  gcp-gcr: circleci/gcp-gcr@0.16.3
   python: circleci/python@2.1.1
 
 parameters:
@@ -142,10 +143,20 @@ jobs:
           paths:
             - telemetry-airflow.tar
 
+  docker-build-artifact-orb:
+    executor: gcp-gcr/default
+    steps:
+      - checkout
+      - run:
+          name: Setup Service Key
+          command: echo "export GCLOUD_SERVICE_KEY=$(echo $GAR_SERVICE_KEY | base64 -d)" >> "$BASH_ENV"
+      - gcp-gcr/gcr-auth:
+          registry-url: us-docker.pkg.dev
+
   publish-registry:
     executor: docker/machine
     parameters:
-      image_tag:
+      image_tags:
         type: string
       registry:
         type: string
@@ -285,35 +296,6 @@ workflows:
               only: /.*/
             branches:
               only: main
-
-      - publish-registry:
-          name: Publish latest to Dockerhub
-          registry: mozilla
-          image_tag: latest
-          registry_authentication: &mozilla-auth
-            - docker/check:
-                docker-password: DOCKER_PASS
-                docker-username: DOCKER_USER
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              only: main
-
-      - publish-registry:
-          name: Publish tag to Dockerhub
-          registry: mozilla
-          image_tag: $CIRCLE_TAG
-          registry_authentication: *mozilla-auth
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
 
       - publish-registry:
           name: Publish latest to GAR
