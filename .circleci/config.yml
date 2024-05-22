@@ -12,7 +12,6 @@
 version: 2.1
 orbs:
   docker: circleci/docker@2.5.0
-  gcp-gcr: circleci/gcp-gcr@0.16.3
   gcp-cli: circleci/gcp-cli@3.2.0
   python: circleci/python@2.1.1
 
@@ -117,7 +116,7 @@ jobs:
             git diff --exit-code requirements.txt requirements-dev.txt
 
   docker-build-artifact:
-    executor: docker/machine
+    executor: gcp-cli/machine
     steps:
       - checkout
       - run:
@@ -144,22 +143,13 @@ jobs:
           paths:
             - telemetry-airflow.tar
 
-  docker-build-artifact-orb:
-    executor: gcp-gcr/default
-    steps:
-      - checkout
-      - run:
-          name: Setup Service Key
-          command: echo "export GCLOUD_SERVICE_KEY=$(echo $GAR_SERVICE_KEY | base64 -d)" >> "$BASH_ENV"
-      - gcp-gcr/gcr-auth:
-          registry-url: us-docker.pkg.dev
-          version: 476.0.0
-
   publish-registry:
     executor: docker/machine
     parameters:
       image_tag:
         type: string
+        default: latest
+        description: Comma-separated list of docker image tags. The contents of each will be evaluated.
       registry:
         type: string
       registry_authentication:
@@ -180,16 +170,38 @@ jobs:
           name: Generate image name
           command: |
             echo 'export PARAM_REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
-            echo 'export PARAM_IMAGE_TAG="<< parameters.image_tag >>"' >> "$BASH_ENV"
+            echo 'export DEFAULT_TAG="sha-${CIRCLE_SHA1:0:9}"' >> "$BASH_ENV"
             echo 'export IMAGE_NAME="$CIRCLE_PROJECT_REPONAME"' >> "$BASH_ENV"
       - run:
-          name: Re-tag artifact
-          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$PARAM_IMAGE_TAG
+          name: Re-tag artifact locally
+          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG
       - docker/push:
           step-name: Push image to registry
           image: $IMAGE_NAME
-          tag: $PARAM_IMAGE_TAG
+          tag: $DEFAULT_TAG
           registry: $PARAM_REGISTRY
+#      - run:
+#          name: Re-tag as `latest` in GAR
+#          command: gcloud artifacts docker tags add $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $PARAM_REGISTRY/$IMAGE_NAME:sha-aaa-latest
+      - when:
+          condition: <<parameters.image_tag>>
+          steps:
+            - run:
+                command: |
+                  #!/bin/bash 
+
+                  IFS="," read -ra DOCKER_TAGS \<<< "$EVAL_TAG"
+                  PROJECT_ID="${!ORB_ENV_PROJECT_ID}"
+
+                  for tag_to_eval in "${DOCKER_TAGS[@]}"; do
+                      TAG=$(eval echo "$tag_to_eval")
+                      set -x
+                      gcloud artifacts docker tags add $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $PARAM_REGISTRY/$IMAGE_NAME:$TAG
+                      set +x
+                  done
+                environment:
+                  EVAL_TAG: << parameters.image_tag >>
+                name: Re-tag image in GAR
 
   sync_gcs:
     docker:
@@ -253,7 +265,6 @@ jobs:
 workflows:
   ci:
     jobs:
-      - docker-build-artifact-orb
       - validate-requirements:
           name: 🧪 Validate requirements
           filters: &ci-filter
@@ -265,6 +276,20 @@ workflows:
       - docker-build-artifact:
           name: 🛠️ Docker build test
           filters: *ci-filter
+
+      - publish-registry:
+          name: Publish tags to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          image_tag: aaalatest,bbblatest
+          registry_authentication: &gar-auth
+            - run:
+                name: Authenticate GAR
+                command: |
+                  echo $GAR_SERVICE_KEY | base64 -d > creds.json
+                  gcloud auth activate-service-account --key-file creds.json
+                  gcloud auth configure-docker us-docker.pkg.dev
+          requires:
+            - 🛠️ Docker build test
 
       - test-local-environment:
           name: 🧪 Validate local environment
