@@ -144,9 +144,10 @@ jobs:
             - telemetry-airflow.tar
 
   publish-registry:
+    description: Publish an image with a default tag of `sha-<9 chars short SHA>`. Other tags can be added via the `image_tag` parameter.
     executor: docker/machine
     parameters:
-      image_tag:
+      additional_tags:
         type: string
         default: latest
         description: Comma-separated list of docker image tags. The contents of each will be evaluated.
@@ -194,7 +195,7 @@ jobs:
                 set +x
             done
           environment:
-            EVAL_TAG: << parameters.image_tag >>
+            EVAL_TAG: << parameters.additional_tags >>
           name: Add tags to image in GAR
 
   sync_gcs:
@@ -271,20 +272,6 @@ workflows:
           name: 🛠️ Docker build test
           filters: *ci-filter
 
-      - publish-registry:
-          name: Publish tags to GAR
-          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: aaalatest,bbblatest
-          registry_authentication: &gar-auth
-            - run:
-                name: Authenticate GAR
-                command: |
-                  echo $GAR_SERVICE_KEY | base64 -d > creds.json
-                  gcloud auth activate-service-account --key-file creds.json
-                  gcloud auth configure-docker us-docker.pkg.dev
-          requires:
-            - 🛠️ Docker build test
-
       - test-local-environment:
           name: 🧪 Validate local environment
           filters: *ci-filter
@@ -320,9 +307,8 @@ workflows:
               only: main
 
       - publish-registry:
-          name: Publish latest to GAR
+          name: Publish latest image to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: latest
           registry_authentication: &gar-auth
             - run:
                 name: Authenticate GAR
@@ -337,19 +323,6 @@ workflows:
               only: /.*/
             branches:
               only: main
-
-      - publish-registry:
-          name: Publish tag to GAR
-          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: $CIRCLE_TAG
-          registry_authentication: *gar-auth
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
 
       - sync_gcs:
           filters:
@@ -372,3 +345,24 @@ workflows:
           requires:
             - 🔃 Update DAGs branch
 
+  manual-publish:
+    jobs:
+      - docker-build-artifact:
+          name: 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+      - publish-registry:
+          name: Publish image with manually created tag to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          additional_tags: $CIRCLE_TAG
+          registry_authentication: *gar-auth
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
