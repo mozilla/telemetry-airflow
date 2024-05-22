@@ -13,6 +13,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.5.0
   gcp-gcr: circleci/gcp-gcr@0.16.3
+  gcp-cli: circleci/gcp-cli@3.2.0
   python: circleci/python@2.1.1
 
 parameters:
@@ -147,6 +148,8 @@ jobs:
     executor: gcp-gcr/default
     steps:
       - checkout
+      - gcp-cli/setup:
+          version: 404.0.0
       - run:
           name: Setup Service Key
           command: echo "export GCLOUD_SERVICE_KEY=$(echo $GAR_SERVICE_KEY | base64 -d)" >> "$BASH_ENV"
