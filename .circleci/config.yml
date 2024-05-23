@@ -12,7 +12,6 @@
 version: 2.1
 orbs:
   docker: circleci/docker@2.5.0
-  gcp-cli: circleci/gcp-cli@3.2.0
   python: circleci/python@2.1.1
 
 parameters:
@@ -48,15 +47,19 @@ jobs:
       - checkout
       - attach_workspace:
           at: artifacts
-      - docker/install-docker-compose:
-          version: v2.17.3
+      - docker/install-docker-compose
+      - run: &prepare-env
+          name: Load environment variables
+          command: |
+            echo 'export GIT_SHA1_SHORT="${CIRCLE_SHA1:0:7}"' >> "$BASH_ENV"
+            echo 'export ARTIFACT_IMAGE_NAME="$CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:7}"' >> "$BASH_ENV"
       - run:
           name: Load Docker image artifact from previous job
           command: docker load -i artifacts/telemetry-airflow.tar
       - run:
           name: Override docker-compose.yaml with artifact
           command: |
-            sed -i "s/  build: ./  image: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}/g" docker-compose.yml
+            sed -i "s/  build: ./  image: $ARTIFACT_IMAGE_NAME/g" docker-compose.yml
       - run:
           name: Start up local environment
           command: |
@@ -116,9 +119,10 @@ jobs:
             git diff --exit-code requirements.txt requirements-dev.txt
 
   docker-build-artifact:
-    executor: gcp-cli/machine
+    executor: docker/machine
     steps:
       - checkout
+      - run: *prepare-env
       - run:
           name: Generate build version.json
           command: >
@@ -132,12 +136,12 @@ jobs:
           command: cat version.json
       - docker/build:
           image: $CIRCLE_PROJECT_REPONAME
-          tag: ${CIRCLE_SHA1:0:9}
+          tag: $GIT_SHA1_SHORT
       - run:
           name: Persist image
           command: |
             mkdir -p artifacts
-            docker save -o artifacts/telemetry-airflow.tar $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
+            docker save -o artifacts/telemetry-airflow.tar $ARTIFACT_IMAGE_NAME
       - persist_to_workspace:
           root: artifacts
           paths:
@@ -159,6 +163,7 @@ jobs:
         type: steps
     steps:
       - checkout
+      - run: *prepare-env
       - when:
           condition: <<parameters.registry_authentication>>
           steps: <<parameters.registry_authentication>>
@@ -170,17 +175,17 @@ jobs:
       - run:
           name: Generate image name
           command: |
-            echo 'export PARAM_REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
-            echo 'export DEFAULT_TAG="sha-${CIRCLE_SHA1:0:9}"' >> "$BASH_ENV"
+            echo 'export REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
+            echo 'export DEFAULT_TAG="sha-$GIT_SHA1_SHORT"' >> "$BASH_ENV"
             echo 'export IMAGE_NAME="$CIRCLE_PROJECT_REPONAME"' >> "$BASH_ENV"
       - run:
           name: Re-tag artifact locally
-          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG
+          command: docker tag $ARTIFACT_IMAGE_NAME $REGISTRY/$IMAGE_NAME:$DEFAULT_TAG
       - docker/push:
           step-name: Push image to registry
           image: $IMAGE_NAME
           tag: $DEFAULT_TAG
-          registry: $PARAM_REGISTRY
+          registry: $REGISTRY
       - run:
           # Inspired from https://github.com/CircleCI-Public/gcp-gcr-orb/blob/a0d81fc37bca851ad9b2faf0eae6a26a7205e11d/src/scripts/push-image.sh
           command: |
@@ -191,7 +196,7 @@ jobs:
             for tag_to_eval in "${DOCKER_TAGS[@]}"; do
                 TAG=$(eval echo "$tag_to_eval")
                 set -x
-                gcloud artifacts docker tags add $PARAM_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $PARAM_REGISTRY/$IMAGE_NAME:$TAG
+                gcloud artifacts docker tags add $REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $REGISTRY/$IMAGE_NAME:$TAG
                 set +x
             done
           environment:
@@ -215,6 +220,7 @@ jobs:
     executor: docker/machine
     steps:
       - checkout
+      - run: *prepare-env
       - add_ssh_keys:
           fingerprints:
             - "e4:30:50:41:53:f0:d6:3a:bb:c9:38:54:2d:ca:56:41"
@@ -231,13 +237,14 @@ jobs:
             git pull origin dags
             cd ..
             git add ${CIRCLE_PROJECT_REPONAME}
-            git commit --allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} commit ${CIRCLE_SHA1:0:9} build ${CIRCLE_BUILD_NUM} [skip ci]"
+            git commit --allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} commit $GIT_SHA1_SHORT build ${CIRCLE_BUILD_NUM} [skip ci]"
             git push origin main
 
   sync-dags-branch:
     executor: docker/machine
     steps:
       - checkout
+      - run: *prepare-env
       - add_ssh_keys:
           fingerprints:
             - "66:9a:9f:55:2b:5c:f5:d6:ea:c5:c4:f9:7b:db:8d:c0"
@@ -253,7 +260,7 @@ jobs:
             rm -rf dags/
             cp -r ~/project/dags dags
             git add .
-            git commit -m "Automatic commit - DAGs from commit ${CIRCLE_SHA1:0:9} build ${CIRCLE_BUILD_NUM} [skip ci]" \
+            git commit -m "Automatic commit - DAGs from commit $GIT_SHA1_SHORT build ${CIRCLE_BUILD_NUM} [skip ci]" \
               && git push \
               || echo "Skipping push since it looks like there were no changes"
 
@@ -301,8 +308,6 @@ workflows:
       - docker-build-artifact:
           name: 🛠️ Docker build and persist image
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
@@ -319,15 +324,11 @@ workflows:
           requires:
             - 🛠️ Docker build and persist image
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
       - sync_gcs:
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
