@@ -13,6 +13,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.5.0
   python: circleci/python@2.1.1
+  gcp-cli: circleci/gcp-cli@3.2.0
 
 parameters:
   python-version:
@@ -149,7 +150,7 @@ jobs:
 
   publish-registry:
     description: Publish an image with a default tag of `sha-<9 chars short SHA>`. Other tags can be added via the `image_tag` parameter.
-    executor: docker/machine
+    executor: gcp-cli/machine
     parameters:
       additional_tags:
         type: string
