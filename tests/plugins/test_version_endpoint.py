@@ -13,7 +13,8 @@ from plugins.version_endpoint import (
 
 
 def test_get_project_root():
-    assert get_project_root().name == "telemetry-airflow"
+    # CircleCI renames the project directory to `project`
+    assert get_project_root().name in ("telemetry-airflow", "project")
     assert get_project_root().is_dir()
 
 
