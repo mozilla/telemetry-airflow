@@ -13,6 +13,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.5.0
   python: circleci/python@2.1.1
+  gcp-cli: circleci/gcp-cli@3.2.0
 
 parameters:
   python-version:
@@ -47,15 +48,19 @@ jobs:
       - checkout
       - attach_workspace:
           at: artifacts
-      - docker/install-docker-compose:
-          version: v2.17.3
+      - docker/install-docker-compose
+      - run: &prepare-env
+          name: Load environment variables
+          command: |
+            echo 'export GIT_SHA1_SHORT="${CIRCLE_SHA1:0:7}"' >> "$BASH_ENV"
+            echo 'export ARTIFACT_IMAGE_NAME="$CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:7}"' >> "$BASH_ENV"
       - run:
           name: Load Docker image artifact from previous job
           command: docker load -i artifacts/telemetry-airflow.tar
       - run:
           name: Override docker-compose.yaml with artifact
           command: |
-            sed -i "s/  build: ./  image: $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}/g" docker-compose.yml
+            sed -i "s/  build: ./  image: $ARTIFACT_IMAGE_NAME/g" docker-compose.yml
       - run:
           name: Start up local environment
           command: |
@@ -118,6 +123,7 @@ jobs:
     executor: docker/machine
     steps:
       - checkout
+      - run: *prepare-env
       - run:
           name: Generate build version.json
           command: >
@@ -131,22 +137,25 @@ jobs:
           command: cat version.json
       - docker/build:
           image: $CIRCLE_PROJECT_REPONAME
-          tag: ${CIRCLE_SHA1:0:9}
+          tag: $GIT_SHA1_SHORT
       - run:
           name: Persist image
           command: |
             mkdir -p artifacts
-            docker save -o artifacts/telemetry-airflow.tar $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9}
+            docker save -o artifacts/telemetry-airflow.tar $ARTIFACT_IMAGE_NAME
       - persist_to_workspace:
           root: artifacts
           paths:
             - telemetry-airflow.tar
 
   publish-registry:
-    executor: docker/machine
+    description: Publish an image with a default tag of `sha-<7 chars short SHA>`. Other tags can be added via the `additional_tags` parameter.
+    executor: gcp-cli/machine
     parameters:
-      image_tag:
+      additional_tags:
         type: string
+        default: latest
+        description: Comma-separated list of docker image tags. The contents of each will be evaluated.
       registry:
         type: string
       registry_authentication:
@@ -155,6 +164,7 @@ jobs:
         type: steps
     steps:
       - checkout
+      - run: *prepare-env
       - when:
           condition: <<parameters.registry_authentication>>
           steps: <<parameters.registry_authentication>>
@@ -166,17 +176,33 @@ jobs:
       - run:
           name: Generate image name
           command: |
-            echo 'export PARAM_REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
-            echo 'export PARAM_IMAGE_TAG="<< parameters.image_tag >>"' >> "$BASH_ENV"
+            echo 'export REGISTRY="<< parameters.registry >>"' >> "$BASH_ENV"
+            echo 'export DEFAULT_TAG="sha-$GIT_SHA1_SHORT"' >> "$BASH_ENV"
             echo 'export IMAGE_NAME="$CIRCLE_PROJECT_REPONAME"' >> "$BASH_ENV"
       - run:
-          name: Re-tag artifact
-          command: docker tag $CIRCLE_PROJECT_REPONAME:${CIRCLE_SHA1:0:9} $PARAM_REGISTRY/$IMAGE_NAME:$PARAM_IMAGE_TAG
+          name: Re-tag artifact locally
+          command: docker tag $ARTIFACT_IMAGE_NAME $REGISTRY/$IMAGE_NAME:$DEFAULT_TAG
       - docker/push:
           step-name: Push image to registry
           image: $IMAGE_NAME
-          tag: $PARAM_IMAGE_TAG
-          registry: $PARAM_REGISTRY
+          tag: $DEFAULT_TAG
+          registry: $REGISTRY
+      - run:
+          # Inspired from https://github.com/CircleCI-Public/gcp-gcr-orb/blob/a0d81fc37bca851ad9b2faf0eae6a26a7205e11d/src/scripts/push-image.sh
+          command: |
+            #!/bin/bash 
+      
+            IFS="," read -ra DOCKER_TAGS \<<< "$EVAL_TAG"
+      
+            for tag_to_eval in "${DOCKER_TAGS[@]}"; do
+                TAG=$(eval echo "$tag_to_eval")
+                set -x
+                gcloud artifacts docker tags add $REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $REGISTRY/$IMAGE_NAME:$TAG
+                set +x
+            done
+          environment:
+            EVAL_TAG: << parameters.additional_tags >>
+          name: Add tags to image in GAR
 
   sync_gcs:
     docker:
@@ -195,6 +221,7 @@ jobs:
     executor: docker/machine
     steps:
       - checkout
+      - run: *prepare-env
       - add_ssh_keys:
           fingerprints:
             - "e4:30:50:41:53:f0:d6:3a:bb:c9:38:54:2d:ca:56:41"
@@ -211,13 +238,14 @@ jobs:
             git pull origin dags
             cd ..
             git add ${CIRCLE_PROJECT_REPONAME}
-            git commit --allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} commit ${CIRCLE_SHA1:0:9} build ${CIRCLE_BUILD_NUM} [skip ci]"
+            git commit --allow-empty -m "Automatic commit from ${CIRCLE_PROJECT_REPONAME} commit $GIT_SHA1_SHORT build ${CIRCLE_BUILD_NUM} [skip ci]"
             git push origin main
 
   sync-dags-branch:
     executor: docker/machine
     steps:
       - checkout
+      - run: *prepare-env
       - add_ssh_keys:
           fingerprints:
             - "66:9a:9f:55:2b:5c:f5:d6:ea:c5:c4:f9:7b:db:8d:c0"
@@ -233,7 +261,7 @@ jobs:
             rm -rf dags/
             cp -r ~/project/dags dags
             git add .
-            git commit -m "Automatic commit - DAGs from commit ${CIRCLE_SHA1:0:9} build ${CIRCLE_BUILD_NUM} [skip ci]" \
+            git commit -m "Automatic commit - DAGs from commit $GIT_SHA1_SHORT build ${CIRCLE_BUILD_NUM} [skip ci]" \
               && git push \
               || echo "Skipping push since it looks like there were no changes"
 
@@ -281,44 +309,12 @@ workflows:
       - docker-build-artifact:
           name: 🛠️ Docker build and persist image
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
       - publish-registry:
-          name: Publish latest to Dockerhub
-          registry: mozilla
-          image_tag: latest
-          registry_authentication: &mozilla-auth
-            - docker/check:
-                docker-password: DOCKER_PASS
-                docker-username: DOCKER_USER
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              only: main
-
-      - publish-registry:
-          name: Publish tag to Dockerhub
-          registry: mozilla
-          image_tag: $CIRCLE_TAG
-          registry_authentication: *mozilla-auth
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
-
-      - publish-registry:
-          name: Publish latest to GAR
+          name: Publish latest image to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: latest
           registry_authentication: &gar-auth
             - run:
                 name: Authenticate GAR
@@ -329,28 +325,11 @@ workflows:
           requires:
             - 🛠️ Docker build and persist image
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
-      - publish-registry:
-          name: Publish tag to GAR
-          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          image_tag: $CIRCLE_TAG
-          registry_authentication: *gar-auth
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
-
       - sync_gcs:
           filters:
-            tags:
-              only: /.*/
             branches:
               only: main
 
@@ -368,3 +347,24 @@ workflows:
           requires:
             - 🔃 Update DAGs branch
 
+  manual-publish:
+    jobs:
+      - docker-build-artifact:
+          name: 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+      - publish-registry:
+          name: Publish image with manually created tag to GAR
+          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          additional_tags: $CIRCLE_TAG
+          registry_authentication: *gar-auth
+          requires:
+            - 🛠️ Docker build and persist image
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
