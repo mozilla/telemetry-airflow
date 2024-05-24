@@ -28,7 +28,7 @@ def on_failure_callback(context):
     exception = context.get('exception')
     
     send_jira_notification(
-        jira_conn_id="jira_connection_id",
+        jira_conn_id="eam_jira_connection_id",
         description=f"Workday XMatters Integration Task 1 failed. Exception = {exception}",
         summary="Airflow Task Issue Exception",
         #use this link to find project id and issue type ids : https://mozilla-hub.atlassian.net/rest/api/latest/project/ASP
