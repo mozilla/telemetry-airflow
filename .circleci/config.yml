@@ -149,7 +149,7 @@ jobs:
             - telemetry-airflow.tar
 
   publish-registry:
-    description: Publish an image with a default tag of `sha-<9 chars short SHA>`. Other tags can be added via the `image_tag` parameter.
+    description: Publish an image with a default tag of `sha-<7 chars short SHA>`. Other tags can be added via the `additional_tags` parameter.
     executor: gcp-cli/machine
     parameters:
       additional_tags:
