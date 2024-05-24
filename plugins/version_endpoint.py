@@ -22,16 +22,20 @@ def get_project_root() -> Path:
     return Path(__file__).parent.parent
 
 
+def parse_airflow_version(dockerfile_content: str) -> str:
+    version_pattern = rf"^FROM apache\/airflow:((slim-)?{SEM_VER_REGEX})$"
+    version_regex = re.compile(pattern=version_pattern, flags=re.MULTILINE | re.DOTALL)
+    return version_regex.search(dockerfile_content).group(1)
+
+
 def get_airflow_version() -> dict[str, str | None]:
     """Parse Airflow version from Dockerfile and return it as a dict."""
     project_root = get_project_root()
-    version_pattern = rf"^FROM apache\/airflow:((slim-){SEM_VER_REGEX})$"
-    version_regex = re.compile(pattern=version_pattern, flags=re.MULTILINE | re.DOTALL)
     dockerfile = project_root / "Dockerfile"
     if dockerfile.is_file() and dockerfile.exists():
         with open(dockerfile) as file:
             content = file.read()
-        version = version_regex.search(content).group(1)
+        version = parse_airflow_version(dockerfile_content=content)
     else:
         version = None
     return {"version": version}
