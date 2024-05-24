@@ -38,11 +38,11 @@ def on_failure_callback(context):
 
 
 default_args = {
- "owner": "Julio Moscon",
- "emails": ["jmoscon@mozilla.com"],
- "start_date": datetime(2024, 1, 1),
- "retries": 0,
- "on_failure_callback": [on_failure_callback],
+    "owner": "Julio Moscon",
+    "emails": ["jmoscon@mozilla.com"],
+    "start_date": datetime(2024, 1, 1),
+    "retries": 0,
+    "on_failure_callback": [on_failure_callback],
 }
 
 with DAG(
@@ -53,13 +53,7 @@ with DAG(
 ) as dag:
     workday_xmatters_dag = GKEPodOperator(
         task_id="eam_workday_xmatters",
-        arguments=[
-            "python",
-            "scripts/workday_xmatters.py",
-            "--level",
-            "info"
-
-        ],
+        arguments=["python", "scripts/workday_xmatters.py", "--level", "info"],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/ \
               eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
