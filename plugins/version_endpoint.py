@@ -23,7 +23,7 @@ def get_project_root() -> Path:
 
 
 def get_airflow_version() -> dict[str, str | None]:
-    """Parse Airflow version from Dockerfile and return it as a dict"""
+    """Parse Airflow version from Dockerfile and return it as a dict."""
     project_root = get_project_root()
     version_pattern = rf"^FROM apache\/airflow:((slim-){SEM_VER_REGEX})$"
     version_regex = re.compile(pattern=version_pattern, flags=re.MULTILINE | re.DOTALL)
