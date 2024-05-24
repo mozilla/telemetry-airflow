@@ -7,7 +7,7 @@ from operators.gcp_container_operator import GKEPodOperator
 
 DOCS = """
 ### Workday/XMatters integration
-Runs a script in docker image that syncs employee data 
+Runs a script in docker image that syncs employee data
 from Workday to XMatters.
 It creates a Jira ticket if the task fails.
 
