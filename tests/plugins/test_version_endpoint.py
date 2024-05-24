@@ -47,10 +47,8 @@ def test_get_airflow_version_exists():
 def test_get_airflow_version_not_exists():
     mock_project_root = patch("plugins.version_endpoint.get_project_root",
                               return_value=Path("/mock/path"))
-    mock_is_file = patch("pathlib.Path.is_file", return_value=False)
-    mock_exists = patch("pathlib.Path.exists", return_value=False)
 
-    with mock_project_root, mock_is_file, mock_exists:
+    with mock_project_root:
         result = get_airflow_version()
         assert result == {"version": None}
 
@@ -78,10 +76,8 @@ def test_get_dockerflow_version_exists():
 def test_get_dockerflow_version_not_exists():
     mock_project_root = patch("plugins.version_endpoint.get_project_root",
                               return_value=Path("/mock/path"))
-    mock_is_file = patch("pathlib.Path.is_file", return_value=False)
-    mock_exists = patch("pathlib.Path.exists", return_value=False)
 
-    with mock_project_root, mock_is_file, mock_exists:
+    with mock_project_root:
         result = get_dockerflow_version()
         assert result == {
             "build": None,
