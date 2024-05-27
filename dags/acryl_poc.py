@@ -7,11 +7,12 @@ This is just a POC. Ignore in Airflow triage
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from datahub_airflow_plugin.operators.datahub_assertion_operator import (
+    DataHubAssertionOperator,
+)
 
-from operators.gcp_container_operator import GKEPodOperator
+from utils.gcp import bigquery_etl_query
 from utils.tags import Tag
-from utils.gcp import bigquery_etl_query, bigquery_dq_check
-from datahub_airflow_plugin.operators.datahub_assertion_operator import DataHubAssertionOperator
 
 default_args = {
     "owner": "ascholtz@mozilla.com",
@@ -40,7 +41,7 @@ with DAG(
         task_id="latest_versions",
         destination_table="latest_versions_v1",
         dataset_id="telemetry_derived",
-        sql_file_path=f"sql/data-observability-dev/telemetry/latest_versions/query.sql",
+        sql_file_path="sql/data-observability-dev/telemetry/latest_versions/query.sql",
         project_id="data-observability-dev",
         date_partition_parameter=None,
         arguments=("--replace",),
@@ -48,24 +49,24 @@ with DAG(
     )
 
     datahub__telemetry_derived__latest_versions_v1 = DataHubAssertionOperator(
-        task_id='datahub__telemetry_derived__latest_versions_v1',
-        datahub_rest_conn_id='datahub_rest_default',
+        task_id="datahub__telemetry_derived__latest_versions_v1",
+        datahub_rest_conn_id="datahub_rest_default",
         urn="urn:li:dataset:(urn:li:dataPlatform:bigquery,data-observability-dev.telemetry_derived.latest_versions_v1,PROD)",
-        dag=dag
+        dag=dag,
     )
 
     latest_versions >> datahub__telemetry_derived__latest_versions_v1
 
     datahub__fenix_derived__metrics_clients_last_seen_v1 = DataHubAssertionOperator(
-        task_id='datahub__fenix_derived__metrics_clients_last_seen_v1',
-        datahub_rest_conn_id='datahub_rest_default',
+        task_id="datahub__fenix_derived__metrics_clients_last_seen_v1",
+        datahub_rest_conn_id="datahub_rest_default",
         urn="urn:li:dataset:(urn:li:dataPlatform:bigquery,data-observability-dev.fenix_derived.metrics_clients_last_seen_v1,PROD)",
-        dag=dag
+        dag=dag,
     )
 
     datahub__fenix_derived__firefox_android_anonymised_v1 = DataHubAssertionOperator(
-        task_id='datahub__fenix_derived__firefox_android_anonymised_v1',
-        datahub_rest_conn_id='datahub_rest_default',
+        task_id="datahub__fenix_derived__firefox_android_anonymised_v1",
+        datahub_rest_conn_id="datahub_rest_default",
         urn="urn:li:dataset:(urn:li:dataPlatform:bigquery,data-observability-dev.fenix_derived.firefox_android_anonymised_v1,PROD)",
-        dag=dag
+        dag=dag,
     )
