@@ -365,6 +365,6 @@ workflows:
             - 🛠️ Docker build and persist image
           filters:
             tags:
-              only: /.*/
+              only: /^dev-.*/
             branches:
-              ignore: /.*/
+              ignore: main
