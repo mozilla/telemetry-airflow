@@ -264,6 +264,27 @@ jobs:
             git commit -m "Automatic commit - DAGs from commit $GIT_SHA1_SHORT build ${CIRCLE_BUILD_NUM} [skip ci]" \
               && git push \
               || echo "Skipping push since it looks like there were no changes"
+            
+  check-branch:
+    executor: *python-executor
+    steps:
+      - checkout
+      - run:
+          name: "Determine branch of the commit"
+          command: |
+            # Fetch the branch name for the commit associated with the tag
+            COMMIT_BRANCH=$(git branch -r --contains "$(git rev-parse HEAD)" | grep -v 'main' || true)
+            
+            # Exit if the branch is main
+            if [ -z "$COMMIT_BRANCH" ]; then
+              echo "This tag is associated with a main branch commit. Exiting."
+              exit 0
+            else
+              echo "This tag is not associated with a main branch commit. Proceeding."
+            fi
+      - run:
+          name: "Run job on dev- tag creation"
+          command: echo "This job runs on tags prefixed with dev- on non-main branches."
 
 workflows:
   ci:
@@ -349,22 +370,32 @@ workflows:
 
   manual-publish:
     jobs:
-      - docker-build-artifact:
-          name: 🛠️ Docker build and persist image
+      - check-branch:
+          name: 👮 Check workflow runs on non-main branch
           filters:
             tags:
               only: /^dev-.*/
             branches:
-              ignore: main
+              ignore: /.*/
+      - docker-build-artifact:
+          name: 🛠️ Docker build and persist image
+          requires:
+            - 👮 Check workflow runs on non-main branch
+          filters:
+            tags:
+              only: /^dev-.*/
+            branches:
+              ignore: /.*/
       - publish-registry:
           name: Publish image with manually created tag to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
           additional_tags: $CIRCLE_TAG
           registry_authentication: *gar-auth
           requires:
+            - 👮 Check workflow runs on non-main branch
             - 🛠️ Docker build and persist image
           filters:
             tags:
               only: /^dev-.*/
             branches:
-              ignore: main
+              ignore: /.*/
