@@ -353,9 +353,9 @@ workflows:
           name: 🛠️ Docker build and persist image
           filters:
             tags:
-              only: /.*/
+              only: /^dev-.*/
             branches:
-              ignore: /.*/
+              ignore: main
       - publish-registry:
           name: Publish image with manually created tag to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
