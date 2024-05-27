@@ -55,7 +55,7 @@ tags = [Tag.ImpactTier.tier_2]
 dag = DAG(
     GLAM_DAG,
     default_args=default_args,
-    schedule_interval="0 13 * * *",
+    schedule_interval="0 16 * * *",
     doc_md=__doc__,
     tags=tags,
 )
