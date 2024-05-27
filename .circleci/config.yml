@@ -120,7 +120,10 @@ jobs:
             git diff --exit-code requirements.txt requirements-dev.txt
 
   docker-build-artifact:
-    executor: docker/machine
+    executor:
+      name: docker/machine
+      image: ubuntu-2204:2023.04.2
+    resource_class: large
     steps:
       - checkout
       - run: *prepare-env
@@ -392,7 +395,6 @@ workflows:
           additional_tags: $CIRCLE_TAG
           registry_authentication: *gar-auth
           requires:
-            - 👮 Check workflow runs on non-main branch
             - 🛠️ Docker build and persist image
           filters:
             tags:
