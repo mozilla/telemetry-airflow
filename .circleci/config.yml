@@ -120,7 +120,10 @@ jobs:
             git diff --exit-code requirements.txt requirements-dev.txt
 
   docker-build-artifact:
-    executor: docker/machine
+    executor:
+      name: docker/machine
+      image: ubuntu-2204:2023.04.2
+    resource_class: large
     steps:
       - checkout
       - run: *prepare-env
@@ -264,6 +267,27 @@ jobs:
             git commit -m "Automatic commit - DAGs from commit $GIT_SHA1_SHORT build ${CIRCLE_BUILD_NUM} [skip ci]" \
               && git push \
               || echo "Skipping push since it looks like there were no changes"
+            
+  check-branch:
+    executor: *python-executor
+    steps:
+      - checkout
+      - run:
+          name: "Determine branch of the commit"
+          command: |
+            # Fetch the branch name for the commit associated with the tag
+            COMMIT_BRANCH=$(git branch -r --contains "$(git rev-parse HEAD)" | grep -v 'main' || true)
+            
+            # Exit if the branch is main
+            if [ -z "$COMMIT_BRANCH" ]; then
+              echo "This tag is associated with a main branch commit. Exiting."
+              exit 0
+            else
+              echo "This tag is not associated with a main branch commit. Proceeding."
+            fi
+      - run:
+          name: "Run job on dev- tag creation"
+          command: echo "This job runs on tags prefixed with dev- on non-main branches."
 
 workflows:
   ci:
@@ -349,11 +373,20 @@ workflows:
 
   manual-publish:
     jobs:
-      - docker-build-artifact:
-          name: 🛠️ Docker build and persist image
+      - check-branch:
+          name: 👮 Check workflow runs on non-main branch
           filters:
             tags:
-              only: /.*/
+              only: /^dev-.*/
+            branches:
+              ignore: /.*/
+      - docker-build-artifact:
+          name: 🛠️ Docker build and persist image
+          requires:
+            - 👮 Check workflow runs on non-main branch
+          filters:
+            tags:
+              only: /^dev-.*/
             branches:
               ignore: /.*/
       - publish-registry:
@@ -365,6 +398,6 @@ workflows:
             - 🛠️ Docker build and persist image
           filters:
             tags:
-              only: /.*/
+              only: /^dev-.*/
             branches:
               ignore: /.*/
