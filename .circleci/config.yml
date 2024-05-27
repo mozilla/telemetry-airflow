@@ -281,7 +281,7 @@ jobs:
             # Exit if the branch is main
             if [ -z "$COMMIT_BRANCH" ]; then
               echo "This tag is associated with a main branch commit. Exiting."
-              exit 0
+              exit 1
             else
               echo "This tag is not associated with a main branch commit. Proceeding."
             fi
