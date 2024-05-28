@@ -39,7 +39,7 @@ def on_failure_callback(context):
 
 
 default_args = {
-    "owner": "Julio Moscon",
+    "owner": "jmoscon@mozilla.com",
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
