@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.providers.atlassian.jira.notifications.jira import send_jira_notification
 
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 DOCS = """
 ### Workday/XMatters integration
@@ -44,11 +45,13 @@ default_args = {
     "retries": 0,
     "on_failure_callback": [on_failure_callback],
 }
+tags = [Tag.ImpactTier.tier_2, Tag.ImpactTier.tier_3]
 
 with DAG(
     "eam-workday-xmatters-integration",
     default_args=default_args,
     doc_md=DOCS,
+    tags=tags,
     schedule_interval="@daily",
 ) as dag:
     workday_xmatters_dag = GKEPodOperator(
