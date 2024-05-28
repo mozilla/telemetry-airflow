@@ -29,7 +29,7 @@ USER airflow
 COPY requirements.txt /
 RUN pip install --no-cache-dir -r /requirements.txt
 COPY requirements-override.txt /
-RUN pip install --no-cache-dir -r /requirements-override.txt
+RUN pip install --no-cache-dir -r /requirements-override.txt --upgrade
 
 WORKDIR $PROJECT_DIR
 
