@@ -41,7 +41,7 @@ with DAG(
         task_id="latest_versions",
         destination_table="latest_versions_v1",
         dataset_id="telemetry_derived",
-        sql_file_path="sql/data-observability-dev/telemetry/latest_versions/query.sql",
+        sql_file_path="sql/data-observability-dev/telemetry_derived/latest_versions_v1/query.sql",
         project_id="data-observability-dev",
         date_partition_parameter=None,
         arguments=("--replace",),
