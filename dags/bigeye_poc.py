@@ -43,7 +43,6 @@ with DAG(
         project_id="data-observability-dev",
         date_partition_parameter=None,
         arguments=("--replace",),
-        dag=dag,
     )
 
     bigeye__telemetry_derived__latest_versions_v1 = RunMetricsOperator(
