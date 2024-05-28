@@ -33,6 +33,10 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-override.txt
+          pkg-manager: pip
+          args: "--upgrade"
       - run:
           name: 🧪 Pytest
           command: python -m pytest --junitxml=test-results/junit.xml
