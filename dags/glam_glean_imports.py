@@ -33,7 +33,7 @@ tags = [Tag.ImpactTier.tier_2]
 dag = DAG(
     "glam_glean_imports",
     default_args=default_args,
-    schedule_interval="0 16 * * *",
+    schedule_interval="0 19 * * *",
     doc_md=__doc__,
     tags=tags,
 )
@@ -43,7 +43,7 @@ wait_for_fenix = ExternalTaskSensor(
     task_id="wait_for_fenix",
     external_dag_id="glam_fenix",
     external_task_id="pre_import",
-    execution_delta=timedelta(hours=14),
+    execution_delta=timedelta(hours=17),
     check_existence=True,
     mode="reschedule",
     allowed_states=ALLOWED_STATES,
@@ -57,7 +57,7 @@ wait_for_fog = ExternalTaskSensor(
     task_id="wait_for_fog",
     external_dag_id="glam_fog",
     external_task_id="pre_import",
-    execution_delta=timedelta(hours=14),
+    execution_delta=timedelta(hours=17),
     check_existence=True,
     mode="reschedule",
     allowed_states=ALLOWED_STATES,

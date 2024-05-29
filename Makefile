@@ -36,6 +36,7 @@ clean: stop
 
 pip-install-local:
 	pip install -r requirements.txt -r requirements-dev.txt
+	pip install -r requirements-override.txt --upgrade
 
 shell:
 	docker-compose run airflow-webserver bash

@@ -55,7 +55,7 @@ tags = [Tag.ImpactTier.tier_2]
 dag = DAG(
     GLAM_DAG,
     default_args=default_args,
-    schedule_interval="0 13 * * *",
+    schedule_interval="0 16 * * *",
     doc_md=__doc__,
     tags=tags,
 )
@@ -66,7 +66,7 @@ wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
-    execution_delta=timedelta(hours=12),
+    execution_delta=timedelta(hours=15),
     check_existence=True,
     mode="reschedule",
     allowed_states=ALLOWED_STATES,
