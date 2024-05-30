@@ -25,6 +25,7 @@ def on_failure_callback(context):
     from airflow.providers.atlassian.jira.notifications.jira import (
         send_jira_notification,
     )
+
     exception = context.get("exception")
 
     send_jira_notification(
