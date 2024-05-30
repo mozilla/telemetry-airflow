@@ -158,5 +158,24 @@
     "port": null,
     "schema": null,
     "extra": "{\"refresh_token\": \"dummy_refresh_token\"}"
+  },
+  "datahub_rest_default": {
+    "conn_type": "datahub-rest",
+    "description": "Used to authenticate to DataHub",
+    "password": null,
+    "host": "https://mozilla.acryl.io/gms",
+    "port": null,
+    "schema": null,
+    "extra": null
+  },
+  "bigeye_connection": {
+    "conn_type": "http",
+    "description": "Used to authenticate to BigEye",
+    "login": "",
+    "password": null,
+    "host": "app.bigeye.com",
+    "port": null,
+    "schema": "https",
+    "extra": ""
   }
 }
