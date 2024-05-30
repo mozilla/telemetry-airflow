@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from airflow import DAG
-from airflow.decorators import task
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -46,7 +45,7 @@ default_args = {
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
-
+    "on_failure_callback": [on_failure_callback],
 }
 tags = [Tag.ImpactTier.tier_2, Tag.ImpactTier.tier_3]
 
@@ -56,15 +55,11 @@ with DAG(
     doc_md=DOCS,
     tags=tags,
     schedule_interval="@daily",
-    on_failure_callback=[on_failure_callback],
 ) as dag:
-    @task()
-    def task():
-        GKEPodOperator(
-            task_id="eam_workday_xmatters",
-            arguments=["python", "scripts/workday_xmatters.py",
-                       "--level", "info"],
-            image="gcr.io/moz-fx-data-airflow-prod-88e0/\
-    eam-integrations_docker_etl:latest",
-            gcp_conn_id="google_cloud_airflow_gke",
-        )
+    workday_xmatters_dag = GKEPodOperator(
+        task_id="eam_workday_xmatters",
+        arguments=["python", "scripts/workday_xmatters.py", "--level", "info"],
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/ \
+              eam-integrations_docker_etl:latest",
+        gcp_conn_id="google_cloud_airflow_gke",
+    )
