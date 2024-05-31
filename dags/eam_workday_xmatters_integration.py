@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from airflow import DAG
-
+from airflow.providers.cncf.kubernetes.secret import Secret
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
@@ -50,6 +50,20 @@ default_args = {
 }
 tags = [Tag.ImpactTier.tier_2, Tag.ImpactTier.tier_3]
 
+
+xmatters_client_id = Secret(deploy_type="env", deploy_target="XMATTERS_CLIENT_ID", secret="airflow-gke-secrets", key="XMATTERS_CLIENT_ID")
+xmatters_username = Secret(deploy_type="env", deploy_target="XMATTERS_USERNAME", secret="airflow-gke-secrets", key="XMATTERS_USERNAME")
+xmatters_password = Secret(deploy_type="env", deploy_target="XMATTERS_CLIENT_ID", secret="airflow-gke-secrets", key="XMATTERS_PASSWORD")
+xmatters_url = Secret(deploy_type="env", deploy_target="XMATTERS_USERNAME", secret="airflow-gke-secrets", key="XMATTERS_URL")
+xmatters_supervisor_id = Secret(deploy_type="env", deploy_target="XMATTERS_CLIENT_ID", secret="airflow-gke-secrets", key="XMATTERS_SUPERVISOR_ID")
+
+xmatters_integ_workday_username = Secret(deploy_type="env", deploy_target="XMATTERS_INTEG_WORKDAY_USERNAME", secret="airflow-gke-secrets", key="XMATTERS_INTEG_WORKDAY_USERNAME")
+xmatters_integ_workday_password = Secret(deploy_type="env", deploy_target="XMATTERS_INTEG_WORKDAY_PASSWORD", secret="airflow-gke-secrets", key="XMATTERS_INTEG_WORKDAY_PASSWORD")
+
+mozgeo_google_api_key = Secret(deploy_type="env", deploy_target="MOZGEO_GOOGLE_API_KEY", secret="airflow-gke-secrets", key="MOZGEO_GOOGLE_API_KEY")
+
+
+
 with DAG(
     "eam-workday-xmatters-integration",
     default_args=default_args,
@@ -63,4 +77,12 @@ with DAG(
         image="gcr.io/moz-fx-data-airflow-prod-88e0/ \
               eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
+        secrets=[xmatters_client_id,
+                xmatters_username,
+                xmatters_password,
+                xmatters_url,
+                xmatters_supervisor_id,
+                xmatters_integ_workday_username,
+                xmatters_integ_workday_password,
+                mozgeo_google_api_key,]
     )
