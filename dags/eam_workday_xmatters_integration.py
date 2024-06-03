@@ -84,11 +84,10 @@ xmatters_integ_workday_password = Secret(
                         secret="airflow-gke-secrets",
                         key="XMATTERS_INTEG_WORKDAY_PASSWORD")
 
-mozgeo_google_api_key = Secret(deploy_type="env", 
+mozgeo_google_api_key = Secret(deploy_type="env",
                                deploy_target="MOZGEO_GOOGLE_API_KEY",
                                secret="airflow-gke-secrets",
                                key="MOZGEO_GOOGLE_API_KEY")
-
 
 
 with DAG(
