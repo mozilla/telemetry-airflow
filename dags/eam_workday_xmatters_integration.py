@@ -115,7 +115,7 @@ with DAG(
         task_id="eam_workday_xmatters",
         arguments=["python", "scripts/workday_xmatters.py", "--level", "info"],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/"
-              + "eam-integrations_docker_etl:latest",
+        + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
             xmatters_client_id,
