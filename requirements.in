@@ -22,6 +22,9 @@ bigeye-airflow
 acryl-datahub-airflow-plugin
 gql
 
+# Monte Carlo integration
+airflow-mcd
+
 # Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
 xmltodict
 
