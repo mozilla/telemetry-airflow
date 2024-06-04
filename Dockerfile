@@ -28,10 +28,9 @@ USER airflow
 
 COPY requirements.txt /
 RUN pip install --no-cache-dir -r /requirements.txt
+COPY requirements-override.txt /
+RUN pip install --no-cache-dir -r /requirements-override.txt --upgrade
 
 WORKDIR $PROJECT_DIR
-
-# deploylib expects /app/version.json, copy the file if it exists
-COPY *version.json /app/version.json
 
 COPY . .

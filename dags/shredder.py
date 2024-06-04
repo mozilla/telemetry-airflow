@@ -40,6 +40,7 @@ default_args = {
     "email": [
         "telemetry-alerts@mozilla.com",
         "akomar@mozilla.com",
+        "bewu@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": False,
@@ -141,5 +142,20 @@ flat_rate = GKEPodOperator(
     node_selector={"nodepool": "highmem"},
     # Give additional time since we may need to scale up when running this job
     startup_timeout_seconds=360,
+    dag=dag,
+)
+
+experiments = GKEPodOperator(
+    task_id="experiments",
+    name="shredder-experiments",
+    arguments=[
+        *base_command,
+        "--parallelism=6",
+        "--billing-project=moz-fx-data-bq-batch-prod",
+        "--environment=experiments",
+    ],
+    image=docker_image,
+    is_delete_operator_pod=True,
+    reattach_on_restart=True,
     dag=dag,
 )

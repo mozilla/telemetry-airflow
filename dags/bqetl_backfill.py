@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from airflow.decorators import dag, task
 from airflow.models.param import Param
@@ -110,11 +111,11 @@ frank@mozilla.com
             type="boolean",
             description="Whether to run checks during backfill.",
         ),
-        "scheduling_parameters_override": Param(
-            [],
-            title="Scheduling Parameters Override",
-            type=["null", "array"],
-            description="Pass a list of parameters to override query's existing scheduling parameters",
+        "scheduling_overrides": Param(
+            {},
+            title="Scheduling Overrides",
+            type=["null", "object"],
+            description="Pass overrides for scheduling sections: parameters and/or date_partition_parameter as needed.",
         ),
     },
 )
@@ -148,9 +149,8 @@ def bqetl_backfill_dag():
             for exclude in excludes:
                 cmd.extend(["--exclude", exclude])
 
-        if scheduling_parameters := context["params"]["scheduling_parameters_override"]:
-            for spo in scheduling_parameters:
-                cmd.extend(["--scheduling_parameters_override", spo])
+        if scheduling_overrides := context["params"]["scheduling_overrides"]:
+            cmd.extend(["--scheduling_overrides", json.dumps(scheduling_overrides)])
 
         if context["params"]["dry_run"]:
             cmd.append("--dry_run")

@@ -8,6 +8,28 @@
 [Apache Airflow](https://airflow.apache.org/) is a platform to programmatically
 author, schedule and monitor workflows.
 
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [Telemetry-Airflow](#telemetry-airflow)
+   * [Writing DAGs](#writing-dags)
+   * [Prerequisites](#prerequisites)
+      + [Installing dependencies locally](#installing-dependencies-locally)
+      + [Updating Python dependencies](#updating-python-dependencies)
+      + [Build Container](#build-container)
+         - [macOS](#macos)
+   * [Testing](#testing)
+      + [Local Deployment](#local-deployment)
+         - [Adding dummy credentials](#adding-dummy-credentials)
+         - [Usage](#usage)
+         - [Testing GKE Jobs (including BigQuery-etl changes)](#testing-gke-jobs-including-bigquery-etl-changes)
+         - [Testing Dataproc Jobs](#testing-dataproc-jobs)
+         - [Debugging](#debugging)
+   * [Production Setup](#production-setup)
+   * [Production Deployments](#production-deployments)
+   * [Dev and Stage Deployments](#dev-and-stage-deployments)
+
+<!-- TOC end -->
+
 This repository codifies the Airflow cluster that is deployed at
 [workflow.telemetry.mozilla.org](https://workflow.telemetry.mozilla.org)
 (behind SSO) and commonly referred to as "WTMO" or simply "Airflow".
@@ -25,18 +47,19 @@ Some links relevant to users and developers of WTMO:
 ## Writing DAGs
 See the Airflow's [Best Practices guide](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#best-practices) to help you write DAGs.
 
-### **⚠ Warning: Do not import resources from the `dags` directory in DAGs definition files ⚠**
+**⚠ Warning: Do not import resources from the `dags` directory in DAGs definition files ⚠**
+
 As an example, if you have `dags/dag_a.py` and `dags/dag_b.py` and want to use a helper
 function in both DAG definition files, define the helper function in the `utils` directory
 such as:
 
-#### `utils/helper.py`
+`utils/helper.py`
 ```python
 def helper_function():
     return "Help"
 ```
 
-#### `dags/dag_a.py`
+`dags/dag_a.py`
 ```python
 from airflow import DAG
 
@@ -46,7 +69,7 @@ with DAG("dag_a", ...):
     ...
 ```
 
-#### `dags/dag_b.py`
+`dags/dag_b.py`
 ```python
 from airflow import DAG
 
@@ -122,6 +145,13 @@ Build Airflow image with
 ```bash
 make build
 ```
+
+#### macOS
+Assuming you're using Docker for Docker Desktop for macOS, start the docker service,
+click the docker icon in the menu bar, click on preferences and change the
+available memory to 4GB.
+
+## Testing
 ### Local Deployment
 To deploy the Airflow container on the docker engine, with its required dependencies, run:
 
@@ -129,14 +159,8 @@ To deploy the Airflow container on the docker engine, with its required dependen
 make build
 make up
 ```
-#### macOS
-Assuming you're using Docker for Docker Desktop for macOS, start the docker service,
-click the docker icon in the menu bar, click on preferences and change the
-available memory to 4GB.
 
-## Testing
-
-### Adding dummy credentials
+#### Adding dummy credentials
 
 Tasks often require credentials to access external credentials. For example, one may choose to store
 API keys in an Airflow connection or variable. These variables are sure to exist in production but
@@ -147,7 +171,7 @@ Update the `resources/dev_variables.env` and `resources/dev_connections.env` wit
 prevent broken workflows.
 
 
-### Usage
+#### Usage
 
 You can now connect to your local Airflow web console at
 `http://localhost:8080/`.
@@ -157,7 +181,7 @@ In order to submit a DAG via the UI, you'll need to toggle the DAG from "Off" to
 You'll likely want to toggle the DAG back to "Off" as soon as your desired task starts running.
 
 
-### Testing GKE Jobs (including BigQuery-etl changes)
+#### Testing GKE Jobs (including BigQuery-etl changes)
 
 See https://go.corp.mozilla.com/wtmodev for more details.
 
@@ -171,7 +195,7 @@ make clean-gke
 
 From there, [connect to Airflow](localhost:8080) and enable your job.
 
-### Testing Dataproc Jobs
+#### Testing Dataproc Jobs
 
 Dataproc jobs run on a self-contained Dataproc cluster, created by Airflow.
 
@@ -194,11 +218,7 @@ make build && make up
 
 You can then connect to Airflow [locally](localhost:8080). Enable your DAG and see that it runs correctly.
 
-### Production Setup
-This repository was structured to be deployed using the [offical Airflow Helm Chart.](https://airflow.apache.org/docs/helm-chart/stable/index.html).
-See the [Production Guide](https://airflow.apache.org/docs/helm-chart/stable/production-guide.html) for best practices.
-
-### Debugging
+#### Debugging
 
 Some useful docker tricks for development and debugging:
 
@@ -212,3 +232,25 @@ docker volume rm $(docker volume ls -qf dangling=true)
 # Careful as this will purge all local volumes not used by at least one container.
 docker volume prune
 ```
+
+## Production Setup
+This repository was structured to be deployed using the [offical Airflow Helm Chart](https://airflow.apache.org/docs/helm-chart/stable/index.html).
+See the [Production Guide](https://airflow.apache.org/docs/helm-chart/stable/production-guide.html) for best practices.
+
+## Production Deployments
+Production deployments are automatically triggered for every commit merged in the `main` branch.
+Docker images are tagged using the git commit short SHA and automatically deployed.
+
+Refer to the CI configuration for more details!
+
+## Dev and Stage Deployments
+Non-production deployments are automatically triggered for every commit merged in the `main` branch.
+Dev and Stage deployments use the `latest` image tag for deployments.
+
+It is also possible to manually trigger the image building and pushing workflow `manual-publish`
+by manually tagging a commit. This can be achieved using git on your local machine, or by creating a
+[pre-release GitHub Release](https://github.com/mozilla/telemetry-airflow/releases/new) with a tag
+prefixed by `dev-` on a non-main branch commit.
+
+Refer to the CI configuration and [deployment repository](https://github.com/mozilla-sre-deploy/deploy-telemetry-airflow/)
+for more details!

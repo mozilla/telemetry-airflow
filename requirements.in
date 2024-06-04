@@ -15,5 +15,15 @@ apache-airflow-providers-redis
 apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
 
+# BigEye integration
+bigeye-airflow
+
+# Acryl DataHub integration
+acryl-datahub-airflow-plugin
+gql
+
 # Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
 xmltodict
+
+# Required for /app/dags/empeam_workday_xmatters_integration.py
+apache-airflow-providers-atlassian-jira
