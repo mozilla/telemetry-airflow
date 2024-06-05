@@ -71,9 +71,9 @@ xmatters_password = Secret(
 )
 xmatters_url = Secret(
     deploy_type="env",
-    deploy_target="XMATTERS_URL",
+    deploy_target="XMATTERS_URL111",
     secret="airflow-gke-secrets",
-    key="XMATTERS_URL",
+    key="XMATTERS_URL111",
 )
 xmatters_supervisor_id = Secret(
     deploy_type="env",
