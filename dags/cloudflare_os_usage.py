@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 from airflow import DAG
+from airflow.hooks.base_hook import BaseHook
 from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
@@ -81,8 +82,14 @@ os_usg_configs = {
     "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_STAGING/%s_errors.csv",
     "errors_archive_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/os_usage/ERRORS_ARCHIVE/%s_errors.csv",
     "gcp_project_id": "moz-fx-data-shared-prod",
-    "gcp_conn_id": "google_cloud_airflow_dataproc",
+    "gcp_conn_id": "google_cloud_shared_prod",
 }
+
+# Get the connection from the gcp_conn_id to use in storage_options
+gcp_conn_dtl = BaseHook.get_connection(os_usg_configs["gcp_conn_id"])
+extra_json_string = gcp_conn_dtl.get_extra()
+extra_dict = json.loads(extra_json_string)
+gcp_strg_tkn = extra_dict["extra__google_cloud_platform__keyfile_dict"]
 
 
 # Function to configure the API URL
@@ -200,8 +207,8 @@ def get_os_usage_data(**kwargs):
         + os_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     )
 
-    result_df.to_csv(result_fpath, index=False)
-    errors_df.to_csv(errors_fpath, index=False)
+    result_df.to_csv(result_fpath, index=False, storage_options={"token": gcp_strg_tkn})
+    errors_df.to_csv(errors_fpath, index=False, storage_options={"token": gcp_strg_tkn})
     print("Wrote errors to: ", errors_fpath)
     print("Wrote results to: ", result_fpath)
 
