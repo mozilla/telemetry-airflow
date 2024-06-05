@@ -177,5 +177,15 @@
     "port": null,
     "schema": "https",
     "extra": ""
+  },
+  "monte_carlo_default_session_id": {
+    "conn_type": "http",
+    "description": "Used to authenticate to Monte Carlo",
+    "login": "",
+    "password": null,
+    "host": "",
+    "port": null,
+    "schema": "https",
+    "extra": ""
   }
 }

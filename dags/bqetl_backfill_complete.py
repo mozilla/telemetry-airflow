@@ -77,7 +77,7 @@ with DAG(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
 
-            return f"{watcher_text} :white_check_mark: Backfill is complete. Production data has been updated."
+            return f"{watcher_text} :white_check_mark: Backfill is complete for `{entry['qualified_table_name']}`. Production data has been updated."
 
         notify_processing_complete = SlackAPIPostOperator(
             task_id="slack_notify_processing_complete",
