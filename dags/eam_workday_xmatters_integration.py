@@ -47,9 +47,8 @@ default_args = {
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
-    "on_failure_callback": [on_failure_callback],
 }
-tags = [Tag.ImpactTier.tier_2, Tag.ImpactTier.tier_3]
+tags = [Tag.ImpactTier.tier_2]
 
 
 xmatters_client_id = Secret(
@@ -66,19 +65,19 @@ xmatters_username = Secret(
 )
 xmatters_password = Secret(
     deploy_type="env",
-    deploy_target="XMATTERS_CLIENT_ID",
+    deploy_target="XMATTERS_PASSWORD",
     secret="airflow-gke-secrets",
     key="XMATTERS_PASSWORD",
 )
 xmatters_url = Secret(
     deploy_type="env",
-    deploy_target="XMATTERS_USERNAME",
+    deploy_target="XMATTERS_URL",
     secret="airflow-gke-secrets",
     key="XMATTERS_URL",
 )
 xmatters_supervisor_id = Secret(
     deploy_type="env",
-    deploy_target="XMATTERS_CLIENT_ID",
+    deploy_target="XMATTERS_SUPERVISOR_ID",
     secret="airflow-gke-secrets",
     key="XMATTERS_SUPERVISOR_ID",
 )
@@ -108,14 +107,15 @@ with DAG(
     "eam-workday-xmatters-integration",
     default_args=default_args,
     doc_md=DOCS,
+    on_failure_callback=on_failure_callback,
     tags=tags,
     schedule_interval="@daily",
 ) as dag:
     workday_xmatters_dag = GKEPodOperator(
         task_id="eam_workday_xmatters",
         arguments=["python", "scripts/workday_xmatters.py", "--level", "info"],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/ \
-              eam-integrations_docker_etl:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/"
+        + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
             xmatters_client_id,
