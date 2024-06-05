@@ -84,10 +84,10 @@ device_usg_configs = {
     "gcp_conn_id": "google_cloud_shared_prod",
 }
 
-# Get the connection from the gcp_conn_id to use in storage_options
-gcp_strg_tkn = BaseHook.get_connection(device_usg_configs["gcp_conn_id"]).extras[
-    "extra__google_cloud_platform__keyfile_dict"
-]
+gcp_conn_dtl = BaseHook.get_connection(device_usg_configs["gcp_conn_id"])
+extra_json_string = gcp_conn_dtl.get_extra()
+extra_dict = json.loads(extra_json_string)
+gcp_strg_tkn = extra_dict["extra__google_cloud_platform__keyfile_dict"]
 
 
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
