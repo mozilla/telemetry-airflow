@@ -73,8 +73,10 @@ with DAG(
 
         @task
         def prepare_slack_processing_complete_parameters(entry):
-            project, _, table = entry["qualified_table_name"].split(".")
-            backfill_table_id = f"{table}_{entry['entry_date'].replace('-', '_')}"
+            project, dataset, table = entry["qualified_table_name"].split(".")
+            backfill_table_id = (
+                f"{dataset}__{table}_{entry['entry_date'].replace('-', '_')}"
+            )
             staging_location = (
                 f"{project}.backfills_staging_derived.{backfill_table_id}"
             )
