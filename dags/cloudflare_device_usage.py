@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 from airflow import DAG
+from airflow.hooks.base_hook import BaseHook
 from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
@@ -80,8 +81,13 @@ device_usg_configs = {
     "errors_stg_gcs_fpth": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_STAGING/%s_errors.csv",
     "errors_archive_gcs_fpath": "gs://moz-fx-data-prod-external-data/cloudflare/device_usage/ERRORS_ARCHIVE/%s_errors.csv",
     "gcp_project_id": "moz-fx-data-shared-prod",
-    "gcp_conn_id": "google_cloud_airflow_dataproc",
+    "gcp_conn_id": "google_cloud_shared_prod",
 }
+
+gcp_conn_dtl = BaseHook.get_connection(device_usg_configs["gcp_conn_id"])
+extra_json_string = gcp_conn_dtl.get_extra()
+extra_dict = json.loads(extra_json_string)
+gcp_strg_tkn = extra_dict["extra__google_cloud_platform__keyfile_dict"]
 
 
 def generate_device_type_timeseries_api_call(strt_dt, end_dt, agg_int, location):
@@ -255,8 +261,10 @@ def get_device_usage_data(**kwargs):
         device_usg_configs["bucket"]
         + device_usg_configs["errors_stg_gcs_fpth"] % logical_dag_dt
     )
-    results_df.to_csv(result_fpath, index=False)
-    errors_df.to_csv(error_fpath, index=False)
+    results_df.to_csv(
+        result_fpath, index=False, storage_options={"token": gcp_strg_tkn}
+    )
+    errors_df.to_csv(error_fpath, index=False, storage_options={"token": gcp_strg_tkn})
     print("Wrote errors to: ", error_fpath)
     print("Wrote results to: ", result_fpath)
 
