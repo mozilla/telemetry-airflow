@@ -48,7 +48,7 @@ default_args = {
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
 }
-tags = [Tag.Triage.no_triage]
+tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
 
 
 xmatters_client_id = Secret(
