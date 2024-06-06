@@ -48,7 +48,7 @@ default_args = {
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
 }
-tags = [Tag.ImpactTier.tier_2]
+tags = [Tag.Triage.no_triage]
 
 
 xmatters_client_id = Secret(
@@ -71,9 +71,9 @@ xmatters_password = Secret(
 )
 xmatters_url = Secret(
     deploy_type="env",
-    deploy_target="XMATTERS_URL111",
+    deploy_target="XMATTERS_URL",
     secret="airflow-gke-secrets",
-    key="XMATTERS_URL111",
+    key="XMATTERS_URL",
 )
 xmatters_supervisor_id = Secret(
     deploy_type="env",
