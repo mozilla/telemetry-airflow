@@ -22,24 +22,91 @@ jmoscon@mozilla.com
 """
 
 
-def on_failure_callback(context):
-    from airflow.providers.atlassian.jira.notifications.jira import (
-        send_jira_notification,
+def get_airflow_log_link(context):
+    import urllib.parse
+
+    dag_run_id = context["dag_run"].run_id
+    task_id = context["task_instance"].task_id
+    base_url = "http://workflow.telemetry.mozilla.org/dags/"
+    base_url += "eam-workday-xmatters-integration/grid?tab=logs&dag_run_id="
+    return base_url + f"{urllib.parse.quote(dag_run_id)}&task_id={task_id}"
+
+
+def create_jira_ticket(context):
+    import json
+    import logging
+
+    import requests
+    from airflow.providers.atlassian.jira.hooks.jira import JiraHook
+    from requests.auth import HTTPBasicAuth
+
+    logger = logging.getLogger(__name__)
+    logger.info("Creating Jira ticket ...")
+
+    conn_id = "eam_jira_connection_id"
+    conn = JiraHook(jira_conn_id=conn_id,).get_connection(conn_id)
+    log_url = get_airflow_log_link(context)
+
+    jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
+    url = f"https://{jira_domain}/rest/api/3/issue"
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    auth = HTTPBasicAuth(conn.login, conn.password)
+    summary = "Workday XMatters Integration - Airflow Task Issue Exception"
+    paragraph_text = "Detailed error logging can be found in the link: "
+    project_key = "ASP"
+    issue_type_id = "10007"
+    payload = json.dumps({
+            "fields": {
+                    "project": {
+                        "key": project_key
+                    },
+                    "summary": summary,
+                    "description": {
+                        "type": "doc",
+                        "version": 1,
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": paragraph_text,
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": "Mozilla-Telemetry log.",
+                                        "marks": [
+                                                {
+                                                    "type": "link",
+                                                    "attrs": {
+                                                                "href": \
+                                                                f"{log_url}"
+                                                             }
+                                                }]
+                                    },
+                                ]
+                            }
+                        ]
+                    },
+                    "issuetype": {
+                        "id": issue_type_id
+                    }
+            }
+            }
     )
 
-    exception = context.get("exception")
-
-    send_jira_notification(
-        jira_conn_id="eam_jira_connection_id",
-        description=f"Workday XMatters Integration \
-             Task 1 failed. Exception = {exception}",
-        summary="Airflow Task Issue Exception",
-        # use this link to find project id and issue type ids :
-        # https://mozilla-hub.atlassian.net/rest/api/latest/project/ASP
-        project_id=10051,
-        issue_type_id=10007,
-        labels=["airflow-task-failure"],
-    ).notify(context)
+    response = requests.post(url, headers=headers, auth=auth, data=payload)
+    logger.info(f"response.text={response.text}")
+    if response.status_code == 201:
+        logger.info("Issue created successfully.")
+        return response.json()
+    else:
+        logger.info(f"Failed to create issue. Status code:"\
+                    f"{response.status_code}, Response: {response.text}")
+        return None
 
 
 default_args = {
@@ -107,7 +174,7 @@ with DAG(
     "eam-workday-xmatters-integration",
     default_args=default_args,
     doc_md=DOCS,
-    on_failure_callback=on_failure_callback,
+    on_failure_callback=create_jira_ticket,
     tags=tags,
     schedule_interval="@daily",
 ) as dag:
