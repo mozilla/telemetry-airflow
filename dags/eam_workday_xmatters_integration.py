@@ -44,58 +44,52 @@ def create_jira_ticket(context):
     logger.info("Creating Jira ticket ...")
 
     conn_id = "eam_jira_connection_id"
-    conn = JiraHook(jira_conn_id=conn_id,).get_connection(conn_id)
+    conn = JiraHook(
+        jira_conn_id=conn_id,
+    ).get_connection(conn_id)
     log_url = get_airflow_log_link(context)
 
     jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    }
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
     summary = "Workday XMatters Integration - Airflow Task Issue Exception"
     paragraph_text = "Detailed error logging can be found in the link: "
     project_key = "ASP"
     issue_type_id = "10007"
-    payload = json.dumps({
+    payload = json.dumps(
+        {
             "fields": {
-                    "project": {
-                        "key": project_key
-                    },
-                    "summary": summary,
-                    "description": {
-                        "type": "doc",
-                        "version": 1,
-                        "content": [
-                            {
-                                "type": "paragraph",
-                                "content": [
-                                    {
-                                        "type": "text",
-                                        "text": paragraph_text,
-                                    },
-                                    {
-                                        "type": "text",
-                                        "text": "Mozilla-Telemetry log.",
-                                        "marks": [
-                                                {
-                                                    "type": "link",
-                                                    "attrs": {
-                                                                "href": \
-                                                                f"{log_url}"
-                                                             }
-                                                }]
-                                    },
-                                ]
-                            }
-                        ]
-                    },
-                    "issuetype": {
-                        "id": issue_type_id
-                    }
+                "project": {"key": project_key},
+                "summary": summary,
+                "description": {
+                    "type": "doc",
+                    "version": 1,
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": paragraph_text,
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "Mozilla-Telemetry log.",
+                                    "marks": [
+                                        {
+                                            "type": "link",
+                                            "attrs": {"href": f"{log_url}"},
+                                        }
+                                    ],
+                                },
+                            ],
+                        }
+                    ],
+                },
+                "issuetype": {"id": issue_type_id},
             }
-            }
+        }
     )
 
     response = requests.post(url, headers=headers, auth=auth, data=payload)
@@ -104,8 +98,10 @@ def create_jira_ticket(context):
         logger.info("Issue created successfully.")
         return response.json()
     else:
-        logger.info(f"Failed to create issue. Status code:"\
-                    f"{response.status_code}, Response: {response.text}")
+        logger.info(
+            f"Failed to create issue. Status code:"
+            f"{response.status_code}, Response: {response.text}"
+        )
         return None
 
 
