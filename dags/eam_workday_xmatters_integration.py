@@ -110,6 +110,7 @@ default_args = {
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
+    "on_failure_callback": create_jira_ticket,
 }
 tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
 
@@ -170,7 +171,6 @@ with DAG(
     "eam-workday-xmatters-integration",
     default_args=default_args,
     doc_md=DOCS,
-    on_failure_callback=create_jira_ticket,
     tags=tags,
     schedule_interval="@daily",
 ) as dag:
