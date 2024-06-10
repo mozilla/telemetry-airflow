@@ -110,7 +110,7 @@ default_args = {
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
     "retries": 0,
-    "on_failure_callback": [create_jira_ticket],
+    "on_failure_callback": create_jira_ticket,
 }
 tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
 
