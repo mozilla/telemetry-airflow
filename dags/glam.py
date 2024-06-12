@@ -369,8 +369,6 @@ extract_counts = SubDagOperator(
     dag=dag,
 )
 
-
-
 with dag as dag:
     extracts_per_channel = EmptyOperator(
         task_id="extracts"
