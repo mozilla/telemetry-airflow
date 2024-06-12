@@ -61,9 +61,7 @@ def create_jira_ticket(context):
     payload = json.dumps(
         {
             "fields": {
-                "assignee": {
-                        "id": assignee_id
-                    },
+                "assignee": {"id": assignee_id},
                 "project": {"key": project_key},
                 "summary": summary,
                 "description": {
