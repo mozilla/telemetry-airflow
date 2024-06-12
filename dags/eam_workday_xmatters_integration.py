@@ -56,10 +56,12 @@ def create_jira_ticket(context):
     summary = "Workday XMatters Integration - Airflow Task Issue Exception"
     paragraph_text = "Detailed error logging can be found in the link: "
     project_key = "ASP"
-    issue_type_id = "10007"
+    issue_type_id = "10020"  # Issue Type = Bug
+    assignee_id = "712020:b999000a-67b1-45ff-8b40-42a5ceeee75b"  # Julio
     payload = json.dumps(
         {
             "fields": {
+                "assignee": {"id": assignee_id},
                 "project": {"key": project_key},
                 "summary": summary,
                 "description": {
