@@ -60,6 +60,7 @@ with DAG(
     default_args=default_args,
     schedule_interval="0 4 * * *",
     doc_md=docs,
+    tags=tags,
 ) as dag:
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
         task_id="microsoft_derived__microsoft_acquisitions__v1",
