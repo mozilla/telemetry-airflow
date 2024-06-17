@@ -7,12 +7,32 @@ import datetime
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query, bigquery_dq_check
- 
+
 # Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables
-microsoft_client_id = Secret(deploy_type="env", deploy_target="MICROSOFT_CLIENT_ID", secret="airflow-gke-secrets", key="MICROSOFT_CLIENT_ID")
-microsoft_client_secret = Secret(deploy_type="env", deploy_target="MICROSOFT_CLIENT_SECRET", secret="airflow-gke-secrets", key="MICROSOFT_CLIENT_SECRET")
-microsoft_tenant_id = Secret(deploy_type="env", deploy_target="MICROSOFT_TENANT_ID", secret="airflow-gke-secrets", key="MICROSOFT_TENANT_ID")
-microsoft_store_app_list =  Secret(deploy_type="env", deploy_target="MICROSOFT_STORE_APP_LIST", secret="airflow-gke-secrets", key="MICROSOFT_STORE_APP_LIST")
+microsoft_client_id = Secret(
+    deploy_type="env",
+    deploy_target="MICROSOFT_CLIENT_ID",
+    secret="airflow-gke-secrets",
+    key="MICROSOFT_CLIENT_ID",
+)
+microsoft_client_secret = Secret(
+    deploy_type="env",
+    deploy_target="MICROSOFT_CLIENT_SECRET",
+    secret="airflow-gke-secrets",
+    key="MICROSOFT_CLIENT_SECRET",
+)
+microsoft_tenant_id = Secret(
+    deploy_type="env",
+    deploy_target="MICROSOFT_TENANT_ID",
+    secret="airflow-gke-secrets",
+    key="MICROSOFT_TENANT_ID",
+)
+microsoft_store_app_list = Secret(
+    deploy_type="env",
+    deploy_target="MICROSOFT_STORE_APP_LIST",
+    secret="airflow-gke-secrets",
+    key="MICROSOFT_STORE_APP_LIST",
+)
 
 docs = """
 
@@ -44,43 +64,52 @@ with DAG(
 ) as dag:
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
         task_id="microsoft_derived__microsoft_acquisitions__v1",
-        secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list],
+        secrets=[
+            microsoft_client_id,
+            microsoft_client_secret,
+            microsoft_tenant_id,
+            microsoft_store_app_list,
+        ],
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_acquisitions_v1/query.py",
         ]
         + [
-            "--date", 
+            "--date",
             "{{ds}}",
-            "--microsoft_client_id", 
+            "--microsoft_client_id",
             "{{var.value.MICROSOFT_CLIENT_ID}}",
-            "--microsoft_store_app_list", 
+            "--microsoft_store_app_list",
             "{{var.value.MICROSOFT_STORE_APP_LIST}}",
-            "--microsoft_tenant_id", 
-            "{{var.value.MICROSOFT_TENANT_ID}}"
+            "--microsoft_tenant_id",
+            "{{var.value.MICROSOFT_TENANT_ID}}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="mhirose@mozilla.com",
         email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
     )
 
-
     microsoft_derived__app_conversions__v1 = GKEPodOperator(
         task_id="microsoft_derived__app_conversions__v1",
-        secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list],
+        secrets=[
+            microsoft_client_id,
+            microsoft_client_secret,
+            microsoft_tenant_id,
+            microsoft_store_app_list,
+        ],
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_conversions_v1/query.py",
         ]
         + [
-            "--date", 
+            "--date",
             "{{ds}}",
-            "--microsoft_client_id", 
+            "--microsoft_client_id",
             "{{var.value.MICROSOFT_CLIENT_ID}}",
-            "--microsoft_store_app_list", 
+            "--microsoft_store_app_list",
             "{{var.value.MICROSOFT_STORE_APP_LIST}}",
-            "--microsoft_tenant_id", 
-            "{{var.value.MICROSOFT_TENANT_ID}}"
+            "--microsoft_tenant_id",
+            "{{var.value.MICROSOFT_TENANT_ID}}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="mhirose@mozilla.com",
@@ -89,20 +118,25 @@ with DAG(
 
     microsoft_derived__app_installs__v1 = GKEPodOperator(
         task_id="microsoft_derived__app_installs__v1",
-        secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list],
+        secrets=[
+            microsoft_client_id,
+            microsoft_client_secret,
+            microsoft_tenant_id,
+            microsoft_store_app_list,
+        ],
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_installs_v1/query.py",
         ]
         + [
-            "--date", 
+            "--date",
             "{{ds}}",
-            "--microsoft_client_id", 
+            "--microsoft_client_id",
             "{{var.value.MICROSOFT_CLIENT_ID}}",
-            "--microsoft_store_app_list", 
+            "--microsoft_store_app_list",
             "{{var.value.MICROSOFT_STORE_APP_LIST}}",
-            "--microsoft_tenant_id", 
-            "{{var.value.MICROSOFT_TENANT_ID}}"
+            "--microsoft_tenant_id",
+            "{{var.value.MICROSOFT_TENANT_ID}}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="mhirose@mozilla.com",
