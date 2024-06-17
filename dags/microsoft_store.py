@@ -123,8 +123,6 @@ with DAG(
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_installs_v1/query.py",
-        ]
-        + [
             "--date",
             "{{ds}}",
             "--microsoft_client_id",
