@@ -52,6 +52,8 @@ default_args = {
     "retries": 2,
 }
 
+TAGS = [Tag.ImpactTier.tier_2]
+
 with DAG(
     "microsoft_store",
     default_args=default_args,
