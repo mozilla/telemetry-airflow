@@ -69,8 +69,6 @@ with DAG(
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_acquisitions_v1/query.py",
-        ]
-        + [
             "--date",
             "{{ds}}",
             "--microsoft_client_id",
@@ -96,8 +94,6 @@ with DAG(
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_conversions_v1/query.py",
-        ]
-        + [
             "--date",
             "{{ds}}",
             "--microsoft_client_id",
