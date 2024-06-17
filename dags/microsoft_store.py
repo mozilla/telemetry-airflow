@@ -35,15 +35,6 @@ default_args = {
     "retries": 2,
 }
 
-read_gke_secret = GKEPodOperator(
-    task_id="read-gke-secret",
-    name="read-gke-secret",
-    image="ubuntu:23.04",
-    arguments=["sleep", "100"],
-    dag=dag,
-    secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list]
-)
-
 with DAG(
     "microsoft_store",
     default_args=default_args,
@@ -53,6 +44,7 @@ with DAG(
 ) as dag:
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
         task_id="microsoft_derived__microsoft_acquisitions__v1",
+        secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list],
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_acquisitions_v1/query.py",
@@ -75,6 +67,7 @@ with DAG(
 
     microsoft_derived__app_conversions__v1 = GKEPodOperator(
         task_id="microsoft_derived__app_conversions__v1",
+        secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list],
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_conversions_v1/query.py",
@@ -96,6 +89,7 @@ with DAG(
 
     microsoft_derived__app_installs__v1 = GKEPodOperator(
         task_id="microsoft_derived__app_installs__v1",
+        secrets=[microsoft_client_id, microsoft_client_secret, microsoft_tenant_id, microsoft_store_app_list],
         arguments=[
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_installs_v1/query.py",
