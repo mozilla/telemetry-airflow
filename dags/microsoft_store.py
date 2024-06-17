@@ -1,12 +1,9 @@
-from airflow.providers.cncf.kubernetes.secret import Secret
-from airflow import DAG
-from airflow.sensors.external_task import ExternalTaskMarker
-from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.utils.task_group import TaskGroup
 import datetime
+
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.secret import Secret
+
 from operators.gcp_container_operator import GKEPodOperator
-from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.gcp import bigquery_etl_query, bigquery_dq_check
 
 # Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables
 microsoft_client_id = Secret(
@@ -60,7 +57,6 @@ with DAG(
     default_args=default_args,
     schedule_interval="0 4 * * *",
     doc_md=docs,
-    tags=tags,
 ) as dag:
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
         task_id="microsoft_derived__microsoft_acquisitions__v1",
