@@ -138,7 +138,3 @@ with DAG(
         owner="mhirose@mozilla.com",
         email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
     )
-
-microsoft_derived__app_acquisitions__v1
-microsoft_derived__app_conversions__v1
-microsoft_derived__app_installs__v1
