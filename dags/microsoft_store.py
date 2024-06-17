@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 # Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables
 microsoft_client_id = Secret(
@@ -52,7 +53,7 @@ default_args = {
     "retries": 2,
 }
 
-TAGS = [Tag.ImpactTier.tier_2]
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "microsoft_store",
