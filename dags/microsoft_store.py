@@ -38,13 +38,6 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    airflow_gke_prod_kwargs = {
-        "gcp_conn_id": "google_cloud_airflow_gke",
-        "project_id": "moz-fx-data-airflow-gke-prod",
-        "location": "us-west1",
-        "cluster_name": "workloads-prod-v1",
-    }
-
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
         task_id="microsoft_derived__microsoft_acquisitions__v1",
         secrets=[
