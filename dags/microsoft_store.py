@@ -7,6 +7,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 # Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables
+
 microsoft_client_id = Secret(
     deploy_type="env",
     deploy_target="MICROSOFT_CLIENT_ID",
@@ -63,13 +64,6 @@ with DAG(
     tags=tags,
 ) as dag:
 
-    airflow_gke_prod_kwargs = {
-        "gcp_conn_id": "google_cloud_airflow_gke",
-        "project_id": "moz-fx-data-airflow-gke-prod",
-        "location": "us-west1",
-        "cluster_name": "workloads-prod-v1",
-    }
-
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
         task_id="microsoft_derived__microsoft_acquisitions__v1",
         secrets=[
@@ -82,9 +76,6 @@ with DAG(
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_acquisitions_v1/query.py",
             "--date={{ ds }}",
-            "--microsoft_client_id={{ var.value.MICROSOFT_CLIENT_ID }}",
-            "--microsoft_store_app_list={{ var.value.MICROSOFT_STORE_APP_LIST }}",
-            "--microsoft_tenant_id={{ var.value.MICROSOFT_TENANT_ID }}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="mhirose@mozilla.com",
@@ -103,9 +94,6 @@ with DAG(
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_conversions_v1/query.py",
             "--date={{ ds }}",
-            "--microsoft_client_id={{ var.value.MICROSOFT_CLIENT_ID }}",
-            "--microsoft_store_app_list={{ var.value.MICROSOFT_STORE_APP_LIST }}",
-            "--microsoft_tenant_id={{ var.value.MICROSOFT_TENANT_ID }}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="mhirose@mozilla.com",
@@ -124,9 +112,6 @@ with DAG(
             "python",
             "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_installs_v1/query.py",
             "--date={{ ds }}",
-            "--microsoft_client_id={{ var.value.MICROSOFT_CLIENT_ID }}",
-            "--microsoft_store_app_list={{ var.value.MICROSOFT_STORE_APP_LIST }}",
-            "--microsoft_tenant_id={{ var.value.MICROSOFT_TENANT_ID }}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
         owner="mhirose@mozilla.com",
