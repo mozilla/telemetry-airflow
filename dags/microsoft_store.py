@@ -63,57 +63,27 @@ with DAG(
     doc_md=docs,
     tags=tags,
 ) as dag:
-
-    microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
-        task_id="microsoft_derived__app_acquisitions__v1",
-        secrets=[
-            microsoft_client_id,
-            microsoft_client_secret,
-            microsoft_tenant_id,
-            microsoft_store_app_list,
-        ],
-        arguments=[
-            "python",
-            "sql/moz-fx-data-shared-prod/microsoft_derived/app_acquisitions_v1/query.py",
-            "--date={{ ds }}",
-        ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        owner="mhirose@mozilla.com",
-        email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
+    table_names = (
+        "app_acquisitions",
+        "app_conversions",
+        "app_installs",
     )
+    for table_name in table_names:
+        GKEPodOperator(
+            task_id="microsoft_derived__{table_name}__v1",
+            secrets=[
+                microsoft_client_id,
+                microsoft_client_secret,
+                microsoft_tenant_id,
+                microsoft_store_app_list,
+            ],
+            arguments=[
+                "python",
+                "sql/moz-fx-data-shared-prod/microsoft_derived/{table_name}/query.py",
+                "--date={{ ds }}",
+            ],
+            image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+            owner="mhirose@mozilla.com",
+            email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
+        )
 
-    microsoft_derived__app_conversions__v1 = GKEPodOperator(
-        task_id="microsoft_derived__app_conversions__v1",
-        secrets=[
-            microsoft_client_id,
-            microsoft_client_secret,
-            microsoft_tenant_id,
-            microsoft_store_app_list,
-        ],
-        arguments=[
-            "python",
-            "sql/moz-fx-data-shared-prod/microsoft_derived/app_conversions_v1/query.py",
-            "--date={{ ds }}",
-        ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        owner="mhirose@mozilla.com",
-        email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
-    )
-
-    microsoft_derived__app_installs__v1 = GKEPodOperator(
-        task_id="microsoft_derived__app_installs__v1",
-        secrets=[
-            microsoft_client_id,
-            microsoft_client_secret,
-            microsoft_tenant_id,
-            microsoft_store_app_list,
-        ],
-        arguments=[
-            "python",
-            "sql/moz-fx-data-shared-prod/microsoft_derived/app_installs_v1/query.py",
-            "--date={{ ds }}",
-        ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        owner="mhirose@mozilla.com",
-        email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
-    )
