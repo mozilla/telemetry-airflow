@@ -71,7 +71,7 @@ with DAG(
     }
 
     microsoft_derived__app_acquisitions__v1 = GKEPodOperator(
-        task_id="microsoft_derived__microsoft_acquisitions__v1",
+        task_id="microsoft_derived__app_acquisitions__v1",
         secrets=[
             microsoft_client_id,
             microsoft_client_secret,
