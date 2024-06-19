@@ -68,9 +68,9 @@ with DAG(
         "app_conversions",
         "app_installs",
     )
-    for table_name in table_names:
+    for table in table_names:
         GKEPodOperator(
-            task_id="microsoft_derived__{table_name}__v1",
+            task_id="microsoft_derived__{table}__v1",
             secrets=[
                 microsoft_client_id,
                 microsoft_client_secret,
@@ -79,7 +79,7 @@ with DAG(
             ],
             arguments=[
                 "python",
-                "sql/moz-fx-data-shared-prod/microsoft_derived/{table_name}/query.py",
+                "sql/moz-fx-data-shared-prod/microsoft_derived/{table}_v1/query.py",
                 "--date={{ ds }}",
             ],
             image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
