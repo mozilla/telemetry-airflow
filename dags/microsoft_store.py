@@ -86,4 +86,3 @@ with DAG(
             owner="mhirose@mozilla.com",
             email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
         )
-
