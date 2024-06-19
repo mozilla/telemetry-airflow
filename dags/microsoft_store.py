@@ -74,7 +74,7 @@ with DAG(
         ],
         arguments=[
             "python",
-            "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_acquisitions_v1/query.py",
+            "sql/moz-fx-data-shared-prod/microsoft_derived/app_acquisitions_v1/query.py",
             "--date={{ ds }}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
@@ -92,7 +92,7 @@ with DAG(
         ],
         arguments=[
             "python",
-            "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_conversions_v1/query.py",
+            "sql/moz-fx-data-shared-prod/microsoft_derived/app_conversions_v1/query.py",
             "--date={{ ds }}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
@@ -110,7 +110,7 @@ with DAG(
         ],
         arguments=[
             "python",
-            "sql/moz-fx-data-shared-prod/microsoft_derived/microsoft_app_installs_v1/query.py",
+            "sql/moz-fx-data-shared-prod/microsoft_derived/app_installs_v1/query.py",
             "--date={{ ds }}",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
