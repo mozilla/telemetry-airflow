@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 import tempfile
-import urllib
+import urllib.request
 
 from datetime import datetime as dt, timedelta, date
 from os import environ
@@ -124,13 +124,12 @@ def get_rows(schema):
             raise ValueError(err_msg)
 
 
-# First fetch from the primary source in s3 as per bug 1312006. We fall back to the github location if this is not available.
+# First fetch from the primary source in gcs as per bug 1312006. We fall back to the github location if this is not available.
 def fetch_schema():
-    """ Fetch the crash data schema from an s3 location or github location. This
+    """ Fetch the crash data schema from an gcs location or github location. This
     returns the corresponding JSON schema in a python dictionary. """
     
-    region = "us-west-2"
-    bucket = "crashstats-telemetry-crashes-prod-us-west-2"
+    bucket = "moz-fx-socorro-prod-prod-telemetry"
     key = "telemetry_socorro_crash.json"
     fallback_url = f"https://raw.githubusercontent.com/mozilla-services/socorro/master/socorro/schemas/{key}"
 
@@ -139,13 +138,13 @@ def fetch_schema():
 
         # Use spark to pull schema file instead of boto since the dataproc hadoop configs only work with spark.
         # Note: only do this on small json files, since collect will bring the file onto the driver
-        json_obj = spark.read.json("s3a://{}/{}".format(bucket, key), multiLine=True).toJSON().collect()
+        json_obj = spark.read.json("gs://{}/{}".format(bucket, key), multiLine=True).toJSON().collect()
         resp = json.loads(json_obj[0])
     except Exception as e:
         log.warning(("Could not fetch schema from s3://{}/{}: {}\n"
                      "Fetching crash data schema from {}")
                     .format(bucket, key, e, fallback_url))
-        resp = urllib.request.urlopen(fallback_url)
+        resp = json.loads(urllib.request.urlopen(fallback_url).read())
 
     return resp
 
