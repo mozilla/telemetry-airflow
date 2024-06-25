@@ -1,5 +1,4 @@
 from airflow.models import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
     BigQueryToGCSOperator,

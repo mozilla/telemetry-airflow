@@ -370,9 +370,7 @@ extract_counts = SubDagOperator(
 )
 
 with dag as dag:
-    extracts_per_channel = EmptyOperator(
-        task_id="extracts"
-    )
+    extracts_per_channel = EmptyOperator(task_id="extracts")
 
     with TaskGroup("glam_external") as glam_external:
         ExternalTaskMarker(
