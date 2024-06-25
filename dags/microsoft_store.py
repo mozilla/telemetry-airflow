@@ -80,7 +80,7 @@ with DAG(
             arguments=[
                 "python",
                 f"sql/moz-fx-data-shared-prod/microsoft_derived/{table}_v1/query.py",
-                "--date='{{ macros.ds_add(ds, -1) }}'",
+                "--date={{ macros.ds_add(ds, -1) }}",
             ],
             image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
             owner="mhirose@mozilla.com",
