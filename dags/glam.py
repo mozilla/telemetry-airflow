@@ -11,6 +11,7 @@ in telemetry-airflow.
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.operators.empty import EmptyOperator
 from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
@@ -18,7 +19,7 @@ from airflow.utils.task_group import TaskGroup
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query
-from utils.glam_subdags.extract import extract_user_counts, extracts_subdag
+from utils.glam_subdags.extract import extract_user_counts
 from utils.glam_subdags.general import repeated_subdag
 from utils.glam_subdags.generate_query import generate_and_run_desktop_query
 from utils.glam_subdags.histograms import histogram_aggregates_subdag
@@ -369,19 +370,7 @@ extract_counts = SubDagOperator(
 )
 
 with dag as dag:
-    extracts_per_channel = SubDagOperator(
-        subdag=extracts_subdag(
-            GLAM_DAG,
-            "extracts",
-            default_args,
-            dag.schedule_interval,
-            table_project_id,
-            billing_project_id,
-            fully_qualified_dataset,
-            dataset_id,
-        ),
-        task_id="extracts",
-    )
+    extracts_per_channel = EmptyOperator(task_id="extracts")
 
     with TaskGroup("glam_external") as glam_external:
         ExternalTaskMarker(
