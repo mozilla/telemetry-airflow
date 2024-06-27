@@ -7,6 +7,7 @@ from airflow.models.param import Param
 from airflow.operators.branch import BaseBranchOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.utils.weekday import WeekDay
@@ -21,13 +22,6 @@ DOCS = """\
 
 As long as the most recent DAG run is successful this job can be considered healthy.
 In such case, past DAG failures can be ignored.
-
-- Failure of the `lookml_generator` task may be due to a new Glean app or changes to
-`custom-namespaces.yaml`. In these cases, the task will have created a PR in
-[looker-spoke-default](https://github.com/mozilla/looker-spoke-default)
-with the title "Auto-push from LookML Generator". These PRs will need to be merged
-and the task re-run.
-
 
 ## Debugging failures
 
@@ -84,42 +78,6 @@ aws_secret_key_secret = Secret(
     deploy_target="AWS_SECRET_ACCESS_KEY",
     secret="airflow-gke-secrets",
     key="probe_scraper_secret__aws_secret_key",
-)
-looker_repos_secret_git_ssh_key_b64 = Secret(
-    deploy_type="env",
-    deploy_target="GIT_SSH_KEY_BASE64",
-    secret="airflow-gke-secrets",
-    key="probe_scraper_secret__looker_repos_secret_git_ssh_key_b64",
-)
-looker_api_client_id_prod = Secret(
-    deploy_type="env",
-    deploy_target="LOOKER_API_CLIENT_ID",
-    secret="airflow-gke-secrets",
-    key="probe_scraper_secret__looker_api_client_id_prod",
-)
-looker_api_client_secret_prod = Secret(
-    deploy_type="env",
-    deploy_target="LOOKER_API_CLIENT_SECRET",
-    secret="airflow-gke-secrets",
-    key="probe_scraper_secret__looker_api_client_secret_prod",
-)
-looker_api_client_id_staging = Secret(
-    deploy_type="env",
-    deploy_target="LOOKER_API_CLIENT_ID",
-    secret="airflow-gke-secrets",
-    key="probe_scraper_secret__looker_api_client_id_staging",
-)
-looker_api_client_secret_staging = Secret(
-    deploy_type="env",
-    deploy_target="LOOKER_API_CLIENT_SECRET",
-    secret="airflow-gke-secrets",
-    key="probe_scraper_secret__looker_api_client_secret_staging",
-)
-dataops_looker_github_secret_access_token = Secret(
-    deploy_type="env",
-    deploy_target="GITHUB_ACCESS_TOKEN",
-    secret="airflow-gke-secrets",
-    key="probe_scraper_secret__dataops_looker_github_secret_access_token",
 )
 mozilla_pipeline_schemas_secret_git_sshkey_b64 = Secret(
     deploy_type="env",
@@ -394,70 +352,10 @@ with DAG(
 
     probe_scraper >> delay_python_task
 
-    image_tag = Variable.get("lookml_generator_release_str")
-    if image_tag is None:
-        image_tag = DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION
-
-    lookml_generator_prod = GKEPodOperator(
-        owner="ascholtz@mozilla.com",
-        email=[
-            "ascholtz@mozilla.com",
-            "dataops+alerts@mozilla.com",
-            "telemetry-alerts@mozilla.com",
-        ],
-        task_id="lookml_generator",
-        name="lookml-generator-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + image_tag,
-        startup_timeout_seconds=500,
-        dag=dag,
-        env_vars={
-            "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
-            "HUB_BRANCH_SOURCE": "base",
-            "HUB_BRANCH_PUBLISH": "main",
-            "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
-            "SPOKE_BRANCH_PUBLISH": "main",
-            "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
-            "UPDATE_SPOKE_BRANCHES": "true",
-        },
-        secrets=[
-            looker_repos_secret_git_ssh_key_b64,
-            looker_api_client_id_prod,
-            looker_api_client_secret_prod,
-            dataops_looker_github_secret_access_token,
-        ],
-        **airflow_gke_prod_kwargs,
+    # trigger lookml generation
+    trigger_looker = TriggerDagRunOperator(
+        task_id="trigger_looker", trigger_dag_id="looker", wait_for_completion=True
     )
-
-    lookml_generator_staging = GKEPodOperator(
-        owner="ascholtz@mozilla.com",
-        email=[
-            "ascholtz@mozilla.com",
-            "dataops+alerts@mozilla.com",
-            "telemetry-alerts@mozilla.com",
-        ],
-        task_id="lookml_generator_staging",
-        name="lookml-generator-staging-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
-        dag=dag,
-        env_vars={
-            "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
-            "HUB_BRANCH_SOURCE": "base",
-            "HUB_BRANCH_PUBLISH": "main-stage",
-            "SPOKE_REPO_URL": "git@github.com:mozilla/looker-spoke-default.git",
-            "SPOKE_BRANCH_PUBLISH": "main-stage",
-            "LOOKER_INSTANCE_URI": "https://mozillastaging.cloud.looker.com",
-            "UPDATE_SPOKE_BRANCHES": "true",
-        },
-        secrets=[
-            looker_repos_secret_git_ssh_key_b64,
-            looker_api_client_id_staging,
-            looker_api_client_secret_staging,
-            dataops_looker_github_secret_access_token,
-        ],
-        **airflow_gke_prod_kwargs,
-    )
-
-    delay_python_task >> lookml_generator_staging >> lookml_generator_prod
 
     # This emits a POST request to a netlify webhook URL that triggers a new
     # build of the glean dictionary. We do this after the schema generator has
@@ -478,4 +376,4 @@ with DAG(
         dag=dag,
     )
 
-    lookml_generator_prod >> glean_dictionary_netlify_build
+    delay_python_task >> trigger_looker >> glean_dictionary_netlify_build
