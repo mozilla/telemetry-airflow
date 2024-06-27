@@ -11,22 +11,23 @@ author, schedule and monitor workflows.
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
 - [Telemetry-Airflow](#telemetry-airflow)
-   * [Writing DAGs](#writing-dags)
-   * [Prerequisites](#prerequisites)
-      + [Installing dependencies locally](#installing-dependencies-locally)
-      + [Updating Python dependencies](#updating-python-dependencies)
-      + [Build Container](#build-container)
-         - [macOS](#macos)
-   * [Testing](#testing)
-      + [Local Deployment](#local-deployment)
-         - [Adding dummy credentials](#adding-dummy-credentials)
-         - [Usage](#usage)
-         - [Testing GKE Jobs (including BigQuery-etl changes)](#testing-gke-jobs-including-bigquery-etl-changes)
-         - [Testing Dataproc Jobs](#testing-dataproc-jobs)
-         - [Debugging](#debugging)
-   * [Production Setup](#production-setup)
-   * [Production Deployments](#production-deployments)
-   * [Dev and Stage Deployments](#dev-and-stage-deployments)
+  - [Contributing to this Repo](#contributing-to-this-repo)
+  - [Writing DAGs](#writing-dags)
+  - [Prerequisites](#prerequisites)
+    - [Installing dependencies locally](#installing-dependencies-locally)
+    - [Updating Python dependencies](#updating-python-dependencies)
+    - [Build Container](#build-container)
+      - [macOS](#macos)
+  - [Testing](#testing)
+    - [Local Deployment](#local-deployment)
+      - [Adding dummy credentials](#adding-dummy-credentials)
+      - [Usage](#usage)
+      - [Testing GKE Jobs (including BigQuery-etl changes)](#testing-gke-jobs-including-bigquery-etl-changes)
+      - [Testing Dataproc Jobs](#testing-dataproc-jobs)
+      - [Debugging](#debugging)
+  - [Production Setup](#production-setup)
+  - [Production Deployments](#production-deployments)
+  - [Dev and Stage Deployments](#dev-and-stage-deployments)
 
 <!-- TOC end -->
 
@@ -43,6 +44,11 @@ Some links relevant to users and developers of WTMO:
 - The Data SRE team maintains a
   [WTMO Developer Guide](https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide)
   (behind SSO)
+
+## Contributing to this Repo
+The best way to creat a Pull Request is to fork this repo, make your changes in the forked repo, and submit a pull request from the forked repo into the central repository.  More info on how to do this can be found [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
+
+Commit messages must follow [Conventional Commit style](https://www.conventionalcommits.org/en/v1.0.0/).
 
 ## Writing DAGs
 See the Airflow's [Best Practices guide](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#best-practices) to help you write DAGs.
