@@ -140,7 +140,7 @@ EVERFI_PASSWORD = Secret(
     deploy_target="EVERFI_PASSWORD",
     secret="airflow-gke-secrets",
     key="EVERFI_PASSWORD",
-) 
+)
 
 
 with DAG(
@@ -152,7 +152,12 @@ with DAG(
 ) as dag:
     workday_everfi_dag = GKEPodOperator(
         task_id="eam_workday_everfi",
-        arguments=["python", "scripts/workday_everfi_integration.py", "--level", "info"],
+        arguments=[
+            "python",
+            "scripts/workday_everfi_integration.py",
+            "--level",
+            "info",
+        ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/"
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
@@ -160,6 +165,6 @@ with DAG(
             EVERFI_INTEG_WORKDAY_USERNAME,
             EVERFI_INTEG_WORKDAY_PASSWORD,
             EVERFI_USERNAME,
-            EVERFI_PASSWORD
+            EVERFI_PASSWORD,
         ],
     )
