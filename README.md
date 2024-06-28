@@ -46,7 +46,7 @@ Some links relevant to users and developers of WTMO:
   (behind SSO)
 
 ## Contributing to this Repo
-The best way to creat a Pull Request is to fork this repo, make your changes in the forked repo, and submit a pull request from the forked repo into the central repository.  More info on how to do this can be found [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
+The best way to create a Pull Request is to fork this repo, make your changes in the forked repo, and submit a pull request from the forked repo into the central repository.  More info on how to do this can be found [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
 
 PR name must follow [Conventional Commit style](https://www.conventionalcommits.org/en/v1.0.0/).
 
