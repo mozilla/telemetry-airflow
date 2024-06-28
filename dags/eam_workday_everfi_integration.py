@@ -140,7 +140,7 @@ EVERFI_PASSWORD = Secret(
     deploy_target="EVERFI_PASSWORD",
     secret="airflow-gke-secrets",
     key="EVERFI_PASSWORD",
-) 
+)
 
 
 with DAG(
