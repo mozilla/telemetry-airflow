@@ -148,7 +148,7 @@ with DAG(
     default_args=default_args,
     doc_md=DOCS,
     tags=tags,
-    schedule_interval="@daily",
+    schedule_interval="0 3 * * *",
 ) as dag:
     workday_everfi_dag = GKEPodOperator(
         task_id="eam_workday_everfi",
