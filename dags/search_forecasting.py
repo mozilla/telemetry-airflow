@@ -16,11 +16,15 @@ from utils.tags import Tag
 
 default_args = {
     "owner": "jsnyder@mozilla.com",
-    "email": ["jsnyder@mozilla.com", "mbowerman@mozilla.com"],
+    "email": [
+        "jsnyder@mozilla.com",
+        "mbowerman@mozilla.com",
+        "telemetry-alerts@mozilla.com",
+    ],
     "depends_on_past": False,
     "start_date": datetime(2024, 6, 21),
     "email_on_failure": True,
-    "email_on_retry": True,
+    "email_on_retry": False,
     "retries": 2,
     "retry_delay": timedelta(minutes=30),
 }
@@ -51,9 +55,4 @@ with DAG(
             task_id=f"search_forecasting_{metric}",
             arguments=["python", script_path, "-c", config_path],
             image=IMAGE,
-            dag=dag,
-            gcp_conn_id="google_cloud_gke_sandbox",  # remove before merging
-            project_id="moz-fx-data-gke-sandbox",  # remove before merging
-            location="us-west1",  # remove before merging
-            cluster_name="jsnyder-gke-sandbox",  # remove before merging
         )
