@@ -22,7 +22,7 @@ default_args = {
         "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
-    "start_date": datetime(2024, 6, 21),
+    "start_date": datetime(2024, 7, 6),
     "email_on_failure": True,
     "email_on_retry": False,
     "retries": 2,
