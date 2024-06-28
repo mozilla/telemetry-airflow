@@ -42,6 +42,7 @@ with DAG(
     tags=TAGS,
 ) as dag:
     for metric in FORECAST_METRICS_LIST:
+        # pass the search_forecasting configs to the KPI forecasting script
         config_filename = f"{metric}.yaml"
         script_path = os.path.join(".", "kpi_forecasting.py")
         config_path = os.path.join("kpi_forecasting", "configs", config_filename)
