@@ -90,7 +90,8 @@ with DAG(
             "spark:spark.executor.memory": "20g",
         },
         "idle_delete_ttl": 14400,
-        "num_workers": 6,
+        # dataproc does not support all GCE instance types, e.g. newer ones
+        # https://cloud.google.com/compute/docs/general-purpose-machines
         "master_machine_type": "n2-standard-8",
         "worker_machine_type": "n2-highmem-4",
         "gcp_conn_id": params.conn_id,
@@ -106,6 +107,7 @@ with DAG(
             cluster_name="bhr-collection-main-{{ ds }}",
             job_name="bhr-collection-main",
             **shared_runner_args,
+            num_workers=6,
             py_args=[
                 "--date",
                 "{{ ds }}",
@@ -128,11 +130,12 @@ with DAG(
             cluster_name="bhr-collection-child-{{ ds }}",
             job_name="bhr-collection-child",
             **shared_runner_args,
+            num_workers=8,
             py_args=[
                 "--date",
                 "{{ ds }}",
                 "--sample-size",
-                "0.1",
+                "0.08",  # there are usually 12-15x more hangs in the child process than main
                 "--use_gcs",
                 "--thread-filter",
                 "Gecko_Child",
