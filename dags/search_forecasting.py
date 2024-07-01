@@ -40,23 +40,6 @@ FORECAST_METRICS_LIST = [
     "search_forecasting_ad_clicks",
 ]
 
-
-# all the search forecasting metrics come from the search_revenue_levers_daily
-# table which is run in the bqetl_search_dashboard dag
-# as the search_derived__search_revenue_levers_daily__v1 task
-# see: https://workflow.telemetry.mozilla.org/dags/bqetl_search_dashboard/grid
-wait_task_sensor = ExternalTaskSensor(
-    task_id="wait_for_search_dashboard",
-    external_dag_id="bqetl_search_dashboard",
-    external_task_id="search_derived__search_revenue_levers_daily__v1",
-    execution_delta=timedelta(days=7),
-    check_existence=True,
-    mode="reschedule",
-    allowed_states=ALLOWED_STATES,
-    failed_states=FAILED_STATES,
-    pool="DATA_ENG_EXTERNALTASKSENSOR",
-)
-
 with DAG(
     "search_forecasting",
     default_args=default_args,
@@ -64,6 +47,22 @@ with DAG(
     doc_md=__doc__,
     tags=TAGS,
 ) as dag:
+    # all the search forecasting metrics come from the search_revenue_levers_daily
+    # table which is run in the bqetl_search_dashboard dag
+    # as the search_derived__search_revenue_levers_daily__v1 task
+    # see: https://workflow.telemetry.mozilla.org/dags/bqetl_search_dashboard/grid
+    wait_task_sensor = ExternalTaskSensor(
+        task_id="wait_for_search_dashboard",
+        external_dag_id="bqetl_search_dashboard",
+        external_task_id="search_derived__search_revenue_levers_daily__v1",
+        execution_delta=timedelta(days=7),
+        check_existence=True,
+        mode="reschedule",
+        allowed_states=ALLOWED_STATES,
+        failed_states=FAILED_STATES,
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+    )
+
     for metric in FORECAST_METRICS_LIST:
         # pass the search_forecasting configs to the KPI forecasting script
         config_filename = f"{metric}.yaml"
