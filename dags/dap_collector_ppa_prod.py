@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from airflow import DAG
+from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -47,6 +48,19 @@ tags = [
     Tag.Triage.no_triage,
 ]
 
+hpke_private_key = Secret(
+    deploy_type="env",
+    deploy_target="HPKE_PRIVATE_KEY",
+    secret="airflow-gke-secrets",
+    key="DAP_PPA_PROD_HPKE_PRIVATE_KEY",
+)
+
+auth_token = Secret(
+    deploy_type="env",
+    deploy_target="AUTH_TOKEN",
+    secret="airflow-gke-secrets",
+    key="DAP_PPA_PROD_AUTH_TOKEN",
+)
 
 with DAG(
     "dap_collector_ppa_prod",
@@ -62,8 +76,6 @@ with DAG(
             "python",
             "dap_collector_ppa_prod/main.py",
             "--date={{ ts }}",
-            "--auth-token={{ var.value.dap_ppa_prod_auth_token }}",
-            "--hpke-private-key={{ var.value.dap_ppa_prod_hpke_private_key }}",
             "--task-config-url={{ var.value.dap_ppa_prod_task_config_url }}",
             "--ad-config-url={{ var.value.dap_ppa_prod_ad_config_url }}",
             "--project",
@@ -75,4 +87,8 @@ with DAG(
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/dap-collector-ppa-prod_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
+        secrets=[
+            hpke_private_key,
+            auth_token,
+        ],
     )
