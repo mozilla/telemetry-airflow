@@ -9,6 +9,9 @@ from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
+import os
+from slack_sdk import WebClient
+
 AUTOMATION_SLACK_CHANNEL = "#dataops-alerts"
 SLACK_CONNECTION_ID = "overwatch_slack"
 DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
@@ -44,8 +47,22 @@ with DAG(
 
     @task_group
     def initiate_backfill(backfill):
+        def invite_watchers_to_slack_channel(entry):
+            token = os.environ["SLACK_BOT_TOKEN"]
+            slack_client = WebClient(token=token)
+
+            for watcher in entry["watchers"]:
+                user_id = slack_client.users_lookupByEmail(email=watcher)
+
+                slack_client.channels_invite(
+                    channel="testing_channel_id", # is it safe to share channel_id publicly?
+                    user=user_id
+                )
+
         @task
         def prepare_slack_initiate_message(entry):
+            invite_watchers_to_slack_channel(entry)
+
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
