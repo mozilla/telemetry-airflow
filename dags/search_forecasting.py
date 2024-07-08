@@ -40,6 +40,7 @@ FORECAST_METRICS_LIST = [
     "search_forecasting_ad_clicks",
 ]
 
+# schedule to run after bqetl_search_dashboard completes
 with DAG(
     "search_forecasting",
     default_args=default_args,
@@ -55,7 +56,6 @@ with DAG(
         task_id="wait_for_search_dashboard",
         external_dag_id="bqetl_search_dashboard",
         external_task_id="search_derived__search_revenue_levers_daily__v1",
-        execution_delta=timedelta(days=7),
         check_existence=True,
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
