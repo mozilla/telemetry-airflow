@@ -40,6 +40,7 @@ FORECAST_METRICS_LIST = [
     "search_forecasting_ad_clicks",
 ]
 
+# schedule to run after bqetl_search_dashboard completes
 with DAG(
     "search_forecasting",
     default_args=default_args,
