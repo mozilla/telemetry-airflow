@@ -55,7 +55,6 @@ with DAG(
         task_id="wait_for_search_dashboard",
         external_dag_id="bqetl_search_dashboard",
         external_task_id="search_derived__search_revenue_levers_daily__v1",
-        execution_delta=timedelta(days=7),
         check_existence=True,
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
