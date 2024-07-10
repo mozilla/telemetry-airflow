@@ -66,7 +66,7 @@ with DAG(
     "dap_collector_ppa_prod",
     default_args=default_args,
     doc_md=DOCS,
-    schedule_interval="*/15 * * * *",
+    schedule_interval="0 0 * * *",
     tags=tags,
     catchup=False,
 ) as dag:
