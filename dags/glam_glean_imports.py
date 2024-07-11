@@ -70,7 +70,7 @@ wait_for_fog = ExternalTaskSensor(
 wait_for_glam = ExternalTaskSensor(
     task_id="wait_for_glam",
     external_dag_id="glam",
-    external_task_id="extracts",
+    external_task_group_id="extracts",
     execution_delta=timedelta(hours=3),
     check_existence=True,
     mode="reschedule",
