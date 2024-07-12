@@ -52,7 +52,7 @@ with DAG(
     "dap_collector_ppa_dev",
     default_args=default_args,
     doc_md=DOCS,
-    schedule_interval="0 0 * * *",
+    schedule_interval="15 0 * * *",
     tags=tags,
     catchup=False,
 ) as dag:
@@ -61,7 +61,7 @@ with DAG(
         arguments=[
             "python",
             "dap_collector_ppa_dev/main.py",
-            "--date={{ ts }}",
+            "--date={{ data_interval_end.at(0) | ts }}",
             "--auth-token={{ var.value.dap_ppa_dev_auth_token }}",
             "--hpke-private-key={{ var.value.dap_ppa_dev_hpke_private_key }}",
             "--task-config-url={{ var.value.dap_ppa_dev_task_config_url }}",
