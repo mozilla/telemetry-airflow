@@ -6,7 +6,7 @@ from airflow.providers.cncf.kubernetes.secret import Secret
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
-# Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables
+# Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables.
 
 microsoft_client_id = Secret(
     deploy_type="env",
