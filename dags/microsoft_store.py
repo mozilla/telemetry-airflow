@@ -6,7 +6,7 @@ from airflow.providers.cncf.kubernetes.secret import Secret
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
-# Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables
+# Deploy value associated with Microsoft Store keys in k8s secret `airflow-gke-secrets` in environments Microsoft variables.
 
 microsoft_client_id = Secret(
     deploy_type="env",
@@ -80,7 +80,7 @@ with DAG(
             arguments=[
                 "python",
                 f"sql/moz-fx-data-shared-prod/microsoft_derived/{table}_v1/query.py",
-                "--date={{ macros.ds_add(ds, -1) }}",
+                "--date={{ macros.ds_add(ds, -2) }}",
             ],
             image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
             owner="mhirose@mozilla.com",
