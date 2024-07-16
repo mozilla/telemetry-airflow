@@ -207,10 +207,6 @@ with DAG(
         for name, url in (
             ("gecko-dev", "https://github.com/mozilla/gecko-dev"),
             ("phabricator", "https://github.com/mozilla-conduit/review"),
-            (
-                "search_engine_usage_study",
-                "https://github.com/mozilla-rally/search-engine-usage-study",
-            ),
         )
     ]
 
