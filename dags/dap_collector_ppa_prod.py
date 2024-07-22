@@ -66,7 +66,7 @@ with DAG(
     "dap_collector_ppa_prod",
     default_args=default_args,
     doc_md=DOCS,
-    schedule_interval="*/15 * * * *",
+    schedule_interval="15 0 * * *",
     tags=tags,
     catchup=False,
 ) as dag:
@@ -75,7 +75,7 @@ with DAG(
         arguments=[
             "python",
             "dap_collector_ppa_prod/main.py",
-            "--date={{ ts }}",
+            "--date={{ data_interval_end.at(0) | ts }}",
             "--task-config-url={{ var.value.dap_ppa_prod_task_config_url }}",
             "--ad-config-url={{ var.value.dap_ppa_prod_ad_config_url }}",
             "--project",
