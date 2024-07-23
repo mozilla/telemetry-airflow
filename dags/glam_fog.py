@@ -1,5 +1,6 @@
+import operator
 from datetime import datetime, timedelta
-from functools import partial
+from functools import partial, reduce
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
@@ -99,7 +100,7 @@ with DAG(
 
     # the set of logical ids and the set of ids that are not mapped to logical ids
     final_products = set(LOGICAL_MAPPING.keys()) | set(PRODUCTS) - set(
-        sum(LOGICAL_MAPPING.values(), [])
+        reduce(operator.iadd, LOGICAL_MAPPING.values(), [])
     )
     for product in final_products:
         func = partial(
