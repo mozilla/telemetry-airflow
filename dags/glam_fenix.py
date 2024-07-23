@@ -158,7 +158,6 @@ with DAG(
         # stage 2 - downstream for export
         scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
-        scalar_percentile = query(task_name=f"{product}__scalar_percentiles_v1")
 
         histogram_bucket_counts = query(
             task_name=f"{product}__histogram_bucket_counts_v1"
@@ -166,7 +165,6 @@ with DAG(
         histogram_probe_counts = query(
             task_name=f"{product}__histogram_probe_counts_v1"
         )
-        histogram_percentiles = query(task_name=f"{product}__histogram_percentiles_v1")
 
         probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
         extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
@@ -218,14 +216,12 @@ with DAG(
             clients_scalar_aggregate
             >> scalar_bucket_counts
             >> scalar_probe_counts
-            >> scalar_percentile
             >> probe_counts
         )
         (
             clients_histogram_aggregate
             >> histogram_bucket_counts
             >> histogram_probe_counts
-            >> histogram_percentiles
             >> probe_counts
         )
         probe_counts >> sample_counts >> extract_probe_counts >> export >> pre_import
