@@ -51,8 +51,7 @@ def create_jira_ticket(context):
 
     jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
-    headers = {"Accept": "application/json", 
-               "Content-Type": "application/json"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
     summary = "Workday Everfi Integration - Airflow Task Issue Exception"
     paragraph_text = "Detailed error logging can be found in the link: "
