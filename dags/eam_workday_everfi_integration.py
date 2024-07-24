@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
