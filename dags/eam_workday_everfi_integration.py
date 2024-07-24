@@ -111,7 +111,9 @@ default_args = {
     "owner": "jmoscon@mozilla.com",
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
-    "retries": 0,
+    "retries": 3,
+    # wait 5 min before retry
+    "retry_delay": datetime.timedelta(minutes=5),
     "on_failure_callback": create_jira_ticket,
 }
 tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
@@ -148,7 +150,8 @@ with DAG(
     default_args=default_args,
     doc_md=DOCS,
     tags=tags,
-    schedule_interval="0 3 * * *",
+    # 7:00 PM UTC/12:00 AM PST - weekdays
+    schedule_interval="0 7 * * 1-5",
 ) as dag:
     workday_everfi_dag = GKEPodOperator(
         task_id="eam_workday_everfi",
