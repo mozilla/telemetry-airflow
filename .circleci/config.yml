@@ -82,7 +82,7 @@ jobs:
           name: 🚓 ruff linting
           command: ruff check . --fix
       - run:
-          name: 🧹 ruff formating
+          name: 🧹 ruff formatting
           command: ruff format .
 
   validate-requirements:
