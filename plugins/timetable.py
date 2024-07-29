@@ -64,4 +64,4 @@ class MultiWeekTimetable(Timetable):
 
 class MozillaTimetablePlugin(AirflowPlugin):
     name = "mozilla_timetable_plugin"
-    timetables = MultiWeekTimetable
+    timetables = (MultiWeekTimetable,)
