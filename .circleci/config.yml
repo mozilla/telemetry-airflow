@@ -290,11 +290,6 @@ workflows:
           requires:
             - 🛠️ Docker build test
 
-      - black:
-          name: ⚫ black
-          filters: *ci-filter
-          requires:
-            - 🧪 Validate requirements
       - ruff:
           name: 🚓 ruff
           filters: *ci-filter
@@ -305,7 +300,6 @@ workflows:
           name: 🧪 Unit tests
           filters: *ci-filter
           requires:
-            - ⚫ black
             - 🚓 ruff
 
   publish:
