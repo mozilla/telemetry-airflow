@@ -54,7 +54,6 @@ with DAG(
     schedule_interval="@daily",
     tags=tags,
 ) as dag:
-
     export_date = "macros.ds_add(ds, -2)"  # previous day data is incomplete
     tasks = []
 
