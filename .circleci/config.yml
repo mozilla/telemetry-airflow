@@ -28,15 +28,8 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-          pip-dependency-file: requirements.txt
+          args: -r requirements.txt -r requirements-dev.txt -r requirements-override.txt --upgrade
           pkg-manager: pip
-      - python/install-packages:
-          pip-dependency-file: requirements-dev.txt
-          pkg-manager: pip
-      - python/install-packages:
-          pip-dependency-file: requirements-override.txt
-          pkg-manager: pip
-          args: "--upgrade"
       - run:
           name: 🧪 Pytest
           command: python -m pytest --junitxml=test-results/junit.xml
