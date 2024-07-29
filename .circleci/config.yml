@@ -286,8 +286,6 @@ workflows:
       - ruff:
           name: 🚓 ruff
           filters: *ci-filter
-          requires:
-            - 🧪 Validate requirements
 
       - unit-tests:
           name: 🧪 Unit tests
