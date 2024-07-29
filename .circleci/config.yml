@@ -28,7 +28,12 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-          args: -r requirements.txt -r requirements-dev.txt -r requirements-override.txt --upgrade
+          args: -r requirements.txt -r requirements-dev.txt
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-override.txt
+          args: "--upgrade"
+          pypi-cache: false
           pkg-manager: pip
       - run:
           name: 🧪 Pytest
