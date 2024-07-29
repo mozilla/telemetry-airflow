@@ -8,6 +8,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
+
 from utils.backfill import BackfillParams
 from utils.tags import Tag
 

@@ -3,6 +3,8 @@ known-third-party = ["airflow"]
 
 [tool.ruff]
 target-version = "py310"
+# Exclude questionably linted code (aka legacy) under the `jobs` directory
+exclude = ["./jobs"]
 
 [tool.ruff.lint]
 select = [
