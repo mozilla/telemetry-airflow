@@ -6,4 +6,4 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 WTF_CSRF_ENABLED = True
 AUTH_TYPE = AUTH_DB
-AUTH_ROLE_PUBLIC = 'Admin'
+AUTH_ROLE_PUBLIC = "Admin"

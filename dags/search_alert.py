@@ -40,7 +40,6 @@ with DAG(
     max_active_runs=1,
     tags=tags,
 ) as dag:
-
     wait_for_search_aggregates = ExternalTaskSensor(
         task_id="wait_for_search_aggregates",
         external_dag_id="bqetl_search",

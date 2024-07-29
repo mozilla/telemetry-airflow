@@ -71,29 +71,6 @@ jobs:
             pip3 install cryptography -c constraints.txt
             make up
 
-  black:
-    executor: *python-executor
-    steps:
-      - checkout
-      - python/install-packages:
-          pip-dependency-file: requirements-dev.txt
-          pkg-manager: pip
-      - run: &git-diff-py-files
-          name: List added, copied, modified, and renamed *py files
-          command: git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$)" > diff.txt || true
-      - run:
-          name: List black errors
-          command: black . --check &> lint_checks.txt || true
-      - run:
-          name: 🧹 Diff-based black
-          command: &display-lint-errors |
-            grep -Ff diff.txt lint_checks.txt > lint_errors.txt || true
-            if [ -s lint_errors.txt ]; then
-              cat lint_errors.txt
-              printf 'Run the following commands to fix your branch:\n  make pip-install-local\n  make fixes'
-              exit 1
-            fi
-
   ruff:
     executor: *python-executor
     steps:
@@ -101,13 +78,12 @@ jobs:
       - python/install-packages:
           pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
-      - run: *git-diff-py-files
       - run:
-          name: List ruff errors
-          command: ruff check . &> lint_checks.txt || true
+          name: 🚓 ruff linting
+          command: ruff check . --fix
       - run:
-          name: 🧹 Diff-based ruff
-          command: *display-lint-errors
+          name: 🧹 ruff formating
+          command: ruff format .
 
   validate-requirements:
     executor: *python-executor

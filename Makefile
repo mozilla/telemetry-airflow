@@ -1,4 +1,4 @@
-.PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local redis-cli run shell stop test up
+.PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local stop test up
 
 
 help:
@@ -9,8 +9,6 @@ help:
 	@echo "  fixes              Applies Black and Ruff fixes to Python files"
 	@echo "  pip-compile        Compile dependencies from 'requirements.in' into 'requirements.txt'"
 	@echo "  pip-install-local  Install pip project requirements to your local environment"
-	@echo "  redis-cli          Opens a Redis CLI"
-	@echo "  shell              Opens a Bash shell"
 	@echo "  test               Runs pytest"
 	@echo "  up                 Runs the whole stack, served under http://localhost:8080/"
 	@echo "  gke                Create a sandbox gke cluster for testing"
@@ -25,8 +23,8 @@ pip-compile:
 	pip-compile --strip-extras --no-annotate requirements-dev.in
 
 fixes:
-	ruff check $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")  --fix
-	black $$(git diff --name-only --diff-filter=ACMR origin/main | grep -E "(.py$$)")
+	ruff check . --fix
+	ruff format .
 
 clean: stop
 	docker-compose down --volumes
@@ -37,12 +35,6 @@ clean: stop
 pip-install-local:
 	pip install -r requirements.txt -r requirements-dev.txt
 	pip install -r requirements-override.txt --upgrade
-
-shell:
-	docker-compose run airflow-webserver bash
-
-redis-cli:
-	docker-compose run redis redis-cli -h redis
 
 stop:
 	docker-compose down

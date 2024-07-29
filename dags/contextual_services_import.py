@@ -34,7 +34,6 @@ with DAG(
     schedule_interval="@daily",
     tags=tags,
 ) as dag:
-
     quicksuggest2bq = GKEPodOperator(
         task_id="quicksuggest2bq",
         arguments=[

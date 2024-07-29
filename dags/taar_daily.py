@@ -13,7 +13,6 @@ is successful then this job can be considered healthy and there is not need to t
 any actions for the past failed DAG runs.
 """
 
-
 from datetime import datetime, timedelta
 
 from airflow import DAG

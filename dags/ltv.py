@@ -6,20 +6,20 @@ Kicks off jobs to run on a Dataproc cluster. The job code lives in
 
 See [client_ltv docs on DTMO](https://docs.telemetry.mozilla.org/datasets/search/client_ltv/reference.html).
 """
-from airflow import DAG
-from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.operators.subdag import SubDagOperator
 from datetime import datetime, timedelta
 
+from airflow import DAG
+from airflow.operators.subdag import SubDagOperator
+from airflow.sensors.external_task import ExternalTaskSensor
+
+from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import (
-    moz_dataproc_pyspark_runner,
     copy_artifacts_dev,
     get_dataproc_parameters,
+    moz_dataproc_pyspark_runner,
 )
-from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query
 from utils.tags import Tag
-
 
 default_args = {
     "owner": "akomar@mozilla.com",
@@ -37,7 +37,13 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
-dag = DAG("ltv_daily", default_args=default_args, schedule_interval="0 4 * * *", doc_md=__doc__, tags=tags,)
+dag = DAG(
+    "ltv_daily",
+    default_args=default_args,
+    schedule_interval="0 4 * * *",
+    doc_md=__doc__,
+    tags=tags,
+)
 
 params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
@@ -65,7 +71,7 @@ ltv_daily = SubDagOperator(
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar"
         },
         additional_metadata={"PIP_PACKAGES": "lifetimes==0.11.1"},
-        python_driver_code="gs://{}/jobs/ltv_daily.py".format(params.artifact_bucket),
+        python_driver_code=f"gs://{params.artifact_bucket}/jobs/ltv_daily.py",
         py_args=[
             "--submission-date",
             "{{ ds }}",
@@ -74,7 +80,7 @@ ltv_daily = SubDagOperator(
             "--project-id",
             project,
             "--source-qualified-table-id",
-            "{project}.search.search_rfm".format(project=project),
+            f"{project}.search.search_rfm",
             "--dataset-id",
             "analysis",
             "--intermediate-table-id",
@@ -120,9 +126,13 @@ ltv_revenue_join = bigquery_etl_query(
     destination_table="client_ltv_v1",
     dataset_id="revenue_derived",
     project_id="moz-fx-data-shared-prod",
-    arguments=("--clustering_fields=engine,country",
-               "--schema_update_option=ALLOW_FIELD_ADDITION", "--schema_update_option=ALLOW_FIELD_RELAXATION",
-               "--time_partitioning_type=DAY", "--time_partitioning_field=submission_date"),
+    arguments=(
+        "--clustering_fields=engine,country",
+        "--schema_update_option=ALLOW_FIELD_ADDITION",
+        "--schema_update_option=ALLOW_FIELD_RELAXATION",
+        "--time_partitioning_type=DAY",
+        "--time_partitioning_field=submission_date",
+    ),
     dag=dag,
 )
 

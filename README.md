@@ -3,7 +3,7 @@
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/mozilla/telemetry-airflow/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/mozilla/telemetry-airflow/tree/main)
 [![Python 3.11.8](https://img.shields.io/badge/python-3.11.8-blue)](https://www.python.org/)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v0.json)](https://github.com/charliermarsh/ruff)
 
 [Apache Airflow](https://airflow.apache.org/) is a platform to programmatically
 author, schedule and monitor workflows.
@@ -11,7 +11,7 @@ author, schedule and monitor workflows.
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
 - [Telemetry-Airflow](#telemetry-airflow)
-  - [Contributing to this Repo](#contributing-to-this-repo)
+  - [Contributing](#contributing)
   - [Writing DAGs](#writing-dags)
   - [Prerequisites](#prerequisites)
     - [Installing dependencies locally](#installing-dependencies-locally)
@@ -45,12 +45,11 @@ Some links relevant to users and developers of WTMO:
   [WTMO Developer Guide](https://mana.mozilla.org/wiki/display/DOPS/WTMO+Developer+Guide)
   (behind SSO)
 
-## Contributing to this Repo
-For contributors without write access to the repo, the best way to create a Pull Request is to fork this repo, make your changes in the forked repo, and submit a pull request from the forked repo into the central repository.  More info on how to do this can be found [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).  In order to merge a PR, someone with write access must approve it.
+## Contributing
+[Forking workflow](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) 
+is required **ONLY** for **contributors without write access**.
 
-Most contributors to this repo are likely to have write access. For these contributors, using a fork is not necessary and creating a branch in this repo directly is the preferred workflow. The normal PR process still applies.
-
-For all PRs (forked or not), PR name and description must follow [Conventional Commit style](https://www.conventionalcommits.org/en/v1.0.0/).
+This repo enforces [Conventional Commit style](https://www.conventionalcommits.org/en/v1.0.0/) via the Github action [Semantic PRs](https://github.com/marketplace/semantic-prs).
 
 ## Writing DAGs
 See the Airflow's [Best Practices guide](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#best-practices) to help you write DAGs.
