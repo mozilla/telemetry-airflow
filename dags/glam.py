@@ -315,7 +315,6 @@ with dag as dag:
     with TaskGroup(
         group_id="extracts", dag=dag, default_args=default_args
     ) as extracts_per_channel:
-        extracts_sql_path = f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_client_probe_counts_extract_v1/query.sql"
         for channel in ("nightly", "beta", "release"):
             bq_extract_table = f"glam_extract_firefox_{channel}_v1"
             etl_query = bigquery_etl_query(
@@ -325,8 +324,7 @@ with dag as dag:
                 project_id=billing_project_id,
                 date_partition_parameter=None,
                 arguments=("--replace",),
-                sql_file_path=extracts_sql_path,
-                parameters=(f"channel:STRING:{channel}",),
+                sql_file_path=f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_extract_firefox_{channel}_v1/query.sql",
                 dag=dag,
             )
 
