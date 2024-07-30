@@ -232,7 +232,6 @@ glam_sample_counts = bigquery_etl_query(
     destination_table="glam_sample_counts_v1",
     dataset_id=fully_qualified_dataset,
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/glam_sample_counts_v1/query.sql",
-    project_id=billing_project_id,
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
