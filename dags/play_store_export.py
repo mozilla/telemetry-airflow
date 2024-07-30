@@ -33,7 +33,6 @@ with DAG(
     schedule_interval="@daily",
     tags=tags,
 ) as dag:
-
     play_store_export = GKEPodOperator(
         task_id="play_store_export",
         arguments=[

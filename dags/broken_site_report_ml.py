@@ -10,11 +10,18 @@ DOCS = """
 
 #### Description
 
-Runs a Docker image that periodically sends a batch of reports
-to bugbug http service for classification and stores results in BQ.
+Runs a Docker image that does the following:
+
+1. Translates incoming broken sites reports to English with ML.TRANSLATE.
+2. Classifies translated reports as valid/invalid using [bugbug](https://github.com/mozilla/bugbug).
+3. Stores translation and classification results in BQ.
 
 The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/broken-site-report-ml)
+
+*Triage notes*
+
+As long as the most recent DAG run is successful this job doesn't need to be triaged.
 
 #### Owner
 

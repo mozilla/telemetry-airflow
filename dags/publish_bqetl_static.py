@@ -36,7 +36,6 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-
     publish_static_mozdata = GKEPodOperator(
         task_id="publish_static_mozdata",
         arguments=["script/bqetl", "static", "publish", "--project_id", "mozdata"],

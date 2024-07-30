@@ -37,7 +37,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         cluster_name="workloads-prod-v1",
         namespace="default",
         *args,
-        **kwargs
+        **kwargs,
     ):
         # Hard set reattach_on_restart = False when do_xcom_push is enabled.
         if do_xcom_push:
@@ -59,5 +59,5 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             location=location,
             cluster_name=cluster_name,
             namespace=namespace,
-            **kwargs
+            **kwargs,
         )

@@ -1,6 +1,6 @@
 """Module with Airflow tag definitions."""
 
-from enum import Enum
+from enum import Enum, member
 
 
 class InvalidTagError(AttributeError):
@@ -34,6 +34,7 @@ class Tag(Enum):
 
         return ret_val
 
+    @member
     class ImpactTier(Enum):
         """Valid options for Impact tier tag."""
 
@@ -41,6 +42,7 @@ class Tag(Enum):
         tier_2: str = "impact/tier_2"
         tier_3: str = "impact/tier_3"
 
+    @member
     class Triage(Enum):
         """Tag for conveying information to the engineer on triage."""
 
@@ -48,6 +50,7 @@ class Tag(Enum):
         record_only: str = "triage/record_only"
         no_triage: str = "triage/no_triage"
 
+    @member
     class Repo(Enum):
         """Valid options for Repo tag."""
 
