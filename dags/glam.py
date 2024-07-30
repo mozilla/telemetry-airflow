@@ -324,7 +324,7 @@ with dag as dag:
                 project_id=billing_project_id,
                 date_partition_parameter=None,
                 arguments=("--replace",),
-                sql_file_path=f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_client_probe_counts_{channel}_extract/query.sql",
+                sql_file_path=f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_extract_firefox_{channel}_v1/query.sql",
                 dag=dag,
             )
 
