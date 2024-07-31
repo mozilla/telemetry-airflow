@@ -148,5 +148,15 @@
     "port": null,
     "schema": null,
     "extra": "{\"refresh_token\": \"dummy_refresh_token\"}"
+  },
+  "dbt_cloud": {
+    "conn_type": "dbt_cloud",
+    "description": "Used to authenticate to the dbt Cloud instance",
+    "login": "",
+    "password": null,
+    "host": "",
+    "port": null,
+    "schema": null,
+    "extra": "{\"account_id\": \"dummy_id\", \"api_token\": \"dummy_refresh_token\"}"
   }
 }
