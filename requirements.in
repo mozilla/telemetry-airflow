@@ -22,6 +22,9 @@ bigeye-airflow
 acryl-datahub-airflow-plugin
 gql
 
+# dbt integration
+apache-airflow-providers-dbt-cloud
+
 # Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
 xmltodict
 
