@@ -29,7 +29,7 @@ default_args = {
     "retries": 2,
     "retry_delay": timedelta(minutes=30),
     "dbt_cloud_conn_id": "dbt_cloud",
-    "account_id": Variable.get("dbt_account_id")
+    "account_id": "{{ var.value.dbt_account_id }}"
 }
 
 tags = [
