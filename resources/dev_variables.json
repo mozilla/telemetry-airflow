@@ -21,5 +21,6 @@
     "taar_dataflow_subnetwork": "taar_dataflow_subnetwork",
     "taar_etl_model_storage_bucket": "taar_etl_model_storage_bucket",
     "taar_etl_storage_bucket": "taar_etl_storage_bucket",
-    "taar_gcp_project_id": "taar_gcp_project_id"
+    "taar_gcp_project_id": "taar_gcp_project_id",
+    "dbt_account_id": "dbt_account_id"
 }
