@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.models import Variable
 from airflow.providers.dbt.cloud.operators.dbt import DbtCloudRunJobOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
@@ -27,6 +28,8 @@ default_args = {
     "email_on_retry": True,
     "retries": 2,
     "retry_delay": timedelta(minutes=30),
+    "dbt_cloud_conn_id": "dbt_cloud",
+    "account_id": "{{ var.value.dbt_account_id }}"
 }
 
 tags = [
