@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from airflow import DAG
+from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -16,6 +17,10 @@ bugs dependencies and breakage reports and stores them in BQ.
 
 The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/webcompat-kb)
+
+*Triage notes*
+
+As long as the most recent DAG run is successful this job doesn't need to be triaged.
 
 #### Owner
 
@@ -37,9 +42,17 @@ tags = [
 
 every_fifteen_minutes = "*/15 * * * *"
 
+bugzilla_token = Secret(
+    deploy_type="env",
+    deploy_target="BUGZILLA_API_KEY",
+    secret="airflow-gke-secrets",
+    key="webcompat_kb_secret__bugzilla_api_key",
+)
+
 with DAG(
     "webcompat_kb",
     default_args=default_args,
+    max_active_runs=1,
     doc_md=DOCS,
     schedule_interval=every_fifteen_minutes,
     tags=tags,
@@ -57,4 +70,7 @@ with DAG(
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
         dag=dag,
+        secrets=[
+            bugzilla_token,
+        ],
     )
