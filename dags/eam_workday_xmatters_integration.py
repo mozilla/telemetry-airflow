@@ -49,7 +49,7 @@ def create_jira_ticket(context):
     ).get_connection(conn_id)
     log_url = get_airflow_log_link(context)
 
-    jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
+    jira_domain = "mozilla-hub.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
@@ -114,7 +114,7 @@ default_args = {
     "retries": 0,
     "on_failure_callback": create_jira_ticket,
 }
-tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
+tags = [Tag.ImpactTier.tier_3]
 
 
 xmatters_client_id = Secret(
