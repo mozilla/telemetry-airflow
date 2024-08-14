@@ -363,9 +363,9 @@ with DAG(
         endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
         data={},
-        owner="linh@mozilla.com",
+        owner="jrediger@mozilla.com",
         email=[
-            "linh@mozilla.com",
+            "jrediger@mozilla.com",
             "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
