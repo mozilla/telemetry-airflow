@@ -13,11 +13,17 @@ from Workday to XMatters.
 It creates a Jira ticket if the task fails.
 
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/eam-integrations)
+[telemetry-airflow](https://github.com/mozilla/telemetry-airflow/tree/main/dags/eam_workday_xmatters_integration.py)
 
 This DAG requires the creation of an Airflow Jira connection.
 
 #### Owner
 jmoscon@mozilla.com
+
+#### Tags
+* impact/tier_3
+* repo/telemetry-airflow
+* triage/record_only
 
 """
 
@@ -114,7 +120,7 @@ default_args = {
     "retries": 0,
     "on_failure_callback": create_jira_ticket,
 }
-tags = [Tag.ImpactTier.tier_3]
+tags = [Tag.ImpactTier.tier_3, Tag.Triage.record_only, Tag.Repo.airflow]
 
 
 xmatters_client_id = Secret(
