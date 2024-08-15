@@ -117,7 +117,9 @@ default_args = {
     "owner": "jmoscon@mozilla.com",
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
-    "retries": 0,
+    "retries": 3,
+    # wait 5 min before retry
+    "retry_delay": datetime.timedelta(minutes=5),
     "on_failure_callback": create_jira_ticket,
 }
 tags = [Tag.ImpactTier.tier_3, Tag.Triage.record_only, Tag.Repo.airflow]
