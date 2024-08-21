@@ -170,13 +170,13 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         arguments=[
             "pip install spectacles==2.4.10 &&" # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
-            r"spectacles content --verbose \ "
-            r" --base-url ${BASE_URL} \ "
-            r" --client_id ${LOOKER_API_CLIENT_ID} \ "
-            r" --client_secret ${LOOKER_API_CLIENT_SECRET} \ "
-            r" --project spoke-default \ "
-            r" --branch ${BRANCH} \ "
-            r" --pin-imports looker-hub:main \ "
+            "spectacles content --verbose"
+            " --base-url ${BASE_URL}"
+            " --client_id ${LOOKER_API_CLIENT_ID}"
+            " --client_secret ${LOOKER_API_CLIENT_SECRET}"
+            " --project spoke-default"
+            " --branch ${BRANCH}"
+            " --pin-imports looker-hub:main"
             "  --folders {' --folders '.join(looker_folders_to_validate)}"
         ],
         env_vars={
