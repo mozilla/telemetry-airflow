@@ -169,7 +169,7 @@ with DAG(
         dag=dag,
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "pip install spectacles==2.4.10 &&" # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
+            "pip install spectacles==2.4.10 && " # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
             "spectacles content --verbose"
             " --base-url ${BASE_URL}"
             " --client_id ${LOOKER_API_CLIENT_ID}"
