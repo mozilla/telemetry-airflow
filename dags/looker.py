@@ -154,7 +154,7 @@ with DAG(
     )
 
     looker_folders_to_validate = [
-        706,  # KPI metrics
+        "706",  # KPI metrics
     ]
 
     lookml_validate_spectacles = GKEPodOperator(
