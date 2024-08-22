@@ -177,7 +177,7 @@ with DAG(
             " --project spoke-default"
             " --branch ${BRANCH}"
             " --pin-imports looker-hub:main"
-            f" --folders {' --folders '.join(looker_folders_to_validate)}"
+            f" --folders {' '.join(looker_folders_to_validate)}"
         ],
         env_vars={
             "BRANCH": "main-validation", # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
