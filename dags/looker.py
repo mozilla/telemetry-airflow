@@ -172,8 +172,8 @@ with DAG(
             "pip install spectacles==2.4.10 && " # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
             "spectacles content --verbose"
             " --base-url ${BASE_URL}"
-            " --client_id ${LOOKER_API_CLIENT_ID}"
-            " --client_secret ${LOOKER_API_CLIENT_SECRET}"
+            " --client-id ${LOOKER_API_CLIENT_ID}"
+            " --client-secret ${LOOKER_API_CLIENT_SECRET}"
             " --project spoke-default"
             " --branch ${BRANCH}"
             " --pin-imports looker-hub:main"
