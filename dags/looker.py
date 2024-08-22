@@ -153,4 +153,38 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
-    lookml_generator_staging >> lookml_generator_prod
+    looker_folders_to_validate = [
+        "706",  # KPI metrics
+    ]
+
+    lookml_validate_spectacles = GKEPodOperator(
+        owner="ascholtz@mozilla.com",
+        email=[
+            "ascholtz@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
+        task_id="lookml_validate_spectacles",
+        name="lookml-validate-spectacles",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        dag=dag,
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "pip install spectacles==2.4.10 && " # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
+            "spectacles content --verbose"
+            " --base-url ${BASE_URL}"
+            " --client_id ${LOOKER_API_CLIENT_ID}"
+            " --client_secret ${LOOKER_API_CLIENT_SECRET}"
+            " --project spoke-default"
+            " --branch ${BRANCH}"
+            " --pin-imports looker-hub:main"
+            f" --folders {' '.join(looker_folders_to_validate)}"
+        ],
+        env_vars={
+            "BRANCH": "main-validation", # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
+            "BASE_URL": "https://mozilla.cloud.looker.com",
+        },
+        secrets=[looker_api_client_id_prod, looker_api_client_secret_prod],
+        **airflow_gke_prod_kwargs,
+    )
+
+    lookml_generator_staging >> lookml_generator_prod >> lookml_validate_spectacles
