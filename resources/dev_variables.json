@@ -22,5 +22,7 @@
     "taar_etl_model_storage_bucket": "taar_etl_model_storage_bucket",
     "taar_etl_storage_bucket": "taar_etl_storage_bucket",
     "taar_gcp_project_id": "taar_gcp_project_id",
-    "dbt_account_id": "dbt_account_id"
+    "dbt_account_id": "dbt_account_id",
+    "looker_api_client_id_prod": "looker_api_client_id_prod",
+    "looker_api_client_secret_prod": "looker_api_client_secret_prod"
 }
