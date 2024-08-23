@@ -32,6 +32,9 @@ To find logs for specific datasets/views, add a string to search for to the end 
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.models import DagRun
+from airflow.operators.python import ShortCircuitOperator
+from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -53,6 +56,13 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
+
+def check_for_queued_runs(dag_id: str) -> bool:
+    queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
+    print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
+    return len(queued_runs) == 0
+
+
 with DAG(
     "bqetl_artifact_deployment",
     max_active_runs=1,
@@ -62,6 +72,13 @@ with DAG(
     tags=tags,
 ) as dag:
     docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
+
+    skip_if_queued_runs_exist = ShortCircuitOperator(
+        task_id="skip_if_queued_runs_exist",
+        ignore_downstream_trigger_rules=True,
+        python_callable=check_for_queued_runs,
+        op_kwargs={"dag_id": dag.dag_id},
+    )
 
     publish_public_udfs = GKEPodOperator(
         task_id="publish_public_udfs",
@@ -132,6 +149,13 @@ with DAG(
         image=docker_image,
     )
 
+    skip_if_queued_runs_exist.set_downstream(
+        [
+            publish_public_udfs,
+            publish_persistent_udfs,
+            publish_new_tables,
+        ]
+    )
     publish_views.set_upstream(publish_public_udfs)
     publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
