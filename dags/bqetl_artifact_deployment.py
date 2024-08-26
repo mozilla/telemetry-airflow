@@ -73,8 +73,12 @@ generate_sql_cmd_template = (
 )
 
 
-def check_for_queued_runs(dag_id: str, generate_sql: bool) -> bool:
-    """Return true if there are no other queued dag runs or if the generate_sql param is true."""
+def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
+    """
+    Run deploys if there are no other queued dag runs or if the generate_sql param is true.
+
+    When used with ShortCircuitOperator, true means run downstream tasks and false means skip.
+    """
     queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
     return len(queued_runs) == 0 or generate_sql == "True"
@@ -94,7 +98,7 @@ with DAG(
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",
         ignore_downstream_trigger_rules=True,
-        python_callable=check_for_queued_runs,
+        python_callable=should_run_deployment,
         op_kwargs={"dag_id": dag.dag_id, "generate_sql": "{{ params.generate_sql }}"},
     )
 
