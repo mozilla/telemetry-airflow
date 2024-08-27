@@ -10,6 +10,7 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.weekday import WeekDay
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -342,6 +343,36 @@ with DAG(
     )
 
     probe_expiry_alerts.set_upstream(probe_scraper)
+
+    wait_for_table_partition_expirations = ExternalTaskSensor(
+        task_id="wait_for_table_partition_expirations",
+        external_dag_id="bqetl_monitoring",
+        external_task_id="monitoring_derived__table_partition_expirations__v1",
+        execution_delta=timedelta(hours=-2),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
+        dag=dag,
+    )
+
+    ping_expiry_alerts = GKEPodOperator(
+        task_id="ping_expiry_alerts",
+        image=probe_scraper_image,
+        arguments=[
+            "python3",
+            "-m",
+            "probe_scraper.ping_expiry_alert",
+            "--run-date",
+            "{{ ds }}",
+        ],
+        owner="bewu@mozilla.com",
+        email=["bewu@mozilla.com", "telemetry-alerts@mozilla.com"],
+        secrets=[aws_access_key_secret, aws_secret_key_secret],
+        dag=dag,
+    )
+
+    ping_expiry_alerts.set_upstream(wait_for_table_partition_expirations)
+    ping_expiry_alerts.set_upstream(probe_scraper)
 
     delay_python_task = PythonOperator(
         task_id="wait_for_1_hour", dag=dag, python_callable=lambda: time.sleep(60 * 60)
