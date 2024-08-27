@@ -184,12 +184,11 @@ with DAG(
             "pip install spectacles==2.4.10 && " # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
             "spectacles content --verbose"
             " --project spoke-default"
-            " --branch ${BRANCH}"
+            " --branch main-validation"  # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
             " --pin-imports looker-hub:main"
             f" --folders {' '.join(looker_folders_to_validate)}"
         ],
         env_vars={
-            "BRANCH": "main-validation", # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
             "LOOKER_BASE_URL": "https://mozilla.cloud.looker.com",
         },
         secrets=[looker_client_id_prod, looker_client_secret_prod],
