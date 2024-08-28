@@ -60,6 +60,7 @@ with DAG(
             "metric",
             "export",
             "-vv",
+            "--date={{ ds }}",
         ],
         env_vars=env_vars,
         secrets=secrets,
