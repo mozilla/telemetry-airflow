@@ -67,6 +67,18 @@ looker_api_client_secret_staging = Secret(
     secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_secret_staging",
 )
+looker_client_id_prod = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_CLIENT_ID",
+    secret="airflow-gke-secrets",
+    key="probe_scraper_secret__looker_api_client_id_prod",
+)
+looker_client_secret_prod = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_CLIENT_SECRET",
+    secret="airflow-gke-secrets",
+    key="probe_scraper_secret__looker_api_client_secret_prod",
+)
 dataops_looker_github_secret_access_token = Secret(
     deploy_type="env",
     deploy_target="GITHUB_ACCESS_TOKEN",
@@ -171,19 +183,15 @@ with DAG(
         arguments=[
             "pip install spectacles==2.4.10 && " # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
             "spectacles content --verbose"
-            " --base-url ${BASE_URL}"
-            " --client-id {{ var.value.looker_api_client_id_prod }}"
-            " --client-secret {{ var.value.looker_api_client_secret_prod }}"
             " --project spoke-default"
-            " --branch ${BRANCH}"
+            " --branch main-validation"  # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
             " --pin-imports looker-hub:main"
             f" --folders {' '.join(looker_folders_to_validate)}"
         ],
         env_vars={
-            "BRANCH": "main-validation", # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
-            "BASE_URL": "https://mozilla.cloud.looker.com",
+            "LOOKER_BASE_URL": "https://mozilla.cloud.looker.com",
         },
-        secrets=[looker_api_client_id_prod, looker_api_client_secret_prod],
+        secrets=[looker_client_id_prod, looker_client_secret_prod],
         **airflow_gke_prod_kwargs,
     )
 
