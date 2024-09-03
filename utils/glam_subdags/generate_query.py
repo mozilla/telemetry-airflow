@@ -118,13 +118,16 @@ def generate_and_run_glean_task(
     source_project_id="moz-fx-data-shared-prod",
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
     env_vars=None,
+    min_sample_id = 0,
+    max_sample_id = 99,
+    replace_table = True,
     **kwargs,
 ):
     """
     See https://github.com/mozilla/bigquery-etl/blob/main/script/glam/run_glam_sql.
 
     :param task_type:                   Either view, init, or query
-    :param task_name:                   Name of the query
+    :param task_name:                   Name of the task, derives the name of the query
     :param product:                     Product name of glean app
     :param destination_project_id:      Project to store derived tables
     :param destination_dataset_id:      Name of the dataset to store derived tables
@@ -136,6 +139,10 @@ def generate_and_run_glean_task(
     if env_vars is None:
         env_vars = {}
 
+    query_name = task_name.split("_sampled_")[0]
+    # If a range smaller than 100% of the samples is being used then sample_id is needed.
+    use_sample_id = min_sample_id > 0 or max_sample_id < 99
+
     env_vars = {
         "PRODUCT": product,
         "SRC_PROJECT": source_project_id,
@@ -143,6 +150,7 @@ def generate_and_run_glean_task(
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",
         "IMPORT": "true",
+        "USE_SAMPLE_ID": use_sample_id,
         **env_vars,
     }
     if task_type not in ["view", "init", "query"]:
@@ -156,7 +164,7 @@ def generate_and_run_glean_task(
         arguments=[
             "script/glam/generate_glean_sql && "
             "source script/glam/run_glam_sql && "
-            f"run_{task_type} {task_name}"
+            f'run_{task_type} {query_name} false {min_sample_id} {max_sample_id} "" --replace={str(replace_table).lower()}'
         ],
         image=docker_image,
         is_delete_operator_pod=False,
