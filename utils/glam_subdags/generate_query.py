@@ -140,6 +140,7 @@ def generate_and_run_glean_task(
         env_vars = {}
 
     query_name = task_name.split("_sampled_")[0]
+    # If a range smaller than 100% of the samples is being used then sample_id is needed.
     use_sample_id = min_sample_id > 0 or max_sample_id < 99
 
     env_vars = {
