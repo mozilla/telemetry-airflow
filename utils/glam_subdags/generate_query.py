@@ -150,7 +150,7 @@ def generate_and_run_glean_task(
         "DATASET": destination_dataset_id,
         "SUBMISSION_DATE": "{{ ds }}",
         "IMPORT": "true",
-        "USE_SAMPLE_ID": use_sample_id,
+        "USE_SAMPLE_ID": str(use_sample_id),
         **env_vars,
     }
     if task_type not in ["view", "init", "query"]:
