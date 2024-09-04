@@ -93,7 +93,10 @@ with DAG(
     bq_dataset = "telemetry_derived"
     bq_table_name = f"{dataset}_{dataset_version}"
 
-    docker_image = "docker.io/mozilla/parquet2bigquery:20190722"
+    # This image was manually built from
+    # https://github.com/mozilla/parquet2bigquery/commit/6bf1f86076de8939ba2c4d008080d6c159a0a093
+    # using python:3.7.4-slim-buster
+    docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/parquet2bigquery:20190722"
 
     gke_args = [
         "--dataset",
