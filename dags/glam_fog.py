@@ -143,7 +143,7 @@ with DAG(
         with TaskGroup(
             group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
         ) as histogram_bucket_counts:
-            prev_task = None
+            prev_task = clients_histogram_aggregate
             # Windows + Release data is in [0-9] so we're further splitting that range.
             for sample_range in ([0, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
                 histogram_bucket_counts = query(
@@ -152,8 +152,7 @@ with DAG(
                     max_sample_id=sample_range[1],
                     replace_table=(sample_range[0] == 0)
                 )
-                if prev_task:
-                    histogram_bucket_counts.set_upstream(prev_task)
+                histogram_bucket_counts.set_upstream(prev_task)
                 prev_task = histogram_bucket_counts
 
         histogram_probe_counts = query(
@@ -213,8 +212,7 @@ with DAG(
             >> probe_counts
         )
         (
-            clients_histogram_aggregate
-            >> histogram_bucket_counts
+            histogram_bucket_counts
             >> histogram_probe_counts
             >> probe_counts
         )
