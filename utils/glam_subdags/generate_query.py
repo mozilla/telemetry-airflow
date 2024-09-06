@@ -143,6 +143,8 @@ def generate_and_run_glean_task(
     # If a range smaller than 100% of the samples is being used then sample_id is needed.
     use_sample_id = min_sample_id > 0 or max_sample_id < 99
 
+    write_preference = "--replace" if replace_table else "--append_table --noreplace"
+
     env_vars = {
         "PRODUCT": product,
         "SRC_PROJECT": source_project_id,
@@ -164,7 +166,7 @@ def generate_and_run_glean_task(
         arguments=[
             "script/glam/generate_glean_sql && "
             "source script/glam/run_glam_sql && "
-            f'run_{task_type} {query_name} false {min_sample_id} {max_sample_id} "" --replace={str(replace_table).lower()}'
+            f'run_{task_type} {query_name} false {min_sample_id} {max_sample_id} "" {write_preference}'
         ],
         image=docker_image,
         is_delete_operator_pod=False,
