@@ -143,7 +143,7 @@ def generate_and_run_glean_task(
     # If a range smaller than 100% of the samples is being used then sample_id is needed.
     use_sample_id = min_sample_id > 0 or max_sample_id < 99
 
-    write_preference = "--replace" if replace_table else "--append_table --noreplace"
+    write_preference = "--replace" if replace_table else "\'--append_table --noreplace\'"
 
     env_vars = {
         "PRODUCT": product,
