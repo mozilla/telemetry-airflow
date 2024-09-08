@@ -15,7 +15,6 @@ Built from bigquery-etl repo, [`dags/bqetl_google_analytics_derived_ga4.py`](htt
 This file is meant to look very similar to generated DAGs in bigquery-etl.
 
 #### Owner
-
 kwindau@mozilla.com
 """
 
