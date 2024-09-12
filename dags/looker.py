@@ -181,7 +181,6 @@ with DAG(
         dag=dag,
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "pip install spectacles==2.4.10 && " # todo: remove this once mozilla-nimbus-schemas supports newer pydantic version
             "spectacles content --verbose"
             " --project spoke-default"
             " --branch main-validation"  # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
