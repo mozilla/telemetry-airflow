@@ -11,16 +11,17 @@ docs = """
 
 #### Description
 
-These jobs normally need to be restarted many times, because each query is only
-attempted once per run. `main_v4` and `main_summary_v4` in particular have partitions
-that fail often due to a combination of size, schema, and clustering. In most cases
+These jobs normally need to be restarted many times because of transient
+Airflow or Kubernetes API errors or query failures since each query is only
+attempted once per task attempt. `main_v5` in particular has partitions
+that fail often due to a combination of size, schema, and clustering.  In most cases
 failed jobs may simply be restarted.
 
-Logs from failed runs are not available in airflow, because Kubernetes Pods are deleted
-on exit. Instead, logs can be found in Google Cloud Logging:
-- [shredder-flat-rate-main-summary](https://cloudlogging.app.goo.gl/Tv68VKpCR9fzbJNGA)
-- [shredder-flat-rate](https://cloudlogging.app.goo.gl/Uu6VRn34VY4AryGJ9)
-- [on-demand](https://cloudlogging.app.goo.gl/GX1GM9hwZMENNnnq8)
+Logs from failed runs are sometimes not available in airflow because Kubernetes Pods are deleted
+on exit. Instead, logs can be found in Google Cloud Logging
+(change resource.labels.pod_name to get logs for different tasks):
+- [shredder-telemetry-main](https://cloudlogging.app.goo.gl/irkg8mKzEy7kBqqg7)
+- [shredder-all](https://cloudlogging.app.goo.gl/UVf3T7QMe4EdGQ6h9)
 
 Kubernetes Pods are deleted on exit to prevent multiple running instances. Multiple
 running instances will submit redundant queries, because state is only read at the start
