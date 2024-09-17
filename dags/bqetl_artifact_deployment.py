@@ -167,7 +167,7 @@ with DAG(
         task_id="publish_bigeye_monitors",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl monitoring publish '*' --project_id=moz-fx-data-shared-prod"
+            "script/bqetl monitoring deploy '*' --project_id=moz-fx-data-shared-prod"
         ],
         image=docker_image,
         secrets=[bigeye_api_key_secret]
