@@ -165,7 +165,7 @@ with_sampling = GKEPodOperator(
     arguments=[
         *base_command,
         "--parallelism=1",
-        "--sampling-parallelism=8",
+        "--sampling-parallelism=4",
         "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--only",
