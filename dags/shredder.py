@@ -80,6 +80,12 @@ base_command = [
     # half as long as of 2022-02-14, and reduces cost by using less flat rate slot time
     "--no-use-dml",
 ]
+common_task_args = {
+    "image": docker_image,
+    "is_delete_operator_pod": True,
+    "reattach_on_restart": True,
+    "dag": dag,
+}
 
 # handle telemetry main and main use counter separately to ensure they run continuously
 # and don't slow down other tables. run them in a separate project with their own slot
@@ -93,11 +99,12 @@ telemetry_main = GKEPodOperator(
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v5",
+        "--sampling-tables",
+        "telemetry_stable.main_v5",
+        "--sampling-parallelism=4",
+        "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
     ],
-    image=docker_image,
-    is_delete_operator_pod=True,
-    reattach_on_restart=True,
-    dag=dag,
+    **common_task_args,
 )
 
 telemetry_main_use_counter = GKEPodOperator(
@@ -109,10 +116,7 @@ telemetry_main_use_counter = GKEPodOperator(
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_use_counter_v4",
     ],
-    image=docker_image,
-    is_delete_operator_pod=True,
-    reattach_on_restart=True,
-    dag=dag,
+    **common_task_args,
 )
 
 # everything else
@@ -121,15 +125,14 @@ flat_rate = GKEPodOperator(
     name="shredder-all",
     arguments=[
         *base_command,
-        "--parallelism=4",
+        "--parallelism=3",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--except",
         "telemetry_stable.main_v5",
         "telemetry_stable.main_use_counter_v4",
+        "telemetry_derived.event_events_v1",
+        "firefox_desktop_derived.events_stream_v1",
     ],
-    image=docker_image,
-    is_delete_operator_pod=True,
-    reattach_on_restart=True,
     # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
     # works on pod resource requests, instead of usage
     container_resources={
@@ -143,7 +146,7 @@ flat_rate = GKEPodOperator(
     node_selector={"nodepool": "highmem"},
     # Give additional time since we may need to scale up when running this job
     startup_timeout_seconds=360,
-    dag=dag,
+    **common_task_args,
 )
 
 experiments = GKEPodOperator(
@@ -155,8 +158,26 @@ experiments = GKEPodOperator(
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--environment=experiments",
     ],
-    image=docker_image,
-    is_delete_operator_pod=True,
-    reattach_on_restart=True,
-    dag=dag,
+    **common_task_args,
+)
+
+# NOTE: avoid using workgroup-restricted tables with sampling because the temp dataset
+# is accessible to the data platform group
+with_sampling = GKEPodOperator(
+    task_id="with-sampling",
+    name="shredder-with-sampling",
+    arguments=[
+        *base_command,
+        "--parallelism=1",
+        "--sampling-parallelism=4",
+        "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
+        "--billing-project=moz-fx-data-bq-batch-prod",
+        "--only",
+        "telemetry_derived.event_events_v1",
+        "firefox_desktop_derived.events_stream_v1",
+        "--sampling-tables",
+        "telemetry_derived.event_events_v1",
+        "firefox_desktop_derived.events_stream_v1",
+    ],
+    **common_task_args,
 )

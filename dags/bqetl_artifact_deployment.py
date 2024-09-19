@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import DagRun
 from airflow.operators.python import ShortCircuitOperator
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
 
@@ -61,6 +62,13 @@ def check_for_queued_runs(dag_id: str) -> bool:
     queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
     return len(queued_runs) == 0
+
+bigeye_api_key_secret = Secret(
+    deploy_type="env",
+    deploy_target="BIGEYE_API_KEY",
+    secret="airflow-gke-secrets",
+    key="bqetl_artifact_deployment__bigeye_api_key",
+)
 
 
 with DAG(
@@ -155,6 +163,16 @@ with DAG(
         image=docker_image,
     )
 
+    publish_bigeye_monitors = GKEPodOperator(
+        task_id="publish_bigeye_monitors",
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "script/bqetl monitoring deploy '*' --project_id=moz-fx-data-shared-prod"
+        ],
+        image=docker_image,
+        secrets=[bigeye_api_key_secret]
+    )
+
     skip_if_queued_runs_exist.set_downstream(
         [
             publish_public_udfs,
@@ -166,3 +184,4 @@ with DAG(
     publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
     publish_metadata.set_upstream(publish_views)
+    publish_bigeye_monitors.set_upstream(publish_views)
