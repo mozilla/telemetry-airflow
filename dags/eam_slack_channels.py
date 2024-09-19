@@ -132,7 +132,7 @@ with DAG(
     doc_md=DOCS,
     tags=tags,
     # 3:00 PM UTC/8:00 AM PST - every-day
-    schedule_interval="0 15 * * 0-6",
+    schedule_interval="0 15 * * *",
 ) as dag:
     slack_channels_dag = GKEPodOperator(
         task_id="eam_slack_channels",
