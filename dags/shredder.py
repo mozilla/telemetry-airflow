@@ -99,6 +99,10 @@ telemetry_main = GKEPodOperator(
         "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v5",
+        "--sampling-tables",
+        "telemetry_stable.main_v5",
+        "--sampling-parallelism=4",
+        "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
     ],
     **common_task_args,
 )
