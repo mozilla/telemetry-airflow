@@ -152,7 +152,18 @@ NETSUITE_INTEG_NETSUITE_PASSWORD = Secret(
     key="NETSUITE_INTEG_WORKDAY_PASSWORD",
 )
 
-
+AWS_ACCESS_KEY_ID = Secret(
+    deploy_type="env",
+    deploy_target="AWS_ACCESS_KEY_ID",
+    secret="airflow-gke-secrets",
+    key="AWS_ACCESS_KEY_ID",
+)
+AWS_SECRET_ACCESS_KEY = Secret(
+    deploy_type="env",
+    deploy_target="AWS_SECRET_ACCESS_KEY",
+    secret="airflow-gke-secrets",
+    key="AWS_SECRET_ACCESS_KEY",
+)
 with DAG(
     "eam-workday-netsuite-integration",
     default_args=default_args,
@@ -170,6 +181,8 @@ with DAG(
             NETSUITE_INTEG_WORKDAY_USERNAME,
             NETSUITE_INTEG_WORKDAY_PASSWORD,
             NETSUITE_INTEG_NETSUITE_USERNAME,
-            NETSUITE_INTEG_NETSUITE_PASSWORD
+            NETSUITE_INTEG_NETSUITE_PASSWORD,
+            AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY
         ],
     )
