@@ -23,7 +23,6 @@ default_args = {
     "depends_on_past": False,
     "start_date": datetime(2019, 9, 10),
     "email": [
-        "anicholson@mozilla.com",
         "srose@mozilla.com",
         "telemetry-alerts@mozilla.com",
     ],
