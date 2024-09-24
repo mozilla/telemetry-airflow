@@ -49,7 +49,7 @@ def create_jira_ticket(context):
     ).get_connection(conn_id)
     log_url = get_airflow_log_link(context)
 
-    jira_domain = "mozilla-hub.atlassian.net"
+    jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
