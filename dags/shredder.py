@@ -96,13 +96,9 @@ telemetry_main = GKEPodOperator(
     name="shredder-telemetry-main",
     arguments=[
         *base_command,
-        "--parallelism={{ var.value.get('shredder_main_parallelism', 2) }}",
+        "--parallelism=2",
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v5",
-        "--sampling-tables",
-        "telemetry_stable.main_v5",
-        "--sampling-parallelism={{ var.value.get('shredder_main_sampling_parallelism', 2) }}",
-        "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
     ],
     **common_task_args,
 )
