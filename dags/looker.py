@@ -110,7 +110,6 @@ with DAG(
         owner="ascholtz@mozilla.com",
         email=[
             "ascholtz@mozilla.com",
-            "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
         task_id="lookml_generator",
@@ -140,7 +139,6 @@ with DAG(
         owner="ascholtz@mozilla.com",
         email=[
             "ascholtz@mozilla.com",
-            "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
         task_id="lookml_generator_staging",
