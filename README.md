@@ -236,7 +236,7 @@ make clean
 docker volume rm $(docker volume ls -qf dangling=true)
 
 # Purge docker volumes (helps with postgres container failing to start)
-# Careful as this will purge all local volumes not used by at least one container.
+# Careful, as this will purge all local volumes not used by at least one container.
 docker volume prune
 ```
 
