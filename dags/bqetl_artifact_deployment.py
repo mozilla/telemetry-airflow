@@ -36,6 +36,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import DagRun, Param
 from airflow.operators.python import ShortCircuitOperator
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
 
@@ -83,6 +84,13 @@ def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
     return len(queued_runs) == 0 or generate_sql == "True"
 
+bigeye_api_key_secret = Secret(
+    deploy_type="env",
+    deploy_target="BIGEYE_API_KEY",
+    secret="airflow-gke-secrets",
+    key="bqetl_artifact_deployment__bigeye_api_key",
+)
+
 
 with DAG(
     "bqetl_artifact_deployment",
@@ -126,6 +134,7 @@ with DAG(
             + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
+            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-bq-people && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
@@ -133,7 +142,9 @@ with DAG(
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7 && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7"
+            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7 && "
+            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-bq-people && "
+            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-bq-people"
         ],
         image=docker_image,
     )
@@ -148,11 +159,13 @@ with DAG(
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-glam-prod-fca7 && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-bq-people && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-glam-prod-fca7 --project-id=moz-fx-data-glam-prod-fca7 && "
             "script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only && "
+            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people && "
             "script/publish_public_data_views --target-project=moz-fx-data-shared-prod && "
             "script/publish_public_data_views --target-project=mozdata"
         ],
@@ -169,9 +182,20 @@ with DAG(
             + "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
             "script/bqetl metadata publish '*' --project_id=mozdata && "
             "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments"
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments && "
+            "script/bqetl metadata publish '*' --project_id=moz-fx-data-bq-people"
         ],
         image=docker_image,
+    )
+
+    publish_bigeye_monitors = GKEPodOperator(
+        task_id="publish_bigeye_monitors",
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "script/bqetl monitoring deploy '*' --project_id=moz-fx-data-shared-prod"
+        ],
+        image=docker_image,
+        secrets=[bigeye_api_key_secret]
     )
 
     skip_if_queued_runs_exist.set_downstream(
@@ -185,3 +209,4 @@ with DAG(
     publish_views.set_upstream(publish_persistent_udfs)
     publish_views.set_upstream(publish_new_tables)
     publish_metadata.set_upstream(publish_views)
+    publish_bigeye_monitors.set_upstream(publish_views)

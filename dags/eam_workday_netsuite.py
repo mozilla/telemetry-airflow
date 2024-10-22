@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
@@ -7,17 +7,23 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """
-### Slack Channels integration
-Runs a script in docker image that
- - will archive unused channels
- - delete old archived channels
+### Workday/Netsuite integration
+Runs a script in docker image that syncs employee data
+from Workday to Netsuite.
+It creates a Jira ticket if the task fails.
 
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/eam-integrations)
+[telemetry-airflow](https://github.com/mozilla/telemetry-airflow/tree/main/dags/eam_workday_netsuite_integration.py)
 
 This DAG requires the creation of an Airflow Jira connection.
 
 #### Owner
 jmoscon@mozilla.com
+
+#### Tags
+* impact/tier_3
+* repo/telemetry-airflow
+* triage/record_only
 
 """
 
@@ -28,7 +34,7 @@ def get_airflow_log_link(context):
     dag_run_id = context["dag_run"].run_id
     task_id = context["task_instance"].task_id
     base_url = "http://workflow.telemetry.mozilla.org/dags/"
-    base_url += "eam-slack-channels-integration/grid?tab=logs&dag_run_id="
+    base_url += "eam-workday-xmatters-integration/grid?tab=logs&dag_run_id="
     return base_url + f"{urllib.parse.quote(dag_run_id)}&task_id={task_id}"
 
 
@@ -49,11 +55,11 @@ def create_jira_ticket(context):
     ).get_connection(conn_id)
     log_url = get_airflow_log_link(context)
 
-    jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
+    jira_domain = "mozilla-hub.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
-    summary = "Slack Channels Integration - Airflow Task Issue Exception"
+    summary = "Workday Netsuite Integration - Airflow Task Issue Exception"
     paragraph_text = "Detailed error logging can be found in the link: "
     project_key = "ASP"
     issue_type_id = "10020"  # Issue Type = Bug
@@ -110,42 +116,73 @@ def create_jira_ticket(context):
 default_args = {
     "owner": "jmoscon@mozilla.com",
     "emails": ["jmoscon@mozilla.com"],
-    "start_date": datetime.datetime(2024, 1, 1),
+    "start_date": datetime(2024, 1, 1),
     "retries": 3,
     # wait 5 min before retry
-    "retry_delay": datetime.timedelta(minutes=5),
+    "retry_delay": timedelta(minutes=5),
     "on_failure_callback": create_jira_ticket,
 }
-tags = [Tag.ImpactTier.tier_3]
+tags = [Tag.ImpactTier.tier_3, Tag.Triage.record_only, Tag.Repo.airflow]
 
 
-SLACK_CHANNEL_TOKEN = Secret(
+NETSUITE_INTEG_WORKDAY_USERNAME = Secret(
     deploy_type="env",
-    deploy_target="SLACK_CHANNEL_TOKEN",
+    deploy_target="NETSUITE_INTEG_WORKDAY_USERNAME",
     secret="airflow-gke-secrets",
-    key="SLACK_CHANNEL_TOKEN",
+    key="NETSUITE_INTEG_WORKDAY_USERNAME",
+)
+NETSUITE_INTEG_WORKDAY_PASSWORD = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_WORKDAY_PASSWORD",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
 )
 
+NETSUITE_INTEG_NETSUITE_USERNAME = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_USERNAME",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
+)
+
+NETSUITE_INTEG_NETSUITE_PASSWORD = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_PASSWORD",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
+)
+
+AWS_ACCESS_KEY_ID = Secret(
+    deploy_type="env",
+    deploy_target="AWS_ACCESS_KEY_ID",
+    secret="airflow-gke-secrets",
+    key="AWS_ACCESS_KEY_ID",
+)
+AWS_SECRET_ACCESS_KEY = Secret(
+    deploy_type="env",
+    deploy_target="AWS_SECRET_ACCESS_KEY",
+    secret="airflow-gke-secrets",
+    key="AWS_SECRET_ACCESS_KEY",
+)
 with DAG(
-    "eam-slack-channels-integration",
+    "eam-workday-netsuite-integration",
     default_args=default_args,
     doc_md=DOCS,
     tags=tags,
-    # 3:00 PM UTC/8:00 AM PST - every-day
-    schedule_interval="0 15 * * *",
+    schedule_interval="@daily",
 ) as dag:
-    slack_channels_dag = GKEPodOperator(
-        task_id="eam_slack_channels",
-        arguments=[
-            "python",
-            "scripts/slack_channels_integration.py",
-            "--level",
-            "info",
-        ],
+    workday_netsuite_dag = GKEPodOperator(
+        task_id="eam_workday_netsuite",
+        arguments=["python", "scripts/workday_netsuite.py", "--level", "info"],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/"
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
-            SLACK_CHANNEL_TOKEN,
+            NETSUITE_INTEG_WORKDAY_USERNAME,
+            NETSUITE_INTEG_WORKDAY_PASSWORD,
+            NETSUITE_INTEG_NETSUITE_USERNAME,
+            NETSUITE_INTEG_NETSUITE_PASSWORD,
+            AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY
         ],
     )

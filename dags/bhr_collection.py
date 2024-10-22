@@ -90,8 +90,8 @@ with DAG(
             "spark:spark.executor.memory": "20g",
         },
         "idle_delete_ttl": 14400,
-        # dataproc does not support all GCE instance types, e.g. newer ones
-        # https://cloud.google.com/compute/docs/general-purpose-machines
+        # supported machine types depends on dataproc image version:
+        # https://cloud.google.com/dataproc/docs/concepts/compute/supported-machine-types
         "master_machine_type": "n2-standard-8",
         "worker_machine_type": "n2-highmem-4",
         "gcp_conn_id": params.conn_id,
@@ -130,7 +130,7 @@ with DAG(
             cluster_name="bhr-collection-child-{{ ds }}",
             job_name="bhr-collection-child",
             **shared_runner_args,
-            num_workers=8,
+            num_workers=10,
             py_args=[
                 "--date",
                 "{{ ds }}",

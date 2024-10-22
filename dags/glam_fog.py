@@ -140,9 +140,22 @@ with DAG(
         scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
-        histogram_bucket_counts = query(
-            task_name=f"{product}__histogram_bucket_counts_v1"
-        )
+        with TaskGroup(
+            group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+        ) as histogram_bucket_counts:
+            prev_task = None
+            # Windows + Release data is in [0-9] so we're further splitting that range.
+            for sample_range in ([0, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
+                histogram_bucket_counts_sampled = query(
+                    task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
+                    min_sample_id=sample_range[0],
+                    max_sample_id=sample_range[1],
+                    replace_table=(sample_range[0] == 0)
+                )
+                if prev_task:
+                    histogram_bucket_counts_sampled.set_upstream(prev_task)
+                prev_task = histogram_bucket_counts_sampled
+
         histogram_probe_counts = query(
             task_name=f"{product}__histogram_probe_counts_v1"
         )

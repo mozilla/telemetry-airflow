@@ -17,7 +17,7 @@ tags = [Tag.ImpactTier.tier_3]
 
 default_args = {
     "email": [
-        "anicholson@mozilla.com",
+        "ascholtz@mozilla.com",
         "wichan@mozilla.com",
     ]
 }
@@ -49,7 +49,7 @@ with DAG(
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
-            return f"{watcher_text} :hourglass_flowing_sand: Completing backfill of `{entry['qualified_table_name']}`. A snapshot of the current production data will be kept as a backup."
+            return f"{watcher_text} :hourglass_flowing_sand: Completing backfill of `{entry['qualified_table_name']}` has started - currently swapping backfill data into production. A snapshot of the current production data will be kept as a backup. You will receive another notification once the completing step is done."
 
         notify_initiate = SlackAPIPostOperator(
             task_id="slack_notify_initate",
