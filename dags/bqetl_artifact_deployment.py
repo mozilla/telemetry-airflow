@@ -1,7 +1,9 @@
 """
-Deploy of bigquery etl tables and views, typically triggered by bigquery-etl merges to main.
+Deploy bigquery etl artifacts.
 
-SQL generation can optionally run during the tasks using the `generate_sql` DAG param.
+This DAG is triggered by CircleCI on merges to the `main` branch and by Jenkins after [schemas deploys](https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27920974/BigQuery+shared-prod#BigQuery(shared-prod)-JenkinsJobs).
+
+SQL generation can optionally run during the tasks using the `generate_sql` DAG param, which is used primarily by Jenkins.
 
 *Triage notes*
 
@@ -96,7 +98,7 @@ with DAG(
     "bqetl_artifact_deployment",
     max_active_runs=1,
     default_args=default_args,
-    schedule_interval="@daily",
+    schedule_interval=None,
     doc_md=__doc__,
     tags=tags,
     params=params,
