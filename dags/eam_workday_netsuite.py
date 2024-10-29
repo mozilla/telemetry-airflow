@@ -167,7 +167,7 @@ with DAG(
 ) as dag:
     workday_netsuite_dag = GKEPodOperator(
         task_id="eam_workday_netsuite",
-        arguments=["python", "scripts/workday_netsuite.py", "--level", "info"],
+        arguments=["python", "scripts/workday_netsuite_integration.py", "--level", "info"],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/"
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
