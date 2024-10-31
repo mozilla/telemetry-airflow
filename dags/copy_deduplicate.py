@@ -363,30 +363,3 @@ with models.DAG(
         )
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
-
-    archive_partition_id = (
-        "{{ macros.ds_format(macros.ds_add(ds, -"
-        # 37 months = 3 years + 1 leap day + 31 days (1 month)
-        + str(365 * 3 + 1 + 31)
-        + '), "%Y-%m-%d", "%Y%m%d") }}'
-    )
-    precheck_query = (
-        "ASSERT (SELECT total_rows FROM "
-        "moz-fx-data-shared-prod.telemetry_stable.INFORMATION_SCHEMA.PARTITIONS "
-        'WHERE table_name = "main_v5" '
-        f'AND partition_id = "{archive_partition_id}") > 0 '
-        'AS "refusing to archive empty partition"'
-    )
-    main_v5 = "moz-fx-data-shared-prod:telemetry_stable.main_v5"
-    archive_main = GKEPodOperator(
-        reattach_on_restart=True,
-        task_id="archive_main",
-        cmds=["bash", "-x", "-c"],
-        arguments=[
-            f"bq query '{precheck_query}' &&"
-            f"bq cp -f {main_v5}'$'{archive_partition_id} "
-            f"{main_v5}_archive'$'{archive_partition_id} && "
-            f"bq rm -f {main_v5}'$'{archive_partition_id}"
-        ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    )
