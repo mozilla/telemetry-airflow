@@ -17,7 +17,7 @@ from utils.dataproc import get_dataproc_parameters
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"
-
+BIGQUERY_ETL_DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
 def export_to_parquet(
     table,
@@ -188,7 +188,7 @@ def bigquery_etl_query(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     multipart=False,
     is_delete_operator_pod=False,
@@ -274,7 +274,7 @@ def bigquery_etl_copy_deduplicate(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     **kwargs,
 ):
     """
@@ -346,7 +346,7 @@ def bigquery_dq_check(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     is_dq_check_fail=True,
     **kwargs,
@@ -416,7 +416,7 @@ def bigquery_bigeye_check(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     **kwargs,
 ):
     """
@@ -464,7 +464,7 @@ def bigquery_xcom_query(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     table_partition_template="${{ds_nodash}}",
     **kwargs,
