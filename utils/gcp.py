@@ -17,7 +17,7 @@ from utils.dataproc import get_dataproc_parameters
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"
-
+BIGQUERY_ETL_DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
 def export_to_parquet(
     table,
@@ -188,7 +188,7 @@ def bigquery_etl_query(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     multipart=False,
     is_delete_operator_pod=False,
@@ -274,7 +274,7 @@ def bigquery_etl_copy_deduplicate(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     **kwargs,
 ):
     """
@@ -346,7 +346,7 @@ def bigquery_dq_check(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     is_dq_check_fail=True,
     **kwargs,
@@ -406,6 +406,51 @@ def bigquery_dq_check(
         **kwargs,
     )
 
+def bigquery_bigeye_check(
+    task_id,
+    table_id,
+    warehouse_id,
+    project_id="moz-fx-data-shared-prod",
+    gcp_conn_id="google_cloud_airflow_gke",
+    gke_project_id=GCP_PROJECT_ID,
+    gke_location="us-west1",
+    gke_cluster_name="workloads-prod-v1",
+    gke_namespace="default",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
+    **kwargs,
+):
+    """
+    Run `bqetl monitoring run` to run Bigeye checks against BigQuery table.
+
+    :param str table_id:                           [Required] BigQuery table the Bigeye checks are run against
+    :param str warehouse_id:                       [Required] Bigeye warehouse ID where checks located
+    :param str task_id:                            [Required] ID for the task
+    :param Optional[str] project_id:               BigQuery default project id
+    :param str gcp_conn_id:                        Airflow connection id for GCP access
+    :param str gke_project_id:                     GKE cluster project id
+    :param str gke_location:                       GKE cluster location
+    :param str gke_cluster_name:                   GKE cluster name
+    :param str gke_namespace:                      GKE cluster namespace
+    :param str docker_image:                       docker image to use
+    :param Dict[str, Any] kwargs:                  Additional keyword arguments for
+                                                   GKEPodOperator
+    :return: GKEPodOperator
+    """
+    kwargs["task_id"] = kwargs.get("task_id", task_id)
+    kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+
+    args = ["script/bqetl", "monitoring", "run", table_id, "--warehouse_id", warehouse_id, "--project_id", project_id]
+    return GKEPodOperator(
+        gcp_conn_id=gcp_conn_id,
+        project_id=gke_project_id,
+        location=gke_location,
+        cluster_name=gke_cluster_name,
+        namespace=gke_namespace,
+        image=docker_image,
+        arguments=args
+        **kwargs,
+    )
+
 
 def bigquery_xcom_query(
     destination_table,
@@ -419,7 +464,7 @@ def bigquery_xcom_query(
     gke_location="us-west1",
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     table_partition_template="${{ds_nodash}}",
     **kwargs,
