@@ -1,5 +1,9 @@
 """
-Nightly deploy of bigquery etl views.
+Deploy bigquery etl artifacts.
+
+This DAG is triggered by CircleCI on merges to the `main` branch and by Jenkins after [schemas deploys](https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27920974/BigQuery+shared-prod#BigQuery(shared-prod)-JenkinsJobs).
+
+SQL generation can optionally run during the tasks using the `generate_sql` DAG param, which is used primarily by Jenkins.
 
 *Triage notes*
 
@@ -32,7 +36,7 @@ To find logs for specific datasets/views, add a string to search for to the end 
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.models import DagRun
+from airflow.models import DagRun, Param
 from airflow.operators.python import ShortCircuitOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
@@ -57,11 +61,30 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_1]
 
+params = {
+    "generate_sql": Param(
+        default=False,
+        type="boolean",
+        description="Run sql generation before each publish task",
+    ),
+}
 
-def check_for_queued_runs(dag_id: str) -> bool:
+# renders generate sql command if params.generate_sql is true, else empty string
+generate_sql_cmd_template = (
+    "{{ 'script/bqetl generate all --use-cloud-function=false && ' "
+    "if params.generate_sql else '' }}"
+)
+
+
+def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
+    """
+    Run deploys if there are no other queued dag runs or if the generate_sql param is true.
+
+    When used with ShortCircuitOperator, true means run downstream tasks and false means skip.
+    """
     queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
-    return len(queued_runs) == 0
+    return len(queued_runs) == 0 or generate_sql == "True"
 
 bigeye_api_key_secret = Secret(
     deploy_type="env",
@@ -75,17 +98,18 @@ with DAG(
     "bqetl_artifact_deployment",
     max_active_runs=1,
     default_args=default_args,
-    schedule_interval="@daily",
+    schedule_interval=None,
     doc_md=__doc__,
     tags=tags,
+    params=params,
 ) as dag:
     docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",
         ignore_downstream_trigger_rules=True,
-        python_callable=check_for_queued_runs,
-        op_kwargs={"dag_id": dag.dag_id},
+        python_callable=should_run_deployment,
+        op_kwargs={"dag_id": dag.dag_id, "generate_sql": "{{ params.generate_sql }}"},
     )
 
     publish_public_udfs = GKEPodOperator(
@@ -108,7 +132,8 @@ with DAG(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
+            generate_sql_cmd_template
+            + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-bq-people && "
@@ -130,7 +155,8 @@ with DAG(
         task_id="publish_views",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
+            generate_sql_cmd_template
+            + "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-glam-prod-fca7 && "
@@ -154,7 +180,8 @@ with DAG(
         task_id="publish_metadata",
         cmds=["bash", "-x", "-c"],
         arguments=[
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
+            generate_sql_cmd_template
+            + "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
             "script/bqetl metadata publish '*' --project_id=mozdata && "
             "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
             "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments && "
