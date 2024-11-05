@@ -447,7 +447,7 @@ def bigquery_bigeye_check(
         cluster_name=gke_cluster_name,
         namespace=gke_namespace,
         image=docker_image,
-        arguments=args
+        arguments=list(args),
         **kwargs,
     )
 
