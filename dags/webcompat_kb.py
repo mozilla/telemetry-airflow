@@ -62,7 +62,8 @@ with DAG(
         task_id="webcompat_kb",
         arguments=[
             "python",
-            "webcompat_kb/main.py",
+            "-m",
+            "webcompat_kb.main",
             "--bq_project_id",
             "moz-fx-dev-dschubert-wckb",
             "--bq_dataset_id",
