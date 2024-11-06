@@ -1,6 +1,7 @@
 import re
 
 from airflow import models
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
     DataprocCreateClusterOperator,
@@ -501,6 +502,14 @@ def bigquery_xcom_query(
         destination_table = destination_table + table_partition_template
         parameters += (date_partition_parameter + ":DATE:{{ds}}",)
     query = "{{ " + f"task_instance.xcom_pull({xcom_task_id!r})" + " }}"
+
+    bigeye_api_key = Secret(
+        deploy_type="env",
+        deploy_target="BIGEYE_API_KEY",
+        secret="airflow-gke-secrets",
+        key="bqetl_artifact_deployment__bigeye_api_key"
+    )
+
     return GKEPodOperator(
         gcp_conn_id=gcp_conn_id,
         project_id=gke_project_id,
@@ -516,6 +525,7 @@ def bigquery_xcom_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [query],
+        secrets=[bigeye_api_key]
         **kwargs,
     )
 
