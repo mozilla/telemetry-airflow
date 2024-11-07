@@ -382,8 +382,6 @@ def bigquery_dq_check(
     destination_table_no_partition = (
         source_table.split("$")[0] if source_table is not None else None
     )
-    if not date_partition_parameter:
-        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
 
     sql_file_path = f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}"
 
