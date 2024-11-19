@@ -44,8 +44,8 @@ CONFIGS = {
         "dau_mobile.yaml",
         "bqetl_analytics_aggregations",
         [
-            "fenix_active_users_aggregates_v3",
             "firefox_ios_active_users_aggregates_v3",
+            "fenix_active_users_aggregates_v3",
             "focus_android_active_users_aggregates_v3",
             "focus_ios_active_users_aggregates_v3",
         ],
