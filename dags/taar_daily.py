@@ -206,8 +206,9 @@ with DAG(
             worker_disk_type="pd-ssd",
             master_disk_size=1024,
             worker_disk_size=1024,
+            # https://cloud.google.com/compute/docs/disks/local-ssd#choose_number_local_ssds
             master_num_local_ssds=2,
-            worker_num_local_ssds=2,
+            worker_num_local_ssds=4,
         ),
     )
 
