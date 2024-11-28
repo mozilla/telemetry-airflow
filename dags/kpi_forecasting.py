@@ -37,7 +37,7 @@ CONFIGS = {
         "dau_desktop.yaml",
         "bqetl_analytics_aggregations",
         [
-            "firefox_desktop_active_users_aggregates_v3",
+            "firefox_desktop_active_users_aggregates_v4",
         ],
     ),
     "dau_mobile": Config(
