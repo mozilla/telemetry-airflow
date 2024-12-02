@@ -94,6 +94,7 @@ def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
     return len(queued_runs) == 0 or generate_sql == "True"
 
+
 bigeye_api_key_secret = Secret(
     deploy_type="env",
     deploy_target="BIGEYE_API_KEY",
@@ -211,7 +212,7 @@ with DAG(
             "script/bqetl monitoring deploy '*' --project_id=moz-fx-data-shared-prod"
         ],
         image=docker_image,
-        secrets=[bigeye_api_key_secret]
+        secrets=[bigeye_api_key_secret],
     )
 
     skip_if_queued_runs_exist.set_downstream(
