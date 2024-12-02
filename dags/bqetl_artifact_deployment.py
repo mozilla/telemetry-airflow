@@ -79,9 +79,6 @@ generate_sql_cmd_template = (
 generate_sql_container_resources = k8s.V1ResourceRequirements(
     requests={"memory": "{{ '5Gi' if params.generate_sql else '2Gi' }}"},
 )
-# TODO: Conditionally choose the appropriate nodepool based on the `generate_sql` parameter
-# once we upgrade to Kubernetes provider >=9.0.1, which adds `node_selector` templating support.
-generate_sql_node_selector = {"nodepool": "highmem"}
 
 
 def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
@@ -159,7 +156,6 @@ with DAG(
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
-        node_selector=generate_sql_node_selector,
     )
 
     publish_views = GKEPodOperator(
@@ -184,7 +180,6 @@ with DAG(
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
-        node_selector=generate_sql_node_selector,
         get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
@@ -202,7 +197,6 @@ with DAG(
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
-        node_selector=generate_sql_node_selector,
     )
 
     publish_bigeye_monitors = GKEPodOperator(
