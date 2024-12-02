@@ -41,6 +41,7 @@ from airflow.operators.python import ShortCircuitOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -74,6 +75,10 @@ generate_sql_cmd_template = (
     "{{ 'script/bqetl generate all --use-cloud-function=false && ' "
     "if params.generate_sql else '' }}"
 )
+# SQL generation currently requires ~4 GB of memory.
+generate_sql_container_resources = k8s.V1ResourceRequirements(
+    requests={"memory": "{{ '5Gi' if params.generate_sql else '2Gi' }}"},
+)
 
 
 def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
@@ -85,6 +90,7 @@ def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
     queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
     return len(queued_runs) == 0 or generate_sql == "True"
+
 
 bigeye_api_key_secret = Secret(
     deploy_type="env",
@@ -149,6 +155,7 @@ with DAG(
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-bq-people"
         ],
         image=docker_image,
+        container_resources=generate_sql_container_resources,
     )
 
     publish_views = GKEPodOperator(
@@ -172,6 +179,7 @@ with DAG(
             "script/publish_public_data_views --target-project=mozdata"
         ],
         image=docker_image,
+        container_resources=generate_sql_container_resources,
         get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
@@ -188,6 +196,7 @@ with DAG(
             "script/bqetl metadata publish '*' --project_id=moz-fx-data-bq-people"
         ],
         image=docker_image,
+        container_resources=generate_sql_container_resources,
     )
 
     publish_bigeye_monitors = GKEPodOperator(
@@ -197,7 +206,7 @@ with DAG(
             "script/bqetl monitoring deploy '*' --project_id=moz-fx-data-shared-prod"
         ],
         image=docker_image,
-        secrets=[bigeye_api_key_secret]
+        secrets=[bigeye_api_key_secret],
     )
 
     skip_if_queued_runs_exist.set_downstream(
