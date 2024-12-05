@@ -3,6 +3,7 @@ import datetime
 from airflow import models
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import (
@@ -67,13 +68,10 @@ with models.DAG(
     # This single task is responsible for sequentially running copy queries
     # over all the tables in _live datasets into _stable datasets except those
     # that are specifically used in another DAG.
-    resources = {
-        "request_memory": "10240Mi",
-        "request_cpu": None,
-        "limit_memory": "20480Mi",
-        "limit_cpu": None,
-        "limit_gpu": None,
-    }
+    resources = k8s.V1ResourceRequirements(
+        requests={"memory": "10240Mi"},
+        limits={"memory": "20480Mi"},
+    )
 
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all",

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from kubernetes.client import models as k8s
 from timetable import MultiWeekTimetable
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -130,13 +131,10 @@ flat_rate = GKEPodOperator(
     ],
     # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
     # works on pod resource requests, instead of usage
-    container_resources={
-        "request_memory": "13312Mi",
-        "request_cpu": None,
-        "limit_memory": "20480Mi",
-        "limit_cpu": None,
-        "limit_gpu": None,
-    },
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "13312Mi"},
+        limits={"memory": "20480Mi"},
+    ),
     # This job was being killed by Kubernetes for using too much memory, thus the highmem node pool
     node_selector={"nodepool": "highmem"},
     # Give additional time since we may need to scale up when running this job
