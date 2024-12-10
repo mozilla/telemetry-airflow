@@ -92,7 +92,6 @@ with models.DAG(
             "telemetry_live.saved_session_use_counter_v4",
             "telemetry_live.saved_session_v5",
         ],
-        node_selector={"nodepool": "highmem"},
         container_resources=resources,
     )
 
