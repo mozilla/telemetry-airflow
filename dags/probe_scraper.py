@@ -130,8 +130,7 @@ with DAG(
         # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
         # works on pod resource requests, instead of usage
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "13312Mi"},
-            limits={"memory": "20480Mi"},
+            requests={"memory": "4500Mi"},
         ),
         # This python job requires 13 GB of memory, thus the highmem node pool
         node_selector={"nodepool": "highmem"},
