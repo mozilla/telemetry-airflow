@@ -69,8 +69,7 @@ with models.DAG(
     # over all the tables in _live datasets into _stable datasets except those
     # that are specifically used in another DAG.
     resources = k8s.V1ResourceRequirements(
-        requests={"memory": "10240Mi"},
-        limits={"memory": "20480Mi"},
+        requests={"memory": "400Mi"},
     )
 
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
@@ -93,7 +92,6 @@ with models.DAG(
             "telemetry_live.saved_session_use_counter_v4",
             "telemetry_live.saved_session_v5",
         ],
-        node_selector={"nodepool": "highmem"},
         container_resources=resources,
     )
 
