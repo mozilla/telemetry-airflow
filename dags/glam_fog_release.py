@@ -45,7 +45,7 @@ with DAG(
         task_id="wait_for_daily_glam_fog_release",
         external_dag_id="glam_fog",
         external_task_id="daily_release_done",
-        execution_delta=timedelta(hours=1),
+        execution_delta=timedelta(hours=8),
         check_existence=True,
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
