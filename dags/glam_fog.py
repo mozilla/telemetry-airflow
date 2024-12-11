@@ -141,38 +141,6 @@ with DAG(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
 
-        # stage 2 - downstream for export
-        scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
-        scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
-
-        with TaskGroup(
-            group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
-        ) as histogram_bucket_counts:
-            prev_task = None
-            # Windows + Release data is in [0-9] so we're further splitting that range.
-            for sample_range in ([0, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
-                histogram_bucket_counts_sampled = query(
-                    task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
-                    min_sample_id=sample_range[0],
-                    max_sample_id=sample_range[1],
-                    replace_table=(sample_range[0] == 0)
-                )
-                if prev_task:
-                    histogram_bucket_counts_sampled.set_upstream(prev_task)
-                prev_task = histogram_bucket_counts_sampled
-
-        histogram_probe_counts = query(
-            task_name=f"{product}__histogram_probe_counts_v1"
-        )
-
-        probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
-        extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
-
-        user_counts = view(task_name=f"{product}__view_user_counts_v1")
-        extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
-
-        sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
-
         # set all of the dependencies for all of the tasks
 
         # get the dependencies for the logical mapping, or just pass through the
@@ -201,6 +169,38 @@ with DAG(
             clients_histogram_aggregate >> daily_release_done
             clients_scalar_aggregate >> daily_release_done
         else:
+            # stage 2 - downstream for export
+            scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
+            scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
+
+            with TaskGroup(
+                group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+            ) as histogram_bucket_counts:
+                prev_task = None
+                # Windows + Release data is in [0-9] so we're further splitting that range.
+                for sample_range in ([0, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
+                    histogram_bucket_counts_sampled = query(
+                        task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
+                        min_sample_id=sample_range[0],
+                        max_sample_id=sample_range[1],
+                        replace_table=(sample_range[0] == 0)
+                    )
+                    if prev_task:
+                        histogram_bucket_counts_sampled.set_upstream(prev_task)
+                    prev_task = histogram_bucket_counts_sampled
+
+            histogram_probe_counts = query(
+                task_name=f"{product}__histogram_probe_counts_v1"
+            )
+
+            probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
+            extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
+
+            user_counts = view(task_name=f"{product}__view_user_counts_v1")
+            extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
+
+            sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
+
             (
                 clients_scalar_aggregate
                 >> scalar_bucket_counts
