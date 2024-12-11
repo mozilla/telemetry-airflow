@@ -10,7 +10,9 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.weekday import WeekDay
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -125,23 +127,17 @@ with DAG(
     probe_scraper_moz_central = GKEPodOperator(
         task_id="probe_scraper_moz_central",
         name="probe-scraper-moz-central",
-        # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
+        # Needed for proper cluster autoscaling, because cluster autoscaling
         # works on pod resource requests, instead of usage
-        container_resources={
-            "request_memory": "13312Mi",
-            "request_cpu": None,
-            "limit_memory": "20480Mi",
-            "limit_cpu": None,
-            "limit_gpu": None,
-        },
-        # This python job requires 13 GB of memory, thus the highmem node pool
-        node_selector={"nodepool": "highmem"},
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "4500Mi"},
+        ),
         # Due to the nature of the container run, we set get_logs to False, to avoid
         # urllib3.exceptions.ProtocolError: 'Connection broken: IncompleteRead(0 bytes
         # read)' errors where the pod continues to run, but airflow loses its connection
         # and sets the status to Failed
         get_logs=False,
-        # Give additional time since we will likely always scale up when running this job
+        # Give additional time since the cluster may scale up when running this job
         startup_timeout_seconds=360,
         image=probe_scraper_image,
         arguments=(
@@ -207,10 +203,7 @@ with DAG(
         for name, url in (
             ("gecko-dev", "https://github.com/mozilla/gecko-dev"),
             ("phabricator", "https://github.com/mozilla-conduit/review"),
-            (
-                "search_engine_usage_study",
-                "https://github.com/mozilla-rally/search-engine-usage-study",
-            ),
+            ("releases-comm-central", "https://github.com/mozilla/releases-comm-central"),
         )
     ]
 
@@ -346,6 +339,36 @@ with DAG(
 
     probe_expiry_alerts.set_upstream(probe_scraper)
 
+    wait_for_table_partition_expirations = ExternalTaskSensor(
+        task_id="wait_for_table_partition_expirations",
+        external_dag_id="bqetl_monitoring",
+        external_task_id="monitoring_derived__table_partition_expirations__v1",
+        execution_delta=timedelta(hours=-2),
+        mode="reschedule",
+        pool="DATA_ENG_EXTERNALTASKSENSOR",
+        email_on_retry=False,
+        dag=dag,
+    )
+
+    ping_expiry_alerts = GKEPodOperator(
+        task_id="ping_expiry_alerts",
+        image=probe_scraper_image,
+        arguments=[
+            "python3",
+            "-m",
+            "probe_scraper.ping_expiry_alert",
+            "--run-date",
+            "{{ ds }}",
+        ],
+        owner="bewu@mozilla.com",
+        email=["bewu@mozilla.com", "telemetry-alerts@mozilla.com"],
+        secrets=[aws_access_key_secret, aws_secret_key_secret],
+        dag=dag,
+    )
+
+    ping_expiry_alerts.set_upstream(wait_for_table_partition_expirations)
+    ping_expiry_alerts.set_upstream(probe_scraper)
+
     delay_python_task = PythonOperator(
         task_id="wait_for_1_hour", dag=dag, python_callable=lambda: time.sleep(60 * 60)
     )
@@ -366,9 +389,9 @@ with DAG(
         endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
         data={},
-        owner="linh@mozilla.com",
+        owner="jrediger@mozilla.com",
         email=[
-            "linh@mozilla.com",
+            "jrediger@mozilla.com",
             "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],

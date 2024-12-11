@@ -7,10 +7,10 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 DOCS = """
-### Workday/Everfi integration
-Runs a script in docker image that syncs employee data
-from Workday to Everfi.
-It creates a Jira ticket if the task fails.
+### Slack Channels integration
+Runs a script in docker image that
+ - will archive unused channels
+ - delete old archived channels
 
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/eam-integrations)
 
@@ -28,7 +28,7 @@ def get_airflow_log_link(context):
     dag_run_id = context["dag_run"].run_id
     task_id = context["task_instance"].task_id
     base_url = "http://workflow.telemetry.mozilla.org/dags/"
-    base_url += "eam-workday-everfi-integration/grid?tab=logs&dag_run_id="
+    base_url += "eam-slack-channels-integration/grid?tab=logs&dag_run_id="
     return base_url + f"{urllib.parse.quote(dag_run_id)}&task_id={task_id}"
 
 
@@ -49,11 +49,11 @@ def create_jira_ticket(context):
     ).get_connection(conn_id)
     log_url = get_airflow_log_link(context)
 
-    jira_domain = "mozilla-hub.atlassian.net"
+    jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
-    summary = "Workday Everfi Integration - Airflow Task Issue Exception"
+    summary = "Slack Channels Integration - Airflow Task Issue Exception"
     paragraph_text = "Detailed error logging can be found in the link: "
     project_key = "ASP"
     issue_type_id = "10020"  # Issue Type = Bug
@@ -119,45 +119,26 @@ default_args = {
 tags = [Tag.ImpactTier.tier_3]
 
 
-EVERFI_INTEG_WORKDAY_USERNAME = Secret(
+SLACK_CHANNEL_TOKEN = Secret(
     deploy_type="env",
-    deploy_target="EVERFI_INTEG_WORKDAY_USERNAME",
+    deploy_target="SLACK_CHANNEL_TOKEN",
     secret="airflow-gke-secrets",
-    key="EVERFI_INTEG_WORKDAY_USERNAME",
+    key="SLACK_CHANNEL_TOKEN",
 )
-EVERFI_INTEG_WORKDAY_PASSWORD = Secret(
-    deploy_type="env",
-    deploy_target="EVERFI_INTEG_WORKDAY_PASSWORD",
-    secret="airflow-gke-secrets",
-    key="EVERFI_INTEG_WORKDAY_PASSWORD",
-)
-EVERFI_USERNAME = Secret(
-    deploy_type="env",
-    deploy_target="EVERFI_USERNAME",
-    secret="airflow-gke-secrets",
-    key="EVERFI_USERNAME",
-)
-EVERFI_PASSWORD = Secret(
-    deploy_type="env",
-    deploy_target="EVERFI_PASSWORD",
-    secret="airflow-gke-secrets",
-    key="EVERFI_PASSWORD",
-)
-
 
 with DAG(
-    "eam-workday-everfi-integration",
+    "eam-slack-channels-integration",
     default_args=default_args,
     doc_md=DOCS,
     tags=tags,
-    # 7:00 PM UTC/12:00 AM PST - weekdays
-    schedule_interval="0 7 * * 1-5",
+    # 3:00 PM UTC/8:00 AM PST - every-day
+    schedule_interval="0 15 * * *",
 ) as dag:
-    workday_everfi_dag = GKEPodOperator(
-        task_id="eam_workday_everfi",
+    slack_channels_dag = GKEPodOperator(
+        task_id="eam_slack_channels",
         arguments=[
             "python",
-            "scripts/workday_everfi_integration.py",
+            "scripts/slack_channels_integration.py",
             "--level",
             "info",
         ],
@@ -165,9 +146,6 @@ with DAG(
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
-            EVERFI_INTEG_WORKDAY_USERNAME,
-            EVERFI_INTEG_WORKDAY_PASSWORD,
-            EVERFI_USERNAME,
-            EVERFI_PASSWORD,
+            SLACK_CHANNEL_TOKEN,
         ],
     )

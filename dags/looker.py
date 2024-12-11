@@ -67,6 +67,18 @@ looker_api_client_secret_staging = Secret(
     secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_secret_staging",
 )
+looker_client_id_prod = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_CLIENT_ID",
+    secret="airflow-gke-secrets",
+    key="probe_scraper_secret__looker_api_client_id_prod",
+)
+looker_client_secret_prod = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_CLIENT_SECRET",
+    secret="airflow-gke-secrets",
+    key="probe_scraper_secret__looker_api_client_secret_prod",
+)
 dataops_looker_github_secret_access_token = Secret(
     deploy_type="env",
     deploy_target="GITHUB_ACCESS_TOKEN",
@@ -98,7 +110,6 @@ with DAG(
         owner="ascholtz@mozilla.com",
         email=[
             "ascholtz@mozilla.com",
-            "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
         task_id="lookml_generator",
@@ -128,7 +139,6 @@ with DAG(
         owner="ascholtz@mozilla.com",
         email=[
             "ascholtz@mozilla.com",
-            "dataops+alerts@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
         task_id="lookml_generator_staging",
@@ -153,4 +163,59 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
-    lookml_generator_staging >> lookml_generator_prod
+    looker_folders_to_validate = [
+        "706",  # KPI metrics
+    ]
+
+    validate_content_spectacles = GKEPodOperator(
+        owner="ascholtz@mozilla.com",
+        email=[
+            "ascholtz@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
+        task_id="validate_content_spectacles",
+        name="validate-content-spectacles",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        dag=dag,
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "spectacles content --verbose"
+            " --project spoke-default"
+            " --branch main-validation"  # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
+            " --pin-imports looker-hub:main"
+            f" --folders {' '.join(looker_folders_to_validate)}"
+        ],
+        env_vars={
+            "LOOKER_BASE_URL": "https://mozilla.cloud.looker.com",
+        },
+        secrets=[looker_client_id_prod, looker_client_secret_prod],
+        **airflow_gke_prod_kwargs,
+    )
+
+    validate_lookml_spoke_default_spectacles = GKEPodOperator(
+        owner="ascholtz@mozilla.com",
+        email=[
+            "ascholtz@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
+        task_id="validate_lookml_spoke_default_spectacles",
+        name="validate-lookml-spoke-default-spectacles",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        dag=dag,
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "spectacles lookml --verbose"
+            " --project spoke-default"
+            " --branch main-validation"  # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
+            " --remote-reset"
+            " --pin-imports looker-hub:main"
+        ],
+        env_vars={
+            "LOOKER_BASE_URL": "https://mozilla.cloud.looker.com",
+        },
+        secrets=[looker_client_id_prod, looker_client_secret_prod],
+        **airflow_gke_prod_kwargs,
+    )
+
+    lookml_generator_staging >> lookml_generator_prod >> validate_content_spectacles
+    lookml_generator_staging >> lookml_generator_prod >> validate_lookml_spoke_default_spectacles

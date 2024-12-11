@@ -38,7 +38,6 @@ default_args = {
         "telemetry-alerts@mozilla.com",
         "akomarzewski@mozilla.com",
         "efilho@mozilla.com",
-        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -138,30 +137,6 @@ clients_scalar_aggregates = bigquery_etl_query(
     dag=dag,
 )
 
-scalar_percentiles = GKEPodOperator(
-    reattach_on_restart=True,
-    task_id="scalar_percentiles",
-    arguments=[
-        "python3",
-        "script/glam/run_scalar_agg_clustered_query.py",
-        "--submission-date",
-        "{{ds}}",
-        "--dst-table",
-        "scalar_percentiles_v1",
-        "--project",
-        project_id,
-        "--billing-project",
-        billing_project_id,
-        "--tmp-project",
-        tmp_project,
-        "--dataset",
-        dataset_id,
-    ],
-    image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    is_delete_operator_pod=False,
-    dag=dag,
-)
-
 
 # This task runs first and replaces the relevant partition, followed
 # by the next task below that appends to the same partition of the same table.
@@ -236,18 +211,6 @@ clients_histogram_aggregates = SubDagOperator(
     dag=dag,
 )
 
-histogram_percentiles = bigquery_etl_query(
-    reattach_on_restart=True,
-    task_id="histogram_percentiles",
-    destination_table="histogram_percentiles_v1",
-    dataset_id=fully_qualified_dataset,
-    sql_file_path=f"sql/{table_project_id}/{dataset_id}/histogram_percentiles_v1/query.sql",
-    project_id=billing_project_id,
-    date_partition_parameter=None,
-    arguments=("--replace", "--clustering_fields=metric,channel"),
-    dag=dag,
-)
-
 glam_user_counts = bigquery_etl_query(
     reattach_on_restart=True,
     task_id="glam_user_counts",
@@ -268,7 +231,6 @@ glam_sample_counts = bigquery_etl_query(
     destination_table="glam_sample_counts_v1",
     dataset_id=fully_qualified_dataset,
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/glam_sample_counts_v1/query.sql",
-    project_id=billing_project_id,
     date_partition_parameter=None,
     parameters=("submission_date:DATE:{{ds}}",),
     arguments=("--replace",),
@@ -319,26 +281,6 @@ clients_histogram_bucket_counts = SubDagOperator(
     dag=dag,
 )
 
-clients_non_norm_histogram_bucket_counts = SubDagOperator(
-    subdag=repeated_subdag(
-        GLAM_DAG,
-        "clients_non_norm_histogram_bucket_counts",
-        default_args,
-        dag.schedule_interval,
-        billing_project_id,
-        table_project_id,
-        dataset_id,
-        fully_qualified_dataset,
-        ("submission_date:DATE:{{ds}}",),
-        20,
-        None,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-        parallel=False,
-    ),
-    task_id="clients_non_norm_histogram_bucket_counts",
-    dag=dag,
-)
-
 clients_histogram_probe_counts = bigquery_etl_query(
     reattach_on_restart=True,
     task_id="clients_histogram_probe_counts",
@@ -372,7 +314,6 @@ with dag as dag:
     with TaskGroup(
         group_id="extracts", dag=dag, default_args=default_args
     ) as extracts_per_channel:
-        extracts_sql_path = f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_client_probe_counts_extract_v1/query.sql"
         for channel in ("nightly", "beta", "release"):
             bq_extract_table = f"glam_extract_firefox_{channel}_v1"
             etl_query = bigquery_etl_query(
@@ -382,8 +323,7 @@ with dag as dag:
                 project_id=billing_project_id,
                 date_partition_parameter=None,
                 arguments=("--replace",),
-                sql_file_path=extracts_sql_path,
-                parameters=(f"channel:STRING:{channel}",),
+                sql_file_path=f"sql/moz-fx-data-shared-prod/{dataset_id}/glam_extract_firefox_{channel}_v1/query.sql",
                 dag=dag,
             )
 
@@ -405,10 +345,7 @@ clients_daily_scalar_aggregates >> clients_daily_keyed_scalar_aggregates
 clients_daily_scalar_aggregates >> clients_daily_keyed_boolean_aggregates
 clients_daily_keyed_boolean_aggregates >> clients_scalar_aggregates
 clients_daily_keyed_scalar_aggregates >> clients_scalar_aggregates
-clients_scalar_aggregates >> scalar_percentiles
-# workaround resources exceeded exception
-# client_scalar_probe_counts is not dependent on scalar_percentiles
-scalar_percentiles >> client_scalar_probe_counts
+clients_scalar_aggregates >> client_scalar_probe_counts
 
 latest_versions >> clients_daily_histogram_aggregates_parent
 clients_daily_histogram_aggregates_parent >> clients_daily_histogram_aggregates_content
@@ -419,21 +356,14 @@ clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
-clients_histogram_aggregates >> clients_non_norm_histogram_bucket_counts
 clients_histogram_aggregates >> glam_user_counts
 clients_histogram_aggregates >> glam_sample_counts
-
-
 clients_histogram_bucket_counts >> clients_histogram_probe_counts
-clients_non_norm_histogram_bucket_counts >> clients_histogram_probe_counts
-clients_histogram_probe_counts >> histogram_percentiles
 
 clients_scalar_aggregates >> glam_user_counts
 glam_user_counts >> extract_counts
 
-
 extract_counts >> extracts_per_channel
 client_scalar_probe_counts >> extracts_per_channel
-scalar_percentiles >> extracts_per_channel
-histogram_percentiles >> extracts_per_channel
+clients_histogram_probe_counts >> extracts_per_channel
 glam_sample_counts >> extracts_per_channel

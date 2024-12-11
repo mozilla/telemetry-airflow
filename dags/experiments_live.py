@@ -32,7 +32,6 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-
     # list of datasets to export data to GCS
     experiment_datasets = [
         "moz-fx-data-shared-prod.telemetry_derived.experiment_enrollment_other_events_overall_v1",

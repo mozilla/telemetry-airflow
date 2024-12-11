@@ -17,7 +17,7 @@ tags = [Tag.ImpactTier.tier_3]
 
 default_args = {
     "email": [
-        "anicholson@mozilla.com",
+        "ascholtz@mozilla.com",
         "wichan@mozilla.com",
     ]
 }
@@ -49,7 +49,7 @@ with DAG(
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
-            return f"{watcher_text} :hourglass_flowing_sand: Initiating backfill scheduled for `{entry['qualified_table_name']}`."
+            return f"{watcher_text} :hourglass_flowing_sand: Initiating backfill scheduled for `{entry['qualified_table_name']}`.  You will receive another notification once the backfill is done."
 
         notify_initiate = SlackAPIPostOperator(
             task_id="slack_notify_initate",

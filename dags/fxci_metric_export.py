@@ -50,7 +50,7 @@ with DAG(
     "fxci_metric_export",
     default_args=default_args,
     doc_md=__doc__,
-    schedule_interval="@daily",
+    schedule_interval="30 0 * * *",
     tags=tags,
 ) as dag:
     fxci_metric_export = GKEPodOperator(
@@ -60,6 +60,7 @@ with DAG(
             "metric",
             "export",
             "-vv",
+            "--date={{ ds }}",
         ],
         env_vars=env_vars,
         secrets=secrets,

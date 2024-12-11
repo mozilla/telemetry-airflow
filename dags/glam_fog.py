@@ -1,5 +1,6 @@
+import operator
 from datetime import datetime, timedelta
-from functools import partial
+from functools import partial, reduce
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
@@ -22,7 +23,6 @@ default_args = {
         "telemetry-alerts@mozilla.com",
         "akomarzewski@mozilla.com",
         "efilho@mozilla.com",
-        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -99,7 +99,7 @@ with DAG(
 
     # the set of logical ids and the set of ids that are not mapped to logical ids
     final_products = set(LOGICAL_MAPPING.keys()) | set(PRODUCTS) - set(
-        sum(LOGICAL_MAPPING.values(), [])
+        reduce(operator.iadd, LOGICAL_MAPPING.values(), [])
     )
     for product in final_products:
         func = partial(
@@ -139,15 +139,26 @@ with DAG(
         # stage 2 - downstream for export
         scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
-        scalar_percentile = query(task_name=f"{product}__scalar_percentiles_v1")
 
-        histogram_bucket_counts = query(
-            task_name=f"{product}__histogram_bucket_counts_v1"
-        )
+        with TaskGroup(
+            group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+        ) as histogram_bucket_counts:
+            prev_task = None
+            # Windows + Release data is in [0-9] so we're further splitting that range.
+            for sample_range in ([0, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
+                histogram_bucket_counts_sampled = query(
+                    task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
+                    min_sample_id=sample_range[0],
+                    max_sample_id=sample_range[1],
+                    replace_table=(sample_range[0] == 0)
+                )
+                if prev_task:
+                    histogram_bucket_counts_sampled.set_upstream(prev_task)
+                prev_task = histogram_bucket_counts_sampled
+
         histogram_probe_counts = query(
             task_name=f"{product}__histogram_probe_counts_v1"
         )
-        histogram_percentiles = query(task_name=f"{product}__histogram_percentiles_v1")
 
         probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
         extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
@@ -199,14 +210,12 @@ with DAG(
             clients_scalar_aggregate
             >> scalar_bucket_counts
             >> scalar_probe_counts
-            >> scalar_percentile
             >> probe_counts
         )
         (
             clients_histogram_aggregate
             >> histogram_bucket_counts
             >> histogram_probe_counts
-            >> histogram_percentiles
             >> probe_counts
         )
         probe_counts >> sample_counts >> extract_probe_counts >> export >> pre_import

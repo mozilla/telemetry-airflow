@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
@@ -13,11 +13,17 @@ from Workday to XMatters.
 It creates a Jira ticket if the task fails.
 
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/eam-integrations)
+[telemetry-airflow](https://github.com/mozilla/telemetry-airflow/tree/main/dags/eam_workday_xmatters_integration.py)
 
 This DAG requires the creation of an Airflow Jira connection.
 
 #### Owner
 jmoscon@mozilla.com
+
+#### Tags
+* impact/tier_3
+* repo/telemetry-airflow
+* triage/record_only
 
 """
 
@@ -49,7 +55,7 @@ def create_jira_ticket(context):
     ).get_connection(conn_id)
     log_url = get_airflow_log_link(context)
 
-    jira_domain = "mozilla-hub-sandbox-721.atlassian.net"
+    jira_domain = "mozilla-hub.atlassian.net"
     url = f"https://{jira_domain}/rest/api/3/issue"
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
     auth = HTTPBasicAuth(conn.login, conn.password)
@@ -111,10 +117,12 @@ default_args = {
     "owner": "jmoscon@mozilla.com",
     "emails": ["jmoscon@mozilla.com"],
     "start_date": datetime(2024, 1, 1),
-    "retries": 0,
+    "retries": 3,
+    # wait 5 min before retry
+    "retry_delay": timedelta(minutes=5),
     "on_failure_callback": create_jira_ticket,
 }
-tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
+tags = [Tag.ImpactTier.tier_3, Tag.Triage.record_only, Tag.Repo.airflow]
 
 
 xmatters_client_id = Secret(

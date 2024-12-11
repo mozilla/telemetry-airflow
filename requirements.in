@@ -1,10 +1,10 @@
 # Official Airflow constraints file
 # Doc: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
-# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.8.2/constraints-3.11.txt
+# File: https://raw.githubusercontent.com/apache/airflow/constraints-2.9.3/constraints-3.11.txt
 --constraint ./constraints.txt
 
 # Airflow dependencies
-apache-airflow[async,google-auth,password,statsd]==2.8.2
+apache-airflow[async,google-auth,password,statsd]==2.9.3
 apache-airflow-providers-amazon
 apache-airflow-providers-celery
 apache-airflow-providers-cncf-kubernetes
@@ -15,15 +15,12 @@ apache-airflow-providers-redis
 apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
 
-# BigEye integration
-bigeye-airflow
-
 # Acryl DataHub integration
 acryl-datahub-airflow-plugin
 gql
 
-# Monte Carlo integration
-airflow-mcd
+# dbt integration
+apache-airflow-providers-dbt-cloud
 
 # Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
 xmltodict

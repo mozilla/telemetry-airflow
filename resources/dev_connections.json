@@ -59,16 +59,6 @@
     "schema": null,
     "extra": "{\"aws_access_key_id\": \"dummy_access_key_id\", \"aws_secret_access_key\": \"dummy_secret_access_key\"}"
   },
-  "aws_socorro_readonly_s3": {
-    "conn_type": "s3",
-    "description": null,
-    "login": null,
-    "password": null,
-    "host": null,
-    "port": null,
-    "schema": null,
-    "extra": "{\"aws_access_key_id\": \"dummy_access_key_id\", \"aws_secret_access_key\": \"dummy_secret_access_key\"}"
-  },
   "google_cloud_airflow_dataproc": {
     "conn_type": "google_cloud_platform",
     "description": null,
@@ -159,33 +149,14 @@
     "schema": null,
     "extra": "{\"refresh_token\": \"dummy_refresh_token\"}"
   },
-  "datahub_rest_default": {
-    "conn_type": "datahub-rest",
-    "description": "Used to authenticate to DataHub",
-    "password": null,
-    "host": "https://mozilla.acryl.io/gms",
-    "port": null,
-    "schema": null,
-    "extra": null
-  },
-  "bigeye_connection": {
-    "conn_type": "http",
-    "description": "Used to authenticate to BigEye",
-    "login": "",
-    "password": null,
-    "host": "app.bigeye.com",
-    "port": null,
-    "schema": "https",
-    "extra": ""
-  },
-  "monte_carlo_default_session_id": {
-    "conn_type": "http",
-    "description": "Used to authenticate to Monte Carlo",
+  "dbt_cloud": {
+    "conn_type": "dbt_cloud",
+    "description": "Used to authenticate to the dbt Cloud instance",
     "login": "",
     "password": null,
     "host": "",
     "port": null,
-    "schema": "https",
-    "extra": ""
+    "schema": null,
+    "extra": "{\"account_id\": \"dummy_id\", \"api_token\": \"dummy_refresh_token\"}"
   }
 }

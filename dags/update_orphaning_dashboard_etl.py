@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
+
 from utils.constants import DS_WEEKLY
 from utils.dataproc import moz_dataproc_pyspark_runner
 from utils.tags import Tag

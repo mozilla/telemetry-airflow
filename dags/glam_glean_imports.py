@@ -20,7 +20,6 @@ default_args = {
         "akommasani@mozilla.com",
         "akomarzewski@mozilla.com",
         "efilho@mozilla.com",
-        "linhnguyen@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -132,16 +131,16 @@ for env in ["Dev", "Prod"]:
             [wait_for_fenix, wait_for_fog] >> glean_env_task_group
 
 
-default_glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
+default_glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2024.10.0-58"
 
 base_docker_args = ["/venv/bin/python", "manage.py"]
 
 for env in ["Dev", "Prod"]:
     glam_import_image = default_glam_import_image
     if env == "Dev":  # noqa 114
-        glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
+        glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2024.10.0-58"
     elif env == "Prod":
-        glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2023.07.1-43"
+        glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2024.10.0-58"
 
     # Fetch secrets from Google Secret Manager to be injected into the pod.
     database_url_secret = Secret(
@@ -181,6 +180,16 @@ for env in ["Dev", "Prod"]:
             name="glam_import_probes",
             image=glam_import_image,
             arguments=[*base_docker_args, "import_probes"],
+            env_vars=env_vars,
+            secrets=[database_url_secret, django_secret],
+        )
+
+        glam_import_revisions = GKEPodOperator(
+            reattach_on_restart=True,
+            task_id="glam_import_revisions",
+            name="glam_import_revisions",
+            image=glam_import_image,
+            arguments=[*base_docker_args, "import_revisions"],
             env_vars=env_vars,
             secrets=[database_url_secret, django_secret],
         )
