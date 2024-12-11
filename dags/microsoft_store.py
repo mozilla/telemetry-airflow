@@ -56,6 +56,7 @@ default_args = {
 
 tags = [Tag.ImpactTier.tier_2]
 
+# Have the DAG run later in the day so Microsoft Store data has a chance to populate
 with DAG(
     "microsoft_store",
     default_args=default_args,
