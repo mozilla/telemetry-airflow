@@ -3,11 +3,7 @@
 import argparse
 import json
 import logging
-<<<<<<< Updated upstream
 import urllib.request
-=======
-import urllib
->>>>>>> Stashed changes
 from datetime import datetime as dt
 from datetime import timedelta
 
@@ -47,13 +43,9 @@ def parse_args():
         description="Write json socorro crash reports to parquet."
     )
     parser.add_argument(
-<<<<<<< Updated upstream
         "--date",
         "-d",
         required=True,
-=======
-        "--date", "-d", required=True,
->>>>>>> Stashed changes
         help="Date (ds_nodash in airflow) of data to process. E.g. 20190801.",
     )
     parser.add_argument(
@@ -93,11 +85,7 @@ def replace_definitions(schema, definitions):
     """Replace references in the JSON schema with their definitions."""
 
     if "properties" in schema:
-<<<<<<< Updated upstream
         for _, meta in schema["properties"].items():
-=======
-        for prop, meta in schema["properties"].items():
->>>>>>> Stashed changes
             replace_definitions(meta, definitions)
     elif "items" in schema:
         if "$ref" in schema["items"]:
@@ -151,21 +139,12 @@ def get_rows(schema):
 # First fetch from the primary source in gcs as per bug 1312006. We fall back to the github location if this is not available.
 def fetch_schema():
     """
-<<<<<<< Updated upstream
     Fetch the crash data schema from an gcs location or github location.
 
     This returns the corresponding JSON schema in a python dictionary.
     """
 
     bucket = "moz-fx-socorro-prod-prod-telemetry"
-=======
-    Fetch the crash data schema from an s3 location or github location. This
-    returns the corresponding JSON schema in a python dictionary.
-    """
-
-    region = "us-west-2"
-    bucket = "crashstats-telemetry-crashes-prod-us-west-2"
->>>>>>> Stashed changes
     key = "telemetry_socorro_crash.json"
     fallback_url = f"https://raw.githubusercontent.com/mozilla-services/socorro/master/socorro/schemas/{key}"
 
@@ -174,7 +153,6 @@ def fetch_schema():
 
         # Use spark to pull schema file instead of boto since the dataproc hadoop configs only work with spark.
         # Note: only do this on small json files, since collect will bring the file onto the driver
-<<<<<<< Updated upstream
         json_obj = (
             spark.read.json(f"gs://{bucket}/{key}", multiLine=True).toJSON().collect()
         )
@@ -185,15 +163,6 @@ def fetch_schema():
             f"Fetching crash data schema from {fallback_url}"
         )
         resp = json.loads(urllib.request.urlopen(fallback_url).read())
-=======
-        json_obj = spark.read.json(f"s3a://{bucket}/{key}", multiLine=True).toJSON().collect()
-        resp = json.loads(json_obj[0])
-    except Exception as e:
-        log.warning(f"Could not fetch schema from s3://{bucket}/{key}: {e}\n"
-                     f"Fetching crash data schema from {fallback_url}"
-                    )
-        resp = urllib.request.urlopen(fallback_url)
->>>>>>> Stashed changes
 
     return resp
 
