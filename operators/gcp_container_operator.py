@@ -48,6 +48,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         in_cluster=False,
         do_xcom_push=False,
         reattach_on_restart=False,
+        on_finish_action="keep_pod",
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id="google_cloud_airflow_gke",
         project_id="moz-fx-data-airflow-gke-prod",
@@ -67,6 +68,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             in_cluster=in_cluster,
             do_xcom_push=do_xcom_push,
             reattach_on_restart=reattach_on_restart,
+            on_finish_action=on_finish_action,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             location=location,
