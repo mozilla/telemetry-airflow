@@ -150,6 +150,8 @@ with DAG(
             python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_locale.py",
             # GCS bucket for testing is located in `cfr-personalization-experiment` project
             # python_driver_code="gs://taar_models/tmp/jobs/taar_locale.py",
+            master_machine_type="n2-standard-8",
+            worker_machine_type="n2-standard-4",
             num_workers=12,
             py_args=[
                 "--date",
@@ -184,10 +186,12 @@ with DAG(
             additional_properties={
                 "spark:spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.3",
                 "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest.jar",
+                "spark:spark.driver.memory": "16g",
+                "spark:spark.executor.memory": "96g",
             },
             num_workers=8,
-            master_machine_type="n1-standard-8",
-            worker_machine_type="n1-highmem-32",
+            master_machine_type="n2-standard-8",
+            worker_machine_type="n2-highmem-32",
             py_args=[
                 "--date",
                 "{{ ds }}",
@@ -202,8 +206,9 @@ with DAG(
             worker_disk_type="pd-ssd",
             master_disk_size=1024,
             worker_disk_size=1024,
+            # https://cloud.google.com/compute/docs/disks/local-ssd#choose_number_local_ssds
             master_num_local_ssds=2,
-            worker_num_local_ssds=2,
+            worker_num_local_ssds=4,
         ),
     )
 
@@ -227,7 +232,8 @@ with DAG(
             ],
             cluster_name="addon-recommender-{{ds_nodash}}",
             image_version="1.3",
-            worker_machine_type="n1-standard-8",
+            master_machine_type="n2-standard-8",
+            worker_machine_type="n2-standard-8",
             num_workers=20,
             optional_components=[],
             install_component_gateway=False,
@@ -260,6 +266,8 @@ with DAG(
             python_driver_code="gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/taar_lite_guidguid.py",
             # GCS bucket for testing is located in `cfr-personalization-experiment` project
             # python_driver_code="gs://taar_models/tmp/jobs/taar_lite_guidguid.py",
+            master_machine_type="n2-standard-8",
+            worker_machine_type="n2-standard-4",
             num_workers=8,
             py_args=[
                 "--date",

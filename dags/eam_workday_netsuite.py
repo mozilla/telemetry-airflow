@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -152,18 +153,6 @@ NETSUITE_INTEG_NETSUITE_PASSWORD = Secret(
     key="NETSUITE_INTEG_WORKDAY_PASSWORD",
 )
 
-AWS_ACCESS_KEY_ID = Secret(
-    deploy_type="env",
-    deploy_target="AWS_ACCESS_KEY_ID",
-    secret="airflow-gke-secrets",
-    key="AWS_ACCESS_KEY_ID",
-)
-AWS_SECRET_ACCESS_KEY = Secret(
-    deploy_type="env",
-    deploy_target="AWS_SECRET_ACCESS_KEY",
-    secret="airflow-gke-secrets",
-    key="AWS_SECRET_ACCESS_KEY",
-)
 with DAG(
     "eam-workday-netsuite-integration",
     default_args=default_args,
@@ -173,7 +162,7 @@ with DAG(
 ) as dag:
     workday_netsuite_dag = GKEPodOperator(
         task_id="eam_workday_netsuite",
-        arguments=["python", "scripts/workday_netsuite.py", "--level", "info"],
+        arguments=["python", "scripts/workday_netsuite_integration.py", "--level", "info"],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/"
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
@@ -182,7 +171,5 @@ with DAG(
             NETSUITE_INTEG_WORKDAY_PASSWORD,
             NETSUITE_INTEG_NETSUITE_USERNAME,
             NETSUITE_INTEG_NETSUITE_PASSWORD,
-            AWS_ACCESS_KEY_ID,
-            AWS_SECRET_ACCESS_KEY
         ],
     )

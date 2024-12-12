@@ -3,6 +3,7 @@ import datetime
 from airflow import models
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import (
@@ -67,13 +68,9 @@ with models.DAG(
     # This single task is responsible for sequentially running copy queries
     # over all the tables in _live datasets into _stable datasets except those
     # that are specifically used in another DAG.
-    resources = {
-        "request_memory": "10240Mi",
-        "request_cpu": None,
-        "limit_memory": "20480Mi",
-        "limit_cpu": None,
-        "limit_gpu": None,
-    }
+    resources = k8s.V1ResourceRequirements(
+        requests={"memory": "400Mi"},
+    )
 
     copy_deduplicate_all = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all",
@@ -95,7 +92,6 @@ with models.DAG(
             "telemetry_live.saved_session_use_counter_v4",
             "telemetry_live.saved_session_v5",
         ],
-        node_selector={"nodepool": "highmem"},
         container_resources=resources,
     )
 
@@ -363,30 +359,3 @@ with models.DAG(
         )
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
-
-    archive_partition_id = (
-        "{{ macros.ds_format(macros.ds_add(ds, -"
-        # 37 months = 3 years + 1 leap day + 31 days (1 month)
-        + str(365 * 3 + 1 + 31)
-        + '), "%Y-%m-%d", "%Y%m%d") }}'
-    )
-    precheck_query = (
-        "ASSERT (SELECT total_rows FROM "
-        "moz-fx-data-shared-prod.telemetry_stable.INFORMATION_SCHEMA.PARTITIONS "
-        'WHERE table_name = "main_v5" '
-        f'AND partition_id = "{archive_partition_id}") > 0 '
-        'AS "refusing to archive empty partition"'
-    )
-    main_v5 = "moz-fx-data-shared-prod:telemetry_stable.main_v5"
-    archive_main = GKEPodOperator(
-        reattach_on_restart=True,
-        task_id="archive_main",
-        cmds=["bash", "-x", "-c"],
-        arguments=[
-            f"bq query '{precheck_query}' &&"
-            f"bq cp -f {main_v5}'$'{archive_partition_id} "
-            f"{main_v5}_archive'$'{archive_partition_id} && "
-            f"bq rm -f {main_v5}'$'{archive_partition_id}"
-        ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    )

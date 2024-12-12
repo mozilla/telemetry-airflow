@@ -1,6 +1,24 @@
+import kubernetes.client as k8s
+from airflow.providers.cncf.kubernetes.callbacks import KubernetesPodOperatorCallback
 from airflow.providers.google.cloud.operators.kubernetes_engine import (
     GKEStartPodOperator as UpstreamGKEPodOperator,
 )
+
+
+class GKEPodOperatorCallbacks(KubernetesPodOperatorCallback):
+    @staticmethod
+    def on_pod_completion(
+        *, pod: k8s.V1Pod, client: k8s.CoreV1Api, mode: str, **kwargs
+    ) -> None:
+        # Allow eviction of completed pods so they don't prevent the cluster from scaling down.
+        pod_patch = k8s.V1Pod(
+            metadata=k8s.V1ObjectMeta(
+                annotations={"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+            )
+        )
+        client.patch_namespaced_pod(
+            pod.metadata.name, pod.metadata.namespace, pod_patch
+        )
 
 
 class GKEPodOperator(UpstreamGKEPodOperator):
@@ -30,6 +48,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         in_cluster=False,
         do_xcom_push=False,
         reattach_on_restart=False,
+        on_finish_action="keep_pod",
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id="google_cloud_airflow_gke",
         project_id="moz-fx-data-airflow-gke-prod",
@@ -43,21 +62,18 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         if do_xcom_push:
             reattach_on_restart = False
 
-        # GKE node pool autoscaling is failing to scale down when completed pods exist on the node
-        # in Completed states, due to the pod not being replicated. E.g. behind an rc or deployment.
-        annotations = {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
-
         super().__init__(
             *args,
             image_pull_policy=image_pull_policy,
             in_cluster=in_cluster,
             do_xcom_push=do_xcom_push,
             reattach_on_restart=reattach_on_restart,
-            annotations=annotations,
+            on_finish_action=on_finish_action,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             location=location,
             cluster_name=cluster_name,
             namespace=namespace,
+            callbacks=GKEPodOperatorCallbacks,
             **kwargs,
         )

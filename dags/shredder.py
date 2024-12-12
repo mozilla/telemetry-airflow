@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from kubernetes.client import models as k8s
 from timetable import MultiWeekTimetable
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -71,11 +72,10 @@ base_command = [
     # dags run one schedule interval after ds, end date should be one day before the dag
     # runs, and schedule intervals are 4 weeks = 28 days, so 28-1 = 27 days after ds
     "--end-date={{macros.ds_add(ds, 27)}}",
-    # start date should be two schedule intervals before end date, to avoid
+    # start date should be at least two schedule intervals before end date, to avoid
     # race conditions with downstream tables and pings received shortly after a
     # deletion request. schedule intervals are 4 weeks = 28 days.
-    # This is temporarily increased to 4 intervals, in order handle outstanding backlog
-    "--start-date={{macros.ds_add(ds, 27-28*4)}}",
+    "--start-date={{macros.ds_add(ds, 27-7*9)}}",
     # non-dml statements use LEFT JOIN instead of IN to filter rows, which takes about
     # half as long as of 2022-02-14, and reduces cost by using less flat rate slot time
     "--no-use-dml",
@@ -131,13 +131,10 @@ flat_rate = GKEPodOperator(
     ],
     # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
     # works on pod resource requests, instead of usage
-    container_resources={
-        "request_memory": "13312Mi",
-        "request_cpu": None,
-        "limit_memory": "20480Mi",
-        "limit_cpu": None,
-        "limit_gpu": None,
-    },
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "13312Mi"},
+        limits={"memory": "20480Mi"},
+    ),
     # This job was being killed by Kubernetes for using too much memory, thus the highmem node pool
     node_selector={"nodepool": "highmem"},
     # Give additional time since we may need to scale up when running this job
