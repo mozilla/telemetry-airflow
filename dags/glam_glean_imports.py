@@ -37,35 +37,6 @@ dag = DAG(
     tags=tags,
 )
 
-# Make sure all the data for the given day has arrived before running.
-wait_for_fenix = ExternalTaskSensor(
-    task_id="wait_for_fenix",
-    external_dag_id="glam_fenix",
-    external_task_id="pre_import",
-    execution_delta=timedelta(hours=17),
-    check_existence=True,
-    mode="reschedule",
-    allowed_states=ALLOWED_STATES,
-    failed_states=FAILED_STATES,
-    pool="DATA_ENG_EXTERNALTASKSENSOR",
-    email_on_retry=False,
-    dag=dag,
-)
-
-wait_for_fog = ExternalTaskSensor(
-    task_id="wait_for_fog",
-    external_dag_id="glam_fog",
-    external_task_id="pre_import",
-    execution_delta=timedelta(hours=17),
-    check_existence=True,
-    mode="reschedule",
-    allowed_states=ALLOWED_STATES,
-    failed_states=FAILED_STATES,
-    pool="DATA_ENG_EXTERNALTASKSENSOR",
-    email_on_retry=False,
-    dag=dag,
-)
-
 wait_for_glam = ExternalTaskSensor(
     task_id="wait_for_glam",
     external_dag_id="glam",
@@ -114,22 +85,6 @@ for env in ["Dev", "Prod"]:
         "GOOGLE_CLOUD_PROJECT": Variable.get(env + "_glam_project"),
     }
 
-    with dag as dag:  # noqa SIM117
-        with TaskGroup(group_id=env + "_glean") as glean_env_task_group:
-            glam_import_glean_counts = GKEPodOperator(
-                reattach_on_restart=True,
-                task_id="glam_import_glean_counts",
-                name="glam_import_glean_counts",
-                image=glean_import_image,
-                arguments=[*base_docker_args, "import_glean_counts"],
-                env_vars=env_vars,
-                secrets=[database_url_secret, django_secret],
-            )
-
-            # Fan in task dependencies so when both are satisfied, the task group will execute
-            # This looks correct in Graph view, but in tree view you will see duplicates
-            [wait_for_fenix, wait_for_fog] >> glean_env_task_group
-
 
 default_glam_import_image = "gcr.io/moz-fx-dataops-images-global/gcp-pipelines/glam/glam-production/glam:2024.10.0-58"
 
@@ -164,16 +119,6 @@ for env in ["Dev", "Prod"]:
     }
 
     with dag as dag, TaskGroup(group_id=env + "_glam") as glam_env_task_group:
-        glam_import_user_counts = GKEPodOperator(
-            reattach_on_restart=True,
-            task_id="glam_import_user_counts",
-            name="glam_import_user_counts",
-            image=glam_import_image,
-            arguments=[*base_docker_args, "import_user_counts"],
-            env_vars=env_vars,
-            secrets=[database_url_secret, django_secret],
-        )
-
         glam_import_probes = GKEPodOperator(
             reattach_on_restart=True,
             task_id="glam_import_probes",
