@@ -91,20 +91,6 @@ with DAG(
         email_on_retry=False,
     )
 
-    pre_import = EmptyOperator(
-        task_id="pre_import",
-    )
-
-    with TaskGroup("glam_fenix_external") as glam_fenix_external:
-        ExternalTaskMarker(
-            task_id="glam_glean_imports__wait_for_fenix",
-            external_dag_id="glam_glean_imports",
-            external_task_id="wait_for_fenix",
-            execution_date="{{ execution_date.replace(hour=5, minute=0).isoformat() }}",
-        )
-
-        pre_import >> glam_fenix_external
-
     mapping = {}
     for product in PRODUCTS:
         query = generate_and_run_glean_queries(
@@ -141,17 +127,17 @@ with DAG(
         )
         latest_versions = query(task_name=f"{product}__latest_versions_v1")
 
-        clients_scalar_aggregate_init = init(
+        clients_scalar_aggregates_init = init(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
-        clients_scalar_aggregate = query(
+        clients_scalar_aggregates = query(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
 
-        clients_histogram_aggregate_init = init(
+        clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
-        clients_histogram_aggregate = query(
+        clients_histogram_aggregates = query(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
 
@@ -186,22 +172,9 @@ with DAG(
 
         sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
 
-        export = GKEPodOperator(
-            task_id=f"export_{product}",
-            image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-            arguments=["script/glam/export_csv"],
-            env_vars={
-                "SRC_PROJECT": PROJECT,
-                "DATASET": "glam_etl",
-                "PRODUCT": product,
-                "BUCKET": BUCKET,
-            },
-            is_delete_operator_pod=False,
-            cmds=["bash"],
-        )
+        done = EmptyOperator(task_id=f"{product}_done")
 
         # set all of the dependencies for all of the tasks
-
         # get the dependencies for the logical mapping, or just pass through the
         # daily query unmodified
         for dependency in LOGICAL_MAPPING.get(product, [product]):
@@ -210,38 +183,37 @@ with DAG(
 
         # only the scalar aggregates are upstream of latest versions
         clients_daily_scalar_aggregates >> latest_versions
-        latest_versions >> clients_scalar_aggregate_init
-        latest_versions >> clients_histogram_aggregate_init
+        latest_versions >> clients_scalar_aggregates_init
+        latest_versions >> clients_histogram_aggregates_init
 
         (
             clients_daily_scalar_aggregates
-            >> clients_scalar_aggregate_init
-            >> clients_scalar_aggregate
+            >> clients_scalar_aggregates_init
+            >> clients_scalar_aggregates
         )
         (
             clients_daily_histogram_aggregates
-            >> clients_histogram_aggregate_init
-            >> clients_histogram_aggregate
+            >> clients_histogram_aggregates_init
+            >> clients_histogram_aggregates
         )
 
         (
-            clients_scalar_aggregate
+            clients_scalar_aggregates
             >> scalar_bucket_counts
             >> scalar_probe_counts
             >> probe_counts
         )
         (
-            clients_histogram_aggregate
+            clients_histogram_aggregates
             >> histogram_bucket_counts
             >> histogram_probe_counts
             >> probe_counts
         )
-        probe_counts >> sample_counts >> extract_probe_counts >> export >> pre_import
+        probe_counts >> sample_counts >> extract_probe_counts >> done
         (
-            clients_scalar_aggregate
+            clients_scalar_aggregates
             >> user_counts
             >> extract_user_counts
-            >> export
-            >> pre_import
+            >> done
         )
-        clients_histogram_aggregate >> export >> pre_import
+        clients_histogram_aggregates >> done
