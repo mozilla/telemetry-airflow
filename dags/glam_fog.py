@@ -72,23 +72,9 @@ with DAG(
         email_on_retry=False,
     )
 
-    pre_import = EmptyOperator(
-        task_id="pre_import",
-    )
-
     daily_release_done = EmptyOperator(
         task_id="daily_release_done",
     )
-
-    with TaskGroup("glam_fog_external") as glam_fog_external:
-        ExternalTaskMarker(
-            task_id="glam_glean_imports__wait_for_fog",
-            external_dag_id="glam_glean_imports",
-            external_task_id="wait_for_fog",
-            execution_date="{{ execution_date.replace(hour=5, minute=0).isoformat() }}",
-        )
-
-        pre_import >> glam_fog_external
 
     mapping = {}
     for product in PRODUCTS:
@@ -127,17 +113,17 @@ with DAG(
         )
         latest_versions = query(task_name=f"{product}__latest_versions_v1")
 
-        clients_scalar_aggregate_init = init(
+        clients_scalar_aggregates_init = init(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
-        clients_scalar_aggregate = query(
+        clients_scalar_aggregates = query(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
 
-        clients_histogram_aggregate_init = init(
+        clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
-        clients_histogram_aggregate = query(
+        clients_histogram_aggregates = query(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
 
@@ -151,23 +137,23 @@ with DAG(
 
         # only the scalar aggregates are upstream of latest versions
         clients_daily_scalar_aggregates >> latest_versions
-        latest_versions >> clients_scalar_aggregate_init
-        latest_versions >> clients_histogram_aggregate_init
+        latest_versions >> clients_scalar_aggregates_init
+        latest_versions >> clients_histogram_aggregates_init
 
         (
             clients_daily_scalar_aggregates
-            >> clients_scalar_aggregate_init
-            >> clients_scalar_aggregate
+            >> clients_scalar_aggregates_init
+            >> clients_scalar_aggregates
         )
         (
             clients_daily_histogram_aggregates
-            >> clients_histogram_aggregate_init
-            >> clients_histogram_aggregate
+            >> clients_histogram_aggregates_init
+            >> clients_histogram_aggregates
         )
 
         if is_release:
-            clients_histogram_aggregate >> daily_release_done
-            clients_scalar_aggregate >> daily_release_done
+            clients_histogram_aggregates >> daily_release_done
+            clients_scalar_aggregates >> daily_release_done
         else:
             # stage 2 - downstream for export
             scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
@@ -201,23 +187,25 @@ with DAG(
 
             sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
 
+            done = EmptyOperator(task_id=f"{product}_done")
+
             (
-                clients_scalar_aggregate
+                clients_scalar_aggregates
                 >> scalar_bucket_counts
                 >> scalar_probe_counts
                 >> probe_counts
             )
             (
-                clients_histogram_aggregate
+                clients_histogram_aggregates
                 >> histogram_bucket_counts
                 >> histogram_probe_counts
                 >> probe_counts
             )
-            probe_counts >> sample_counts >> extract_probe_counts >> pre_import
+            probe_counts >> sample_counts >> extract_probe_counts >> done
             (
-                clients_scalar_aggregate
+                clients_scalar_aggregates
                 >> user_counts
                 >> extract_user_counts
-                >> pre_import
+                >> done
             )
-            clients_histogram_aggregate >> pre_import
+            clients_histogram_aggregates >> done
