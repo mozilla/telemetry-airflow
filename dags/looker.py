@@ -227,7 +227,6 @@ with DAG(
             "--n_days 180"
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
-        dag=dag,
         env_vars={
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
         },
