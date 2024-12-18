@@ -224,7 +224,7 @@ with DAG(
             "-m",
             "looker_utils.main",
             "delete-branches",
-            "--n_days 180"
+            "--inactive_days=180"
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
         env_vars={
