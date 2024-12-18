@@ -231,6 +231,7 @@ with DAG(
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
         },
         secrets=[looker_client_id_prod, looker_client_secret_prod],
+        **airflow_gke_prod_kwargs,
     )
 
     lookml_generator_staging >> lookml_generator_prod >> validate_content_spectacles
