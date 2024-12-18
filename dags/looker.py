@@ -234,6 +234,7 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
-    lookml_generator_staging >> lookml_generator_prod >> validate_content_spectacles
-    lookml_generator_staging >> lookml_generator_prod >> validate_lookml_spoke_default_spectacles
-    lookml_generator_staging >> lookml_generator_prod >> delete_outdated_branches
+    lookml_generator_staging >> lookml_generator_prod
+    lookml_generator_prod >> validate_content_spectacles
+    lookml_generator_prod >> validate_lookml_spoke_default_spectacles
+    lookml_generator_prod >> delete_outdated_branches
