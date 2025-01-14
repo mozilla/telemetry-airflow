@@ -40,7 +40,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-PROJECT = "moz-fx-data-glam-prod-fca7"
+PROJECT = "moz-fx-glam-prod"
 BUCKET = "moz-fx-data-glam-prod-fca7-etl-data"
 
 # Fenix as a product has a convoluted app_id history. The comments note the
