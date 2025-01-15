@@ -26,7 +26,7 @@ from utils.tags import Tag
 
 project_id = "moz-fx-data-shared-prod"
 table_project_id = "moz-fx-data-shared-prod"
-billing_project_id = "moz-fx-data-glam-prod-fca7"
+billing_project_id = "moz-fx-glam-prod"
 dataset_id = "telemetry_derived"
 fully_qualified_dataset = f"{table_project_id}:{dataset_id}"
 tmp_project = "moz-fx-data-shared-prod"  # for temporary tables in analysis dataset
