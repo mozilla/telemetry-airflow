@@ -196,8 +196,13 @@ with DAG(
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
-            NETSUITE_INTEG_WORKDAY_USERNAME,
+            NETSUITE_INTEG_WORKDAY_USERNAME, 
             NETSUITE_INTEG_WORKDAY_PASSWORD,
- 
+            NETSUITE_INTEG_NETSUITE_CONSUMER_KEY,
+            NETSUITE_INTEG_NETSUITE_CONSUMER_SECRET,
+            NETSUITE_INTEG_NETSUITE_TOKEN_ID,
+            NETSUITE_INTEG_NETSUITE_TOKEN_SECRET, 
+            NETSUITE_INTEG_NETSUITE_TOKEN_OAUTH_REALM,
+            NETSUITE_INTEG_NETSUITE_HOST 
         ],
     )
