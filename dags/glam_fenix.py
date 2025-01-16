@@ -41,7 +41,6 @@ default_args = {
 }
 
 PROJECT = "moz-fx-data-glam-prod-fca7"
-BUCKET = "moz-fx-data-glam-prod-fca7-etl-data"
 
 # Fenix as a product has a convoluted app_id history. The comments note the
 # start and end dates of the id in the app store.
