@@ -30,7 +30,6 @@ default_args = {
 }
 
 PROJECT = "moz-fx-glam-prod"
-BUCKET = "moz-fx-data-glam-prod-fca7-etl-data"
 
 tags = [Tag.ImpactTier.tier_2]
 
