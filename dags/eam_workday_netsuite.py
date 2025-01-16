@@ -143,14 +143,14 @@ NETSUITE_INTEG_NETSUITE_USERNAME = Secret(
     deploy_type="env",
     deploy_target="NETSUITE_INTEG_NETSUITE_USERNAME",
     secret="airflow-gke-secrets",
-    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
+    key="NETSUITE_INTEG_NETSUITE_USERNAME",
 )
 
 NETSUITE_INTEG_NETSUITE_PASSWORD = Secret(
     deploy_type="env",
     deploy_target="NETSUITE_INTEG_NETSUITE_PASSWORD",
     secret="airflow-gke-secrets",
-    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
+    key="NETSUITE_INTEG_NETSUITE_PASSWORD",
 )
 
 with DAG(

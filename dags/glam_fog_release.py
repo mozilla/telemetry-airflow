@@ -29,7 +29,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-PROJECT = "moz-fx-data-glam-prod-fca7"
+PROJECT = "moz-fx-glam-prod"
 
 tags = [Tag.ImpactTier.tier_2]
 

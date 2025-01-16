@@ -30,7 +30,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-PROJECT = "moz-fx-data-glam-prod-fca7"
+PROJECT = "moz-fx-glam-prod"
 
 # Fenix as a product has a convoluted app_id history. The comments note the
 # start and end dates of the id in the app store.
