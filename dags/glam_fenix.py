@@ -14,10 +14,9 @@ from functools import partial, reduce
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
-from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.glam_subdags.generate_query import (
     generate_and_run_glean_queries,
@@ -106,6 +105,9 @@ with DAG(
         reduce(operator.iadd, LOGICAL_MAPPING.values(), [])
     )
     for product in final_products:
+        is_release = "release" in product
+        done = EmptyOperator(task_id=f"{product}_done")
+
         func = partial(
             generate_and_run_glean_task,
             product=product,
@@ -140,46 +142,12 @@ with DAG(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
 
-        # stage 2 - downstream for export
-        scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
-        scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
-
-        with TaskGroup(
-            group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
-        ) as histogram_bucket_counts:
-            prev_task = None
-            for sample_range in ([0, 19], [20, 39], [40, 59], [60, 79], [80, 99]):
-                histogram_bucket_counts_sampled = query(
-                    task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
-                    min_sample_id=sample_range[0],
-                    max_sample_id=sample_range[1],
-                    replace_table=(sample_range[0] == 0)
-                )
-                if prev_task:
-                    histogram_bucket_counts_sampled.set_upstream(prev_task)
-                prev_task = histogram_bucket_counts_sampled
-
-        histogram_probe_counts = query(
-            task_name=f"{product}__histogram_probe_counts_v1"
-        )
-
-        probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
-        extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
-
-        user_counts = view(task_name=f"{product}__view_user_counts_v1")
-        extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
-
-        sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
-
-        done = EmptyOperator(task_id=f"{product}_done")
-
         # set all of the dependencies for all of the tasks
         # get the dependencies for the logical mapping, or just pass through the
         # daily query unmodified
         for dependency in LOGICAL_MAPPING.get(product, [product]):
             mapping[dependency] >> clients_daily_scalar_aggregates
             mapping[dependency] >> clients_daily_histogram_aggregates
-
         # only the scalar aggregates are upstream of latest versions
         clients_daily_scalar_aggregates >> latest_versions
         latest_versions >> clients_scalar_aggregates_init
@@ -195,24 +163,58 @@ with DAG(
             >> clients_histogram_aggregates_init
             >> clients_histogram_aggregates
         )
+        if is_release:
+            clients_histogram_aggregates >> done
+            clients_scalar_aggregates >> done
+        else:
+            # stage 2 - downstream for export
+            scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
+            scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
-        (
-            clients_scalar_aggregates
-            >> scalar_bucket_counts
-            >> scalar_probe_counts
-            >> probe_counts
-        )
-        (
-            clients_histogram_aggregates
-            >> histogram_bucket_counts
-            >> histogram_probe_counts
-            >> probe_counts
-        )
-        probe_counts >> sample_counts >> extract_probe_counts >> done
-        (
-            clients_scalar_aggregates
-            >> user_counts
-            >> extract_user_counts
-            >> done
-        )
-        clients_histogram_aggregates >> done
+            with TaskGroup(
+                group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+            ) as histogram_bucket_counts:
+                prev_task = None
+                for sample_range in ([0, 19], [20, 39], [40, 59], [60, 79], [80, 99]):
+                    histogram_bucket_counts_sampled = query(
+                        task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
+                        min_sample_id=sample_range[0],
+                        max_sample_id=sample_range[1],
+                        replace_table=(sample_range[0] == 0)
+                    )
+                    if prev_task:
+                        histogram_bucket_counts_sampled.set_upstream(prev_task)
+                    prev_task = histogram_bucket_counts_sampled
+
+            histogram_probe_counts = query(
+                task_name=f"{product}__histogram_probe_counts_v1"
+            )
+
+            probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
+            extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
+
+            user_counts = view(task_name=f"{product}__view_user_counts_v1")
+            extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
+
+            sample_counts = view(task_name=f"{product}__view_sample_counts_v1")
+
+            (
+                clients_scalar_aggregates
+                >> scalar_bucket_counts
+                >> scalar_probe_counts
+                >> probe_counts
+            )
+            (
+                clients_histogram_aggregates
+                >> histogram_bucket_counts
+                >> histogram_probe_counts
+                >> probe_counts
+            )
+            probe_counts >> sample_counts >> extract_probe_counts >> done
+            (
+                clients_scalar_aggregates
+                >> user_counts
+                >> extract_user_counts
+                >> done
+            )
+            clients_histogram_aggregates >> done
