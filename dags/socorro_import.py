@@ -50,7 +50,7 @@ with DAG(
     # We use an application-specific gcs bucket because the data needs to be transformed
     # in dataproc before loading
 
-    gcs_data_bucket = "moz-fx-data-prod-socorro-data"
+    gcs_data_bucket = "airflow-dataproc-socorro-data"
 
     dataset = "socorro_crash"
     dataset_version = "v2"
