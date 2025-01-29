@@ -204,7 +204,7 @@ with DAG(
     doc_md=DOCS,
     tags=tags,
     # 12:00 AM EST - M-F
-    schedule_interval="0 5 * * 1-5",
+    schedule_interval="0 8 * * 1-5",
 ) as dag:
     workday_netsuite_dag = GKEPodOperator(
         task_id="eam_workday_netsuite",
