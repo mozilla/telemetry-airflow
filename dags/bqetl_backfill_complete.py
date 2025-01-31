@@ -18,7 +18,8 @@ tags = [Tag.ImpactTier.tier_3]
 default_args = {
     "email": [
         "ascholtz@mozilla.com",
-        "wichan@mozilla.com",
+        "bewu@mozilla.com"
+        "wichan@mozilla.com"
     ]
 }
 
