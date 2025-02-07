@@ -11,6 +11,8 @@ For context, see https://github.com/mozilla/taar
 Each run of this jobs overwrites existing data, as long as the most recent DAG run
 is successful then this job can be considered healthy and there is not need to take
 any actions for the past failed DAG runs.
+
+## This DAG is paused, see https://mozilla-hub.atlassian.net/browse/DENG-7245
 """
 
 from datetime import datetime, timedelta
@@ -60,7 +62,10 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_2]
+tags = [
+    Tag.ImpactTier.tier_3,
+    Tag.Triage.no_triage,
+]
 
 with DAG(
     "taar_daily",

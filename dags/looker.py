@@ -217,5 +217,23 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
-    lookml_generator_staging >> lookml_generator_prod >> validate_content_spectacles
-    lookml_generator_staging >> lookml_generator_prod >> validate_lookml_spoke_default_spectacles
+    delete_outdated_branches = GKEPodOperator(
+        task_id="delete_outdated_branches",
+        arguments=[
+            "python",
+            "-m",
+            "looker_utils.main",
+            "delete-branches",
+            "--inactive_days=180"
+        ],
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
+        env_vars={
+            "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
+        },
+        secrets=[looker_client_id_prod, looker_client_secret_prod],
+        **airflow_gke_prod_kwargs,
+    )
+
+    lookml_generator_staging >> lookml_generator_prod
+    lookml_generator_prod >> validate_content_spectacles >> delete_outdated_branches
+    lookml_generator_prod >> validate_lookml_spoke_default_spectacles >> delete_outdated_branches

@@ -86,13 +86,13 @@ with DAG(
         },
         "additional_properties": {
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            "spark:spark.driver.memory": "18g",
+            "spark:spark.driver.memory": "30g",
             "spark:spark.executor.memory": "20g",
         },
         "idle_delete_ttl": 14400,
         # supported machine types depends on dataproc image version:
         # https://cloud.google.com/dataproc/docs/concepts/compute/supported-machine-types
-        "master_machine_type": "n2-standard-8",
+        "master_machine_type": "n2-highmem-8",
         "worker_machine_type": "n2-highmem-4",
         "gcp_conn_id": params.conn_id,
         "service_account": params.client_email,

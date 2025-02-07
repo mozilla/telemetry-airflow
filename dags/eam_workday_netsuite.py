@@ -132,6 +132,7 @@ NETSUITE_INTEG_WORKDAY_USERNAME = Secret(
     secret="airflow-gke-secrets",
     key="NETSUITE_INTEG_WORKDAY_USERNAME",
 )
+
 NETSUITE_INTEG_WORKDAY_PASSWORD = Secret(
     deploy_type="env",
     deploy_target="NETSUITE_INTEG_WORKDAY_PASSWORD",
@@ -139,26 +140,71 @@ NETSUITE_INTEG_WORKDAY_PASSWORD = Secret(
     key="NETSUITE_INTEG_WORKDAY_PASSWORD",
 )
 
-NETSUITE_INTEG_NETSUITE_USERNAME = Secret(
+NETSUITE_INTEG_WORKDAY_LISTING_OF_WORKERS_LINK = Secret(
     deploy_type="env",
-    deploy_target="NETSUITE_INTEG_NETSUITE_USERNAME",
+    deploy_target="NETSUITE_INTEG_WORKDAY_LISTING_OF_WORKERS_LINK",
     secret="airflow-gke-secrets",
-    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
+    key="NETSUITE_INTEG_WORKDAY_LISTING_OF_WORKERS_LINK",
 )
 
-NETSUITE_INTEG_NETSUITE_PASSWORD = Secret(
+NETSUITE_INTEG_WORKDAY_INTERNATIONAL_TRANSFER_LINK = Secret(
     deploy_type="env",
-    deploy_target="NETSUITE_INTEG_NETSUITE_PASSWORD",
+    deploy_target="NETSUITE_INTEG_WORKDAY_INTERNATIONAL_TRANSFER_LINK",
     secret="airflow-gke-secrets",
-    key="NETSUITE_INTEG_WORKDAY_PASSWORD",
+    key="NETSUITE_INTEG_WORKDAY_INTERNATIONAL_TRANSFER_LINK",
 )
+
+
+NETSUITE_INTEG_NETSUITE_CONSUMER_KEY = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_CONSUMER_KEY",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_NETSUITE_CONSUMER_KEY",
+)
+
+NETSUITE_INTEG_NETSUITE_CONSUMER_SECRET = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_CONSUMER_SECRET",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_NETSUITE_CONSUMER_SECRET",
+)
+
+NETSUITE_INTEG_NETSUITE_TOKEN_ID = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_TOKEN_ID",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_NETSUITE_TOKEN_ID",
+)
+
+NETSUITE_INTEG_NETSUITE_TOKEN_SECRET = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_TOKEN_SECRET",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_NETSUITE_TOKEN_SECRET",
+)
+
+NETSUITE_INTEG_NETSUITE_TOKEN_OAUTH_REALM = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_TOKEN_OAUTH_REALM",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_NETSUITE_TOKEN_OAUTH_REALM",
+)
+
+NETSUITE_INTEG_NETSUITE_HOST = Secret(
+    deploy_type="env",
+    deploy_target="NETSUITE_INTEG_NETSUITE_HOST",
+    secret="airflow-gke-secrets",
+    key="NETSUITE_INTEG_NETSUITE_HOST",
+)
+
 
 with DAG(
     "eam-workday-netsuite-integration",
     default_args=default_args,
     doc_md=DOCS,
     tags=tags,
-    schedule_interval="@daily",
+    # 12:00 AM PST - M-F
+    schedule_interval="0 8 * * 1-5",
 ) as dag:
     workday_netsuite_dag = GKEPodOperator(
         task_id="eam_workday_netsuite",
@@ -167,9 +213,15 @@ with DAG(
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
-            NETSUITE_INTEG_WORKDAY_USERNAME,
+            NETSUITE_INTEG_WORKDAY_USERNAME, 
             NETSUITE_INTEG_WORKDAY_PASSWORD,
-            NETSUITE_INTEG_NETSUITE_USERNAME,
-            NETSUITE_INTEG_NETSUITE_PASSWORD,
+            NETSUITE_INTEG_WORKDAY_LISTING_OF_WORKERS_LINK,
+            NETSUITE_INTEG_WORKDAY_INTERNATIONAL_TRANSFER_LINK,
+            NETSUITE_INTEG_NETSUITE_CONSUMER_KEY,
+            NETSUITE_INTEG_NETSUITE_CONSUMER_SECRET,
+            NETSUITE_INTEG_NETSUITE_TOKEN_ID,
+            NETSUITE_INTEG_NETSUITE_TOKEN_SECRET, 
+            NETSUITE_INTEG_NETSUITE_TOKEN_OAUTH_REALM,
+            NETSUITE_INTEG_NETSUITE_HOST 
         ],
     )

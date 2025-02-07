@@ -44,7 +44,7 @@ FORECAST_METRICS_LIST = [
 with DAG(
     "search_forecasting",
     default_args=default_args,
-    schedule_interval="30 4 7 * *",
+    schedule_interval="30 5 7 * *",
     doc_md=__doc__,
     tags=TAGS,
 ) as dag:

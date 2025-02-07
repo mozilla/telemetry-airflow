@@ -137,6 +137,7 @@ with DAG(
     publish_new_tables = GKEPodOperator(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
+        execution_timeout=timedelta(hours=2),
         arguments=[
             generate_sql_cmd_template
             + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
@@ -149,8 +150,8 @@ with DAG(
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7 && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-glam-prod-fca7 && "
+            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-glam-prod && "
+            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-glam-prod && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-bq-people && "
             "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-bq-people"
         ],
@@ -166,13 +167,13 @@ with DAG(
             + "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-glam-prod-fca7 && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-glam-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-bq-people && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-glam-prod-fca7 --project-id=moz-fx-data-glam-prod-fca7 && "
+            "script/bqetl view clean --skip-authorized --target-project=moz-fx-glam-prod --project-id=moz-fx-glam-prod && "
             "script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people && "
             "script/publish_public_data_views --target-project=moz-fx-data-shared-prod && "
