@@ -118,7 +118,7 @@ frank@mozilla.com
             description="Pass overrides for scheduling sections: parameters and/or date_partition_parameter as needed.",
         ),
         "override_retention_range_limit": Param(
-            True,
+            False,
             title="Override retention limit",
             type="boolean",
             description="Backfills are limited to 775 days in the past by default.",
