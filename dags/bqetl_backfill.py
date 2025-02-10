@@ -123,6 +123,12 @@ frank@mozilla.com
             type="boolean",
             description="Backfills are limited to 775 days in the past by default.",
         ),
+        "billing_project": Param(
+            "moz-fx-data-backfill-slots",
+            title="Billing project",
+            type="string",
+            description="Project to run the query in, can be used to use certain bigquery reservations.",
+        ),
     },
 )
 def bqetl_backfill_dag():
@@ -168,6 +174,9 @@ def bqetl_backfill_dag():
 
         if context["params"]["override_retention_range_limit"]:
             cmd.append("--override-retention-range-limit")
+
+        if billing_project := context["params"]["billing_project"]:
+            cmd.append(f"--billing-project={billing_project}")
 
         if not all(isinstance(c, str) for c in cmd):
             raise Exception(
