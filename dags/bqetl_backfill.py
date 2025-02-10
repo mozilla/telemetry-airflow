@@ -117,6 +117,12 @@ frank@mozilla.com
             type=["null", "object"],
             description="Pass overrides for scheduling sections: parameters and/or date_partition_parameter as needed.",
         ),
+        "override_retention_range_limit": Param(
+            False,
+            title="Override retention limit",
+            type="boolean",
+            description="Backfills are limited to 775 days in the past by default.",
+        ),
     },
 )
 def bqetl_backfill_dag():
@@ -159,6 +165,9 @@ def bqetl_backfill_dag():
             cmd.append("--checks")
         else:
             cmd.append("--no-checks")
+
+        if context["params"]["override_retention_range_limit"]:
+            cmd.append("--override-retention-range-limit")
 
         if not all(isinstance(c, str) for c in cmd):
             raise Exception(
