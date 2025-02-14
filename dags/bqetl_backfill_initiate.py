@@ -19,7 +19,7 @@ default_args = {
     "email": [
         "ascholtz@mozilla.com",
         "bewu@mozilla.com",
-        "wichan@mozilla.com"
+        "wichan@mozilla.com",
     ]
 }
 
@@ -37,7 +37,12 @@ with DAG(
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl backfill scheduled --status=Initiate --json_path=/airflow/xcom/return.json"
+            "script/bqetl",
+            "backfill",
+            "scheduled",
+            "--status=Initiate",
+            "--json_path=/airflow/xcom/return.json",
+            "--ignore-old-entries",
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -85,7 +90,11 @@ with DAG(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
 
-            return f"{watcher_text} :white_check_mark: Backfill processing is done. Staging location: `{staging_location}` Please validate that your data has changed as you expect and complete your backfill by updating the Backfill entry's status to Complete in the bigquery-etl repository."
+            return (
+                f"{watcher_text} :white_check_mark: Backfill processing is done. Staging location: `{staging_location}`. "
+                "Please validate that your data has changed as you expect and complete your backfill by updating the Backfill entry's status to Complete in the bigquery-etl repository. "
+                "Note that the staging table will expire in 30 days, so the backfill must be completed within 30 days."
+            )
 
         notify_processing_complete = SlackAPIPostOperator(
             task_id="slack_notify_processing_complete",
