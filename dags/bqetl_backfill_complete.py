@@ -70,6 +70,7 @@ with DAG(
             cmds=["sh", "-cx"],
             arguments=prepare_pod_parameters(backfill),
             image=DOCKER_IMAGE,
+            reattach_on_restart=True,
         )
 
         @task
