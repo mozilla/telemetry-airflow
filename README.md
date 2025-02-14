@@ -7,7 +7,6 @@
 
 [Apache Airflow](https://airflow.apache.org/) is a platform to programmatically
 author, schedule and monitor workflows.
-
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
 - [Telemetry-Airflow](#telemetry-airflow)
