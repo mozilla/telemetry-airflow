@@ -78,7 +78,7 @@ with DAG(
         ) as histogram_bucket_counts:
             prev_task = None
             # Windows + Release data is in [0-9] so we're further splitting that range.
-            for sample_range in ([0, 0], [1, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
+            for sample_range in ([0, 0], [1, 1], [2, 3], [4, 6], [7, 9], [10, 49], [50, 99]):
                 histogram_bucket_counts_sampled = query(
                     task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
                     min_sample_id=sample_range[0],
