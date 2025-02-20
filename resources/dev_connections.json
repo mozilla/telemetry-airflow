@@ -19,16 +19,6 @@
     "schema": "",
     "extra": "{\"known_hosts\": \"myhost.com AAAABBBBB\"}"
   },
-  "airflow_taar_rw_s3": {
-    "conn_type": "s3",
-    "description": null,
-    "login": null,
-    "password": null,
-    "host": null,
-    "port": null,
-    "schema": null,
-    "extra": "{\"aws_access_key_id\": \"dummy_access_key_id\", \"aws_secret_access_key\": \"dummy_secret_access_key\"}"
-  },
   "aws_data_iam_ses": {
     "conn_type": "s3",
     "description": null,
