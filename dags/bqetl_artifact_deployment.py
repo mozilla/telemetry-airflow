@@ -162,6 +162,7 @@ with DAG(
     publish_views = GKEPodOperator(
         task_id="publish_views",
         cmds=["bash", "-x", "-c"],
+        execution_timeout=timedelta(hours=2),
         arguments=[
             generate_sql_cmd_template
             + "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
