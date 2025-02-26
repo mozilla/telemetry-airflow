@@ -16,12 +16,6 @@
     "surveygizmo_api_secret": "tapsekret",
     "surveygizmo_api_token": "tokentokentoken",
     "surveygizmo_daily_attitudes_survey_id": 12345,
-    "taar_bigtable_instance_id": "taar_bigtable_instance_id",
-    "taar_dataflow_service_account_email": "taar_dataflow_service_account_email",
-    "taar_dataflow_subnetwork": "taar_dataflow_subnetwork",
-    "taar_etl_model_storage_bucket": "taar_etl_model_storage_bucket",
-    "taar_etl_storage_bucket": "taar_etl_storage_bucket",
-    "taar_gcp_project_id": "taar_gcp_project_id",
     "dbt_account_id": "dbt_account_id",
     "looker_api_client_id_prod": "looker_api_client_id_prod",
     "looker_api_client_secret_prod": "looker_api_client_secret_prod"
