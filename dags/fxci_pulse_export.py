@@ -29,7 +29,7 @@ tags = [Tag.ImpactTier.tier_3]
 
 env_vars = {
     "FXCI_ETL_BIGQUERY_PROJECT": "moz-fx-data-shared-prod",
-    "FXCI_ETL_BIGQUERY_DATASET": "fxci",
+    "FXCI_ETL_BIGQUERY_DATASET": "fxci_derived",
     "FXCI_ETL_STORAGE_PROJECT": "moz-fx-dev-releng",
     "FXCI_ETL_STORAGE_BUCKET": "fxci-etl",
     "FXCI_ETL_PULSE_USER": "fxci-etl",
