@@ -37,7 +37,12 @@ with DAG(
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json"
+            "script/bqetl",
+            "backfill",
+            "scheduled",
+            "--status=Complete",
+            "--json_path=/airflow/xcom/return.json",
+            "--ignore-old-entries",
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -50,7 +55,11 @@ with DAG(
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
-            return f"{watcher_text} :hourglass_flowing_sand: Completing backfill of `{entry['qualified_table_name']}` has started - currently swapping backfill data into production. A snapshot of the current production data will be kept as a backup. You will receive another notification once the completing step is done."
+            return (
+                f"{watcher_text} :hourglass_flowing_sand: Completing backfill of `{entry['qualified_table_name']}` has started - currently swapping backfill data into production. "
+                f"A snapshot of the current production data will be kept as a backup for 30 days. "
+                f"You will receive another notification once the completing step is done."
+            )
 
         notify_initiate = SlackAPIPostOperator(
             task_id="slack_notify_initate",
