@@ -100,6 +100,9 @@ telemetry_main = GKEPodOperator(
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_v5",
     ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
     **common_task_args,
 )
 
@@ -112,6 +115,9 @@ telemetry_main_use_counter = GKEPodOperator(
         "--billing-project=moz-fx-data-shredder",
         "--only=telemetry_stable.main_use_counter_v4",
     ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
     **common_task_args,
 )
 
@@ -129,14 +135,9 @@ flat_rate = GKEPodOperator(
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
     ],
-    # Needed to scale the highmem pool from 0 -> 1, because cluster autoscaling
-    # works on pod resource requests, instead of usage
     container_resources=k8s.V1ResourceRequirements(
-        requests={"memory": "13312Mi"},
-        limits={"memory": "20480Mi"},
+        requests={"memory": "3072Mi"},
     ),
-    # This job was being killed by Kubernetes for using too much memory, thus the highmem node pool
-    node_selector={"nodepool": "highmem"},
     # Give additional time since we may need to scale up when running this job
     startup_timeout_seconds=360,
     **common_task_args,
@@ -151,6 +152,9 @@ experiments = GKEPodOperator(
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--environment=experiments",
     ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "1024Mi"},
+    ),
     **common_task_args,
 )
 
@@ -172,5 +176,8 @@ with_sampling = GKEPodOperator(
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
     ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
     **common_task_args,
 )
