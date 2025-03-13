@@ -37,12 +37,7 @@ with DAG(
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl",
-            "backfill",
-            "scheduled",
-            "--status=Initiate",
-            "--json_path=/airflow/xcom/return.json",
-            "--ignore-old-entries",
+            "script/bqetl backfill scheduled --status=Initiate --json_path=/airflow/xcom/return.json --ignore-old-entries"
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
