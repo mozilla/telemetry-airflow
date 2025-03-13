@@ -396,6 +396,7 @@ with DAG(
             "telemetry-alerts@mozilla.com",
         ],
         task_id="glean_dictionary_build",
+        trigger_rule="all_done",
         dag=dag,
     )
 
