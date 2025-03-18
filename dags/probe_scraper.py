@@ -396,6 +396,7 @@ with DAG(
             "telemetry-alerts@mozilla.com",
         ],
         task_id="glean_dictionary_build",
+        # Glean Dictionary utilizes data from generated LookML namespaces. If Looker DAG fails we want to run the Dictionary build anyway to load updated generated schemas
         trigger_rule="all_done",
         dag=dag,
     )
