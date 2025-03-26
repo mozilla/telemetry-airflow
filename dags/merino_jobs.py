@@ -39,7 +39,7 @@ def merino_job(
         # Needed for the jobs increased amount of domain it has
         # to process.
         container_resources = k8s.V1ResourceRequirements(
-            requests={"memory": "512Mi"},
+            requests={"memory": "2048Mi"},
         ),
         env_vars=default_env_vars,
         email=[
