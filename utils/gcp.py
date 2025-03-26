@@ -21,6 +21,7 @@ GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"
 BIGQUERY_ETL_DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
+
 def export_to_parquet(
     table,
     destination_table=None,
@@ -419,6 +420,7 @@ def bigquery_dq_check(
         **kwargs,
     )
 
+
 def bigquery_bigeye_check(
     task_id,
     table_id,
@@ -452,13 +454,22 @@ def bigquery_bigeye_check(
     kwargs["task_id"] = kwargs.get("task_id", task_id)
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
 
-    args = ["script/bqetl", "monitoring", "run", table_id, "--warehouse_id", warehouse_id, "--project_id", project_id]
+    args = [
+        "script/bqetl",
+        "monitoring",
+        "run",
+        table_id,
+        "--warehouse_id",
+        warehouse_id,
+        "--project_id",
+        project_id,
+    ]
 
     bigeye_api_key = Secret(
         deploy_type="env",
         deploy_target="BIGEYE_API_KEY",
         secret="airflow-gke-secrets",
-        key="bqetl_artifact_deployment__bigeye_api_key"
+        key="bqetl_artifact_deployment__bigeye_api_key",
     )
 
     return GKEPodOperator(

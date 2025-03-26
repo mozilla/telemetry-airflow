@@ -170,16 +170,16 @@ class DataProcHelper:
 
         if self.master_num_local_ssds > 0:
             master_instance_group_config = cluster_config["master_config"]
-            master_instance_group_config["disk_config"][
-                "num_local_ssds"
-            ] = self.master_num_local_ssds
+            master_instance_group_config["disk_config"]["num_local_ssds"] = (
+                self.master_num_local_ssds
+            )
             cluster_config.update({"master_config": master_instance_group_config})
 
         if self.worker_num_local_ssds > 0:
             worker_instance_group_config = cluster_config["worker_config"]
-            worker_instance_group_config["disk_config"][
-                "num_local_ssds"
-            ] = self.worker_num_local_ssds
+            worker_instance_group_config["disk_config"]["num_local_ssds"] = (
+                self.worker_num_local_ssds
+            )
             cluster_config.update({"worker_config": worker_instance_group_config})
 
         return DataprocCreateClusterOperator(
