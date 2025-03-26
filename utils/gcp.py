@@ -2,11 +2,12 @@ import re
 
 from airflow import models
 from airflow.providers.cncf.kubernetes.secret import Secret
+from airflow.providers.google.cloud.hooks.dataproc import DataProcJobBuilder
 from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
     DataprocCreateClusterOperator,
     DataprocDeleteClusterOperator,
-    DataprocSubmitPySparkJobOperator,
+    DataprocSubmitJobOperator,
 )
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.bigquery_to_gcs import (
@@ -117,16 +118,23 @@ def export_to_parquet(
             ).make(),
         )
 
-        run_dataproc_pyspark = DataprocSubmitPySparkJobOperator(
+        dataproc_job_builder = DataProcJobBuilder(
+            job_type="pyspark_job",
             task_id="run_dataproc_pyspark",
             cluster_name=cluster_name,
-            dataproc_jars=["gs://spark-lib/bigquery/spark-2.4-bigquery-latest.jar"],
-            dataproc_properties={
+            project_id=project_id,
+            properties={
                 "spark.jars.packages": "org.apache.spark:spark-avro_2.11:2.4.4",
             },
-            main="https://raw.githubusercontent.com/mozilla/bigquery-etl/main"
-            "/script/legacy/export_to_parquet.py",
-            arguments=[table]
+        )
+        dataproc_job_builder.add_jar_file_uris(
+            ["gs://spark-lib/bigquery/spark-2.4-bigquery-latest.jar"]
+        )
+        dataproc_job_builder.set_python_main(
+            "https://raw.githubusercontent.com/mozilla/bigquery-etl/main/script/legacy/export_to_parquet.py"
+        )
+        dataproc_job_builder.add_args(
+            [table]
             + [
                 "--" + key + "=" + value
                 for key, value in {
@@ -138,7 +146,13 @@ def export_to_parquet(
             ]
             + (["--static-partitions"] if static_partitions else [])
             + (static_partitions if static_partitions else [])
-            + arguments,
+            + arguments
+        )
+        dataproc_job = dataproc_job_builder.build()
+
+        run_dataproc_pyspark = DataprocSubmitJobOperator(
+            task_id="run_dataproc_pyspark",
+            job=dataproc_job,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             region=region,

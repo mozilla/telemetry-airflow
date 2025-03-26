@@ -5,6 +5,7 @@ from airflow import models
 from airflow.exceptions import AirflowException
 from airflow.operators.bash import BashOperator
 from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.providers.google.cloud.hooks.dataproc import DataProcJobBuilder
 
 # When google deprecates dataproc_v1beta2 in DataprocHook/Operator classes
 # We can import these from our patched code, rather than upgrading/deploying
@@ -14,8 +15,7 @@ from airflow.providers.google.cloud.operators.dataproc import (
     ClusterGenerator,
     DataprocCreateClusterOperator,
     DataprocDeleteClusterOperator,
-    DataprocSubmitPySparkJobOperator,
-    DataprocSubmitSparkJobOperator,
+    DataprocSubmitJobOperator,
 )
 
 
@@ -251,7 +251,7 @@ def moz_dataproc_pyspark_runner(
     """
     Create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
 
-    Then we call DataprocSubmitPySparkJobOperator to execute the pyspark script defined by the argument
+    Then we call DataprocSubmitJobOperator to execute the pyspark script defined by the argument
     python_driver_code. Once that succeeds, we teardown the cluster.
 
     **Example**: ::
@@ -396,13 +396,21 @@ def moz_dataproc_pyspark_runner(
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        run_pyspark_on_dataproc = DataprocSubmitPySparkJobOperator(
+        dataproc_job_builder = DataProcJobBuilder(
+            job_type="pyspark_job",
             task_id="run_dataproc_pyspark",
-            job_name=job_name,
             cluster_name=cluster_name,
+            project_id=project_id,
+        )
+        dataproc_job_builder.set_job_name(job_name)
+        dataproc_job_builder.set_python_main(python_driver_code)
+        dataproc_job_builder.add_args(py_args)
+        dataproc_job = dataproc_job_builder.build()
+
+        run_pyspark_on_dataproc = DataprocSubmitJobOperator(
+            task_id="run_dataproc_pyspark",
+            job=dataproc_job,
             region=region,
-            main=python_driver_code,
-            arguments=py_args,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
         )
@@ -452,7 +460,7 @@ def moz_dataproc_jar_runner(
     """
     Create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
 
-    Then we call DataprocSubmitSparkJobOperator to execute the jar defined by the arguments
+    Then we call DataprocSubmitJobOperator to execute the jar defined by the arguments
     jar_urls and main_class. Once that succeeds, we teardown the cluster.
 
     **Example**: ::
@@ -535,14 +543,22 @@ def moz_dataproc_jar_runner(
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        run_jar_on_dataproc = DataprocSubmitSparkJobOperator(
+        dataproc_job_builder = DataProcJobBuilder(
+            job_type="spark_job",
+            task_id="run_jar_on_dataproc",
             cluster_name=cluster_name,
+            project_id=project_id,
+        )
+        dataproc_job_builder.set_job_name(job_name)
+        dataproc_job_builder.add_jar_file_uris(jar_urls)
+        dataproc_job_builder.set_main(main_class=main_class)
+        dataproc_job_builder.add_args(jar_args)
+        dataproc_job = dataproc_job_builder.build()
+
+        run_jar_on_dataproc = DataprocSubmitJobOperator(
             region=region,
             task_id="run_jar_on_dataproc",
-            job_name=job_name,
-            dataproc_jars=jar_urls,
-            main_class=main_class,
-            arguments=jar_args,
+            job=dataproc_job,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
         )
@@ -598,7 +614,7 @@ def moz_dataproc_scriptrunner(
     Create a GCP Dataproc cluster with Anaconda/Jupyter/Component gateway.
 
     Then we execute a script uri (either https or gcs) similar to how we use our custom AWS
-    EmrSparkOperator. This will call DataprocSubmitSparkJobOperator using EMR's script-runner.jar, which
+    EmrSparkOperator. This will call DataprocSubmitJobOperator using EMR's script-runner.jar, which
     then executes the airflow_gcp.sh entrypoint script. The entrypoint script expects another
     script uri, along with it's arguments, as parameters. Once that succeeds, we teardown the
     cluster.
@@ -703,16 +719,26 @@ def moz_dataproc_scriptrunner(
     with models.DAG(_dag_name, default_args=default_args) as dag:
         create_dataproc_cluster = dataproc_helper.create_cluster()
 
-        # Run DataprocSubmitSparkJobOperator with script-runner.jar pointing to airflow_gcp.sh.
+        # Run DataprocSubmitJobOperator with script-runner.jar pointing to airflow_gcp.sh.
 
-        run_script_on_dataproc = DataprocSubmitSparkJobOperator(
+        dataproc_job_builder = DataProcJobBuilder(
+            job_type="spark_job",
+            task_id="run_script_on_dataproc",
             cluster_name=cluster_name,
+            project_id=project_id,
+        )
+        dataproc_job_builder.set_job_name(job_name)
+        dataproc_job_builder.add_jar_file_uris([jar_url])
+        dataproc_job_builder.set_main(
+            main_class="com.amazon.elasticmapreduce.scriptrunner.ScriptRunner"
+        )
+        dataproc_job_builder.add_args(args)
+        dataproc_job = dataproc_job_builder.build()
+
+        run_script_on_dataproc = DataprocSubmitJobOperator(
             region=region,
             task_id="run_script_on_dataproc",
-            job_name=job_name,
-            dataproc_jars=[jar_url],
-            main_class="com.amazon.elasticmapreduce.scriptrunner.ScriptRunner",
-            arguments=args,
+            job=dataproc_job,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
         )
