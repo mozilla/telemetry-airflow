@@ -34,6 +34,8 @@ x-airflow-common:
     # yamllint enable rule:line-length
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     DEPLOY_ENVIRONMENT: dev
+    # Opt out of Airflow's usage telemetry.
+    SCARF_ANALYTICS: 'false'
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
