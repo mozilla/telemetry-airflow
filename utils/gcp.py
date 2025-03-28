@@ -153,7 +153,7 @@ def export_to_parquet(
 
         run_dataproc_pyspark = DataprocSubmitJobOperator(
             task_id="run_dataproc_pyspark",
-            job=dataproc_job,
+            job=dataproc_job["job"],
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
             region=region,

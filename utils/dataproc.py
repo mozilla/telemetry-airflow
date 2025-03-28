@@ -409,7 +409,7 @@ def moz_dataproc_pyspark_runner(
 
         run_pyspark_on_dataproc = DataprocSubmitJobOperator(
             task_id="run_dataproc_pyspark",
-            job=dataproc_job,
+            job=dataproc_job["job"],
             region=region,
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
@@ -558,7 +558,7 @@ def moz_dataproc_jar_runner(
         run_jar_on_dataproc = DataprocSubmitJobOperator(
             region=region,
             task_id="run_jar_on_dataproc",
-            job=dataproc_job,
+            job=dataproc_job["job"],
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
         )
@@ -738,7 +738,7 @@ def moz_dataproc_scriptrunner(
         run_script_on_dataproc = DataprocSubmitJobOperator(
             region=region,
             task_id="run_script_on_dataproc",
-            job=dataproc_job,
+            job=dataproc_job["job"],
             gcp_conn_id=gcp_conn_id,
             project_id=project_id,
         )
