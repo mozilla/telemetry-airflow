@@ -9,7 +9,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
-from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.providers.http.operators.http import HttpOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.weekday import WeekDay
 from kubernetes.client import models as k8s
@@ -203,7 +203,10 @@ with DAG(
         for name, url in (
             ("gecko-dev", "https://github.com/mozilla/gecko-dev"),
             ("phabricator", "https://github.com/mozilla-conduit/review"),
-            ("releases-comm-central", "https://github.com/mozilla/releases-comm-central"),
+            (
+                "releases-comm-central",
+                "https://github.com/mozilla/releases-comm-central",
+            ),
         )
     ]
 
@@ -384,7 +387,7 @@ with DAG(
     # build of the glean dictionary. We do this after the schema generator has
     # finished running as the dictionary uses the new schema files as part of
     # said build.
-    glean_dictionary_netlify_build = SimpleHttpOperator(
+    glean_dictionary_netlify_build = HttpOperator(
         http_conn_id="http_netlify_build_webhook",
         endpoint=Variable.get("glean_dictionary_netlify_build_webhook_id"),
         method="POST",
