@@ -30,6 +30,7 @@ def merino_job(
         task_id=name,
         name=name,
         image="mozilla/merino-py:latest",
+        image_pull_policy="Always",
         project_id="moz-fx-data-airflow-gke-prod",
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",
