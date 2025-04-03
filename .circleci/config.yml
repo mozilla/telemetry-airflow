@@ -312,7 +312,7 @@ workflows:
       - publish-registry:
           name: Publish latest image to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          additional_tags: main-$CIRCLE_SHA1, latest
+          additional_tags: main-$GIT_SHA1_SHORT, latest
           registry_authentication: &gar-auth
             - run:
                 name: Authenticate GAR
