@@ -135,7 +135,7 @@ jobs:
     parameters:
       additional_tags:
         type: string
-        default: latest
+        default: ""
         description: Comma-separated list of docker image tags. The contents of each will be evaluated.
       registry:
         type: string
@@ -168,22 +168,25 @@ jobs:
           image: $IMAGE_NAME
           tag: $DEFAULT_TAG
           registry: $REGISTRY
-      - run:
-          # Inspired from https://github.com/CircleCI-Public/gcp-gcr-orb/blob/a0d81fc37bca851ad9b2faf0eae6a26a7205e11d/src/scripts/push-image.sh
-          command: |
-            #!/bin/bash 
-      
-            IFS="," read -ra DOCKER_TAGS \<<< "$EVAL_TAG"
-      
-            for tag_to_eval in "${DOCKER_TAGS[@]}"; do
-                TAG=$(eval echo "$tag_to_eval")
-                set -x
-                gcloud artifacts docker tags add $REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $REGISTRY/$IMAGE_NAME:$TAG
-                set +x
-            done
-          environment:
-            EVAL_TAG: << parameters.additional_tags >>
-          name: Add tags to image in GAR
+      - when:
+          condition: << parameters.additional_tags >>
+          steps:
+            - run:
+                name: Add tags to image in GAR
+                environment:
+                  ADDITIONAL_TAGS: << parameters.additional_tags >>
+                # Inspired from https://github.com/CircleCI-Public/gcp-gcr-orb/blob/a0d81fc37bca851ad9b2faf0eae6a26a7205e11d/src/scripts/push-image.sh
+                command: |
+                  #!/bin/bash 
+            
+                  IFS="," read -ra ADDITIONAL_TAGS_ARRAY \<<< "$ADDITIONAL_TAGS"
+            
+                  for tag_to_eval in "${ADDITIONAL_TAGS_ARRAY[@]}"; do
+                      TAG=$(eval echo "$tag_to_eval")
+                      set -x
+                      gcloud artifacts docker tags add $REGISTRY/$IMAGE_NAME:$DEFAULT_TAG $REGISTRY/$IMAGE_NAME:$TAG
+                      set +x
+                  done
 
   sync_gcs:
     docker:
@@ -309,6 +312,7 @@ workflows:
       - publish-registry:
           name: Publish latest image to GAR
           registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
+          additional_tags: main-$CIRCLE_SHA1, latest
           registry_authentication: &gar-auth
             - run:
                 name: Authenticate GAR
