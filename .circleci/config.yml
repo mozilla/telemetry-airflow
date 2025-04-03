@@ -177,10 +177,10 @@ jobs:
                   ADDITIONAL_TAGS: << parameters.additional_tags >>
                 # Inspired from https://github.com/CircleCI-Public/gcp-gcr-orb/blob/a0d81fc37bca851ad9b2faf0eae6a26a7205e11d/src/scripts/push-image.sh
                 command: |
-                  #!/bin/bash 
-            
+                  #!/bin/bash
+                  
                   IFS="," read -ra ADDITIONAL_TAGS_ARRAY \<<< "$ADDITIONAL_TAGS"
-            
+                  
                   for tag_to_eval in "${ADDITIONAL_TAGS_ARRAY[@]}"; do
                       TAG=$(eval echo "$tag_to_eval")
                       set -x
