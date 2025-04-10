@@ -22,8 +22,5 @@ gql
 # dbt integration
 apache-airflow-providers-dbt-cloud
 
-# Required for /app/dags/fivetran_acoustic.py, /app/dags/utils/acoustic/acoustic_client.py
-xmltodict
-
 # Required for /app/dags/empeam_workday_xmatters_integration.py
 apache-airflow-providers-atlassian-jira
