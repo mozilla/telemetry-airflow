@@ -8,7 +8,7 @@ from utils.gcp import bigquery_etl_query
 
 gcp_conn_id = "google_cloud_airflow_dataproc"
 project_id = "moz-fx-data-shared-prod"
-glam_bucket = "moz-fx-data-glam-prod-fca7-etl-data"
+glam_bucket = "moz-fx-glam-prod-etl-data"
 
 
 def extract_user_counts(
