@@ -1,6 +1,7 @@
 import datetime
 
 from airflow import DAG
+
 from operators.gcp_container_operator import GKEPodOperator
 
 docs = """
@@ -47,5 +48,3 @@ with DAG(
         image=f"gcr.io/{SERVER}/{IMAGE_NAME}",
         gcp_conn_id="google_cloud_airflow_gke",
     )
-
-pull_extensions
