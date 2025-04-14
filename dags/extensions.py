@@ -26,7 +26,7 @@ default_args = {
     "retries": 2,
 }
 
-tags = ["impact/tier_3", "repo/docker-etl"]
+tags = ["impact/tier_3", "repo/telemetry-airflow"]
 SERVER = "moz-fx-data-airflow-prod-88e0"
 IMAGE_NAME = "extensions_docker_etl:latest"
 
