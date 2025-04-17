@@ -3,9 +3,11 @@ import logging
 import kubernetes.client as k8s
 from airflow.providers.cncf.kubernetes.callbacks import KubernetesPodOperatorCallback
 from airflow.providers.cncf.kubernetes.utils.pod_manager import OnFinishAction, PodPhase
+from airflow.providers.google.cloud.links.kubernetes_engine import KubernetesEnginePodLink
 from airflow.providers.google.cloud.operators.kubernetes_engine import (
     GKEStartPodOperator as UpstreamGKEPodOperator,
 )
+from airflow.utils.context import Context
 
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,17 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             callbacks=GKEPodOperatorCallbacks,
             **kwargs,
         )
+
+    def get_or_create_pod(self, pod_request_obj: k8s.V1Pod, context: Context) -> k8s.V1Pod:
+        """Set GKE pod link during pod creation.
+
+        Workaround for https://github.com/apache/airflow/issues/46658
+        This is meant for apache-airflow-providers-google==14.0.0
+        """
+        pod = super().get_or_create_pod(pod_request_obj, context)
+        self.pod = pod
+        KubernetesEnginePodLink.persist(context=context, task_instance=self)
+        return pod
 
     def process_pod_deletion(self, pod: k8s.V1Pod, *, reraise=True):
         if pod is None:
