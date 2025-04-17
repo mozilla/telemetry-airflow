@@ -1,6 +1,7 @@
 import datetime
 
 from airflow import models
+from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 from kubernetes.client import models as k8s
@@ -72,8 +73,8 @@ with models.DAG(
         requests={"memory": "400Mi"},
     )
 
-    copy_deduplicate_all = bigquery_etl_copy_deduplicate(
-        task_id="copy_deduplicate_all",
+    copy_deduplicate_all_base = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_all_base",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         priority_weight=100,
@@ -91,9 +92,33 @@ with models.DAG(
             "telemetry_live.saved_session_v4",
             "telemetry_live.saved_session_use_counter_v4",
             "telemetry_live.saved_session_v5",
+            "firefox_desktop_live.metrics_v1",
         ],
         container_resources=resources,
     )
+
+    copy_deduplicate_sliced = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_sliced",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        priority_weight=100,
+        parallelism=5,
+        hourly=True,
+        only_tables=[
+            "firefox_desktop_live.metrics_v1",
+        ],
+        container_resources=resources,
+    )
+
+    # EmptyOperator is used instead of a task group to maintain compatibility with downstream sensors
+    copy_deduplicate_all = EmptyOperator(
+        task_id="copy_deduplicate_all",
+    )
+
+    (
+        copy_deduplicate_sliced,
+        copy_deduplicate_all_base,
+    ) >> copy_deduplicate_all
 
     with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:
         # list of downstream dependencies consisting of external DAG name and execution delta
