@@ -124,7 +124,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         except Exception as e:
             if isinstance(e, k8s.ApiException) and e.status == 404:
                 # Ignore "404 Not Found" errors.
-                pass
+                logger.warning(f'Pod "{pod.metadata.name}" not found.')
             elif reraise:
                 raise
             else:
