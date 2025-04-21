@@ -120,7 +120,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                 )
                 self.pod_manager.delete_pod(remote_pod)
             else:
-                super().process_pod_deletion(remote_pod, reraise=reraise)
+                super().process_pod_deletion(pod, reraise=reraise)
         except Exception as e:
             if isinstance(e, k8s.ApiException) and e.status == 404:
                 # Ignore "404 Not Found" errors.
