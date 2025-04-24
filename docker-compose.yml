@@ -37,6 +37,7 @@ x-airflow-common:
     # Opt out of Airflow's usage telemetry.
     SCARF_ANALYTICS: 'false'
     AIRFLOW__DATAHUB__ENABLED: 'false'
+    AIRFLOW__DATAHUB__RENDER_TEMPLATES: 'false'
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
