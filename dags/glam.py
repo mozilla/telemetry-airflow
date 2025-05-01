@@ -18,7 +18,6 @@ from airflow.utils.task_group import TaskGroup
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.gcp import bigquery_etl_query
-from utils.glam_subdags.extract import extract_user_counts
 from utils.glam_subdags.general import repeated_subdag
 from utils.glam_subdags.generate_query import generate_and_run_desktop_query
 from utils.glam_subdags.histograms import histogram_aggregates_subdag
@@ -211,20 +210,6 @@ clients_histogram_aggregates = SubDagOperator(
     dag=dag,
 )
 
-glam_user_counts = bigquery_etl_query(
-    reattach_on_restart=True,
-    task_id="glam_user_counts",
-    destination_table="glam_user_counts_v1",
-    dataset_id=fully_qualified_dataset,
-    sql_file_path=f"sql/{table_project_id}/{dataset_id}/glam_user_counts_v1/query.sql",
-    project_id=billing_project_id,
-    date_partition_parameter=None,
-    parameters=("submission_date:DATE:{{ds}}",),
-    arguments=("--replace",),
-    dag=dag,
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-)
-
 glam_sample_counts = bigquery_etl_query(
     reattach_on_restart=True,
     task_id="glam_sample_counts",
@@ -293,23 +278,6 @@ clients_histogram_probe_counts = bigquery_etl_query(
     dag=dag,
 )
 
-extract_counts = SubDagOperator(
-    subdag=extract_user_counts(
-        GLAM_DAG,
-        "extract_user_counts",
-        default_args,
-        dag.schedule_interval,
-        table_project_id,
-        billing_project_id,
-        fully_qualified_dataset,
-        dataset_id,
-        "user_counts",
-        "counts",
-    ),
-    task_id="extract_user_counts",
-    dag=dag,
-)
-
 with dag as dag:
     with TaskGroup(
         group_id="extracts", dag=dag, default_args=default_args
@@ -356,14 +324,10 @@ clients_daily_histogram_aggregates_gpu >> clients_histogram_aggregates
 clients_daily_keyed_histogram_aggregates >> clients_histogram_aggregates
 
 clients_histogram_aggregates >> clients_histogram_bucket_counts
-clients_histogram_aggregates >> glam_user_counts
 clients_histogram_aggregates >> glam_sample_counts
 clients_histogram_bucket_counts >> clients_histogram_probe_counts
 
-clients_scalar_aggregates >> glam_user_counts
-glam_user_counts >> extract_counts
-
-extract_counts >> extracts_per_channel
+clients_scalar_aggregates >> glam_sample_counts
 client_scalar_probe_counts >> extracts_per_channel
 clients_histogram_probe_counts >> extracts_per_channel
 glam_sample_counts >> extracts_per_channel

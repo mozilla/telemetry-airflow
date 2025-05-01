@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.operators.email import EmailOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -29,12 +30,18 @@ def merino_job(
         task_id=name,
         name=name,
         image="mozilla/merino-py:latest",
+        image_pull_policy="Always",
         project_id="moz-fx-data-airflow-gke-prod",
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",
         location="us-west1",
         cmds=["python", "-m", "merino.jobs.cli"],
         arguments=arguments,
+        # Needed for the jobs increased amount of domain it has
+        # to process.
+        container_resources = k8s.V1ResourceRequirements(
+            requests={"memory": "512Mi"},
+        ),
         env_vars=default_env_vars,
         email=[
             "disco-team@mozilla.com",
