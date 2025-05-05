@@ -182,7 +182,7 @@ with DAG(
                         "--bugzilla-api-key",
                         "{{ var.value.bugzilla_probe_expiry_bot_api_key }}",
                     ]
-                    if name == "gecko-dev"
+                    if name == "firefox"
                     else []
                 )
             ),
@@ -201,7 +201,7 @@ with DAG(
             **airflow_gke_prod_kwargs,
         )
         for name, url in (
-            ("gecko-dev", "https://github.com/mozilla/gecko-dev"),
+            ("firefox", "https://github.com/mozilla-firefox/firefox"),
             ("phabricator", "https://github.com/mozilla-conduit/review"),
             (
                 "releases-comm-central",
