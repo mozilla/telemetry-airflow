@@ -51,12 +51,6 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-    # Jobs read from/write to s3://telemetry-public-analysis-2/bhr/data/hang_aggregates/
-    write_aws_conn_id = "aws_dev_telemetry_public_analysis_2_rw"
-    aws_access_key, aws_secret_key, _ = AwsBaseHook(
-        aws_conn_id=write_aws_conn_id, client_type="s3"
-    ).get_credentials()
-
     wait_for_bhr_ping = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate",
         external_dag_id="copy_deduplicate",
@@ -130,7 +124,7 @@ with DAG(
             cluster_name="bhr-collection-child-{{ ds }}",
             job_name="bhr-collection-child",
             **shared_runner_args,
-            num_workers=10,
+            num_workers=12,
             py_args=[
                 "--date",
                 "{{ ds }}",
