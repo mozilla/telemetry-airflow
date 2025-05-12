@@ -11,6 +11,11 @@ does not successfully complete running, then the tasks in this DAG will fail as 
 
 The DAG is scheduled to run every three hours to pick up experiment results from manually
 triggered analysis runs quickly.
+
+*Triage notes*
+
+As long as the most recent DAG run is successful this job can be considered healthy.
+In such case, past DAG failures can be ignored.
 """
 
 from datetime import datetime, timedelta
