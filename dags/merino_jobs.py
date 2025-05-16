@@ -6,6 +6,8 @@ from airflow.hooks.base import BaseHook
 from airflow.operators.email import EmailOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from kubernetes.client import models as k8s
+from airflow.utils.task_group import TaskGroup
+
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -17,6 +19,7 @@ DOCS = """\
     The jobs are run via the GKEPodOperator
 """
 
+SUPPORTED_LANGUAGES = ["en", "fr", "de", "it", "pl"]
 
 def merino_job(
     name: str, arguments: list[str], env_vars: dict[str, Any] | None = None, **kwargs
@@ -94,60 +97,65 @@ with DAG(
     es_prod_connection = BaseHook.get_connection("merino_elasticsearch_prod")
     es_staging_connection = BaseHook.get_connection("merino_elasticsearch_stage")
 
-    wikipedia_indexer_copy_export = merino_job(
-        "wikipedia_indexer_copy_export",
-        arguments=[
-            "wikipedia-indexer",
-            "copy-export",
-            "--gcs-path",
-            "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-            "--gcp-project",
-            "moz-fx-data-shared-prod",
-        ],
-    )
+    for lang in SUPPORTED_LANGUAGES:
+        with TaskGroup(group_id=f"wikipedia_indexer_{lang}"):
+            copy_export_task = merino_job(
+                name=f"wikipedia_indexer_copy_export_{lang}",
+                arguments=[
+                    "wikipedia-indexer",
+                    "copy-export",
+                    "--gcs-path",
+                    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+                    "--gcp-project",
+                    "moz-fx-data-shared-prod",
+                    "--language",
+                    lang,
+                ],
+            )
 
-    wikipedia_indexer_build_index_for_staging = merino_job(
-        "wikipedia_indexer_build_index_staging",
-        arguments=[
-            "wikipedia-indexer",
-            "index",
-            "--version",
-            "v1",
-            "--total-docs",
-            "6600000",  # Estimate of the total number of documents in wikipedia index
-            "--elasticsearch-url",
-            str(es_staging_connection.host),
-            "--gcs-path",
-            "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-            "--gcp-project",
-            "moz-fx-data-shared-prod",
-        ],
-        secrets=[elasticsearch_stage_apikey_secret],
-    )
+            wiki_index_staging_task = merino_job(
+                name=f"wikipedia_indexer_build_index_staging_{lang}",
+                arguments=[
+                    "wikipedia-indexer",
+                    "index",
+                    "--language",
+                    lang,
+                    "--version",
+                    "v1",
+                    "--total-docs",
+                    "6600000",  # Estimate of the total number of documents in wikipedia index
+                    "--elasticsearch-url",
+                    str(es_staging_connection.host),
+                    "--gcs-path",
+                    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+                    "--gcp-project",
+                    "moz-fx-data-shared-prod",
+                ],
+                secrets=[elasticsearch_stage_apikey_secret],
+            )
 
-    wikipedia_indexer_build_index_for_prod = merino_job(
-        "wikipedia_indexer_build_index_production",
-        arguments=[
-            "wikipedia-indexer",
-            "index",
-            "--version",
-            "v1",
-            "--total-docs",
-            "6600000",  # Estimate of the total number of documents in wikipedia index
-            "--elasticsearch-url",
-            str(es_prod_connection.host),
-            "--gcs-path",
-            "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-            "--gcp-project",
-            "moz-fx-data-shared-prod",
-        ],
-        secrets=[elasticsearch_prod_apikey_secret],
-    )
+            wiki_index_prod_task = merino_job(
+                name=f"wikipedia_indexer_build_index_prod_{lang}",
+                arguments=[
+                    "wikipedia-indexer",
+                    "index",
+                    "--language",
+                    lang,
+                    "--version",
+                    "v1",
+                    "--total-docs",
+                    "6600000", # Estimate of the total number of documents in wikipedia index
+                    "--elasticsearch-url",
+                    str(es_prod_connection.host),
+                    "--gcs-path",
+                    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+                    "--gcp-project",
+                    "moz-fx-data-shared-prod",
+                ],
+                secrets=[elasticsearch_prod_apikey_secret],
+            )
 
-    wikipedia_indexer_copy_export >> [
-        wikipedia_indexer_build_index_for_staging,
-        wikipedia_indexer_build_index_for_prod,
-    ]
+            copy_export_task >> [wiki_index_staging_task, wiki_index_prod_task]
 
     # Navigational suggestions task.
     prepare_domain_metadata_stage = merino_job(
