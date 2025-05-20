@@ -68,6 +68,8 @@ with DAG(
             "moz-fx-dev-dschubert-wckb",
             "--bq-kb-dataset",
             "webcompat_knowledge_base",
+            "--bq-web-features-dataset",
+            "web_features",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
         dag=dag,
