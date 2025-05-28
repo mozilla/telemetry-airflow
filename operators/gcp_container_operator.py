@@ -50,6 +50,12 @@ class GKEPodOperator(UpstreamGKEPodOperator):
 
     """
 
+    # Disable the templating setting for the `on_finish_action` field because that
+    # mangles the field's enum value into an incompatible string representation.
+    template_fields = tuple(
+        set(UpstreamGKEPodOperator.template_fields) - {"on_finish_action"}
+    )
+
     def __init__(
         self,
         image_pull_policy="Always",
@@ -57,7 +63,10 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         startup_timeout_seconds=240,
         do_xcom_push=False,
         reattach_on_restart=False,
-        on_finish_action="keep_pod",
+        # Delete succeeded pods to avoid an upstream operator bug where re-running successful tasks
+        # with `reattach_on_restart` enabled doesn't actually start a new pod if a pod from a
+        # previous successful try exists (https://mozilla-hub.atlassian.net/browse/DENG-8670).
+        on_finish_action="delete_succeeded_pod",
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id="google_cloud_airflow_gke",
         project_id="moz-fx-data-airflow-gke-prod",
