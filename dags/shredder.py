@@ -4,7 +4,7 @@ from airflow import DAG
 from kubernetes.client import models as k8s
 from timetable import MultiWeekTimetable
 
-from operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator, OnFinishAction
 from utils.tags import Tag
 
 docs = """
@@ -82,7 +82,7 @@ base_command = [
 ]
 common_task_args = {
     "image": docker_image,
-    "is_delete_operator_pod": True,
+    "on_finish_action": OnFinishAction.DELETE_POD.value,
     "reattach_on_restart": True,
     "dag": dag,
 }
