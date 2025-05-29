@@ -1,11 +1,14 @@
 import logging
 
 import kubernetes.client as k8s
-from airflow.providers.cncf.kubernetes.callbacks import KubernetesPodOperatorCallback
-from airflow.providers.cncf.kubernetes.utils.pod_manager import OnFinishAction, PodPhase
-from airflow.providers.google.cloud.links.kubernetes_engine import KubernetesEnginePodLink
+from airflow.providers.cncf.kubernetes.operators.pod import (
+    KubernetesPodOperatorCallback,
+    OnFinishAction,
+    PodPhase,
+)
 from airflow.providers.google.cloud.operators.kubernetes_engine import (
     GKEStartPodOperator as UpstreamGKEPodOperator,
+    KubernetesEnginePodLink,
 )
 from airflow.utils.context import Context
 
@@ -66,7 +69,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         # Delete succeeded pods to avoid an upstream operator bug where re-running successful tasks
         # with `reattach_on_restart` enabled doesn't actually start a new pod if a pod from a
         # previous successful try exists (https://mozilla-hub.atlassian.net/browse/DENG-8670).
-        on_finish_action="delete_succeeded_pod",
+        on_finish_action=OnFinishAction.DELETE_SUCCEEDED_POD.value,
         # Defined in Airflow's UI -> Admin -> Connections
         gcp_conn_id="google_cloud_airflow_gke",
         project_id="moz-fx-data-airflow-gke-prod",
@@ -112,7 +115,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         if pod is None:
             return
 
-        # Since we default to on_finish_action="keep_pod" the pod may be left running if the task
+        # Since we don't set on_finish_action="delete_pod" the pod may be left running if the task
         # was stopped for a reason other than the pod succeeding/failing, like a pod startup timeout
         # or a task execution timeout (this could be considered a bug in the Kubernetes provider).
         # As a workaround we delete the pod during cleanup if it's still running.

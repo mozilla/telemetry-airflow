@@ -207,7 +207,6 @@ def bigquery_etl_query(
     docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
     date_partition_parameter="submission_date",
     multipart=False,
-    is_delete_operator_pod=False,
     table_partition_template="${{ds_nodash}}",
     **kwargs,
 ):
@@ -233,9 +232,6 @@ def bigquery_etl_query(
                                                    rather than partition
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
-    :param is_delete_operator_pod                  Optional, What to do when the pod reaches its final
-                                                   state, or the execution is interrupted.
-                                                   If False (default): do nothing, If True: delete the pod
     :param str table_partition_template:           Template for the datestring that's used for
                                                    the partition table id. Defaults to "{{ds_nodash}}".
     :return: GKEPodOperator
@@ -270,7 +266,6 @@ def bigquery_etl_query(
         + ["--parameter=" + parameter for parameter in parameters]
         + list(arguments)
         + [sql_file_path],
-        is_delete_operator_pod=is_delete_operator_pod,
         **kwargs,
     )
 
