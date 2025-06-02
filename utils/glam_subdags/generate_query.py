@@ -58,7 +58,6 @@ def generate_and_run_desktop_query(
         env_vars=env_vars,
         arguments=command,
         image=docker_image,
-        is_delete_operator_pod=False,
         **kwargs,
     )
 
@@ -104,7 +103,6 @@ def generate_and_run_glean_queries(
         env_vars=env_vars,
         arguments=["script/glam/generate_glean_sql && script/glam/run_glam_sql"],
         image=docker_image,
-        is_delete_operator_pod=False,
         **kwargs,
     )
 
@@ -169,6 +167,5 @@ def generate_and_run_glean_task(
             f'run_{task_type} {query_name} false {min_sample_id} {max_sample_id} "" {write_preference}'
         ],
         image=docker_image,
-        is_delete_operator_pod=False,
         **kwargs,
     )

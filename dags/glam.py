@@ -243,7 +243,6 @@ client_scalar_probe_counts = GKEPodOperator(
         dataset_id,
     ],
     image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
-    is_delete_operator_pod=False,
     dag=dag,
 )
 
