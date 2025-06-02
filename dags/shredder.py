@@ -134,6 +134,7 @@ flat_rate = GKEPodOperator(
         "telemetry_stable.main_use_counter_v4",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
+        "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "3072Mi"},
@@ -175,6 +176,7 @@ with_sampling = GKEPodOperator(
         "--sampling-tables",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
+        "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "512Mi"},
