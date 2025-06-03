@@ -173,6 +173,7 @@ with_sampling = GKEPodOperator(
         "--only",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
+        "firefox_desktop_stable.metrics_v1",
         "--sampling-tables",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
