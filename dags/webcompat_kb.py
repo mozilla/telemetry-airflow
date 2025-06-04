@@ -70,6 +70,8 @@ with DAG(
             "webcompat_knowledge_base",
             "--bq-web-features-dataset",
             "web_features",
+            "--bq-standards-positions-dataset",
+            "standards_positions",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
         dag=dag,
