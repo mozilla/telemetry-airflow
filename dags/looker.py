@@ -209,11 +209,13 @@ with DAG(
             " --branch main-validation"  # this branch is a mirror of main, but Looker cannot open production branches (like main) for validation
             " --remote-reset"
             " --pin-imports looker-hub:main"
+            " --timeout 10800"
         ],
         env_vars={
             "LOOKER_BASE_URL": "https://mozilla.cloud.looker.com",
         },
         secrets=[looker_client_id_prod, looker_client_secret_prod],
+        execution_timeout=timedelta(hours=3),
         **airflow_gke_prod_kwargs,
     )
 
