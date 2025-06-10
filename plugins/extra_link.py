@@ -41,13 +41,14 @@ class BugzillaLink(BaseOperatorLink):
     def get_link(self, operator: BaseOperator, *, ti_key: TaskInstanceKey):
         base_url = conf.get(section="webserver", key="base_url")
         comment = dedent(
-            f"""Airflow task `{operator.dag_id}.{operator.task_id}` failed for run `{ti_key.run_id}`
+            f"""\
+            Airflow task `{operator.dag_id}.{operator.task_id}` failed for run `{ti_key.run_id}`.
 
-              Task link:
-              {base_url}/dags/{quote(operator.dag_id)}/grid?dag_run_id={quote_plus(ti_key.run_id)}&task_id={quote_plus(operator.task_id)}
+            Task link:
+            {base_url}/dags/{quote(operator.dag_id)}/grid?dag_run_id={quote_plus(ti_key.run_id)}&task_id={quote_plus(operator.task_id)}
 
-              Log extract:
-              ```
+            Log extract:
+            ```
               <extract of error log>
             ```"""
         )
