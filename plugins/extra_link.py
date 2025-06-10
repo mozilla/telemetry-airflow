@@ -7,9 +7,8 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.baseoperatorlink import BaseOperatorLink
 from airflow.models.taskinstancekey import TaskInstanceKey
 from airflow.operators.bash import BashOperator
-from airflow.operators.branch import BaseBranchOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.operators.subdag import SubDagOperator
 from airflow.plugins_manager import AirflowPlugin
 from airflow.providers.google.cloud.operators.dataproc import (
@@ -30,7 +29,7 @@ class BugzillaLink(BaseOperatorLink):
         BashOperator,
         PythonOperator,
         EmptyOperator,
-        BaseBranchOperator,
+        BranchPythonOperator,
         DataprocCreateClusterOperator,
         DataprocDeleteClusterOperator,
         DataprocSubmitJobOperator,
@@ -49,7 +48,7 @@ class BugzillaLink(BaseOperatorLink):
 
             Log extract:
             ```
-              <extract of error log>
+            <extract of error log>
             ```"""
         )
 
