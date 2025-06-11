@@ -131,7 +131,7 @@ with DAG(
         scalar_wait_for_yesterdays_aggregates = ExternalTaskSensor(
             task_id=f"{product}_wait_for_yesterdays_scalar_aggregates",
             external_dag_id="glam_fenix",
-            external_task_id=f"{product}__clients_scalar_aggregates_v1",
+            external_task_id=f"query_{product}__clients_scalar_aggregates_v1",
             execution_delta=timedelta(days=1),
             mode="reschedule",
         )
@@ -150,7 +150,7 @@ with DAG(
         histogram_wait_for_yesterdays_aggregates = ExternalTaskSensor(
             task_id=f"{product}_wait_for_yesterdays_histogram_aggregates",
             external_dag_id="glam_fenix",
-            external_task_id=f"{product}__clients_histogram_aggregates_v1",
+            external_task_id=f"query_{product}__clients_histogram_aggregates_v1",
             execution_delta=timedelta(days=1),
             mode="reschedule",
         )
