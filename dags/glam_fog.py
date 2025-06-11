@@ -112,13 +112,38 @@ with DAG(
         )
         latest_versions = query(task_name=f"{product}__latest_versions_v1")
 
+        scalar_wait_for_yesterdays_aggregates = ExternalTaskSensor(
+            task_id=f"{product}_wait_for_yesterdays_scalar_aggregates",
+            external_dag_id="glam_fog",
+            external_task_id=f"{product}__clients_scalar_aggregates_v1",
+            execution_delta=timedelta(days=1),
+            mode="reschedule",
+        )
+        clients_scalar_aggregates_new_init = init(
+            task_name=f"{product}__clients_scalar_aggregates_new_v1"
+        )
+        clients_scalar_aggregates_new = query(
+            task_name=f"{product}__clients_scalar_aggregates_new_v1"
+        )
         clients_scalar_aggregates_init = init(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
         clients_scalar_aggregates = query(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
-
+        histogram_wait_for_yesterdays_aggregates = ExternalTaskSensor(
+            task_id=f"{product}_wait_for_yesterdays_histogram_aggregates",
+            external_dag_id="glam_fog",
+            external_task_id=f"{product}__clients_histogram_aggregates_v1",
+            execution_delta=timedelta(days=1),
+            mode="reschedule",
+        )
+        clients_histogram_aggregates_new_init = init(
+            task_name=f"{product}__clients_histogram_aggregates_new_v1"
+        )
+        clients_histogram_aggregates_new = query(
+            task_name=f"{product}__clients_histogram_aggregates_new_v1"
+        )
         clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
@@ -133,19 +158,23 @@ with DAG(
         for dependency in LOGICAL_MAPPING.get(product, [product]):
             mapping[dependency] >> clients_daily_scalar_aggregates
             mapping[dependency] >> clients_daily_histogram_aggregates
-
-        # only the scalar aggregates are upstream of latest versions
         clients_daily_scalar_aggregates >> latest_versions
-        latest_versions >> clients_scalar_aggregates_init
-        latest_versions >> clients_histogram_aggregates_init
+        clients_daily_histogram_aggregates >> latest_versions
+
+        latest_versions >> scalar_wait_for_yesterdays_aggregates
+        latest_versions >> histogram_wait_for_yesterdays_aggregates
 
         (
-            clients_daily_scalar_aggregates
+            scalar_wait_for_yesterdays_aggregates
+            >> clients_scalar_aggregates_new_init
+            >> clients_scalar_aggregates_new
             >> clients_scalar_aggregates_init
             >> clients_scalar_aggregates
         )
         (
-            clients_daily_histogram_aggregates
+            histogram_wait_for_yesterdays_aggregates
+            >> clients_histogram_aggregates_new_init
+            >> clients_histogram_aggregates_new
             >> clients_histogram_aggregates_init
             >> clients_histogram_aggregates
         )
