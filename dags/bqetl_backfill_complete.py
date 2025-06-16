@@ -4,6 +4,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.decorators import task, task_group
+from airflow.providers.slack.notifications.slack import send_slack_notification
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -11,6 +12,12 @@ from utils.tags import Tag
 
 AUTOMATION_SLACK_CHANNEL = "#dataops-alerts"
 SLACK_CONNECTION_ID = "overwatch_slack"
+DATA_PLATFORM_WG_CHANNEL_ID = "C01E8GDG80N"
+SLACK_COMMON_ARGS = {
+    "username": "Backfill",
+    "slack_conn_id": SLACK_CONNECTION_ID,
+    "channel": AUTOMATION_SLACK_CHANNEL,
+}
 DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
 tags = [Tag.ImpactTier.tier_3]
@@ -18,7 +25,7 @@ tags = [Tag.ImpactTier.tier_3]
 default_args = {
     "email": [
         "ascholtz@mozilla.com",
-        "bewu@mozilla.com",
+        "benwu@mozilla.com",
         "wichan@mozilla.com",
     ]
 }
@@ -58,11 +65,29 @@ with DAG(
 
         notify_initiate = SlackAPIPostOperator(
             task_id="slack_notify_initate",
-            username="Backfill",
-            slack_conn_id=SLACK_CONNECTION_ID,
             text=prepare_slack_complete_message(backfill),
-            channel=AUTOMATION_SLACK_CHANNEL,
+            **SLACK_COMMON_ARGS,
         )
+
+        @task
+        def prepare_slack_failure_message(entry):
+            project, dataset, table = entry["qualified_table_name"].split(".")
+            backup_table_id = (
+                f"{dataset}__{table}_backup_{entry['entry_date'].replace('-', '_')}"
+            )
+            backup_location = (
+                f"{project}.backfills_staging_derived.{backup_table_id}"
+            )
+            watcher_text = " ".join(
+                f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
+            )
+
+            return (
+                f"{watcher_text} :x: Backfill completion for `{entry['qualified_table_name']}` failed. "
+                "Check recent <https://workflow.telemetry.mozilla.org/dags/bqetl_backfill_complete/grid|`process_backfill` task run> for logs. "
+                f"To retry the backfill, delete the backup table at `{backup_location}`. "
+                f"Ask in <#{DATA_PLATFORM_WG_CHANNEL_ID}> if you need help."
+            )
 
         @task
         def prepare_pod_parameters(entry):
@@ -75,6 +100,10 @@ with DAG(
             arguments=prepare_pod_parameters(backfill),
             image=DOCKER_IMAGE,
             reattach_on_restart=True,
+            on_failure_callback=send_slack_notification(
+                text=prepare_slack_failure_message(backfill),
+                **SLACK_COMMON_ARGS,
+            ),
         )
 
         @task
@@ -87,10 +116,8 @@ with DAG(
 
         notify_processing_complete = SlackAPIPostOperator(
             task_id="slack_notify_processing_complete",
-            username="Backfill",
-            slack_conn_id=SLACK_CONNECTION_ID,
             text=prepare_slack_processing_complete_parameters(backfill),
-            channel=AUTOMATION_SLACK_CHANNEL,
+            **SLACK_COMMON_ARGS,
         )
 
         notify_initiate >> process_backfill >> notify_processing_complete
