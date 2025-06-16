@@ -13,6 +13,11 @@ from utils.tags import Tag
 AUTOMATION_SLACK_CHANNEL = "#dataops-alerts"
 SLACK_CONNECTION_ID = "overwatch_slack"
 DATA_PLATFORM_WG_CHANNEL_ID = "C01E8GDG80N"
+SLACK_COMMON_ARGS = {
+    "username": "Backfill",
+    "slack_conn_id": SLACK_CONNECTION_ID,
+    "channel": AUTOMATION_SLACK_CHANNEL,
+}
 DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
 
 tags = [Tag.ImpactTier.tier_3]
@@ -60,10 +65,8 @@ with DAG(
 
         notify_initiate = SlackAPIPostOperator(
             task_id="slack_notify_initate",
-            username="Backfill",
-            slack_conn_id=SLACK_CONNECTION_ID,
             text=prepare_slack_complete_message(backfill),
-            channel=AUTOMATION_SLACK_CHANNEL,
+            **SLACK_COMMON_ARGS,
         )
 
         @task
@@ -98,10 +101,8 @@ with DAG(
             image=DOCKER_IMAGE,
             reattach_on_restart=True,
             on_failure_callback=send_slack_notification(
-                username="Backfill",
-                slack_conn_id=SLACK_CONNECTION_ID,
                 text=prepare_slack_failure_message(backfill),
-                channel=AUTOMATION_SLACK_CHANNEL,
+                **SLACK_COMMON_ARGS,
             ),
         )
 
@@ -115,10 +116,8 @@ with DAG(
 
         notify_processing_complete = SlackAPIPostOperator(
             task_id="slack_notify_processing_complete",
-            username="Backfill",
-            slack_conn_id=SLACK_CONNECTION_ID,
             text=prepare_slack_processing_complete_parameters(backfill),
-            channel=AUTOMATION_SLACK_CHANNEL,
+            **SLACK_COMMON_ARGS,
         )
 
         notify_initiate >> process_backfill >> notify_processing_complete
