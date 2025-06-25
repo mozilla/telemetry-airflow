@@ -68,7 +68,7 @@ with DAG(
             "KNOWN_HOSTS": conn.extra_dejson["known_hosts"],
             "SRC_TABLE": "moz-fx-data-shared-prod.search_terms_derived.adm_daily_dma_aggregates_v1",
             # The run for submission_date=2022-03-04 will be named:
-            # Aggregated-Query-Data-03042022.csv.gz
+            # Aggregated-DMA-Query-Data-03042022.csv.gz
             "DST_PATH": 'files/Aggregated-DMA-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
             "SUBMISSION_DATE": "{{ ds }}",
         },
