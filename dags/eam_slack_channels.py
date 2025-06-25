@@ -126,6 +126,13 @@ SLACK_CHANNEL_TOKEN = Secret(
     key="SLACK_CHANNEL_TOKEN",
 )
 
+slack_service_account = Secret(
+    deploy_type="env",
+    deploy_target="slack_service_account",
+    secret="airflow-gke-secrets",
+    key="slack_service_account",
+)
+
 with DAG(
     "eam-slack-channels-integration",
     default_args=default_args,
@@ -147,5 +154,6 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
             SLACK_CHANNEL_TOKEN,
+            slack_service_account,
         ],
     )
