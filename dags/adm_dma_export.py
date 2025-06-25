@@ -20,7 +20,7 @@ and credentials stored in the `adm_sftp` connection.
 
 default_args = {
     "owner": "llisi@mozilla.com",
-    "start_date": datetime.datetime(2019, 7, 25),
+    "start_date": datetime.datetime(2025, 6, 23),
     "email": [
         "telemetry-alerts@mozilla.com",
         "llisi@mozilla.com",
