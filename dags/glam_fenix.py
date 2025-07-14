@@ -163,9 +163,33 @@ with DAG(
         clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
-        clients_histogram_aggregates = query(
-            task_name=f"{product}__clients_histogram_aggregates_v1"
+        clients_histogram_aggregates_snapshot_init = init(
+            task_name=f"{product}__clients_histogram_aggregates_snapshot_v1"
         )
+        if is_release:
+            with TaskGroup(
+                group_id=f"{product}__clients_histogram_aggregates_v1", dag=dag, default_args=default_args
+            ) as clients_histogram_aggregates:
+                prev_task = None
+                for sample_range in (
+                    [0, 2], [3, 5], [6, 9], [10, 49], [50, 99]
+                ):
+                    clients_histogram_aggregates_sampled = query(
+                        task_name=(
+                            f"{product}__clients_histogram_aggregates_v1_sampled_"
+                            f"{sample_range[0]}_{sample_range[1]}"
+                        ),
+                        min_sample_id=sample_range[0],
+                        max_sample_id=sample_range[1],
+                        replace_table=(sample_range[0] == 0)
+                    )
+                    if prev_task:
+                        clients_histogram_aggregates_sampled.set_upstream(prev_task)
+                    prev_task = clients_histogram_aggregates_sampled
+        else:
+            clients_histogram_aggregates = query(
+                task_name=f"{product}__clients_histogram_aggregates_v1"
+            )
 
         # set all of the dependencies for all of the tasks
         # get the dependencies for the logical mapping, or just pass through the
@@ -191,6 +215,7 @@ with DAG(
             >> clients_histogram_aggregates_new_init
             >> clients_histogram_aggregates_new
             >> clients_histogram_aggregates_init
+            >> clients_histogram_aggregates_snapshot_init
             >> clients_histogram_aggregates
         )
         if is_release:
