@@ -147,10 +147,10 @@ with DAG(
         clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
-        clients_histogram_aggregates_snapshot_init = init(
-            task_name=f"{product}__clients_histogram_aggregates_snapshot_v1"
-        )
         if is_release:
+            clients_histogram_aggregates_snapshot_init = init(
+                task_name=f"{product}__clients_histogram_aggregates_snapshot_v1"
+            )
             with TaskGroup(
                 group_id=f"{product}__clients_histogram_aggregates_v1", dag=dag, default_args=default_args
             ) as clients_histogram_aggregates:
@@ -200,14 +200,15 @@ with DAG(
             >> clients_histogram_aggregates_new_init
             >> clients_histogram_aggregates_new
             >> clients_histogram_aggregates_init
-            >> clients_histogram_aggregates_snapshot_init
-            >> clients_histogram_aggregates
         )
 
         if is_release:
+            clients_histogram_aggregates_init >> clients_histogram_aggregates_snapshot_init
+            clients_histogram_aggregates_snapshot_init >> clients_histogram_aggregates
             clients_histogram_aggregates >> daily_release_done
             clients_scalar_aggregates >> daily_release_done
         else:
+            clients_histogram_aggregates_init >> clients_histogram_aggregates
             # stage 2 - downstream for export
             scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
             scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
