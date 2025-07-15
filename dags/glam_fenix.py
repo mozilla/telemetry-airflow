@@ -16,6 +16,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
+from airflow.providers.google.cloud.operators.bigquery import BigQueryDeleteTableOperator
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.glam_subdags.generate_query import (
@@ -167,6 +168,10 @@ with DAG(
             clients_histogram_aggregates_snapshot_init = init(
                 task_name=f"{product}__clients_histogram_aggregates_snapshot_v1"
             )
+            clients_histogram_aggregates_snapshot_teardown = BigQueryDeleteTableOperator(
+                task_id=f"{product}__clients_histogram_aggregates_snapshot_v1_teardown",
+                deletion_dataset_table=f"{PROJECT}.glam_etl.{product}__clients_histogram_aggregates_snapshot_v1"
+            )
             with TaskGroup(
                 group_id=f"{product}__clients_histogram_aggregates_v1", dag=dag, default_args=default_args
             ) as clients_histogram_aggregates:
@@ -219,7 +224,8 @@ with DAG(
         if is_release:
             clients_histogram_aggregates_init >> clients_histogram_aggregates_snapshot_init
             clients_histogram_aggregates_snapshot_init >> clients_histogram_aggregates
-            clients_histogram_aggregates >> done
+            clients_histogram_aggregates >> clients_histogram_aggregates_snapshot_teardown
+            clients_histogram_aggregates_snapshot_teardown >> done
             clients_scalar_aggregates >> done
         else:
             clients_histogram_aggregates_init >> clients_histogram_aggregates
