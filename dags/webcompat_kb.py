@@ -72,6 +72,8 @@ with DAG(
             "web_features",
             "--bq-standards-positions-dataset",
             "standards_positions",
+            "--bq-chrome-use-counters-dataset",
+            "chrome_use_counters",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
         dag=dag,
