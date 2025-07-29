@@ -14,6 +14,32 @@ Triggers rerun for Jetstream experiments.
 #### Owner
 ascholtz@mozilla.com
 mwilliams@mozilla.com
+
+#### How to trigger
+
+To trigger this DAG, use the Airflow UI and provide the required parameters. For example:
+
+- `experiment_slug`: The slug of the experiment to rerun (required)
+- `recreate_enrollments`: Set to true to recreate enrollments (optional, default: false)
+- `statistics_only`: Set to true to run statistics only (optional, default: false)
+- `analysis_overall`, `analysis_week`, `analysis_day`: Set to true to include the respective analysis period (optional, default: all set to false)
+
+Example (Airflow UI):
+
+1. Go to the DAGs list, find `jetstream_rerun`, and click 'Trigger DAG'.
+2. In the config, set:
+   ```json
+   {
+     "experiment_slug": "my-experiment-slug",
+     "recreate_enrollments": true,
+     "statistics_only": false,
+     "analysis_overall": true,
+     "analysis_week": false,
+     "analysis_day": true
+   }
+   ```
+
+The `experiment_slug` must match the slug of the experiment you want to rerun.
 """
 
 tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
