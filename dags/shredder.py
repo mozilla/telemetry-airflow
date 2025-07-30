@@ -167,9 +167,10 @@ with_sampling = GKEPodOperator(
     arguments=[
         *base_command,
         "--parallelism={{ var.value.get('shredder_w_sampling_parallelism', 1) }}",
-        "--sampling-parallelism={{ var.value.get('shredder_w_sampling_sampling_parallelism', 4) }}",
+        "--sampling-parallelism={{ var.value.get('shredder_w_sampling_sampling_parallelism', 2) }}",
         "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
-        "--billing-project=moz-fx-data-bq-batch-prod",
+        "--billing-project=moz-fx-data-shared-prod",
+        "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-all",
         "--only",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
