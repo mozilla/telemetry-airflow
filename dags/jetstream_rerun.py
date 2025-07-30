@@ -67,7 +67,7 @@ def jetstream_rerun_dag():
     def generate_rerun_arguments(**context):
         cmd = [
             "rerun",
-            "--slug", context["params"]["experiment_slug"],
+            "--experiment-slug", context["params"]["experiment_slug"],
             "--argo",
         ]
         if context["params"].get("recreate_enrollments", False):
