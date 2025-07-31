@@ -132,13 +132,6 @@ with DAG(
         clients_scalar_aggregates = query(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
-        histogram_wait_for_yesterdays_aggregates = ExternalTaskSensor(
-            task_id=f"{product}_wait_for_yesterdays_histogram_aggregates",
-            external_dag_id="glam_fog",
-            external_task_id=f"query_{product}__clients_histogram_aggregates_v1",
-            execution_delta=timedelta(days=1),
-            mode="reschedule",
-        )
         clients_histogram_aggregates_new_init = init(
             task_name=f"{product}__clients_histogram_aggregates_new_v1"
         )
@@ -148,7 +141,21 @@ with DAG(
         clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
+        histogram_wait_for_yesterdays_aggregates_partial = partial(
+            ExternalTaskSensor,
+            task_id=f"{product}_wait_for_yesterdays_histogram_aggregates",
+            external_dag_id="glam_fog",
+            execution_delta=timedelta(days=1),
+            mode="reschedule",
+        )
         if is_release:
+            histogram_wait_for_yesterdays_aggregates = (
+                histogram_wait_for_yesterdays_aggregates_partial(
+                    external_task_group_id=(
+                        f"query_{product}__clients_histogram_aggregates_v1"
+                    ),
+                )
+            )
             clients_histogram_aggregates_snapshot_init = init(
                 task_name=f"{product}__clients_histogram_aggregates_snapshot_v1"
             )
@@ -172,6 +179,13 @@ with DAG(
                         clients_histogram_aggregates_sampled.set_upstream(prev_task)
                     prev_task = clients_histogram_aggregates_sampled
         else:
+            histogram_wait_for_yesterdays_aggregates = (
+                histogram_wait_for_yesterdays_aggregates_partial(
+                    external_task_id=(
+                        f"query_{product}__clients_histogram_aggregates_v1"
+                    ),
+                )
+            )
             clients_histogram_aggregates = query(
                 task_name=f"{product}__clients_histogram_aggregates_v1"
             )
