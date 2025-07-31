@@ -16,7 +16,9 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
-from airflow.providers.google.cloud.operators.bigquery import BigQueryDeleteTableOperator
+from airflow.providers.google.cloud.operators.bigquery import (
+    BigQueryDeleteTableOperator,
+)
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.glam_subdags.generate_query import (
@@ -148,13 +150,6 @@ with DAG(
         clients_scalar_aggregates = query(
             task_name=f"{product}__clients_scalar_aggregates_v1"
         )
-        histogram_wait_for_yesterdays_aggregates = ExternalTaskSensor(
-            task_id=f"{product}_wait_for_yesterdays_histogram_aggregates",
-            external_dag_id="glam_fenix",
-            external_task_id=f"query_{product}__clients_histogram_aggregates_v1",
-            execution_delta=timedelta(days=1),
-            mode="reschedule",
-        )
         clients_histogram_aggregates_new_init = init(
             task_name=f"{product}__clients_histogram_aggregates_new_v1"
         )
@@ -164,17 +159,32 @@ with DAG(
         clients_histogram_aggregates_init = init(
             task_name=f"{product}__clients_histogram_aggregates_v1"
         )
+        histogram_wait_for_yesterdays_aggregates_partial = partial(
+            ExternalTaskSensor,
+            task_id=f"{product}_wait_for_yesterdays_histogram_aggregates",
+            external_dag_id="glam_fenix",
+            execution_delta=timedelta(days=1),
+            mode="reschedule",
+        )
         if is_release:
+            # Release histogram_aggregates is a TaskGroup
+            histogram_wait_for_yesterdays_aggregates = (
+                histogram_wait_for_yesterdays_aggregates_partial(
+                    external_task_group_id=(
+                        f"query_{product}__clients_histogram_aggregates_v1"
+                    ),
+                )
+            )
             clients_histogram_aggregates_snapshot_init = init(
                 task_name=f"{product}__clients_histogram_aggregates_snapshot_v1"
             )
             with TaskGroup(
-                group_id=f"{product}__clients_histogram_aggregates_v1", dag=dag, default_args=default_args
+                group_id=f"{product}__clients_histogram_aggregates_v1",
+                dag=dag,
+                default_args=default_args,
             ) as clients_histogram_aggregates:
                 prev_task = None
-                for sample_range in (
-                    [0, 2], [3, 5], [6, 9], [10, 49], [50, 99]
-                ):
+                for sample_range in ([0, 2], [3, 5], [6, 9], [10, 49], [50, 99]):
                     clients_histogram_aggregates_sampled = query(
                         task_name=(
                             f"{product}__clients_histogram_aggregates_v1_sampled_"
@@ -182,12 +192,19 @@ with DAG(
                         ),
                         min_sample_id=sample_range[0],
                         max_sample_id=sample_range[1],
-                        replace_table=(sample_range[0] == 0)
+                        replace_table=(sample_range[0] == 0),
                     )
                     if prev_task:
                         clients_histogram_aggregates_sampled.set_upstream(prev_task)
                     prev_task = clients_histogram_aggregates_sampled
         else:
+            histogram_wait_for_yesterdays_aggregates = (
+                histogram_wait_for_yesterdays_aggregates_partial(
+                    external_task_id=(
+                        f"query_{product}__clients_histogram_aggregates_v1"
+                    ),
+                )
+            )
             clients_histogram_aggregates = query(
                 task_name=f"{product}__clients_histogram_aggregates_v1"
             )
@@ -218,18 +235,25 @@ with DAG(
             >> clients_histogram_aggregates_init
         )
         if is_release:
-            clients_histogram_aggregates_init >> clients_histogram_aggregates_snapshot_init
+            (
+                clients_histogram_aggregates_init
+                >> clients_histogram_aggregates_snapshot_init
+            )
             clients_histogram_aggregates_snapshot_init >> clients_histogram_aggregates
             clients_histogram_aggregates >> done
             clients_scalar_aggregates >> done
         else:
             clients_histogram_aggregates_init >> clients_histogram_aggregates
             # stage 2 - downstream for export
-            scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
+            scalar_bucket_counts = query(
+                task_name=f"{product}__scalar_bucket_counts_v1"
+            )
             scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
             with TaskGroup(
-                group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+                group_id=f"{product}__histogram_bucket_counts_v1",
+                dag=dag,
+                default_args=default_args,
             ) as histogram_bucket_counts:
                 prev_task = None
                 for sample_range in ([0, 19], [20, 39], [40, 59], [60, 79], [80, 99]):
@@ -237,7 +261,7 @@ with DAG(
                         task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
                         min_sample_id=sample_range[0],
                         max_sample_id=sample_range[1],
-                        replace_table=(sample_range[0] == 0)
+                        replace_table=(sample_range[0] == 0),
                     )
                     if prev_task:
                         histogram_bucket_counts_sampled.set_upstream(prev_task)
@@ -248,7 +272,9 @@ with DAG(
             )
 
             probe_counts = view(task_name=f"{product}__view_probe_counts_v1")
-            extract_probe_counts = query(task_name=f"{product}__extract_probe_counts_v1")
+            extract_probe_counts = query(
+                task_name=f"{product}__extract_probe_counts_v1"
+            )
 
             user_counts = view(task_name=f"{product}__view_user_counts_v1")
             extract_user_counts = query(task_name=f"{product}__extract_user_counts_v1")
@@ -268,10 +294,5 @@ with DAG(
                 >> probe_counts
             )
             probe_counts >> sample_counts >> extract_probe_counts >> done
-            (
-                clients_scalar_aggregates
-                >> user_counts
-                >> extract_user_counts
-                >> done
-            )
+            (clients_scalar_aggregates >> user_counts >> extract_user_counts >> done)
             clients_histogram_aggregates >> done
