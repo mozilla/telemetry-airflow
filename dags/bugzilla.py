@@ -24,7 +24,7 @@ BUGZILLA_URL = "https://bugzilla.mozilla.org/rest"
 PRODUCT = "Data Platform and Tools"
 COMPONENT = "General"
 WHITEBOARD_TAG = "[dataplatform]"
-API_KEY_VAR = "BUGZILLA_API_KEY"
+API_KEY_VAR = "bugzilla_probe_expiry_bot_api_key"
 
 default_args = {
     "retries": 1,
