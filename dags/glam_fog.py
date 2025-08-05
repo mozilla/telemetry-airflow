@@ -151,7 +151,7 @@ with DAG(
         if is_release:
             histogram_wait_for_yesterdays_aggregates = (
                 histogram_wait_for_yesterdays_aggregates_partial(
-                    external_task_id=("daily_release_done"),
+                    external_task_id="daily_release_done",
                 )
             )
             clients_histogram_aggregates_snapshot_init = init(
