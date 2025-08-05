@@ -12,7 +12,7 @@ docs = """
 ### Bugzilla
 Runs daily scheduled jobs on Bugzilla.
 Tags bugs in Bugzilla for the product "Data Platform and Tools" and component "General"
-with the whiteboard tag `[dataplatform]` if not already present. This will trigger a sync to Jira.
+with the whiteboard tag `[dataplatform]` if do not already have a tag. This will trigger a sync to Jira.
 
 #### Owner
 ascholtz@mozilla.com
