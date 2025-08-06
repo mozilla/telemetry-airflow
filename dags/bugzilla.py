@@ -57,8 +57,12 @@ with DAG(
                 "component": COMPONENT,
                 "include_fields": "id,whiteboard",
                 "status": ["NEW", "ASSIGNED", "REOPENED"],
+                "status_whiteboard": "^ *$",
+                "status_whiteboard_type": "regexp",
+                "order": "bug_id DESC",
                 "limit": 500,
             }
+
             response = requests.get(f"{BUGZILLA_URL}/bug", params=params)
             response.raise_for_status()
             return response.json()["bugs"]
