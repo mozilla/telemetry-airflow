@@ -212,3 +212,14 @@ with DAG(
     )
 
     [prepare_domain_metadata_stage, prepare_domain_metadata_prod] >> on_domain_success
+
+    # polygon image ingestion task
+    polygon_ingestion_prod = merino_job(
+        name="polygon_ingestion_prod",
+        arguments=[
+            "polygon-ingestion",
+            "ingest",
+        ],
+        secrets=[], #TODO - populate with polygon secret
+    )
+
