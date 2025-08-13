@@ -86,6 +86,13 @@ elasticsearch_prod_apikey_secret = Secret(
     key="merino_elasticsearch_secret__prod_api_key",
 )
 
+polygon_prod_apikey_secret = Secret(
+    deploy_type="env",
+    deploy_target="MERINO_POLYGON__API_KEY",
+    secret="airflow-gke-secrets",
+    key="merino_polygon_secret__prod_api_key",
+)
+
 # Run weekly on Tuesdays at 5am UTC
 with DAG(
     "merino_jobs",
@@ -220,6 +227,6 @@ with DAG(
             "polygon-ingestion",
             "ingest",
         ],
-        secrets=[], #TODO - populate with polygon secret
+        secrets=[polygon_prod_apikey_secret],
     )
 
