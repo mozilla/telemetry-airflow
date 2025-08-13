@@ -86,6 +86,13 @@ elasticsearch_prod_apikey_secret = Secret(
     key="merino_elasticsearch_secret__prod_api_key",
 )
 
+polygon_prod_apikey_secret = Secret(
+    deploy_type="env",
+    deploy_target="MERINO_POLYGON__API_KEY",
+    secret="airflow-gke-secrets",
+    key="merino_polygon_secret__prod_api_key",
+)
+
 # Run weekly on Tuesdays at 5am UTC
 with DAG(
     "merino_jobs",
@@ -212,3 +219,14 @@ with DAG(
     )
 
     [prepare_domain_metadata_stage, prepare_domain_metadata_prod] >> on_domain_success
+
+    # polygon image ingestion task
+    polygon_ingestion_prod = merino_job(
+        name="polygon_ingestion_prod",
+        arguments=[
+            "polygon-ingestion",
+            "ingest",
+        ],
+        secrets=[polygon_prod_apikey_secret],
+    )
+
