@@ -73,8 +73,6 @@ peopleteam_fetch = GKEPodOperator(
     task_id="peopleteam-monthly-fetcher",
     name="peopleteam-monthly-fetcher",
     image_pull_policy="Always",
-    namespace="composer-user-workloads",
-    service_account_name="default",
     image=DI_IMAGE,
     secrets=[WORKDAY_USERNAME, WORKDAY_PASSWORD],
     # TODO: move the copying stuff to the di module itself
@@ -120,8 +118,6 @@ for report_name in ["hires", "terminations", "promotions", "headcount"]:
     merge_op[report_name] = GKEPodOperator(
         task_id="workday-merge-" + report_name,
         name="workday-merge-" + report_name,
-        namespace="composer-user-workloads",
-        service_account_name="default",
         image=QUERIES_IMAGE,
         cmds=[
             "bash",
