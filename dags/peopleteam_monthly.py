@@ -6,6 +6,7 @@ from airflow.operators.bash import BashOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
 
 PROJECT = "moz-fx-data-bq-people"  # was dp2-prod
 
@@ -51,11 +52,14 @@ default_args = {
     #'catchup': False,
 }
 
+tags = [Tag.ImpactTier.tier_3]
+
 dag = DAG(
     dag_id="peopleteam-monthly",
     default_args=default_args,
     max_active_runs=1,
     schedule_interval="0 16 1 * *",
+    tags=tags,
 )
 
 # Because airflow won't run 2019-02-01's monthly job until 2019-03-01, we need to
@@ -71,7 +75,6 @@ peopleteam_fetch = GKEPodOperator(
     image_pull_policy="Always",
     namespace="composer-user-workloads",
     service_account_name="default",
-    config_file="/home/airflow/composer_kube_config",
     image=DI_IMAGE,
     secrets=[WORKDAY_USERNAME, WORKDAY_PASSWORD],
     # TODO: move the copying stuff to the di module itself
@@ -119,7 +122,6 @@ for report_name in ["hires", "terminations", "promotions", "headcount"]:
         name="workday-merge-" + report_name,
         namespace="composer-user-workloads",
         service_account_name="default",
-        config_file="/home/airflow/composer_kube_config",
         image=QUERIES_IMAGE,
         cmds=[
             "bash",
