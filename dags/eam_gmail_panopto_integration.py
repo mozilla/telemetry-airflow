@@ -117,26 +117,26 @@ default_args = {
 tags = [Tag.ImpactTier.tier_3]
 
 
-gmail_panopto_user = Secret(
-    deploy_type="env",
-    deploy_target="gmail_panopto_user",
-    secret="airflow-gke-secrets",
-    key="gmail_panopto_user",
-)
+def create_secret(deploy_target):
+    return Secret(
+        deploy_type="env",
+        deploy_target=deploy_target,
+        secret="airflow-gke-secrets",
+        key=deploy_target,
+    )
 
-gmail_panopto_pass = Secret(
-    deploy_type="env",
-    deploy_target="gmail_panopto_pass",
-    secret="airflow-gke-secrets",
-    key="gmail_panopto_pass",
-)
+gmail_panopto_panopto_user = create_secret("gmail_panopto_panopto_user")
+gmail_panopto_panopto_pass = create_secret("gmail_panopto_panopto_pass")
 
-gmail_panopto_gmail_private_key = Secret(
-    deploy_type="env",
-    deploy_target="gmail_panopto_gmail_private_key",
-    secret="airflow-gke-secrets",
-    key="gmail_panopto_gmail_private_key",
-)
+gmail_panopto_gmail_project_id = create_secret("gmail_panopto_gmail_project_id")
+gmail_panopto_gmail_private_key_id = create_secret("gmail_panopto_gmail_private_key_id")
+gmail_panopto_gmail_private_key = create_secret("gmail_panopto_gmail_private_key")
+gmail_panopto_gmail_client_email = create_secret("gmail_panopto_gmail_client_email")
+gmail_panopto_gmail_client_id = create_secret("gmail_panopto_gmail_client_id")
+gmail_panopto_gmail_client_x509_cert_url = create_secret("gmail_panopto_gmail_client_x509_cert_url")
+
+gmail_panopto_gmail_group_name  = create_secret("gmail_panopto_gmail_group_name")
+gmail_panopto_panopto_group_name  = create_secret("gmail_panopto_panopto_group_name")
 
 with DAG(
     "eam-gmail-panopto-integration",
@@ -158,8 +158,15 @@ with DAG(
         + "eam-integrations_docker_etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
-            gmail_panopto_user,
-            gmail_panopto_pass,
+            gmail_panopto_panopto_user,
+            gmail_panopto_panopto_pass,            
+            gmail_panopto_gmail_project_id,
+            gmail_panopto_gmail_private_key_id ,
             gmail_panopto_gmail_private_key,
+            gmail_panopto_gmail_client_email,
+            gmail_panopto_gmail_client_id,
+            gmail_panopto_gmail_client_x509_cert_url,
+            gmail_panopto_gmail_group_name,
+            gmail_panopto_panopto_group_name
         ],
     )
