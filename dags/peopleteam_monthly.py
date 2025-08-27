@@ -2,7 +2,6 @@
 import datetime
 
 from airflow import DAG
-from airflow.operators.bash import BashOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 
 from operators.gcp_container_operator import GKEPodOperator
@@ -94,18 +93,23 @@ delete_op = {}
 insert_op = {}
 merge_op = {}
 for report_name in ["hires", "terminations", "promotions", "headcount"]:
-    stage_op[report_name] = BashOperator(
+    stage_op[report_name] = GKEPodOperator(
         task_id="workday-stage-" + report_name,
-        bash_command="bq load --location=US --source_format CSV --autodetect --skip_leading_rows=1 --replace moz-fx-data-bq-people:composer_workday_staging."
-        + report_name
-        + " gs://"
-        + INCOMING_BUCKET
-        + "/peopleteam_dashboard_monthly/pull_date_"
-        + pull_date
-        + "/"
-        + report_name
-        + '_{{ macros.ds_add(next_execution_date.strftime("%Y-%m-%d"), -1) }}.csv',
-        # + "_2022-05-31.csv",
+        image="google/cloud-sdk:536.0.0",
+        cmds=[
+            "bash",
+            "-c",
+            "bq load --location=US --source_format CSV --autodetect --skip_leading_rows=1 --replace moz-fx-data-bq-people:composer_workday_staging."
+            + report_name
+            + " gs://"
+            + INCOMING_BUCKET
+            + "/peopleteam_dashboard_monthly/pull_date_"
+            + pull_date
+            + "/"
+            + report_name
+            + '_{{ macros.ds_add(next_execution_date.strftime("%Y-%m-%d"), -1) }}.csv',
+            # + "_2022-05-31.csv",
+        ],
         dag=dag,
     )
 
