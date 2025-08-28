@@ -12,6 +12,7 @@ apache-airflow-providers-google
 apache-airflow-providers-http
 apache-airflow-providers-postgres
 apache-airflow-providers-redis
+apache-airflow-providers-sftp
 apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
 
