@@ -59,6 +59,15 @@ dag = DAG(
     max_active_runs=1,
     schedule_interval="0 16 1 * *",
     tags=tags,
+    doc_md="""\
+    # People Team Monthly Report DAG
+    This DAG was Adapted from [cloudops-infra's data-composer project](https://github.com/mozilla-services/cloudops-infra/blob/f31bfee056b77b509db7548aa636b9cf58efcaf9/projects/data-composer/tf/modules/dags/dags/peopleteam-monthly.py#L1-L132)
+    ## Caveat
+    It is expected to have a failing `workday-merge-promotions` task outside of promotion cycles.
+    ## Why is this disabled?
+    DataSRE has been trying to decommission data related to this DAG for years. Ownership now lies within the Data Org.
+    If you want to use this DAG, please contact the Data Org.
+    """
 )
 
 # Because airflow won't run 2019-02-01's monthly job until 2019-03-01, we need to
