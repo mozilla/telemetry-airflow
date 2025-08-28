@@ -22,7 +22,7 @@ WORKDAY_USERNAME = Secret(
 )
 WORKDAY_PASSWORD = Secret(
     deploy_type="env",
-    deploy_target="WORKDAY_USERNAME",
+    deploy_target="WORKDAY_PASSWORD",
     secret="airflow-gke-secrets",
     key="EVERFI_INTEG_WORKDAY_PASSWORD",
 )
