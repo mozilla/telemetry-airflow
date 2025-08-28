@@ -99,7 +99,7 @@ WHERE
 
 upload_to_bucket = bigquery.BigQueryInsertJobOperator(
     task_id="upload-to-bucket",
-    gcp_conn_id="google_cloud_airflow_gke",
+    gcp_conn_id="google_cloud_shared_prod",
     configuration={
         "query": {
             "query": WORKER_TO_TA_QUERY,
@@ -111,7 +111,7 @@ upload_to_bucket = bigquery.BigQueryInsertJobOperator(
 
 transfer_to_tripactions = gcs_to_sftp.GCSToSFTPOperator(
     task_id="workday-to-tripaction",
-    gcp_conn_id="google_cloud_airflow_gke",
+    gcp_conn_id="google_cloud_shared_prod",
     sftp_conn_id="tripactions_sftp",
     source_bucket=BUCKET,
     source_object=GCS_OBJECT,
