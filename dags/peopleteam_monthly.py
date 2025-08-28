@@ -99,7 +99,7 @@ for report_name in ["hires", "terminations", "promotions", "headcount"]:
         cmds=[
             "bash",
             "-c",
-            "bq load --location=US --source_format CSV --autodetect --skip_leading_rows=1 --replace moz-fx-data-bq-people:composer_workday_staging."
+            "bq load --location=US --source_format CSV --autodetect --column_name_character_map=V1 --skip_leading_rows=1 --replace moz-fx-data-bq-people:composer_workday_staging."
             + report_name
             + " gs://"
             + INCOMING_BUCKET
