@@ -67,6 +67,7 @@ dag = DAG(
     ## Why is this disabled?
     DataSRE has been trying to decommission data related to this DAG for years. Ownership now lies within the Data Org.
     If you want to use this DAG, please contact the Data Org.
+    See this comment for more [context](https://mozilla-hub.atlassian.net/browse/SVCSE-3016?focusedCommentId=1127778).
     """
 )
 
