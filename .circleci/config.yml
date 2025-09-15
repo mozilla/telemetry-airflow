@@ -249,27 +249,6 @@ jobs:
               && git push \
               || echo "Skipping push since it looks like there were no changes"
             
-  check-branch:
-    executor: *python-executor
-    steps:
-      - checkout
-      - run:
-          name: "Determine branch of the commit"
-          command: |
-            # Fetch the branch name for the commit associated with the tag
-            COMMIT_BRANCH=$(git branch -r --contains "$(git rev-parse HEAD)" | grep -v 'main' || true)
-            
-            # Exit if the branch is main
-            if [ -z "$COMMIT_BRANCH" ]; then
-              echo "This tag is associated with a main branch commit. Exiting."
-              exit 1
-            else
-              echo "This tag is not associated with a main branch commit. Proceeding."
-            fi
-      - run:
-          name: "Run job on dev- tag creation"
-          command: echo "This job runs on tags prefixed with dev- on non-main branches."
-
 workflows:
   ci:
     jobs:
@@ -347,17 +326,8 @@ workflows:
 
   manual-publish:
     jobs:
-      - check-branch:
-          name: 👮 Check workflow runs on non-main branch
-          filters:
-            tags:
-              only: /^dev-.*/
-            branches:
-              ignore: /.*/
       - docker-build-artifact:
           name: 🛠️ Docker build and persist image
-          requires:
-            - 👮 Check workflow runs on non-main branch
           filters:
             tags:
               only: /^dev-.*/
