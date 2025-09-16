@@ -50,4 +50,4 @@ else
            --conn-extra "$JSON_CREDS"
 fi
 
-echo "visit https://go.corp.mozilla.com/wtmodev for more info"
+echo "visit https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide for more info"
