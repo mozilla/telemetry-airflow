@@ -190,7 +190,7 @@ You'll likely want to toggle the DAG back to "Off" as soon as your desired task 
 
 #### Testing GKE Jobs (including BigQuery-etl changes)
 
-See https://go.corp.mozilla.com/wtmodev for more details.
+See https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide for more details.
 
 ```
 make build && make up
