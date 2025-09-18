@@ -80,8 +80,8 @@ with DAG(
         },
         "additional_properties": {
             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            "spark:spark.driver.memory": "30g",
-            "spark:spark.executor.memory": "20g",
+            "spark:spark.driver.memory": "40g",
+            "spark:spark.executor.memory": "21g",
         },
         "idle_delete_ttl": 14400,
         # supported machine types depends on dataproc image version:
@@ -129,7 +129,7 @@ with DAG(
                 "--date",
                 "{{ ds }}",
                 "--sample-size",
-                "0.08",  # there are usually 12-15x more hangs in the child process than main
+                "0.06",  # there are usually 17x more hangs in the child process than main
                 "--use_gcs",
                 "--thread-filter",
                 "Gecko_Child",
