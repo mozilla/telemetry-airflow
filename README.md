@@ -26,8 +26,7 @@ author, schedule and monitor workflows.
       - [Testing Dataproc Jobs](#testing-dataproc-jobs)
       - [Debugging](#debugging)
   - [Production Setup](#production-setup)
-  - [Production Deployments](#production-deployments)
-  - [Dev and Stage Deployments](#dev-and-stage-deployments)
+  - [Deployments](#deployments)
 
 <!-- TOC end -->
 
@@ -244,20 +243,20 @@ docker volume prune
 This repository was structured to be deployed using the [offical Airflow Helm Chart](https://airflow.apache.org/docs/helm-chart/stable/index.html).
 See the [Production Guide](https://airflow.apache.org/docs/helm-chart/stable/production-guide.html) for best practices.
 
-## Production Deployments
-Production deployments are automatically triggered for every commit merged in the `main` branch.
-Docker images are tagged using the git commit short SHA and automatically deployed.
+## Deployments
 
-Refer to the CI configuration for more details!
+Production and stage deployments are automatically triggered for every merge to the `main` branch:
 
-## Dev and Stage Deployments
-Non-production deployments are automatically triggered for every commit merged in the `main` branch.
-Dev and Stage deployments use the `latest` image tag for deployments.
+- Docker images are built from the `main` branch merge commit, tagged as `main-` suffixed with the commit's short SHA, and then deployed to production and stage via ArgoCD.
 
-It is also possible to manually trigger the image building and pushing workflow `manual-publish`
-by manually tagging a commit. This can be achieved using git on your local machine, or by creating a
-[pre-release GitHub Release](https://github.com/mozilla/telemetry-airflow/releases/new) with a tag
-prefixed by `dev-` on a non-main branch commit.
+Dev deployments are automatically triggered for every new Git tag that starts with `dev-`:
 
-Refer to the CI configuration and [deployment repository](https://github.com/mozilla-sre-deploy/deploy-telemetry-airflow/)
-for more details!
+- Docker images are built from the tagged commit, tagged to match the Git `dev-...` tag, and then deployed to dev via ArgoCD.
+- To create a Git tag for your current commit and push it you can run `git tag <tagname>` followed by `git push <remote> <tagname>`.
+- You should generally use a unique `dev-...` tag every time, because the deployments are triggered when ArgoCD detects a different latest `dev-...` image tag than what it last deployed.
+
+Implementation details:
+
+- [CI configuration](https://github.com/mozilla/telemetry-airflow/blob/main/.circleci/config.yml)
+- [Helm chart configuration](https://github.com/mozilla/dataservices-infra/tree/main/telemetry-airflow/k8s/telemetry-airflow)
+- [MozCloud tenant configuration](https://github.com/mozilla/global-platform-admin/blob/main/tenants/telemetry-airflow.yaml)
