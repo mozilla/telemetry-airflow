@@ -1,4 +1,4 @@
-.PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local stop test up
+.PHONY: build clean fixes help pip-compile pip-install-local stop test up
 
 
 help:
