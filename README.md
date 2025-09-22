@@ -247,11 +247,11 @@ See the [Production Guide](https://airflow.apache.org/docs/helm-chart/stable/pro
 
 Production and stage deployments are automatically triggered for every merge to the `main` branch:
 
-- Docker images are built from the `main` branch merge commit, tagged as `main-` suffixed with the commit's short SHA, and then deployed to production and stage via ArgoCD.
+- A new Docker image is built from the `main` branch merge commit, tagged as `main-` suffixed with the commit's short SHA, and then deployed to production and stage via ArgoCD.
 
 Dev deployments are automatically triggered for every new Git tag that starts with `dev-`:
 
-- Docker images are built from the tagged commit, tagged to match the Git `dev-...` tag, and then deployed to dev via ArgoCD.
+- A new Docker image is built from the tagged commit, tagged to match the Git `dev-...` tag, and then deployed to dev via ArgoCD.
 - To create a Git tag for your current commit and push it you can run `git tag <tagname>` followed by `git push <remote> <tagname>`.
 - You should generally use a unique `dev-...` tag every time, because the deployments are triggered when ArgoCD detects a different latest `dev-...` image tag than what it last deployed.
 
