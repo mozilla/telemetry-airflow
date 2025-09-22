@@ -49,6 +49,13 @@ bugzilla_token = Secret(
     key="webcompat_kb_secret__bugzilla_api_key",
 )
 
+github_token = Secret(
+    deploy_type="env",
+    deploy_target="GH_TOKEN",
+    secret="airflow-gke-secrets",
+    key="webcompat_kb_secret__gh_token",
+)
+
 with DAG(
     "webcompat_kb",
     default_args=default_args,
@@ -74,10 +81,13 @@ with DAG(
             "standards_positions",
             "--bq-chrome-use-counters-dataset",
             "chrome_use_counters",
+            "--bq-interop-dataset",
+            "interop",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
         dag=dag,
         secrets=[
             bugzilla_token,
+            github_token,
         ],
     )
