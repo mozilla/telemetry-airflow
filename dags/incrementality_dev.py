@@ -82,7 +82,6 @@ with DAG(
         ],
 
         image="us-central1-docker.pkg.dev/moz-fx-dev-gleonard-ads/incrementality/ads_incrementality_dap_collector:v2",
-        gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
             hpke_private_key,
             auth_token,
