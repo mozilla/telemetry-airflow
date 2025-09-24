@@ -68,6 +68,11 @@ echo "local ip is $MY_IP"
 # Create GKE Cluster - No TTL available, will need a external monitor with cleanup
 if gcloud container clusters describe $GKE_SANDBOX_CLUSTER --project $GKE_SANDBOX_PROJECT --location $GKE_SANDBOX_CLUSTER_LOCATION >/dev/null 2>&1; then
     echo "$GKE_SANDBOX_CLUSTER cluster exists in $GKE_SANDBOX_CLUSTER_LOCATION"
+    gcloud container clusters update $GKE_SANDBOX_CLUSTER \
+           --enable-master-authorized-networks \
+           --master-authorized-networks="$MY_IP/32" \
+           --location $GKE_SANDBOX_CLUSTER_LOCATION \
+           --project $GKE_SANDBOX_PROJECT
 else
     echo "creating $GKE_SANDBOX_CLUSTER cluster in $GKE_SANDBOX_CLUSTER_LOCATION..."
     gcloud container clusters create $GKE_SANDBOX_CLUSTER \
