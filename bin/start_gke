@@ -4,50 +4,99 @@
 
 set -eo pipefail
 
+ENV_FILE="$(dirname "$(dirname "$0")")/.env"
+if [ -e "$ENV_FILE" ]; then
+    source "$ENV_FILE"
+fi
+if [ -z "$GKE_SANDBOX_PROJECT" ]; then
+    echo "GKE_SANDBOX_PROJECT needs to be defined in $ENV_FILE"
+    exit 1
+fi
+
+GKE_SANDBOX_CLUSTER=${GKE_SANDBOX_CLUSTER:-telemetry-airflow-gke-sandbox}
+GKE_SANDBOX_CLUSTER_LOCATION=${GKE_SANDBOX_CLUSTER_LOCATION:-us-west1}
+GKE_SANDBOX_SERVICE_ACCOUNT=${GKE_SANDBOX_SERVICE_ACCOUNT:-telemetry-airflow-gke-runner}
+GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL="$GKE_SANDBOX_SERVICE_ACCOUNT@$GKE_SANDBOX_PROJECT.iam.gserviceaccount.com"
+GKE_SANDBOX_SERVICE_ACCOUNT_SECRET=${GKE_SANDBOX_SERVICE_ACCOUNT_SECRET:-$GKE_SANDBOX_SERVICE_ACCOUNT}
+GKE_SANDBOX_AIRFLOW_CONNECTION=${GKE_SANDBOX_AIRFLOW_CONNECTION:-google_cloud_gke_sandbox}
+
+echo "GKE_SANDBOX_PROJECT = $GKE_SANDBOX_PROJECT"
+echo "GKE_SANDBOX_CLUSTER = $GKE_SANDBOX_CLUSTER"
+echo "GKE_SANDBOX_CLUSTER_LOCATION = $GKE_SANDBOX_CLUSTER_LOCATION"
+echo "GKE_SANDBOX_SERVICE_ACCOUNT = $GKE_SANDBOX_SERVICE_ACCOUNT"
+echo "GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL = $GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL"
+echo "GKE_SANDBOX_SERVICE_ACCOUNT_SECRET = $GKE_SANDBOX_SERVICE_ACCOUNT_SECRET"
+echo "GKE_SANDBOX_AIRFLOW_CONNECTION = $GKE_SANDBOX_AIRFLOW_CONNECTION"
+
+if gcloud services list --filter="config.name='container.googleapis.com'" --project=$GKE_SANDBOX_PROJECT >/dev/null 2>&1; then
+    echo "Kubernetes is enabled in $GKE_SANDBOX_PROJECT"
+else
+    echo "enabling Kubernetes in $GKE_SANDBOX_PROJECT..."
+    gcloud services enable container.googleapis.com --project=$GKE_SANDBOX_PROJECT
+fi
+
+if gcloud services list --filter="config.name='secretmanager.googleapis.com'" --project=$GKE_SANDBOX_PROJECT >/dev/null 2>&1; then
+    echo "Secret Manager is enabled in $GKE_SANDBOX_PROJECT"
+else
+    echo "enabling Secret Manager in $GKE_SANDBOX_PROJECT..."
+    gcloud services enable secretmanager.googleapis.com --project=$GKE_SANDBOX_PROJECT
+fi
+
+if gcloud iam service-accounts describe $GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL --project=$GKE_SANDBOX_PROJECT >/dev/null 2>&1; then
+    echo "$GKE_SANDBOX_PROJECT has a $GKE_SANDBOX_SERVICE_ACCOUNT service account"
+else
+    echo "creating $GKE_SANDBOX_SERVICE_ACCOUNT service account for $GKE_SANDBOX_PROJECT..."
+    gcloud iam service-accounts create $GKE_SANDBOX_SERVICE_ACCOUNT --project=$GKE_SANDBOX_PROJECT
+    sleep 5
+    gcloud iam service-accounts keys create "$GKE_SANDBOX_SERVICE_ACCOUNT.json" --iam-account=$GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL --project=$GKE_SANDBOX_PROJECT
+    gcloud secrets create $GKE_SANDBOX_SERVICE_ACCOUNT --data-file="$GKE_SANDBOX_SERVICE_ACCOUNT.json" --project=$GKE_SANDBOX_PROJECT && rm -f "$GKE_SANDBOX_SERVICE_ACCOUNT.json"
+    gcloud projects add-iam-policy-binding $GKE_SANDBOX_PROJECT --role=roles/container.admin --member="serviceAccount:$GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL"
+fi
+
+if gcloud compute networks describe default --project=$GKE_SANDBOX_PROJECT >/dev/null 2>&1; then
+    echo "$GKE_SANDBOX_PROJECT has a default network"
+else
+    echo "creating default network for $GKE_SANDBOX_PROJECT..."
+    gcloud compute networks create default --subnet-mode=auto --project=$GKE_SANDBOX_PROJECT
+fi
+
 # Set Env var MY_LOCAL_IP or use icanhazip.com to fetch it
 # https://major.io/icanhazip-com-faq/#what-about-my-privacy
 MY_IP=${MY_LOCAL_IP:-$(curl icanhazip.com -s -4)}
 echo "local ip is $MY_IP"
 
-
-USERNAME=$(gcloud config get-value account | awk -F"@" '{print $1}')
-CLUSTERNAME=$USERNAME-gke-sandbox
-
 # Create GKE Cluster - No TTL available, will need a external monitor with cleanup
-if gcloud container clusters describe $CLUSTERNAME --project moz-fx-data-gke-sandbox --region us-west1 >/dev/null 2>&1; then
-    echo "cluster $CLUSTERNAME exists"
+if gcloud container clusters describe $GKE_SANDBOX_CLUSTER --project $GKE_SANDBOX_PROJECT --location $GKE_SANDBOX_CLUSTER_LOCATION >/dev/null 2>&1; then
+    echo "$GKE_SANDBOX_CLUSTER cluster exists in $GKE_SANDBOX_CLUSTER_LOCATION"
 else
-    echo "cluster $CLUSTERNAME doesn't exist. creating..."
-    gcloud container clusters create $CLUSTERNAME \
+    echo "creating $GKE_SANDBOX_CLUSTER cluster in $GKE_SANDBOX_CLUSTER_LOCATION..."
+    gcloud container clusters create $GKE_SANDBOX_CLUSTER \
            --enable-stackdriver-kubernetes \
            -m n1-standard-4 \
            --release-channel="stable" \
            --enable-master-authorized-networks \
            --master-authorized-networks="$MY_IP/32" \
-           --region us-west1 \
+           --location $GKE_SANDBOX_CLUSTER_LOCATION \
            --num-nodes=1 \
            --scopes="cloud-platform" \
-           --service-account="data-gke-sandbox-runner@moz-fx-data-gke-sandbox.iam.gserviceaccount.com" \
-           --project moz-fx-data-gke-sandbox
-
+           --service-account="$GKE_SANDBOX_SERVICE_ACCOUNT_EMAIL" \
+           --project $GKE_SANDBOX_PROJECT
 fi
 
 echo "fetching secret..."
-JSON_CREDS=$(gcloud secrets versions access latest --secret="gke-sandbox-creds" --project moz-fx-data-gke-sandbox)
+JSON_CREDS=$(gcloud secrets versions access latest --secret=$GKE_SANDBOX_SERVICE_ACCOUNT_SECRET --project $GKE_SANDBOX_PROJECT)
 
 # Upload secret to local wtmo
-GCP_CONN_ID="google_cloud_gke_sandbox"
-
 CONTAINER_ID=$(docker ps --filter name=web -q)
 if [ -z "$CONTAINER_ID" ]; then
     echo "ERROR: Airflow container is likely not running (or docker). Run 'make up' to start airflow containers"
 else
     echo "Web container id is $CONTAINER_ID. Adding gcp connection..."
-    docker exec $CONTAINER_ID airflow connections delete $GCP_CONN_ID
+    docker exec $CONTAINER_ID airflow connections delete $GKE_SANDBOX_AIRFLOW_CONNECTION
 
-    docker exec $CONTAINER_ID airflow connections add $GCP_CONN_ID \
+    docker exec $CONTAINER_ID airflow connections add $GKE_SANDBOX_AIRFLOW_CONNECTION \
            --conn-type google_cloud_platform \
-           --conn-extra "$JSON_CREDS"
+           --conn-extra "{\"keyfile_dict\": $JSON_CREDS}"
 fi
 
 echo "visit https://mozilla-hub.atlassian.net/wiki/spaces/SRE/pages/27922811/WTMO+Developer+Guide for more info"

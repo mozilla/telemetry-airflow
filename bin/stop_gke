@@ -4,11 +4,24 @@
 
 set -eo pipefail
 
-USERNAME=$(gcloud config get-value account | awk -F"@" '{print $1}')
-CLUSTERNAME=$USERNAME-gke-sandbox
+ENV_FILE="$(dirname "$(dirname "$0")")/.env"
+if [ -e "$ENV_FILE" ]; then
+    source "$ENV_FILE"
+fi
+if [ -z "$GKE_SANDBOX_PROJECT" ]; then
+    echo "GKE_SANDBOX_PROJECT needs to be defined in $ENV_FILE"
+    exit 1
+fi
 
-if gcloud container clusters describe $CLUSTERNAME --region us-west1 --project moz-fx-data-gke-sandbox >/dev/null 2>&1; then
-    gcloud container clusters delete $CLUSTERNAME --region us-west1 --quiet --project moz-fx-data-gke-sandbox
+GKE_SANDBOX_CLUSTER=${GKE_SANDBOX_CLUSTER:-telemetry-airflow-gke-sandbox}
+GKE_SANDBOX_CLUSTER_LOCATION=${GKE_SANDBOX_CLUSTER_LOCATION:-us-west1}
+
+echo "GKE_SANDBOX_PROJECT = $GKE_SANDBOX_PROJECT"
+echo "GKE_SANDBOX_CLUSTER = $GKE_SANDBOX_CLUSTER"
+echo "GKE_SANDBOX_CLUSTER_LOCATION = $GKE_SANDBOX_CLUSTER_LOCATION"
+
+if gcloud container clusters describe $GKE_SANDBOX_CLUSTER --location $GKE_SANDBOX_CLUSTER_LOCATION --project $GKE_SANDBOX_PROJECT >/dev/null 2>&1; then
+    gcloud container clusters delete $GKE_SANDBOX_CLUSTER --location $GKE_SANDBOX_CLUSTER_LOCATION --quiet --project $GKE_SANDBOX_PROJECT
 else
-    echo "cluster $CLUSTERNAME does not exist"
+    echo "$GKE_SANDBOX_CLUSTER cluster does not exist in $GKE_SANDBOX_CLUSTER_LOCATION"
 fi
