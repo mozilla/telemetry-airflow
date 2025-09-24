@@ -87,7 +87,7 @@ echo "fetching secret..."
 JSON_CREDS=$(gcloud secrets versions access latest --secret=$GKE_SANDBOX_SERVICE_ACCOUNT_SECRET --project $GKE_SANDBOX_PROJECT)
 
 # Upload secret to local wtmo
-CONTAINER_ID=$(docker ps --filter name=web -q)
+CONTAINER_ID=$(docker ps --filter name=telemetry-airflow-airflow-webserver-1 -q)
 if [ -z "$CONTAINER_ID" ]; then
     echo "ERROR: Airflow container is likely not running (or docker). Run 'make up' to start airflow containers"
 else
