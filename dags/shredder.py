@@ -191,6 +191,8 @@ with_sampling = GKEPodOperator(
     **common_task_args,
 )
 
+# the following tables will be shredded per-partition with a join query instead of a delete
+# this is for tables that are small but can be much more efficiently shredded per-partition
 force_no_dml = GKEPodOperator(
     task_id="force-no-dml",
     name="shredder-force-no-dml",
