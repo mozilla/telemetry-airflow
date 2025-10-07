@@ -4,7 +4,7 @@ Exports Firefox-CI task and run data from Taskcluster to BigQuery.
 This connects to and drains three separate Taskcluster pulse queues, and
 exports each message into BigQuery.
 
-The container is defined in [fxci-etl](https://github.com/mozilla-releng/fxci-etl).
+The container is defined in [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/fxci-taskcluster-export).
 """
 
 from datetime import datetime, timedelta
