@@ -137,7 +137,7 @@ with DAG(
     publish_new_tables = GKEPodOperator(
         task_id="publish_new_tables",
         cmds=["bash", "-x", "-c"],
-        execution_timeout=timedelta(hours=2),
+        execution_timeout=timedelta(hours=6),
         arguments=[
             generate_sql_cmd_template
             + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
