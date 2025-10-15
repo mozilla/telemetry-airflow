@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from airflow import DAG
@@ -16,49 +17,52 @@ Runs a Docker image that collects Incrementality data from a DAP (Distributed Ag
 The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/ads-incrementality-dap-collector)
 
-This DAG requires following variables to be defined in Airflow:
-* dap_ppa_prod_auth_token
-* dap_ppa_prod_hpke_private_key
-* TBD
+This DAG requires following secrets to be defined in Airflow:
+* dap_ads_incr_auth_token_dev
+* dap_ads_incr_auth_token_prod
+* dap_ads_incr_hpke_private_key_dev
+* dap_ads_incr_hpke_private_key_prod
+
+The following variables are defined in the Airflow:
+* ads_incr_job_project_id
+* ads_incr_job_config_bucket
 
 This job is under active development, occasional failures are expected.
 
 #### Owner
-
-gleonard@mozilla.com
-mlifshin@mozilla.com
+* gleonard@mozilla.com
+* mlifshin@mozilla.com
 """
 
 default_args = {
     "owner": "gleonard@mozilla.com",
-    "email": ["ads-eng@mozilla.com", "gleonard@mozilla.com", "mlifshin@mozilla.com"],
+    "email": [ "gleonard@mozilla.com", "mlifshin@mozilla.com"],  ## TODO Add "ads-eng@mozilla.com",
     "depends_on_past": False,
-    "start_date": datetime(2025, 9, 1),
+    "start_date": datetime(2025, 10, 1),
     "email_on_failure": True,
     "email_on_retry": False,
-    "retries": 0, # TODO GLE: what to do about retries
+    "retries": 0,
 }
-
-job_project_id = "moz-fx-dev-gleonard-ads"
-job_config_bucket = "ads-gleonard-etl-config"
 
 tags = [
     Tag.ImpactTier.tier_3,
     Tag.Triage.no_triage,
 ]
 
+deploy_env = os.environ.get("DEPLOY_ENVIRONMENT", "dev")
+
 hpke_private_key = Secret(
     deploy_type="env",
     deploy_target="HPKE_PRIVATE_KEY",
     secret="airflow-gke-secrets",
-    key="DAP_PPA_DEV_HPKE_PRIVATE_KEY",
+    key="dap_ads_incr_hpke_private_key_" + deploy_env,
 )
 
 auth_token = Secret(
     deploy_type="env",
-    deploy_target="HPKE_TOKEN",  # TODO need to rename to auth_token in docker etl.
+    deploy_target="AUTH_TOKEN",
     secret="airflow-gke-secrets",
-    key="DAP_PPA_DEV_AUTH_TOKEN",
+    key="dap_ads_incr_auth_token_" + deploy_env,
 )
 
 with DAG(
@@ -73,15 +77,12 @@ with DAG(
         task_id="dap_incrementality",
         arguments=[
             "python",
-            "ads-incrementality-dap-collector/main.py",
-            "--batch_start={{ data_interval_end.at(0) | ts }}",
-            "--gcp_project",
-            job_project_id,
-            "--job_config_bucket",
-            job_config_bucket,
+            "ads_incrementality_dap_collector/main.py",
+            "--job_config_gcp_project={{ var.value.ads_incr_job_project_id }}",
+            "--job_config_bucket={{ var.value.ads_incr_job_config_bucket }}",
+            "--process_date={{ ds }}"
         ],
-
-        image="us-central1-docker.pkg.dev/moz-fx-dev-gleonard-ads/incrementality/ads_incrementality_dap_collector:v2",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/ads_incrementality_dap_collector:latest",
         secrets=[
             hpke_private_key,
             auth_token,
