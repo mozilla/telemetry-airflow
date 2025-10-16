@@ -66,7 +66,7 @@ auth_token = Secret(
 )
 
 with DAG(
-    "dap_incrementality",
+    "ads_incrementality",
     default_args=default_args,
     doc_md=DOCS,
     schedule_interval="15 0 * * *",
@@ -74,7 +74,7 @@ with DAG(
     catchup=False,
 ) as dag:
     dap_collector = GKEPodOperator(
-        task_id="dap_incrementality",
+        task_id="ads_incrementality",
         arguments=[
             "python",
             "ads_incrementality_dap_collector/main.py",
@@ -82,7 +82,7 @@ with DAG(
             "--job_config_bucket={{ var.value.ads_incr_job_config_bucket }}",
             "--process_date={{ ds }}"
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/ads_incrementality_dap_collector:latest",
+        image="gcr.io/moz-fx-data-airflow-prod-88e0/ads-incrementality-dap-collector_docker_etl:latest",
         secrets=[
             hpke_private_key,
             auth_token,
