@@ -53,14 +53,14 @@ tags = [
 
 hpke_private_key = Secret(
     deploy_type="env",
-    deploy_target="HPKE_PRIVATE_KEY",
+    deploy_target="DAP_PRIVATE_KEY",
     secret="airflow-gke-secrets",
     key="dap_ads_incr_hpke_private_key_dev", #+ deploy_env,
 )
 
 auth_token = Secret(
     deploy_type="env",
-    deploy_target="AUTH_TOKEN",
+    deploy_target="DAP_AUTH_TOKEN",
     secret="airflow-gke-secrets",
     key="dap_ads_incr_auth_token_dev", # + deploy_env,
 )
