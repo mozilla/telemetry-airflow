@@ -49,20 +49,20 @@ tags = [
     Tag.Triage.no_triage,
 ]
 
-deploy_env = os.environ.get("DEPLOY_ENVIRONMENT", "dev")
+# deploy_env = os.environ.get("DEPLOY_ENVIRONMENT", "dev")
 
 hpke_private_key = Secret(
     deploy_type="env",
     deploy_target="HPKE_PRIVATE_KEY",
     secret="airflow-gke-secrets",
-    key="dap_ads_incr_hpke_private_key_" + deploy_env,
+    key="dap_ads_incr_hpke_private_key_dev", #+ deploy_env,
 )
 
 auth_token = Secret(
     deploy_type="env",
     deploy_target="AUTH_TOKEN",
     secret="airflow-gke-secrets",
-    key="dap_ads_incr_auth_token_" + deploy_env,
+    key="dap_ads_incr_auth_token_dev", # + deploy_env,
 )
 
 with DAG(
