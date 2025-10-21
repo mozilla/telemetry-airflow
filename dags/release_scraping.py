@@ -37,7 +37,7 @@ with DAG(
         task_id="read_release_data",
         arguments=[
             "python",
-            "release-scraping/main.py",
+            "release_scraping/main.py",
             "--date",
             "{{ ds }}",
         ],
