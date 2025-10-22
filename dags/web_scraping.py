@@ -3,9 +3,9 @@ from airflow import DAG
 from operators.gcp_container_operator import GKEPodOperator
 
 docs = """
-### release_scraping
+### web_scraping
 
-Reads Chrome release notes and loads it to GCS
+Scrapes a few websites on a monthly basis & loads data to GCS
 
 Owner: kwindau@mozilla.com
 """
@@ -27,7 +27,7 @@ SERVER = "moz-fx-data-airflow-prod-88e0"
 IMAGE_NAME = "release_scraping_docker_etl:latest"
 
 with DAG(
-    "release_scraping",
+    "web_scraping",
     default_args=default_args,
     schedule_interval="0 15 2 * *",
     doc_md=docs,
