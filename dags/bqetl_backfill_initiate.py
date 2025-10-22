@@ -12,10 +12,10 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 AUTOMATION_SLACK_CHANNEL = "#dataops-alerts"
-SLACK_CONNECTION_ID = "overwatch_slack"
+SLACK_CONNECTION_ID = "slack_airflow_bot"
 DATA_PLATFORM_WG_CHANNEL_ID = "C01E8GDG80N"
 SLACK_COMMON_ARGS = {
-    "username": "Backfill",
+    "username": "airflow-bot",
     "slack_conn_id": SLACK_CONNECTION_ID,
     "channel": AUTOMATION_SLACK_CHANNEL,
 }
