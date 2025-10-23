@@ -49,20 +49,20 @@ tags = [
     Tag.Triage.no_triage,
 ]
 
-# deploy_env = os.environ.get("DEPLOY_ENVIRONMENT", "dev")
+deploy_env = os.environ.get("DEPLOY_ENVIRONMENT", "dev")
 
 hpke_private_key = Secret(
     deploy_type="env",
     deploy_target="DAP_PRIVATE_KEY",
     secret="airflow-gke-secrets",
-    key="dap_ads_incr_hpke_private_key_dev", #+ deploy_env,
+    key="dap_ads_incr_hpke_private_key_dev" + deploy_env,
 )
 
-auth_token = Secret(
+bearer_token = Secret(
     deploy_type="env",
     deploy_target="BEARER_TOKEN",
     secret="airflow-gke-secrets",
-    key="dap_ads_incr_auth_token_dev", # + deploy_env,
+    key="dap_ads_incr_auth_token_dev" + deploy_env,
 )
 
 with DAG(
@@ -85,6 +85,6 @@ with DAG(
         image="gcr.io/moz-fx-data-airflow-prod-88e0/ads-incrementality-dap-collector_docker_etl:latest",
         secrets=[
             hpke_private_key,
-            auth_token,
+            bearer_token,
         ],
     )
