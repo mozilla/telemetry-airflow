@@ -55,14 +55,14 @@ hpke_private_key = Secret(
     deploy_type="env",
     deploy_target="DAP_PRIVATE_KEY",
     secret="airflow-gke-secrets",
-    key="dap_ads_incr_hpke_private_key_dev" + deploy_env,
+    key="dap_ads_incr_hpke_private_key_dev_missing" + deploy_env,
 )
 
 bearer_token = Secret(
     deploy_type="env",
     deploy_target="BEARER_TOKEN",
     secret="airflow-gke-secrets",
-    key="dap_ads_incr_auth_token_dev" + deploy_env,
+    key="dap_ads_incr_auth_token_dev_missing" + deploy_env,
 )
 
 with DAG(
