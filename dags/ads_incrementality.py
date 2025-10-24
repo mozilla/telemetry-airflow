@@ -36,7 +36,7 @@ This job is under active development, occasional failures are expected.
 
 default_args = {
     "owner": "gleonard@mozilla.com",
-    "email": [ "gleonard@mozilla.com", "mlifshin@mozilla.com"],  ## TODO Add "ads-eng@mozilla.com",
+    "email": [ "ads-eng@mozilla.com"],
     "depends_on_past": False,
     "start_date": datetime(2025, 10, 1),
     "email_on_failure": True,
