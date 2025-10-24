@@ -93,6 +93,13 @@ polygon_prod_apikey_secret = Secret(
     key="merino_polygon_secret__prod_api_key",
 )
 
+flightaware_prod_apikey_secret = Secret(
+    deploy_type="env",
+    deploy_target="MERINO_FLIGHTAWARE__API_KEY",
+    secret="airflow-gke-secrets",
+    key="merino_flightaware_secret__prod_api_key",
+)
+
 # Run weekly on Tuesdays at 5am UTC
 with DAG(
     "merino_jobs",
@@ -228,5 +235,18 @@ with DAG(
             "ingest",
         ],
         secrets=[polygon_prod_apikey_secret],
+    )
+
+with DAG(
+    "merino_flightaware_schedules",
+    schedule_interval="0 */6 * * *",  # every 6 hours
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
+) as dag:
+    schedules_job = merino_job(
+        name="fetch_flightaware_schedules_prod",
+        arguments=["fetch_flights", "fetch-and-store"],
+        secrets=[flightaware_prod_apikey_secret],
     )
 

@@ -130,11 +130,16 @@ flat_rate = GKEPodOperator(
         "--parallelism={{ var.value.get('shredder_all_parallelism', 3) }}",
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--except",
+        # main
         "telemetry_stable.main_v5",
         "telemetry_stable.main_use_counter_v4",
+        # sampling
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
         "firefox_desktop_stable.metrics_v1",
+        # force no dml
+        "telemetry_derived.cohort_weekly_active_clients_staging_v1",
+        "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "3072Mi"},
@@ -168,6 +173,7 @@ with_sampling = GKEPodOperator(
         *base_command,
         "--parallelism={{ var.value.get('shredder_w_sampling_parallelism', 1) }}",
         "--sampling-parallelism={{ var.value.get('shredder_w_sampling_sampling_parallelism', 2) }}",
+        "--sampling-batch-size={{ var.value.get('shredder_w_sampling_sampling_batch_size', 1) }}",
         "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
         "--billing-project=moz-fx-data-shared-prod",
         "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-all",
@@ -183,5 +189,22 @@ with_sampling = GKEPodOperator(
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "512Mi"},
     ),
+    **common_task_args,
+)
+
+# the following tables will be shredded per-partition with a join query instead of a delete
+# this is for tables that are small but can be much more efficiently shredded per-partition
+force_no_dml = GKEPodOperator(
+    task_id="force-no-dml",
+    name="shredder-force-no-dml",
+    arguments=[
+        *base_command,
+        "--parallelism=1",
+        "--billing-project=moz-fx-data-bq-batch-prod",
+        "--max-single-dml-bytes=1",
+        "--only",
+        "telemetry_derived.cohort_weekly_active_clients_staging_v1",
+        "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
+    ],
     **common_task_args,
 )
