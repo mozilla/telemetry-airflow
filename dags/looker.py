@@ -114,7 +114,7 @@ with DAG(
         ],
         task_id="lookml_generator",
         name="lookml-generator-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:" + image_tag,
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/lookml-generator/lookml-generator:" + image_tag,
         startup_timeout_seconds=500,
         dag=dag,
         env_vars={
@@ -143,7 +143,7 @@ with DAG(
         ],
         task_id="lookml_generator_staging",
         name="lookml-generator-staging-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/lookml-generator/lookml-generator:latest",
         dag=dag,
         env_vars={
             "HUB_REPO_URL": "git@github.com:mozilla/looker-hub.git",
@@ -175,7 +175,7 @@ with DAG(
         ],
         task_id="validate_content_spectacles",
         name="validate-content-spectacles",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/lookml-generator/lookml-generator:latest",
         dag=dag,
         cmds=["bash", "-x", "-c"],
         arguments=[
@@ -200,7 +200,7 @@ with DAG(
         ],
         task_id="validate_lookml_spoke_default_spectacles",
         name="validate-lookml-spoke-default-spectacles",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/lookml-generator:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/lookml-generator/lookml-generator:latest",
         dag=dag,
         cmds=["bash", "-x", "-c"],
         arguments=[
