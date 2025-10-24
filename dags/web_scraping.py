@@ -1,5 +1,6 @@
 import datetime
 from airflow import DAG
+from airflow.sensors.external_task import ExternalTaskMarker
 from operators.gcp_container_operator import GKEPodOperator
 
 docs = """
@@ -44,3 +45,12 @@ with DAG(
         image=f"gcr.io/{SERVER}/{IMAGE_NAME}",
         gcp_conn_id="google_cloud_airflow_gke",
     )
+
+    # This marks a specific task in the downstream DAG so clears cascade there.
+    run_bqetl_market_intel_bot = ExternalTaskMarker(
+        task_id="run_bqetl_market_intel_bot",
+        external_dag_id="bqetl_market_intel_bot",
+        external_task_id="wait_for_read_release_data",
+    )
+
+    read_release_data >> run_bqetl_market_intel_bot
