@@ -227,6 +227,24 @@ with DAG(
 
     [prepare_domain_metadata_stage, prepare_domain_metadata_prod] >> on_domain_success
 
+    prepare_domain_metadata_prod_gcp_v2 = merino_job(
+        "nav_suggestions_prepare_domain_metadata_prod_gcp_v2",
+        arguments=[
+            "navigational-suggestions",
+            "prepare-domain-metadata",
+            "--src-gcp-project",
+            "moz-fx-data-shared-prod",
+            "--dst-gcp-project",
+            "moz-fx-merino-prod-5de4",
+            "--dst-gcs-bucket",
+            "merino-images-prod",
+            "--dst-cdn-hostname",
+            "prod-images.merino.prod.webservices.mozgcp.net",
+            "--force-upload",
+            "--write-xcom",
+        ],
+    )
+
     # polygon image ingestion task
     polygon_ingestion_prod = merino_job(
         name="polygon_ingestion_prod",
