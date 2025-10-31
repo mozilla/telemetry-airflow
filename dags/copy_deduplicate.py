@@ -150,7 +150,6 @@ with models.DAG(
             ("bqetl_org_mozilla_firefox_derived", "hour=2, minute=0"),
             ("bqetl_org_mozilla_focus_derived", "hour=2, minute=0"),
             ("bqetl_public_data_json", "hour=5, minute=0"),
-            ("bqetl_regrets_reporter_summary", "hour=4, minute=0"),
             ("bqetl_search_terms_daily", "hour=3, minute=0"),
             ("bqetl_sponsored_tiles_clients_daily", "hour=4, minute=0"),
             ("bqetl_urlbar", "hour=3, minute=0"),
