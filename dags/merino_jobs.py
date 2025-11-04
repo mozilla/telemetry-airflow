@@ -281,15 +281,15 @@ with DAG(
     "merino_sports_nightly",
     # This performs a data purge on accumulated sport events, so more frequent
     # calls can improve performance and limit costs.
-    # This should be called at a minium of once per day, around Midnight ET.
+    # This should be called at a minimum of once per day, around Midnight ET.
     # (Offsetting by 2 minutes to prevent potential overlap with `update`.)
     schedule_interval="2 */6 * * *",
     doc_md=DOCS,
     default_args=default_args,
     tags=tags,
 ) as dag:
-    schedules_job = merino_job(
-        name="nightly_sportsdata_update_prod",
+    sports_nightly_job = merino_job(
+        name="sports_nightly_job",
         arguments=["fetch_sports", "nightly"],
         secrets=[sportsdata_prod_apikey_secret],
     )
@@ -304,8 +304,8 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-    schedules_job = merino_job(
-        name="nightly_sportsdata_update_prod",
+    sports_update_job = merino_job(
+        name="sports_update_job",
         arguments=["fetch_sports", "update"],
         secrets=[sportsdata_prod_apikey_secret],
     )
