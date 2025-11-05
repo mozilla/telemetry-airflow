@@ -21,6 +21,7 @@ DOCS = """\
 
 SUPPORTED_LANGUAGES = ["en", "fr", "de", "it", "pl"]
 
+
 def merino_job(
     name: str, arguments: list[str], env_vars: dict[str, Any] | None = None, **kwargs
 ):
@@ -42,7 +43,7 @@ def merino_job(
         arguments=arguments,
         # Needed for the jobs increased amount of domain it has
         # to process.
-        container_resources = k8s.V1ResourceRequirements(
+        container_resources=k8s.V1ResourceRequirements(
             requests={"memory": "512Mi"},
         ),
         env_vars=default_env_vars,
@@ -98,6 +99,13 @@ flightaware_prod_apikey_secret = Secret(
     deploy_target="MERINO_FLIGHTAWARE__API_KEY",
     secret="airflow-gke-secrets",
     key="merino_flightaware_secret__prod_api_key",
+)
+
+sportsdata_prod_apikey_secret = Secret(
+    deploy_type="env",
+    deploy_target="MERINO_PROVIDERS__SPORTS__SPORTSDATA_API_KEY",
+    secret="airflow-gke-secrets",
+    key="merino_providers__sports__sportsdata_api_key",  # TODO: confirm?
 )
 
 # Run weekly on Tuesdays at 5am UTC
@@ -158,7 +166,7 @@ with DAG(
                     "--version",
                     "v1",
                     "--total-docs",
-                    "6600000", # Estimate of the total number of documents in wikipedia index
+                    "6600000",  # Estimate of the total number of documents in wikipedia index
                     "--elasticsearch-url",
                     str(es_prod_connection.host),
                     "--gcs-path",
@@ -268,3 +276,36 @@ with DAG(
         secrets=[flightaware_prod_apikey_secret],
     )
 
+# Sports Nightly
+with DAG(
+    "merino_sports_nightly",
+    # This performs a data purge on accumulated sport events, so more frequent
+    # calls can improve performance and limit costs.
+    # This should be called at a minimum of once per day, around Midnight ET.
+    # (Offsetting by 2 minutes to prevent potential overlap with `update`.)
+    schedule_interval="2 */6 * * *",
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
+) as dag:
+    sports_nightly_job = merino_job(
+        name="sports_nightly_job",
+        arguments=["fetch_sports", "nightly"],
+        secrets=[sportsdata_prod_apikey_secret],
+    )
+
+# Sports Update
+with DAG(
+    "merino_sports_update",
+    # This updates current and pending sport events for the window
+    # current date ±7 days. Called every 5 minutes.
+    schedule_interval="*/5 * * * *",
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
+) as dag:
+    sports_update_job = merino_job(
+        name="sports_update_job",
+        arguments=["fetch_sports", "update"],
+        secrets=[sportsdata_prod_apikey_secret],
+    )
