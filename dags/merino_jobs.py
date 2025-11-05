@@ -101,11 +101,19 @@ flightaware_prod_apikey_secret = Secret(
     key="merino_flightaware_secret__prod_api_key",
 )
 
+# The Secret defines how the DAG should get the credential.
+# See https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/_modules/airflow/providers/cncf/kubernetes/secret.html#Secret
 sportsdata_prod_apikey_secret = Secret(
+    # How is the secret deployed (usually as an `env`ironment variable)
     deploy_type="env",
+    # What Environment variable should store this value (Talk to DAGENG about this value)
+    # This value should match what the merino job is expecting.
+    # In this case, we follow the `settings` model
     deploy_target="MERINO_PROVIDERS__SPORTS__SPORTSDATA_API_KEY",
+    # Where is the secret stored in Kubernetes?
     secret="airflow-gke-secrets",
-    key="merino_providers__sports__sportsdata_api_key",  # TODO: confirm?
+    # finally, what is the name of the secret in the storage (Talk to DAGENG about this value)
+    key="merino_providers__sports__sportsdata_api_key",
 )
 
 # Run weekly on Tuesdays at 5am UTC
@@ -288,6 +296,8 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
+    # Note, assigning this to a value is probably not required, but may
+    # make debugging easier.
     sports_nightly_job = merino_job(
         name="sports_nightly_job",
         arguments=["fetch_sports", "nightly"],
