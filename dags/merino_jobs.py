@@ -1,4 +1,5 @@
 import datetime
+from copy import copy
 from typing import Any
 
 from airflow import DAG
@@ -109,7 +110,7 @@ sportsdata_prod_apikey_secret = Secret(
     # What Environment variable should store this value (Talk to DAGENG about this value)
     # This value should match what the merino job is expecting.
     # In this case, we follow the `settings` model
-    deploy_target="MERINO_PROVIDERS__SPORTS__SPORTSDATA_API_KEY",
+    deploy_target="MERINO_PROVIDERS__SPORTS__SPORTSDATA__API_KEY",
     # Where is the secret stored in Kubernetes?
     secret="airflow-gke-secrets",
     # finally, what is the name of the secret in the storage (Talk to DAGENG about this value)
@@ -284,6 +285,10 @@ with DAG(
         secrets=[flightaware_prod_apikey_secret],
     )
 
+sports_args = copy(default_args)
+sports_args["email_on_failure"] = False
+sports_args["email"] = ["jconlin+af@mozilla.com"]
+
 # Sports Nightly
 with DAG(
     "merino_sports_nightly",
@@ -293,7 +298,7 @@ with DAG(
     # (Offsetting by 2 minutes to prevent potential overlap with `update`.)
     schedule_interval="2 */6 * * *",
     doc_md=DOCS,
-    default_args=default_args,
+    default_args=sports_args,
     tags=tags,
 ) as dag:
     # Note, assigning this to a value is probably not required, but may
@@ -311,7 +316,7 @@ with DAG(
     # current date ±7 days. Called every 5 minutes.
     schedule_interval="*/5 * * * *",
     doc_md=DOCS,
-    default_args=default_args,
+    default_args=sports_args,
     tags=tags,
 ) as dag:
     sports_update_job = merino_job(
