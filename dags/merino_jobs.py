@@ -311,6 +311,7 @@ with DAG(
     default_args=sports_args,
     tags=tags,
 ) as dag:
+    es_secret = elasticsearch_prod_apikey_secret or elasticsearch_stage_apikey_secret
     # Note, assigning this to a value is probably not required, but may
     # make debugging easier.
     sports_nightly_job = merino_job(
@@ -320,7 +321,8 @@ with DAG(
             or es_staging_connection.host,
         },
         arguments=["fetch_sports", "nightly"],
-        secrets=[sportsdata_prod_apikey_secret],
+        # NOTE: ALL secrets must be passed in explicitly
+        secrets=[sportsdata_prod_apikey_secret, es_secret],
     )
 
 # Sports Update
@@ -333,6 +335,7 @@ with DAG(
     default_args=sports_args,
     tags=tags,
 ) as dag:
+    es_secret = elasticsearch_prod_apikey_secret or elasticsearch_stage_apikey_secret
     sports_update_job = merino_job(
         name="sports_update_job",
         env_vars={
@@ -340,5 +343,6 @@ with DAG(
             or es_staging_connection.host,
         },
         arguments=["fetch_sports", "update"],
-        secrets=[sportsdata_prod_apikey_secret],
+        # NOTE: ALL secrets must be passed in explicitly
+        secrets=[sportsdata_prod_apikey_secret, es_secret],
     )
