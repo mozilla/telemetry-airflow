@@ -117,6 +117,14 @@ sportsdata_prod_apikey_secret = Secret(
     key="merino_providers__sports__sportsdata_api_key",
 )
 
+# Sports will re-use the same Elastic search URL and API_KEY that wikipedia uses.
+# BE SURE TO MODIFY BOTH SPORTS AND WIKIPEDIA IF THESE VALUES CHANGE!
+
+# Values used by multiple DAGs
+es_prod_connection = BaseHook.get_connection("merino_elasticsearch_prod")
+es_staging_connection = BaseHook.get_connection("merino_elasticsearch_stage")
+
+
 # Run weekly on Tuesdays at 5am UTC
 with DAG(
     "merino_jobs",
@@ -125,8 +133,6 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-    es_prod_connection = BaseHook.get_connection("merino_elasticsearch_prod")
-    es_staging_connection = BaseHook.get_connection("merino_elasticsearch_stage")
 
     for lang in SUPPORTED_LANGUAGES:
         with TaskGroup(group_id=f"wikipedia_indexer_{lang}"):
@@ -285,6 +291,9 @@ with DAG(
         secrets=[flightaware_prod_apikey_secret],
     )
 
+
+# NOTE: Environment variable based settings for things like Elastic search URLs and credential sets, are NOT
+# included in Airflow declarations. These values need to be explicitly specified.
 sports_args = copy(default_args)
 sports_args["email_on_failure"] = False
 sports_args["email_on_retry"] = False
@@ -306,6 +315,10 @@ with DAG(
     # make debugging easier.
     sports_nightly_job = merino_job(
         name="sports_nightly_job",
+        env_vars={
+            "MERINO_PROVIDERS__SPORTS__ES__DSN": es_prod_connection.host
+            or es_staging_connection.host,
+        },
         arguments=["fetch_sports", "nightly"],
         secrets=[sportsdata_prod_apikey_secret],
     )
@@ -322,6 +335,10 @@ with DAG(
 ) as dag:
     sports_update_job = merino_job(
         name="sports_update_job",
+        env_vars={
+            "MERINO_PROVIDERS__SPORTS__ES__DSN": es_prod_connection.host
+            or es_staging_connection.host,
+        },
         arguments=["fetch_sports", "update"],
         secrets=[sportsdata_prod_apikey_secret],
     )
