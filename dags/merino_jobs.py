@@ -314,7 +314,7 @@ with DAG(
     "merino_sports_update",
     # This updates current and pending sport events for the window
     # current date ±7 days. Called every 5 minutes.
-    schedule_interval="*/5 * * * *",
+    schedule_interval="0 * * * *",
     doc_md=DOCS,
     default_args=sports_args,
     tags=tags,
