@@ -287,6 +287,7 @@ with DAG(
 
 sports_args = copy(default_args)
 sports_args["email_on_failure"] = False
+sports_args["email_on_retry"] = False
 sports_args["email"] = ["jconlin+af@mozilla.com"]
 
 # Sports Nightly
