@@ -152,7 +152,7 @@ annotations_export = GKEPodOperator(
 ensemble_transposer = GKEPodOperator(
     task_id="ensemble_transposer",
     name="ensemble_transposer",
-    image="gcr.io/moz-fx-data-airflow-prod-88e0/ensemble-transposer:latest",
+    image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/ensemble-transposer/ensemble-transposer:latest",
     env_vars={
         "GCS_BUCKET_NAME": "moz-fx-data-static-websit-8565-ensemble",
     },
