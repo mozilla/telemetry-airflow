@@ -72,7 +72,7 @@ params = {
 
 # renders generate sql command if params.generate_sql is true, else empty string
 generate_sql_cmd_template = (
-    "{{ 'script/bqetl generate all --use-cloud-function=false && ' "
+    "{{ 'script/bqetl generate all --ignore derived_view_schemas --use-cloud-function=false && ' "
     "if params.generate_sql else '' }}"
 )
 # SQL generation currently requires ~4 GB of memory.
@@ -165,7 +165,8 @@ with DAG(
         execution_timeout=timedelta(hours=2),
         arguments=[
             generate_sql_cmd_template
-            + "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
+            + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
+            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-glam-prod && "
