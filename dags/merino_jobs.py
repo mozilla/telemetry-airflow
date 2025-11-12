@@ -344,5 +344,5 @@ with DAG(
         },
         arguments=["fetch_sports", "update"],
         # NOTE: ALL secrets must be passed in explicitly
-        secrets=[sportsdata_prod_apikey_secret, es_secret],
+        secrets=[sports_prod_sportsdata_apikey_secret, es_secret],
     )
