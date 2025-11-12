@@ -110,7 +110,7 @@ sportsdata_prod_apikey_secret = Secret(
     # What Environment variable should store this value (Talk to DAGENG about this value)
     # This value should match what the merino job is expecting.
     # In this case, we follow the `settings` model
-    deploy_target="MERINO_PROVIDERS__SPORTS__SPORTSDATA__API_KEY",
+    deploy_target="MERINO_PROVIDERS__SPORTS__ES__API_KEY",
     # Where is the secret stored in Kubernetes?
     secret="airflow-gke-secrets",
     # finally, what is the name of the secret in the storage (Talk to DAGENG about this value)
