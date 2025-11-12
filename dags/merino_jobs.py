@@ -104,13 +104,13 @@ flightaware_prod_apikey_secret = Secret(
 
 # The Secret defines how the DAG should get the credential.
 # See https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/_modules/airflow/providers/cncf/kubernetes/secret.html#Secret
-sportsdata_prod_apikey_secret = Secret(
+sports_prod_sportsdata_apikey_secret = Secret(
     # How is the secret deployed (usually as an `env`ironment variable)
     deploy_type="env",
     # What Environment variable should store this value (Talk to DAGENG about this value)
     # This value should match what the merino job is expecting.
     # In this case, we follow the `settings` model
-    deploy_target="MERINO_PROVIDERS__SPORTS__ES__API_KEY",
+    deploy_target="MERINO_PROVIDERS__SPORTS__SPORTSDATA__API_KEY",
     # Where is the secret stored in Kubernetes?
     secret="airflow-gke-secrets",
     # finally, what is the name of the secret in the storage (Talk to DAGENG about this value)
@@ -322,7 +322,7 @@ with DAG(
         },
         arguments=["fetch_sports", "nightly"],
         # NOTE: ALL secrets must be passed in explicitly
-        secrets=[sportsdata_prod_apikey_secret, es_secret],
+        secrets=[sports_prod_sportsdata_apikey_secret, es_secret],
     )
 
 # Sports Update
@@ -344,5 +344,5 @@ with DAG(
         },
         arguments=["fetch_sports", "update"],
         # NOTE: ALL secrets must be passed in explicitly
-        secrets=[sportsdata_prod_apikey_secret, es_secret],
+        secrets=[sports_prod_sportsdata_apikey_secret, es_secret],
     )
