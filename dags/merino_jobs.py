@@ -104,7 +104,7 @@ flightaware_prod_apikey_secret = Secret(
 
 # The Secret defines how the DAG should get the credential.
 # See https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/_modules/airflow/providers/cncf/kubernetes/secret.html#Secret
-sportsdata_prod_apikey_secret = Secret(
+sports_prod_sportsdata_apikey_secret = Secret(
     # How is the secret deployed (usually as an `env`ironment variable)
     deploy_type="env",
     # What Environment variable should store this value (Talk to DAGENG about this value)
@@ -322,7 +322,7 @@ with DAG(
         },
         arguments=["fetch_sports", "nightly"],
         # NOTE: ALL secrets must be passed in explicitly
-        secrets=[sportsdata_prod_apikey_secret, es_secret],
+        secrets=[sports_prod_sportsdata_apikey_secret, es_secret],
     )
 
 # Sports Update
@@ -330,7 +330,7 @@ with DAG(
     "merino_sports_update",
     # This updates current and pending sport events for the window
     # current date ±7 days. Called every 5 minutes.
-    schedule_interval="0 * * * *",
+    schedule_interval="*/5 * * * *",
     doc_md=DOCS,
     default_args=sports_args,
     tags=tags,
@@ -344,5 +344,5 @@ with DAG(
         },
         arguments=["fetch_sports", "update"],
         # NOTE: ALL secrets must be passed in explicitly
-        secrets=[sportsdata_prod_apikey_secret, es_secret],
+        secrets=[sports_prod_sportsdata_apikey_secret, es_secret],
     )
