@@ -266,6 +266,7 @@ with DAG(
             "--force-upload",
             "--write-xcom",
         ],
+        do_xcom_push=True,
     )
 
     # polygon image ingestion task
