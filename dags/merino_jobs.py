@@ -264,9 +264,7 @@ with DAG(
             "--dst-cdn-hostname",
             "prod-images.merino.prod.webservices.mozgcp.net",
             "--force-upload",
-            "--write-xcom",
         ],
-        do_xcom_push=True,
     )
 
     # polygon image ingestion task
