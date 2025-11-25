@@ -48,10 +48,7 @@ def merino_job(
             requests={"memory": "512Mi"},
         ),
         env_vars=default_env_vars,
-        email=[
-            "disco-team@mozilla.com",
-            "wstuckey@mozilla.com",
-        ],
+        email=["disco-team@mozilla.com"],
         **kwargs,
     )
 
@@ -59,7 +56,7 @@ def merino_job(
 default_args = {
     "owner": "disco-team@mozilla.com",
     "start_date": datetime.datetime(2023, 2, 1),
-    "email": ["disco-team@mozilla.com", "wstuckey@mozilla.com"],
+    "email": ["disco-team@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
@@ -235,7 +232,7 @@ with DAG(
 
     on_domain_success = EmailOperator(
         task_id="email_on_domain_success",
-        to=["disco-team@mozilla.com", "wstuckey@mozilla.com"],
+        to=["disco-team@mozilla.com"],
         subject="Navigational Suggestions Domain Metadata job successful",
         html_content="""
         Job completed. Download the new top picks json file on GCS.
