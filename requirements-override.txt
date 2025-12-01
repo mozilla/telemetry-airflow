@@ -1,3 +1,4 @@
 # There's a bug in apache-airflow-providers-google 12.0.0 where Dataproc operators fail to import
 # without OpenLineage installed, which was fixed in 14.0.0 (https://github.com/apache/airflow/pull/46561).
+apache-airflow==2.10.5
 apache-airflow-providers-google==14.0.0
