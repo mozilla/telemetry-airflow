@@ -54,7 +54,7 @@ with DAG(
     "fxci_pulse_export",
     default_args=default_args,
     doc_md=__doc__,
-    schedule_interval="30 */4 * * *",
+    schedule_interval="30 */2 * * *",
     tags=tags,
 ) as dag:
     fxci_pulse_export = GKEPodOperator(
