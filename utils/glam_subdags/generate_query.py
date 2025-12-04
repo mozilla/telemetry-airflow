@@ -13,6 +13,7 @@ def generate_and_run_desktop_query(
     destination_dataset_id=None,
     process=None,
     docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    use_slots=False,
     **kwargs,
 ):
     """
@@ -29,6 +30,7 @@ def generate_and_run_desktop_query(
     :param process:                     Process to filter probes for.  Gets all processes by default.
     :param docker_image:                Docker image
     :param gcp_conn_id:                 Airflow GCP connection
+    :param use_slots:                   Use slots for the query
     """
     if destination_dataset_id is None:
         destination_dataset_id = source_dataset_id
@@ -43,10 +45,14 @@ def generate_and_run_desktop_query(
     if not overwrite:
         env_vars["APPEND"] = "t"
 
+    # For use in shell script
+    use_slots_param = str(use_slots).lower()
+
     command = [
         "script/glam/generate_and_run_desktop_sql",
         probe_type,
         sample_size,
+        use_slots_param,
     ]
     if process is not None:
         command.append(process)
