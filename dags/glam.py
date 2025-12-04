@@ -82,7 +82,7 @@ latest_versions = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/latest_versions/query.sql",
     project_id=billing_project_id,
     date_partition_parameter=None,
-    arguments=("--replace",),
+    arguments=("--replace", "--reservation_id=glam"),
     dag=dag,
 )
 
@@ -132,7 +132,7 @@ clients_scalar_aggregates = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/clients_scalar_aggregates_v1/query.sql",
     project_id=billing_project_id,
     depends_on_past=True,
-    arguments=("--replace",),
+    arguments=("--replace", "--reservation_id=glam"),
     dag=dag,
 )
 
@@ -151,6 +151,7 @@ clients_daily_histogram_aggregates_parent = generate_and_run_desktop_query(
     process="parent",
     get_logs=False,
     dag=dag,
+    use_slots=True,
 )
 
 clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
@@ -165,6 +166,7 @@ clients_daily_histogram_aggregates_content = generate_and_run_desktop_query(
     process="content",
     get_logs=False,
     dag=dag,
+    use_slots=True,
 )
 
 clients_daily_histogram_aggregates_gpu = generate_and_run_desktop_query(
@@ -179,6 +181,7 @@ clients_daily_histogram_aggregates_gpu = generate_and_run_desktop_query(
     process="gpu",
     get_logs=False,
     dag=dag,
+    use_slots=True,
 )
 
 clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
