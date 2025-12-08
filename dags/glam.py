@@ -82,7 +82,7 @@ latest_versions = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/latest_versions/query.sql",
     project_id=billing_project_id,
     date_partition_parameter=None,
-    arguments=("--replace"),
+    arguments=("--replace",),
     dag=dag,
 )
 
