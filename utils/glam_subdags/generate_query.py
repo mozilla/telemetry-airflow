@@ -125,6 +125,7 @@ def generate_and_run_glean_task(
     min_sample_id = 0,
     max_sample_id = 99,
     replace_table = True,
+    use_slots = True,
     **kwargs,
 ):
     """
@@ -170,7 +171,7 @@ def generate_and_run_glean_task(
         arguments=[
             "script/glam/generate_glean_sql && "
             "source script/glam/run_glam_sql && "
-            f'run_{task_type} {query_name} false {min_sample_id} {max_sample_id} "" {write_preference}'
+            f'run_{task_type} {query_name} false {min_sample_id} {max_sample_id} "" {write_preference} 10 {str(use_slots).lower()}'
         ],
         image=docker_image,
         **kwargs,
