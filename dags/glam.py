@@ -82,7 +82,7 @@ latest_versions = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/latest_versions/query.sql",
     project_id=billing_project_id,
     date_partition_parameter=None,
-    arguments=("--replace", "--reservation_id=glam"),
+    arguments=("--replace"),
     dag=dag,
 )
 
@@ -195,6 +195,7 @@ clients_daily_keyed_histogram_aggregates = generate_and_run_desktop_query(
     probe_type="keyed_histogram",
     get_logs=False,
     dag=dag,
+    use_slots=True,
 )
 
 clients_histogram_aggregates = SubDagOperator(
@@ -276,7 +277,7 @@ clients_histogram_probe_counts = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/clients_histogram_probe_counts_v1/query.sql",
     project_id=billing_project_id,
     date_partition_parameter=None,
-    arguments=("--replace", "--clustering_fields=metric,channel"),
+    arguments=("--replace", "--clustering_fields=metric,channel", "--reservation_id=glam"),
     dag=dag,
 )
 
