@@ -68,7 +68,13 @@ with DAG(
 
     dryrun = GKEPodOperator(
         task_id="dryrun",
-        arguments=["script/bqetl", "dryrun", "--validate-schemas", "sql"],
+        arguments=[
+            "script/bqetl",
+            "dryrun",
+            "--use-cloud-function=false",
+            "--validate-schemas",
+            "sql",
+        ],
         image=docker_image,
         trigger_rule=TriggerRule.ALL_DONE,
     )
