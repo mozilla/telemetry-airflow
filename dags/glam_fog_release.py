@@ -70,7 +70,7 @@ with DAG(
         )
 
         # stage 2 - downstream for export
-        scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1", use_slots=False)
+        scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1")
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
         with TaskGroup(
@@ -90,8 +90,7 @@ with DAG(
                     ),
                     min_sample_id=sample_range[0],
                     max_sample_id=sample_range[1],
-                    replace_table=(sample_range[0] == 0),
-                    use_slots=False,
+                    replace_table=(sample_range[0] == 0)
                 )
                 if prev_task:
                     histogram_bucket_counts_sampled.set_upstream(prev_task)
