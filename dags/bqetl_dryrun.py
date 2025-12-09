@@ -57,7 +57,7 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
 ) as dag:
-    docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
+    docker_image = "gcr.io/ascholtz-dev/bqetl:latest"
 
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",
@@ -73,7 +73,7 @@ with DAG(
             "dryrun",
             "--use-cloud-function=false",
             "--validate-schemas",
-            "sql",
+            "sql/moz-fx-data-shared-prod/fenix_derived",
         ],
         image=docker_image,
         trigger_rule=TriggerRule.ALL_DONE,
