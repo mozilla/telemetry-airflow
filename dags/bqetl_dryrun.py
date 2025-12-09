@@ -16,8 +16,8 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.models import DagRun
-from airflow.utils.state import DagRunState
 from airflow.operators.python import ShortCircuitOperator
+from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
 
 from operators.gcp_container_operator import GKEPodOperator
