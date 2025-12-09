@@ -38,15 +38,15 @@ default_args = {
 tags = [Tag.ImpactTier.tier_2]
 
 
-def should_dryrun(dag_id: str, generate_sql: bool) -> bool:
+def should_dryrun(dag_id: str) -> bool:
     """
-    Run deploys if there are no other queued dag runs or if the generate_sql param is true.
+    Run dryruns if there are no other queued DAG runs.
 
     When used with ShortCircuitOperator, true means run downstream tasks and false means skip.
     """
     queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
-    print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
-    return len(queued_runs) == 0 or generate_sql == "True"
+    print(f"Found {len(queued_runs)} queued DAG runs for {dag_id}")
+    return len(queued_runs) == 0
 
 
 with DAG(
