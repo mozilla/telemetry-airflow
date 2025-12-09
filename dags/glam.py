@@ -132,7 +132,7 @@ clients_scalar_aggregates = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/clients_scalar_aggregates_v1/query.sql",
     project_id=billing_project_id,
     depends_on_past=True,
-    arguments=("--replace", "--reservation_id=glam"),
+    arguments=("--replace", "--reservation_id=moz-fx-bigquery-reserv-global:glam"),
     dag=dag,
 )
 
@@ -277,7 +277,7 @@ clients_histogram_probe_counts = bigquery_etl_query(
     sql_file_path=f"sql/{table_project_id}/{dataset_id}/clients_histogram_probe_counts_v1/query.sql",
     project_id=billing_project_id,
     date_partition_parameter=None,
-    arguments=("--replace", "--clustering_fields=metric,channel", "--reservation_id=glam"),
+    arguments=("--replace", "--clustering_fields=metric,channel", "--reservation_id=moz-fx-bigquery-reserv-global:glam"),
     dag=dag,
 )
 
