@@ -38,6 +38,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import DagRun, Param
 from airflow.operators.python import ShortCircuitOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
@@ -56,8 +57,8 @@ default_args = {
     "start_date": datetime(2022, 12, 6),
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 tags = [Tag.ImpactTier.tier_1]
@@ -212,6 +213,12 @@ with DAG(
         secrets=[bigeye_api_key_secret],
     )
 
+    trigger_dryrun = TriggerDagRunOperator(
+        task_id="trigger_dryrun",
+        trigger_dag_id="bqetl_dryrun",
+        wait_for_completion=False,
+    )
+
     skip_if_queued_runs_exist.set_downstream(
         [
             publish_public_udfs,
@@ -224,3 +231,6 @@ with DAG(
     publish_views.set_upstream(publish_new_tables)
     publish_metadata.set_upstream(publish_views)
     publish_bigeye_monitors.set_upstream(publish_views)
+    # trigger dryrun
+    # doesn't block downstream tasks
+    trigger_dryrun.set_upstream(publish_views)
