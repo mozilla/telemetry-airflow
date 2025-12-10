@@ -58,13 +58,7 @@ with DAG(
     tags=tags,
 ) as dag:
     docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
-
-    skip_if_queued_runs_exist = ShortCircuitOperator(
-        task_id="skip_if_queued_runs_exist",
-        ignore_downstream_trigger_rules=True,
-        python_callable=should_dryrun,
-        op_kwargs={"dag_id": dag.dag_id},
-    )
+    docker_custom_image = "gcr.io/ascholtz-dev/bqetl:latest"
 
     dryrun = GKEPodOperator(
         task_id="dryrun",
@@ -75,8 +69,19 @@ with DAG(
             "--validate-schemas",
             "sql",
         ],
-        image=docker_image,
+        image=docker_custom_image,
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    dryrun.set_upstream(skip_if_queued_runs_exist)
+    dryrun_highmem = GKEPodOperator(
+        task_id="dryrun_highmem",
+        arguments=[
+            "script/bqetl",
+            "dryrun",
+            "--use-cloud-function=false",
+            "--validate-schemas",
+            "sql",
+        ],
+        image=docker_custom_image,
+        trigger_rule=TriggerRule.ALL_DONE,
+    )
