@@ -73,16 +73,15 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    dryrun_highmem = GKEPodOperator(
-        task_id="dryrun_highmem",
+    dryrun_telemetry = GKEPodOperator(
+        task_id="dryrun_telemetry",
         arguments=[
             "script/bqetl",
             "dryrun",
             "--use-cloud-function=false",
             "--validate-schemas",
-            "sql",
+            "sql/moz-fx-data-shared-prod/telemetry_derived/",
         ],
         image=docker_custom_image,
-        get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
