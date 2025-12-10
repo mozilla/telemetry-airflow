@@ -83,5 +83,6 @@ with DAG(
             "sql",
         ],
         image=docker_custom_image,
+        get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
