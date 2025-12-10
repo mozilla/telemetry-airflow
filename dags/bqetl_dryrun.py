@@ -66,7 +66,6 @@ with DAG(
         arguments=[
             "script/bqetl",
             "dryrun",
-            "--use-cloud-function=false",
             "--validate-schemas",
             "sql",
         ],
