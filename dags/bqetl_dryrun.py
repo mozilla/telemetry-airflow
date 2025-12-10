@@ -19,6 +19,7 @@ from airflow.models import DagRun
 from airflow.operators.python import ShortCircuitOperator
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -71,12 +72,17 @@ with DAG(
         arguments=[
             "script/bqetl",
             "dryrun",
-            "--use-cloud-function=false",
             "--validate-schemas",
             "sql",
         ],
         image=docker_image,
         trigger_rule=TriggerRule.ALL_DONE,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={
+                "cpu": "4",
+                "memory": "2Gi",
+            },
+        ),
     )
 
     dryrun.set_upstream(skip_if_queued_runs_exist)
