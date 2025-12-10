@@ -19,6 +19,7 @@ from airflow.models import DagRun
 from airflow.operators.python import ShortCircuitOperator
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -84,4 +85,10 @@ with DAG(
         ],
         image=docker_custom_image,
         trigger_rule=TriggerRule.ALL_DONE,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={
+                "cpu": "2",      
+                "memory": "2Gi",
+            },
+        ),
     )
