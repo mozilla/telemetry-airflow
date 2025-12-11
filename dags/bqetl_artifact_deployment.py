@@ -78,7 +78,7 @@ generate_sql_cmd_template = (
 )
 # SQL generation currently requires ~4 GB of memory.
 generate_sql_container_resources = k8s.V1ResourceRequirements(
-    requests={"memory": "{{ '5Gi' if params.generate_sql else '2Gi' }}"},
+    requests={"memory": "{{ '5Gi' if params.generate_sql else '3Gi' }}"},
 )
 
 
@@ -110,7 +110,7 @@ with DAG(
     tags=tags,
     params=params,
 ) as dag:
-    docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
+    docker_image = "gcr.io/ascholtz-dev/bqetl:latest"
 
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",
@@ -123,6 +123,9 @@ with DAG(
         task_id="publish_public_udfs",
         arguments=["script/publish_public_udfs"],
         image=docker_image,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi", "cpu": "4"},
+        ),
     )
 
     publish_persistent_udfs = GKEPodOperator(
@@ -133,6 +136,22 @@ with DAG(
             "script/publish_persistent_udfs --project-id=mozdata"
         ],
         image=docker_image,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi", "cpu": "4"},
+        ),
+    )
+
+    generate_sql = GKEPodOperator(
+        task_id="generate_sql",
+        cmds=["bash", "-x", "-c"],
+        execution_timeout=timedelta(hours=6),
+        arguments=[
+            "script/bqetl generate all --ignore derived_view_schemas --use-cloud-function=false"
+        ],
+        image=docker_image,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "5Gi", "cpu": "4",},
+        ),
     )
 
     publish_new_tables = GKEPodOperator(
@@ -140,24 +159,13 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         execution_timeout=timedelta(hours=6),
         arguments=[
-            generate_sql_cmd_template
-            + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-bq-people && "
             "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-glam-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-glam-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-bq-people && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-bq-people"
+            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod"
         ],
         image=docker_image,
-        container_resources=generate_sql_container_resources,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi", "cpu": "4"},
+        ),
     )
 
     publish_views = GKEPodOperator(
@@ -168,22 +176,13 @@ with DAG(
             generate_sql_cmd_template
             + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-glam-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-bq-people && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
-            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
-            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view clean --skip-authorized --target-project=moz-fx-glam-prod --project-id=moz-fx-glam-prod && "
-            "script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only && "
-            "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people && "
-            "script/publish_public_data_views --target-project=moz-fx-data-shared-prod && "
-            "script/publish_public_data_views --target-project=mozdata"
+            "script/publish_public_data_views --target-project=moz-fx-data-shared-prod"
         ],
         image=docker_image,
-        container_resources=generate_sql_container_resources,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi", "cpu": "4",},
+        ),
         get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
@@ -193,14 +192,12 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         arguments=[
             generate_sql_cmd_template
-            + "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
-            "script/bqetl metadata publish '*' --project_id=mozdata && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-bq-people"
+            + "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod"
         ],
         image=docker_image,
-        container_resources=generate_sql_container_resources,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi", "cpu": "4",},
+        ),
     )
 
     publish_bigeye_monitors = GKEPodOperator(
@@ -211,6 +208,9 @@ with DAG(
         ],
         image=docker_image,
         secrets=[bigeye_api_key_secret],
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi", "cpu": "4",},
+        ),
     )
 
     trigger_dryrun = TriggerDagRunOperator(
