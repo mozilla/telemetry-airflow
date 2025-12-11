@@ -124,7 +124,7 @@ with DAG(
         arguments=["script/publish_public_udfs"],
         image=docker_image,
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi", "cpu": "4"},
+            requests={"memory": "3Gi",},
         ),
     )
 
@@ -137,7 +137,7 @@ with DAG(
         ],
         image=docker_image,
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi", "cpu": "4"},
+            requests={"memory": "3Gi",},
         ),
     )
 
@@ -150,7 +150,7 @@ with DAG(
         ],
         image=docker_image,
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "5Gi", "cpu": "4",},
+            requests={"memory": "5Gi",},
         ),
     )
 
@@ -164,7 +164,7 @@ with DAG(
         ],
         image=docker_image,
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi", "cpu": "4"},
+            requests={"memory": "3Gi", },
         ),
     )
 
@@ -181,7 +181,7 @@ with DAG(
         ],
         image=docker_image,
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi", "cpu": "4",},
+            requests={"memory": "3Gi",},
         ),
         get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
@@ -196,7 +196,7 @@ with DAG(
         ],
         image=docker_image,
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi", "cpu": "4",},
+            requests={"memory": "3Gi",},
         ),
     )
 
@@ -209,7 +209,7 @@ with DAG(
         image=docker_image,
         secrets=[bigeye_api_key_secret],
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi", "cpu": "4",},
+            requests={"memory": "3Gi",},
         ),
     )
 
