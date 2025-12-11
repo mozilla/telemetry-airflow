@@ -80,7 +80,7 @@ generate_sql_cmd_template = (
 generate_sql_container_resources = k8s.V1ResourceRequirements(
     requests={
         "memory": "{{ '6Gi' if params.generate_sql else '2Gi' }}",
-        "cpu": "{{ '4' if params.generate_sql else '2' }}",
+        "cpu": "{{ '4' if params.generate_sql else '1' }}",
     },
 )
 
