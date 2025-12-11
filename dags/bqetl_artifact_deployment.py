@@ -78,7 +78,10 @@ generate_sql_cmd_template = (
 )
 # SQL generation currently requires ~4 GB of memory.
 generate_sql_container_resources = k8s.V1ResourceRequirements(
-    requests={"memory": "{{ '5Gi' if params.generate_sql else '2Gi' }}"},
+    requests={
+        "memory": "{{ '6Gi' if params.generate_sql else '2Gi' }}",
+        "cpu": "{{ '4' if params.generate_sql else '1' }}",
+    },
 )
 
 
