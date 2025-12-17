@@ -1,21 +1,24 @@
 import datetime
+
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskMarker
+
 from operators.gcp_container_operator import GKEPodOperator
 
 docs = """
 ### web_scraping
 
-Scrapes a few websites on a monthly basis & loads data to GCS
+Scrapes a few websites on a monthly basis &
+loads data to GCS to be used in the monthly market intel bot report
 
-Owner: kwindau@mozilla.com
+Owner: lmcfall@mozilla.com
 """
 
 default_args = {
-    "owner": "kwindau@mozilla.com",
+    "owner": "lmcfall@mozilla.com",
     "start_date": datetime.datetime(2025, 9, 1, 0, 0),
     "end_date": None,
-    "email": ["kwindau@mozilla.com"],
+    "email": ["lmcfall@mozilla.com"],
     "depends_on_past": False,
     "retry_delay": datetime.timedelta(seconds=1800),
     "email_on_failure": True,
