@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import Variable
 from airflow.providers.cncf.kubernetes.secret import Secret
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -102,6 +103,10 @@ with DAG(
         "cluster_name": "workloads-prod-v1",
     }
 
+    resources = k8s.V1ResourceRequirements(
+        requests={"memory": "1500Mi", "cpu": "3"},
+    )
+
     image_tag = Variable.get("lookml_generator_release_str")
     if image_tag is None:
         image_tag = DEFAULT_LOOKML_GENERATOR_IMAGE_VERSION
@@ -114,7 +119,8 @@ with DAG(
         ],
         task_id="lookml_generator",
         name="lookml-generator-1",
-        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/lookml-generator/lookml-generator:" + image_tag,
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/lookml-generator/lookml-generator:"
+        + image_tag,
         startup_timeout_seconds=500,
         dag=dag,
         env_vars={
@@ -132,6 +138,7 @@ with DAG(
             looker_api_client_secret_prod,
             dataops_looker_github_secret_access_token,
         ],
+        container_resources=resources,
         **airflow_gke_prod_kwargs,
     )
 
@@ -160,6 +167,7 @@ with DAG(
             looker_api_client_secret_staging,
             dataops_looker_github_secret_access_token,
         ],
+        container_resources=resources,
         **airflow_gke_prod_kwargs,
     )
 
@@ -226,7 +234,7 @@ with DAG(
             "-m",
             "looker_utils.main",
             "delete-branches",
-            "--inactive_days=180"
+            "--inactive_days=180",
         ],
         image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
         env_vars={
@@ -238,4 +246,8 @@ with DAG(
 
     lookml_generator_staging >> lookml_generator_prod
     lookml_generator_prod >> validate_content_spectacles >> delete_outdated_branches
-    lookml_generator_prod >> validate_lookml_spoke_default_spectacles >> delete_outdated_branches
+    (
+        lookml_generator_prod
+        >> validate_lookml_spoke_default_spectacles
+        >> delete_outdated_branches
+    )
