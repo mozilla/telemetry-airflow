@@ -222,6 +222,11 @@ with DAG(
         wait_for_completion=False,
     )
 
+    # trigger lookml generation
+    trigger_looker = TriggerDagRunOperator(
+        task_id="trigger_looker", trigger_dag_id="looker", wait_for_completion=False
+    )
+
     skip_if_queued_runs_exist.set_downstream(
         [
             publish_public_udfs,
@@ -237,3 +242,4 @@ with DAG(
     # trigger dryrun
     # doesn't block downstream tasks
     trigger_dryrun.set_upstream(publish_views)
+    trigger_looker.set_upstream(publish_views)
