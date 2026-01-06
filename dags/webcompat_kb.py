@@ -84,7 +84,7 @@ with DAG(
             "--bq-interop-dataset",
             "interop",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/webcompat-kb_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/webcompat-kb:latest",
         dag=dag,
         secrets=[
             bugzilla_token,

@@ -208,20 +208,24 @@ with DAG(
 ) as dag:
     workday_netsuite_dag = GKEPodOperator(
         task_id="eam_workday_netsuite",
-        arguments=["python", "scripts/workday_netsuite_integration.py", "--level", "info"],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/"
-        + "eam-integrations_docker_etl:latest",
+        arguments=[
+            "python",
+            "scripts/workday_netsuite_integration.py",
+            "--level",
+            "info",
+        ],
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/eam-integrations:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
-            NETSUITE_INTEG_WORKDAY_USERNAME, 
+            NETSUITE_INTEG_WORKDAY_USERNAME,
             NETSUITE_INTEG_WORKDAY_PASSWORD,
             NETSUITE_INTEG_WORKDAY_LISTING_OF_WORKERS_LINK,
             NETSUITE_INTEG_WORKDAY_INTERNATIONAL_TRANSFER_LINK,
             NETSUITE_INTEG_NETSUITE_CONSUMER_KEY,
             NETSUITE_INTEG_NETSUITE_CONSUMER_SECRET,
             NETSUITE_INTEG_NETSUITE_TOKEN_ID,
-            NETSUITE_INTEG_NETSUITE_TOKEN_SECRET, 
+            NETSUITE_INTEG_NETSUITE_TOKEN_SECRET,
             NETSUITE_INTEG_NETSUITE_TOKEN_OAUTH_REALM,
-            NETSUITE_INTEG_NETSUITE_HOST 
+            NETSUITE_INTEG_NETSUITE_HOST,
         ],
     )

@@ -52,6 +52,6 @@ with DAG(
             "--datasets",
             *experiment_datasets,
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/experiments-monitoring-data-export_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/experiments-monitoring-data-export:latest",
         dag=dag,
     )

@@ -27,8 +27,6 @@ default_args = {
 }
 
 tags = ["impact/tier_3", "repo/telemetry-airflow"]
-SERVER = "moz-fx-data-airflow-prod-88e0"
-IMAGE_NAME = "release_scraping_docker_etl:latest"
 
 with DAG(
     "web_scraping",
@@ -45,7 +43,7 @@ with DAG(
             "--date",
             "{{ ds }}",
         ],
-        image=f"gcr.io/{SERVER}/{IMAGE_NAME}",
+        image=f"us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/release_scraping:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 
