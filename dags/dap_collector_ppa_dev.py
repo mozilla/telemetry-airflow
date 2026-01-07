@@ -73,6 +73,6 @@ with DAG(
             "--report-table-id",
             report_table_id,
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/dap-collector-ppa-dev_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/dap-collector-ppa-dev:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )

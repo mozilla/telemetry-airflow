@@ -236,7 +236,7 @@ with DAG(
             "delete-branches",
             "--inactive_days=180",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/looker-utils:latest",
         env_vars={
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
         },
