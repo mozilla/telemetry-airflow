@@ -32,7 +32,7 @@ default_args = {
 }
 
 TAGS = [Tag.ImpactTier.tier_1]
-IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/kpi-forecasting_docker_etl:latest"
+IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/kpi-forecasting:latest"
 
 FORECAST_METRICS_LIST = [
     "search_forecasting_daily_active_users",

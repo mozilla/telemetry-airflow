@@ -44,7 +44,7 @@ with DAG(
             "--destination-table-id",
             table_id,
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/quicksuggest2bq_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/quicksuggest2bq:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[

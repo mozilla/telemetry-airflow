@@ -62,6 +62,6 @@ with DAG(
             "--bq_dataset_id",
             "webcompat_user_reports",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/broken-site-report-ml_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/broken-site-report-ml:latest",
         dag=dag,
     )

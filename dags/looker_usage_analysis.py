@@ -73,7 +73,7 @@ with DAG(
             "--date={{ ds }}",
             "explores",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/looker-utils:latest",
         env_vars={
             "LOOKER_INSTANCE_URI": looker_instance_uri,
         },
@@ -93,7 +93,7 @@ with DAG(
             "--date={{ ds }}",
             "models",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/looker-utils:latest",
         env_vars={
             "LOOKER_INSTANCE_URI": looker_instance_uri,
         },
@@ -113,7 +113,7 @@ with DAG(
             "--date={{ ds }}",
             "unused-explores",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/looker-utils_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/looker-utils:latest",
         env_vars={
             "LOOKER_INSTANCE_URI": looker_instance_uri,
         },
