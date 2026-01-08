@@ -82,14 +82,11 @@ with models.DAG(
         # Any table listed here under except_tables _must_ have a corresponding
         # copy_deduplicate job elsewhere.
         except_tables=[
-            "telemetry_live.main_v4",
             "telemetry_live.main_use_counter_v4",
             "telemetry_live.main_v5",
             "telemetry_live.event_v4",
-            "telemetry_live.first_shutdown_v4",
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
-            "telemetry_live.saved_session_v4",
             "telemetry_live.saved_session_use_counter_v4",
             "telemetry_live.saved_session_v5",
             "firefox_desktop_live.metrics_v1",
@@ -174,7 +171,6 @@ with models.DAG(
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=[
-            "telemetry_live.main_v4",
             "telemetry_live.main_use_counter_v4",
             "telemetry_live.main_v5",
         ],
@@ -225,7 +221,6 @@ with models.DAG(
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=[
-            "telemetry_live.first_shutdown_v4",
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
         ],
@@ -256,7 +251,6 @@ with models.DAG(
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
         only_tables=[
-            "telemetry_live.saved_session_v4",
             "telemetry_live.saved_session_use_counter_v4",
             "telemetry_live.saved_session_v5",
         ],
