@@ -24,12 +24,12 @@ from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 default_args = {
-    "owner": "kik@mozilla.com",
+    "owner": "bewu@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
         "telemetry-alerts@mozilla.com",
-        "kik@mozilla.com",
+        "benwu@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -39,9 +39,7 @@ default_args = {
 
 PIP_PACKAGES = [
     "git+https://github.com/mozilla/python_moztelemetry.git@v0.10.7#egg=python-moztelemetry",
-    "git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim",
-    "boto3==1.16.20",
-    "six==1.15.0",
+    "git+https://github.com/FirefoxGraphics/telemetry.git#egg=bigquery_shim&subdirectory=analyses/bigquery_shim",
 ]
 
 GCS_BUCKET = "moz-fx-data-static-websit-8565-analysis-output"
@@ -77,7 +75,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
+            image_version="2.0-debian10",
             dag_name="graphics_trends",
             default_args=default_args,
             cluster_name="graphics-trends-{{ ds }}",
@@ -100,7 +98,7 @@ with DAG(
             ],
             idle_delete_ttl=14400,
             num_workers=2,
-            worker_machine_type="n1-standard-4",
+            worker_machine_type="n2-standard-4",
             gcp_conn_id=params.conn_id,
             service_account=params.client_email,
             storage_bucket=params.storage_bucket,
@@ -112,7 +110,7 @@ with DAG(
         dag=dag,
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
+            image_version="2.0-debian10",
             dag_name="graphics_dashboard",
             default_args=default_args,
             cluster_name="graphics-dashboard-{{ ds }}",
@@ -135,7 +133,7 @@ with DAG(
             ],
             idle_delete_ttl=14400,
             num_workers=2,
-            worker_machine_type="n1-highmem-4",
+            worker_machine_type="n2-highmem-4",
             gcp_conn_id=params.conn_id,
             service_account=params.client_email,
             storage_bucket=params.storage_bucket,
