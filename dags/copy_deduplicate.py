@@ -87,8 +87,6 @@ with models.DAG(
             "telemetry_live.event_v4",
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
-            "telemetry_live.saved_session_use_counter_v4",
-            "telemetry_live.saved_session_v5",
             "firefox_desktop_live.metrics_v1",
         ],
         container_resources=resources,
@@ -245,19 +243,6 @@ with models.DAG(
             )
 
         copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
-
-    copy_deduplicate_saved_session_ping = bigquery_etl_copy_deduplicate(
-        task_id="copy_deduplicate_saved_session_ping",
-        target_project_id="moz-fx-data-shared-prod",
-        billing_projects=("moz-fx-data-shared-prod",),
-        only_tables=[
-            "telemetry_live.saved_session_use_counter_v4",
-            "telemetry_live.saved_session_v5",
-        ],
-        priority_weight=50,
-        parallelism=1,
-        owner="akomarzewski@mozilla.com",
-    )
 
     # Events.
 
