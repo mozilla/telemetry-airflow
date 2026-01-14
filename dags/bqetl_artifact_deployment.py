@@ -175,7 +175,12 @@ with DAG(
             "script/publish_public_data_views --target-project=mozdata"
         ],
         image=docker_image,
-        container_resources=generate_sql_container_resources,
+        container_resources=k8s.V1ResourceRequirements(
+            requests={
+                "memory": "3Gi",
+                "cpu": "2",
+            },
+        ),
         get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
