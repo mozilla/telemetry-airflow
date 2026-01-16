@@ -138,33 +138,16 @@ with DAG(
         image=docker_image,
     )
 
-    publish_new_tables = GKEPodOperator(
-        task_id="publish_new_tables",
+    publish_tables_and_views = GKEPodOperator(
+        task_id="publish_tables_and_views",
         cmds=["bash", "-x", "-c"],
         execution_timeout=timedelta(hours=6),
         arguments=[
             generate_sql_cmd_template
+            + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
             + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people && "
             "script/bqetl query schema update '*' --use-cloud-function=false --skip-existing --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people"
-        ],
-        image=docker_image,
-        container_resources=generate_sql_container_resources,
-    )
-
-    publish_views = GKEPodOperator(
-        task_id="publish_views",
-        cmds=["bash", "-x", "-c"],
-        execution_timeout=timedelta(hours=2),
-        arguments=[
-            generate_sql_cmd_template
-            + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-glam-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-bq-people && "
+            "script/bqetl deploy '*' --tables --views --use-cloud-function=false --force --ignore-dryrun-skip --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people"
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
@@ -176,7 +159,6 @@ with DAG(
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
-        get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
@@ -220,15 +202,14 @@ with DAG(
         [
             publish_public_udfs,
             publish_persistent_udfs,
-            publish_new_tables,
+            publish_tables_and_views,
         ]
     )
-    publish_views.set_upstream(publish_public_udfs)
-    publish_views.set_upstream(publish_persistent_udfs)
-    publish_views.set_upstream(publish_new_tables)
-    publish_metadata.set_upstream(publish_views)
-    publish_bigeye_monitors.set_upstream(publish_views)
+    publish_tables_and_views.set_upstream(publish_public_udfs)
+    publish_tables_and_views.set_upstream(publish_persistent_udfs)
+    publish_metadata.set_upstream(publish_tables_and_views)
+    publish_bigeye_monitors.set_upstream(publish_tables_and_views)
     # trigger dryrun
     # doesn't block downstream tasks
-    trigger_dryrun.set_upstream(publish_views)
-    trigger_looker.set_upstream(publish_views)
+    trigger_dryrun.set_upstream(publish_tables_and_views)
+    trigger_looker.set_upstream(publish_tables_and_views)
