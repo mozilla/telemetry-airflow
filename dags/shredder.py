@@ -175,15 +175,30 @@ with_sampling = GKEPodOperator(
         "--sampling-parallelism={{ var.value.get('shredder_w_sampling_sampling_parallelism', 2) }}",
         "--sampling-batch-size={{ var.value.get('shredder_w_sampling_sampling_batch_size', 1) }}",
         "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
-        "--billing-project=moz-fx-data-shared-prod",
-        "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-all",
+        "--billing-project=moz-fx-data-bq-batch-prod",
         "--only",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
-        "firefox_desktop_stable.metrics_v1",
         "--sampling-tables",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
+    ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
+    **common_task_args,
+)
+
+desktop_metrics = GKEPodOperator(
+    task_id="desktop-metrics",
+    name="shredder-desktop-metrics",
+    arguments=[
+        *base_command,
+        "--parallelism=1",
+        # https://mozilla-hub.atlassian.net/browse/DENG-9181
+        "--billing-project=moz-fx-data-shared-prod",
+        "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-desktop-metrics",
+        "--only",
         "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
