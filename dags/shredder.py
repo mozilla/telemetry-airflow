@@ -157,6 +157,7 @@ flat_rate = GKEPodOperator(
         # force no dml
         "telemetry_derived.cohort_weekly_active_clients_staging_v1",
         "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
+        # column removal
         *column_removal_backfill_tables,
     ],
     container_resources=k8s.V1ResourceRequirements(
@@ -255,6 +256,5 @@ column_removal = GKEPodOperator(
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "512Mi"},
     ),
-    # Give additional time since we may need to scale up when running this job
     **common_task_args,
 )
