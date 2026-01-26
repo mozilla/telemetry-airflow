@@ -20,7 +20,6 @@ default_args = {
     "owner": "jsnyder@mozilla.com",
     "email": [
         "jsnyder@mozilla.com",
-        "mbowerman@mozilla.com",
         "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
