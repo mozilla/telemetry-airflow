@@ -70,7 +70,8 @@ with DAG(
             # The run for submission_date=2022-03-04 will be named:
             # Aggregated-DMA-Query-Data-03042022.csv.gz
             "DST_PATH": 'files/Aggregated-DMA-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
-            "SUBMISSION_DATE": "{{ ds }}",
+            # Subtract 1 day from execution date to match upstream date_partition_offset: -1
+            "SUBMISSION_DATE": '{{ macros.ds_add(ds, -1) }}',
         },
         secrets=[adm_sftp_secret],
         email=[
