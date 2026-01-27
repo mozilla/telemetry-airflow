@@ -54,7 +54,8 @@ class DataProcHelper:
         worker_disk_size=1024,
         worker_num_local_ssds=0,
     ):
-        if optional_components is None:
+        # conda is installed by default on 2.x
+        if optional_components is None and image_version.startswith("1."):
             optional_components = ["ANACONDA"]
         self.cluster_name = cluster_name
         self.job_name = job_name
@@ -354,8 +355,6 @@ def moz_dataproc_pyspark_runner(
 
     """
 
-    if optional_components is None:
-        optional_components = ["ANACONDA"]
     if cluster_name is None or python_driver_code is None:
         raise AirflowException("Please specify cluster_name and/or python_driver_code.")
 
@@ -503,8 +502,6 @@ def moz_dataproc_jar_runner(
 
     """
 
-    if optional_components is None:
-        optional_components = ["ANACONDA"]
     if cluster_name is None or jar_urls is None or main_class is None:
         raise AirflowException(
             "Please specify cluster_name, jar_urls, and/or main_class."
@@ -664,8 +661,6 @@ def moz_dataproc_scriptrunner(
 
     """
 
-    if optional_components is None:
-        optional_components = ["ANACONDA"]
     if job_name is None or uri is None or cluster_name is None:
         raise AirflowException("Please specify job_name, uri, and cluster_name.")
 

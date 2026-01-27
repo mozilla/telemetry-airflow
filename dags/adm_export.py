@@ -55,7 +55,7 @@ with DAG(
         task_id="adm_daily_aggregates_to_sftp",
         name="adm_daily_aggregates_to_sftp",
         # See https://github.com/mozilla/docker-etl/pull/28
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bq2sftp_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/bq2sftp:latest",
         project_id="moz-fx-data-airflow-gke-prod",
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",

@@ -27,9 +27,9 @@ RUN apt-get autoremove -yqq --purge && \
 USER airflow
 
 COPY requirements.txt /
-RUN pip install --no-cache-dir -r /requirements.txt
+RUN pip install --no-cache-dir --no-deps -r /requirements.txt
 COPY requirements-override.txt /
-RUN pip install --no-cache-dir -r /requirements-override.txt --upgrade
+RUN pip install --no-cache-dir --no-deps -r /requirements-override.txt
 
 WORKDIR $PROJECT_DIR
 

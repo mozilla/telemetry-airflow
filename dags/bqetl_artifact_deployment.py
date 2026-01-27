@@ -38,6 +38,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import DagRun, Param
 from airflow.operators.python import ShortCircuitOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
 from airflow.utils.trigger_rule import TriggerRule
@@ -56,8 +57,8 @@ default_args = {
     "start_date": datetime(2022, 12, 6),
     "email_on_failure": True,
     "email_on_retry": True,
-    "retries": 2,
-    "retry_delay": timedelta(minutes=30),
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 tags = [Tag.ImpactTier.tier_1]
@@ -77,7 +78,10 @@ generate_sql_cmd_template = (
 )
 # SQL generation currently requires ~4 GB of memory.
 generate_sql_container_resources = k8s.V1ResourceRequirements(
-    requests={"memory": "{{ '5Gi' if params.generate_sql else '2Gi' }}"},
+    requests={
+        "memory": "{{ '6Gi' if params.generate_sql else '2Gi' }}",
+        "cpu": "{{ '4' if params.generate_sql else '1' }}",
+    },
 )
 
 
@@ -134,44 +138,17 @@ with DAG(
         image=docker_image,
     )
 
-    publish_new_tables = GKEPodOperator(
-        task_id="publish_new_tables",
+    publish_tables_and_views = GKEPodOperator(
+        task_id="publish_tables_and_views",
         cmds=["bash", "-x", "-c"],
         execution_timeout=timedelta(hours=6),
         arguments=[
             generate_sql_cmd_template
-            + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-experiments && "
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-bq-people && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-experiments && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-glam-prod && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-glam-prod && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --ignore-dryrun-skip --project-id=moz-fx-data-bq-people && "
-            "script/bqetl query schema deploy '*' --use-cloud-function=false --force --ignore-dryrun-skip --project-id=moz-fx-data-bq-people"
-        ],
-        image=docker_image,
-        container_resources=generate_sql_container_resources,
-    )
-
-    publish_views = GKEPodOperator(
-        task_id="publish_views",
-        cmds=["bash", "-x", "-c"],
-        execution_timeout=timedelta(hours=2),
-        arguments=[
-            generate_sql_cmd_template
             + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-experiments && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-marketing-prod && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-glam-prod && "
+            + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people && "
+            "script/bqetl query schema update '*' --use-cloud-function=false --skip-existing --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
+            "script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
-            "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-bq-people && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod && "
@@ -183,7 +160,6 @@ with DAG(
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
-        get_logs=False,
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
@@ -212,15 +188,29 @@ with DAG(
         secrets=[bigeye_api_key_secret],
     )
 
+    trigger_dryrun = TriggerDagRunOperator(
+        task_id="trigger_dryrun",
+        trigger_dag_id="bqetl_dryrun",
+        wait_for_completion=False,
+    )
+
+    # trigger lookml generation
+    trigger_looker = TriggerDagRunOperator(
+        task_id="trigger_looker", trigger_dag_id="looker", wait_for_completion=False
+    )
+
     skip_if_queued_runs_exist.set_downstream(
         [
             publish_public_udfs,
             publish_persistent_udfs,
-            publish_new_tables,
+            publish_tables_and_views,
         ]
     )
-    publish_views.set_upstream(publish_public_udfs)
-    publish_views.set_upstream(publish_persistent_udfs)
-    publish_views.set_upstream(publish_new_tables)
-    publish_metadata.set_upstream(publish_views)
-    publish_bigeye_monitors.set_upstream(publish_views)
+    publish_tables_and_views.set_upstream(publish_public_udfs)
+    publish_tables_and_views.set_upstream(publish_persistent_udfs)
+    publish_metadata.set_upstream(publish_tables_and_views)
+    publish_bigeye_monitors.set_upstream(publish_tables_and_views)
+    # trigger dryrun
+    # doesn't block downstream tasks
+    trigger_dryrun.set_upstream(publish_tables_and_views)
+    trigger_looker.set_upstream(publish_tables_and_views)

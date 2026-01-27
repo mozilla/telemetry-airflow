@@ -36,7 +36,7 @@ This job is under active development, occasional failures are expected.
 
 default_args = {
     "owner": "gleonard@mozilla.com",
-    "email": [ "ads-eng@mozilla.com"],
+    "email": ["ads-eng@mozilla.com"],
     "depends_on_past": False,
     "start_date": datetime(2025, 10, 1),
     "email_on_failure": True,
@@ -80,9 +80,9 @@ with DAG(
             "ads_incrementality_dap_collector/main.py",
             "--job_config_gcp_project={{ var.value.ads_incr_job_project_id }}",
             "--job_config_bucket={{ var.value.ads_incr_job_config_bucket }}",
-            "--process_date={{ ds }}"
+            "--process_date={{ ds }}",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/ads-incrementality-dap-collector_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/ads-incrementality-dap-collector:latest",
         secrets=[
             hpke_private_key,
             bearer_token,
