@@ -8,5 +8,5 @@ apache-airflow-providers-google==14.0.0
 apache-airflow-providers-common-compat==1.4.0
 google-cloud-build==3.31.0
 
-acryl-datahub @ https://66ce3d9f.datahub-wheels.pages.dev/artifacts/wheels/acryl_datahub-0.0.0.dev1-py3-none-any.whl
-acryl-datahub-airflow-plugin @ https://66ce3d9f.datahub-wheels.pages.dev/artifacts/wheels/acryl_datahub_airflow_plugin-0.0.0.dev1-py3-none-any.whl
+acryl-datahub @ https://ccbab1be.datahub-wheels.pages.dev/artifacts/wheels/acryl_datahub-0.0.0.dev1-py3-none-any.whl
+acryl-datahub-airflow-plugin @ https://ccbab1be.datahub-wheels.pages.dev/artifacts/wheels/acryl_datahub_airflow_plugin-0.0.0.dev1-py3-none-any.whl
