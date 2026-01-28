@@ -1,5 +1,12 @@
+# Reiterate the Airflow version requirement in case `pip install` is called on this file without `--no-deps`.
+apache-airflow==2.10.5
+
 # There's a bug in apache-airflow-providers-google 12.0.0 where Dataproc operators fail to import
 # without OpenLineage installed, which was fixed in 14.0.0 (https://github.com/apache/airflow/pull/46561).
 apache-airflow-providers-google==14.0.0
+# Also install the minimum version of newer dependencies required by apache-airflow-providers-google 14.0.0.
+apache-airflow-providers-common-compat==1.4.0
+google-cloud-build==3.31.0
+
 acryl-datahub @ https://66ce3d9f.datahub-wheels.pages.dev/artifacts/wheels/acryl_datahub-0.0.0.dev1-py3-none-any.whl
 acryl-datahub-airflow-plugin @ https://66ce3d9f.datahub-wheels.pages.dev/artifacts/wheels/acryl_datahub_airflow_plugin-0.0.0.dev1-py3-none-any.whl

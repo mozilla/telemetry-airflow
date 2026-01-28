@@ -1,21 +1,24 @@
 import datetime
+
 from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskMarker
+
 from operators.gcp_container_operator import GKEPodOperator
 
 docs = """
 ### web_scraping
 
-Scrapes a few websites on a monthly basis & loads data to GCS
+Scrapes a few websites on a monthly basis &
+loads data to GCS to be used in the monthly market intel bot report
 
-Owner: kwindau@mozilla.com
+Owner: lmcfall@mozilla.com
 """
 
 default_args = {
-    "owner": "kwindau@mozilla.com",
+    "owner": "lmcfall@mozilla.com",
     "start_date": datetime.datetime(2025, 9, 1, 0, 0),
     "end_date": None,
-    "email": ["kwindau@mozilla.com"],
+    "email": ["lmcfall@mozilla.com"],
     "depends_on_past": False,
     "retry_delay": datetime.timedelta(seconds=1800),
     "email_on_failure": True,
@@ -24,8 +27,6 @@ default_args = {
 }
 
 tags = ["impact/tier_3", "repo/telemetry-airflow"]
-SERVER = "moz-fx-data-airflow-prod-88e0"
-IMAGE_NAME = "release_scraping_docker_etl:latest"
 
 with DAG(
     "web_scraping",
@@ -42,7 +43,7 @@ with DAG(
             "--date",
             "{{ ds }}",
         ],
-        image=f"gcr.io/{SERVER}/{IMAGE_NAME}",
+        image=f"us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/release_scraping:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 

@@ -137,7 +137,7 @@ DOCUSIGN_INTEG_WORKDAY_PASSWORD = Secret(
     secret="airflow-gke-secrets",
     key="DOCUSIGN_INTEG_WORKDAY_PASSWORD",
 )
- 
+
 with DAG(
     "eam-workday-docusign-integration",
     default_args=default_args,
@@ -154,12 +154,11 @@ with DAG(
             "--level",
             "info",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/"
-        + "eam-integrations_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/eam-integrations:latest",
         gcp_conn_id="google_cloud_airflow_gke",
         secrets=[
             docusign_jwt,
             DOCUSIGN_INTEG_WORKDAY_USERNAME,
-            DOCUSIGN_INTEG_WORKDAY_PASSWORD, 
+            DOCUSIGN_INTEG_WORKDAY_PASSWORD,
         ],
     )

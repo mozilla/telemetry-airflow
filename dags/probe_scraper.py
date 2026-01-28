@@ -7,7 +7,6 @@ from airflow.models.param import Param
 from airflow.operators.branch import BaseBranchOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.providers.http.operators.http import HttpOperator
 from airflow.sensors.external_task import ExternalTaskSensor
@@ -378,11 +377,6 @@ with DAG(
 
     probe_scraper >> delay_python_task
 
-    # trigger lookml generation
-    trigger_looker = TriggerDagRunOperator(
-        task_id="trigger_looker", trigger_dag_id="looker", wait_for_completion=True
-    )
-
     # This emits a POST request to a netlify webhook URL that triggers a new
     # build of the glean dictionary. We do this after the schema generator has
     # finished running as the dictionary uses the new schema files as part of
@@ -404,4 +398,4 @@ with DAG(
         dag=dag,
     )
 
-    delay_python_task >> trigger_looker >> glean_dictionary_netlify_build
+    delay_python_task >> glean_dictionary_netlify_build

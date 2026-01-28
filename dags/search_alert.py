@@ -62,7 +62,7 @@ with DAG(
             "--submission_date={{ ds }}",
             "--project_id=mozdata",
         ],
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/search-alert_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/search-alert:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 

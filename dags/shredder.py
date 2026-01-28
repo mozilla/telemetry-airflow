@@ -87,6 +87,23 @@ common_task_args = {
     "dag": dag,
 }
 
+# For https://mozilla-hub.atlassian.net/browse/DENG-8494
+# Should match https://github.com/mozilla/mozilla-schema-generator/blob/main/mozilla_schema_generator/configs/glean_v2_allowlist.yaml
+column_removal_backfill_tables = [
+    "org_mozilla_fenix_nightly_stable.metrics_v1",
+    "org_mozilla_fenix_nightly_stable.sync_v1",
+    "org_mozilla_fenix_nightly_stable.first_session_v1",
+    "org_mozilla_fenix_nightly_stable.adjust_attribution_v1",
+    "org_mozilla_fenix_nightly_stable.health_v1",
+    "org_mozilla_fenix_nightly_stable.captcha_detection_v1",
+    "org_mozilla_fennec_aurora_stable.metrics_v1",
+    "org_mozilla_fennec_aurora_stable.sync_v1",
+    "org_mozilla_fennec_aurora_stable.captcha_detection_v1",
+    "org_mozilla_fennec_aurora_stable.first_session_v1",
+    "org_mozilla_fennec_aurora_stable.health_v1",
+    "org_mozilla_fennec_aurora_stable.adjust_attribution_v1",
+]
+
 # handle telemetry main and main use counter separately to ensure they run continuously
 # and don't slow down other tables. run them in a separate project with their own slot
 # reservation to ensure they can finish on time, because they use more slots than
@@ -140,6 +157,8 @@ flat_rate = GKEPodOperator(
         # force no dml
         "telemetry_derived.cohort_weekly_active_clients_staging_v1",
         "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
+        # column removal
+        *column_removal_backfill_tables,
     ],
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "3072Mi"},
@@ -175,15 +194,30 @@ with_sampling = GKEPodOperator(
         "--sampling-parallelism={{ var.value.get('shredder_w_sampling_sampling_parallelism', 2) }}",
         "--sampling-batch-size={{ var.value.get('shredder_w_sampling_sampling_batch_size', 1) }}",
         "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
-        "--billing-project=moz-fx-data-shared-prod",
-        "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-all",
+        "--billing-project=moz-fx-data-bq-batch-prod",
         "--only",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
-        "firefox_desktop_stable.metrics_v1",
         "--sampling-tables",
         "telemetry_derived.event_events_v1",
         "firefox_desktop_derived.events_stream_v1",
+    ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
+    **common_task_args,
+)
+
+desktop_metrics = GKEPodOperator(
+    task_id="desktop-metrics",
+    name="shredder-desktop-metrics",
+    arguments=[
+        *base_command,
+        "--parallelism=1",
+        # https://mozilla-hub.atlassian.net/browse/DENG-9181
+        "--billing-project=moz-fx-data-shared-prod",
+        "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-desktop-metrics",
+        "--only",
         "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
@@ -206,5 +240,21 @@ force_no_dml = GKEPodOperator(
         "telemetry_derived.cohort_weekly_active_clients_staging_v1",
         "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
     ],
+    **common_task_args,
+)
+
+column_removal = GKEPodOperator(
+    task_id="column-removal",
+    name="shredder-column-removal",
+    arguments=[
+        *base_command,
+        "--parallelism=3",
+        "--billing-project=moz-fx-data-bq-batch-prod",
+        "--only",
+        *column_removal_backfill_tables,
+    ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
     **common_task_args,
 )

@@ -55,7 +55,7 @@ with DAG(
         task_id="adm_daily_aggregates_to_sftp",
         name="adm_daily_aggregates_to_sftp",
         # See https://github.com/mozilla/docker-etl/pull/28
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bq2sftp_docker_etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/bq2sftp:latest",
         project_id="moz-fx-data-airflow-gke-prod",
         gcp_conn_id="google_cloud_airflow_gke",
         cluster_name="workloads-prod-v1",
@@ -68,8 +68,9 @@ with DAG(
             "SRC_TABLE": "moz-fx-data-shared-prod.search_terms_derived.adm_daily_aggregates_v1",
             # The run for submission_date=2022-03-04 will be named:
             # Aggregated-Query-Data-03042022.csv.gz
-            "DST_PATH": 'files/Aggregated-Query-Data-{{ macros.ds_format(ds, "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
-            "SUBMISSION_DATE": "{{ ds }}",
+            "DST_PATH": 'files/Aggregated-Query-Data-{{ macros.ds_format(macros.ds_add(ds, -1), "%Y-%m-%d", "%m%d%Y") }}.csv.gz',
+            # Subtract 1 day from execution date to match the upstream date_partition_offset: -1
+            "SUBMISSION_DATE": '{{ macros.ds_add(ds, -1) }}',
         },
         secrets=[adm_sftp_secret],
         email=[
