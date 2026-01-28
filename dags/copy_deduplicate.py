@@ -6,11 +6,11 @@ from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 from kubernetes.client import models as k8s
 
-from operators.gcp_container_operator import GKEPodOperator
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
 )
+from utils.glean_v2_backfill import column_removal_backfill_tables
 from utils.tags import Tag
 
 DOCS = """\
@@ -88,7 +88,19 @@ with models.DAG(
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
             "firefox_desktop_live.metrics_v1",
+            *column_removal_backfill_tables,
         ],
+        container_resources=resources,
+    )
+
+    # temporary test task with no downstream dependencies
+    copy_deduplicate_glean_v2_backfill = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_glean_v2_backfill",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        priority_weight=100,
+        parallelism=4,
+        only_tables=column_removal_backfill_tables,
         container_resources=resources,
     )
 
