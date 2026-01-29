@@ -5,6 +5,7 @@ from kubernetes.client import models as k8s
 from timetable import MultiWeekTimetable
 
 from operators.gcp_container_operator import GKEPodOperator, OnFinishAction
+from utils.glean_v2_backfill import column_removal_backfill_tables
 from utils.tags import Tag
 
 docs = """
@@ -86,23 +87,6 @@ common_task_args = {
     "reattach_on_restart": True,
     "dag": dag,
 }
-
-# For https://mozilla-hub.atlassian.net/browse/DENG-8494
-# Should match https://github.com/mozilla/mozilla-schema-generator/blob/main/mozilla_schema_generator/configs/glean_v2_allowlist.yaml
-column_removal_backfill_tables = [
-    "org_mozilla_fenix_nightly_stable.metrics_v1",
-    "org_mozilla_fenix_nightly_stable.sync_v1",
-    "org_mozilla_fenix_nightly_stable.first_session_v1",
-    "org_mozilla_fenix_nightly_stable.adjust_attribution_v1",
-    "org_mozilla_fenix_nightly_stable.health_v1",
-    "org_mozilla_fenix_nightly_stable.captcha_detection_v1",
-    "org_mozilla_fennec_aurora_stable.metrics_v1",
-    "org_mozilla_fennec_aurora_stable.sync_v1",
-    "org_mozilla_fennec_aurora_stable.captcha_detection_v1",
-    "org_mozilla_fennec_aurora_stable.first_session_v1",
-    "org_mozilla_fennec_aurora_stable.health_v1",
-    "org_mozilla_fennec_aurora_stable.adjust_attribution_v1",
-]
 
 # handle telemetry main and main use counter separately to ensure they run continuously
 # and don't slow down other tables. run them in a separate project with their own slot
@@ -213,11 +197,15 @@ desktop_metrics = GKEPodOperator(
     name="shredder-desktop-metrics",
     arguments=[
         *base_command,
-        "--parallelism=1",
+        "--parallelism={{ var.value.get('shredder_desktop_metrics_parallelism', 2) }}",
+        "--sampling-parallelism={{ var.value.get('shredder_desktop_metrics_sampling_parallelism', 2) }}",
+        "--sampling-batch-size={{ var.value.get('shredder_desktop_metrics_sampling_batch_size', 4) }}",
         # https://mozilla-hub.atlassian.net/browse/DENG-9181
         "--billing-project=moz-fx-data-shared-prod",
         "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-desktop-metrics",
         "--only",
+        "firefox_desktop_stable.metrics_v1",
+        "--sampling-tables",
         "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(

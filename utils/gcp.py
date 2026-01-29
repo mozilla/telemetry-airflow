@@ -276,6 +276,7 @@ def bigquery_etl_copy_deduplicate(
     billing_projects=(),
     only_tables=None,
     except_tables=None,
+    column_removal_backfill_tables=None,
     parallelism=4,
     priority="INTERACTIVE",
     hourly=False,
@@ -297,6 +298,7 @@ def bigquery_etl_copy_deduplicate(
                                      defaults to gcp_conn_id project
     :param Tuple[str] only_tables:   Only process tables matching the given globs of form 'telemetry_live.main_v*'
     :param Tuple[str] except_tables: Process all tables except those matching the given globs
+    :param Tuple[str] column_removal_backfill_tables: Use transformation to write to Glean v2 table.
     :param int parallelism:          Maximum number of queries to execute concurrently
     :param str priority:             BigQuery query priority to use, must be BATCH or INTERACTIVE
     :param bool hourly:              Alias for --slices=24
@@ -323,6 +325,10 @@ def bigquery_etl_copy_deduplicate(
         for except_table in except_tables:
             table_qualifiers.append("--except")
             table_qualifiers.append(except_table)
+    if column_removal_backfill_tables:
+        for column_removal_backfill_table in column_removal_backfill_tables:
+            table_qualifiers.append("--write-to-v2")
+            table_qualifiers.append(column_removal_backfill_table)
     return GKEPodOperator(
         task_id=task_id,
         reattach_on_restart=True,

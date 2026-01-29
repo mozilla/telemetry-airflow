@@ -13,7 +13,7 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 default_args = {
-    "owner": "wstuckey@mozilla.com",
+    "owner": "cmorales@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2021, 11, 18),
     "email_on_failure": True,
@@ -48,7 +48,7 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[
-            "wstuckey@mozilla.com",
+            "cmorales@mozilla.com",
             "ctroy@mozilla.com",
         ],
     )
