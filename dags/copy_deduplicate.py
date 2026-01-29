@@ -101,6 +101,7 @@ with models.DAG(
         priority_weight=100,
         parallelism=4,
         only_tables=column_removal_backfill_tables,
+        column_removal_backfill_tables=column_removal_backfill_tables,
         container_resources=resources,
     )
 
