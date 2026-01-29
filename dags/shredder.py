@@ -197,11 +197,15 @@ desktop_metrics = GKEPodOperator(
     name="shredder-desktop-metrics",
     arguments=[
         *base_command,
-        "--parallelism=1",
+        "--parallelism={{ var.value.get('shredder_desktop_metrics_parallelism', 2) }}",
+        "--sampling-parallelism={{ var.value.get('shredder_desktop_metrics_sampling_parallelism', 2) }}",
+        "--sampling-batch-size={{ var.value.get('shredder_desktop_metrics_sampling_batch_size', 4) }}",
         # https://mozilla-hub.atlassian.net/browse/DENG-9181
         "--billing-project=moz-fx-data-shared-prod",
         "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-desktop-metrics",
         "--only",
+        "firefox_desktop_stable.metrics_v1",
+        "--sampling-tables",
         "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
