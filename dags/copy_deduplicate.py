@@ -116,7 +116,6 @@ with models.DAG(
             "firefox_desktop_live.metrics_v1",
         ],
         container_resources=resources,
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl@sha256:f24e746dc8be45c4e1c5ba34250776e6c32fb31c6abdddedc38df3f5b7b6674e",
     )
 
     # EmptyOperator is used instead of a task group to maintain compatibility with downstream sensors
@@ -194,7 +193,6 @@ with models.DAG(
             "telemetry-alerts@mozilla.com",
             "akomarzewski@mozilla.com",
         ],
-        docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl@sha256:f24e746dc8be45c4e1c5ba34250776e6c32fb31c6abdddedc38df3f5b7b6674e",
     )
 
     with TaskGroup("main_ping_external") as main_ping_external:
