@@ -48,7 +48,11 @@ def merino_job(
             requests={"memory": "512Mi"},
         ),
         env_vars=default_env_vars,
-        email=["disco-team@mozilla.com"],
+        email=[
+            "asobiepanek@mozilla.com",
+            "najiang@mozilla.com",
+            "disco-team@mozilla.com",
+        ],
         **kwargs,
     )
 
@@ -56,7 +60,11 @@ def merino_job(
 default_args = {
     "owner": "disco-team@mozilla.com",
     "start_date": datetime.datetime(2023, 2, 1),
-    "email": ["disco-team@mozilla.com"],
+    "email": [
+        "asobiepanek@mozilla.com",
+        "najiang@mozilla.com",
+        "disco-team@mozilla.com",
+    ],
     "email_on_failure": True,
     "email_on_retry": True,
     "depends_on_past": False,
