@@ -200,6 +200,7 @@ desktop_metrics = GKEPodOperator(
         "--parallelism={{ var.value.get('shredder_desktop_metrics_parallelism', 2) }}",
         "--sampling-parallelism={{ var.value.get('shredder_desktop_metrics_sampling_parallelism', 2) }}",
         "--sampling-batch-size={{ var.value.get('shredder_desktop_metrics_sampling_batch_size', 4) }}",
+        "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
         # https://mozilla-hub.atlassian.net/browse/DENG-9181
         "--billing-project=moz-fx-data-shared-prod",
         "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-desktop-metrics",
