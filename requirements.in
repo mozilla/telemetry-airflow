@@ -16,10 +16,6 @@ apache-airflow-providers-sftp
 apache-airflow-providers-slack
 airflow-provider-fivetran-async==2.0.2
 
-# Acryl DataHub integration
-acryl-datahub-airflow-plugin[airflow2]==1.3.1.9
-gql
-
 # dbt integration
 apache-airflow-providers-dbt-cloud
 
