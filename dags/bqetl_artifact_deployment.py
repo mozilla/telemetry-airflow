@@ -144,7 +144,11 @@ with DAG(
             GKEPodOperator(
                 task_id=f"publish_static_tables_{gcp_project}",
                 arguments=[
-                    f"script/bqetl static publish --project_id={gcp_project}"
+                    "script/bqetl",
+                    "static",
+                    "publish",
+                    "--project_id",
+                    gcp_project,
                 ],
                 image=docker_image,
             )
@@ -214,6 +218,7 @@ with DAG(
             publish_public_udfs,
             publish_persistent_udfs,
             publish_tables_and_views,
+            publish_static_tables,
         ]
     )
     publish_tables_and_views.set_upstream(publish_public_udfs)
