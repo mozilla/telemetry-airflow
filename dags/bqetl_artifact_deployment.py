@@ -143,7 +143,6 @@ with DAG(
         for gcp_project in ("moz-fx-data-shared-prod", "mozdata"):
             GKEPodOperator(
                 task_id=f"publish_static_tables_{gcp_project}",
-                cmds=["bash", "-x", "-c"],
                 arguments=[
                     f"script/bqetl static publish --project_id={gcp_project}"
                 ],
