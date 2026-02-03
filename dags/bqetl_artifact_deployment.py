@@ -41,6 +41,7 @@ from airflow.operators.python import ShortCircuitOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
+from airflow.utils.task_group import TaskGroup
 from airflow.utils.trigger_rule import TriggerRule
 from kubernetes.client import models as k8s
 
@@ -138,16 +139,16 @@ with DAG(
         image=docker_image,
     )
 
-    publish_static_tables = GKEPodOperator(
-        task_id="publish_static_tables",
-        cmds=["bash", "-x", "-c"],
-        execution_timeout=timedelta(hours=1),
-        arguments=[
-            "script/bqetl static publish --project_id=moz-fx-data-shared-prod && "
-            "script/bqetl static publish --project_id=mozdata"
-        ],
-        image=docker_image,
-    )
+    with TaskGroup(group_id="publish_static_tables") as publish_static_tables:
+        for gcp_project in ("moz-fx-data-shared-prod", "mozdata"):
+            _ = GKEPodOperator(
+                task_id=f"publish_static_tables_{gcp_project}",
+                cmds=["bash", "-x", "-c"],
+                arguments=[
+                    f"script/bqetl static publish --project_id={gcp_project}"
+                ],
+                image=docker_image,
+            )
 
     publish_tables_and_views = GKEPodOperator(
         task_id="publish_tables_and_views",
