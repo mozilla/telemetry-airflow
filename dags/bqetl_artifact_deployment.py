@@ -138,6 +138,17 @@ with DAG(
         image=docker_image,
     )
 
+    publish_static_tables = GKEPodOperator(
+        task_id="publish_static_tables",
+        cmds=["bash", "-x", "-c"],
+        execution_timeout=timedelta(hours=1),
+        arguments=[
+            "script/bqetl static publish --project_id=moz-fx-data-shared-prod && "
+            "script/bqetl static publish --project_id=mozdata"
+        ],
+        image=docker_image,
+    )
+
     publish_tables_and_views = GKEPodOperator(
         task_id="publish_tables_and_views",
         cmds=["bash", "-x", "-c"],
@@ -147,8 +158,6 @@ with DAG(
             + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
             + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people && "
             "script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
-            "script/bqetl static publish --project_id=moz-fx-data-shared-prod && "
-            "script/bqetl static publish --project_id=mozdata && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
@@ -209,6 +218,7 @@ with DAG(
     )
     publish_tables_and_views.set_upstream(publish_public_udfs)
     publish_tables_and_views.set_upstream(publish_persistent_udfs)
+    publish_tables_and_views.set_upstream(publish_static_tables)
     publish_metadata.set_upstream(publish_tables_and_views)
     publish_bigeye_monitors.set_upstream(publish_tables_and_views)
     # trigger dryrun
