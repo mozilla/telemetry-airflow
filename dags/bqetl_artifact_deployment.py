@@ -141,7 +141,7 @@ with DAG(
 
     with TaskGroup(group_id="publish_static_tables") as publish_static_tables:
         for gcp_project in ("moz-fx-data-shared-prod", "mozdata"):
-            _ = GKEPodOperator(
+            GKEPodOperator(
                 task_id=f"publish_static_tables_{gcp_project}",
                 cmds=["bash", "-x", "-c"],
                 arguments=[
