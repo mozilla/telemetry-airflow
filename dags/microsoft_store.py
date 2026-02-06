@@ -83,7 +83,7 @@ with DAG(
                 f"sql/moz-fx-data-shared-prod/microsoft_derived/{table}_v1/query.py",
                 "--date={{ macros.ds_add(ds, -3) }}",
             ],
-            image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+            image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest",
             owner="mhirose@mozilla.com",
             email=["mhirose@mozilla.com", "telemetry-alerts@mozilla.com"],
         )

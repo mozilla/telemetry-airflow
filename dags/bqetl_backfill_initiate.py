@@ -19,7 +19,7 @@ SLACK_COMMON_ARGS = {
     "slack_conn_id": SLACK_CONNECTION_ID,
     "channel": AUTOMATION_SLACK_CHANNEL,
 }
-DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
+DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
 
 tags = [Tag.ImpactTier.tier_3]
 
