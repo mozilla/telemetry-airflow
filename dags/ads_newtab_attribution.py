@@ -29,15 +29,15 @@ The following variables are defined in the Airflow:
 
 This job is expected to be stable however occasional failures may occur.
 
-1. If the log contains the text "Collection timed out for " then clear the task to rerun it.  Since rerunning may result 
-in data duplication notify the ads-eng team via Slack #ads-team-support indicating that the task was rerun.
+1. If the log contains the text "Collection timed out for " then clear the task to rerun it.  Since rerunning may
+ result in data duplication notify the ads-eng team via Slack #ads-team-support indicating that the task was rerun.
 
-2. If the log contains the text "Verify start date is not more than 14 days ago" then a retry is not needed.  DAP 
-aggressively deletes data and the data required for the task to complete has been deleted.  This should only be seen in
- historical tasks.
+2. If the log contains the text "Verify start date is not more than 14 days ago" then a retry is not needed.  DAP
+aggressively deletes data and the data required for the task to complete has been deleted.  This should only be seen
+ in historical tasks.
 
-3. If the log contains the text "Collection failed for" reach out to the ads-eng team via Slack #ads-team-support 
-for assistance with the investigation.
+3. If the log contains the text "Collection failed for" reach out to the ads-eng team via Slack #ads-team-support
+ for assistance with the investigation.
 
 
 #### Owner
