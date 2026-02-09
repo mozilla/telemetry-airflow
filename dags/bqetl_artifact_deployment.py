@@ -41,6 +41,7 @@ from airflow.operators.python import ShortCircuitOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.utils.state import DagRunState
+from airflow.utils.task_group import TaskGroup
 from airflow.utils.trigger_rule import TriggerRule
 from kubernetes.client import models as k8s
 
@@ -138,6 +139,20 @@ with DAG(
         image=docker_image,
     )
 
+    with TaskGroup(group_id="publish_static_tables") as publish_static_tables:
+        for gcp_project in ("moz-fx-data-shared-prod", "mozdata"):
+            GKEPodOperator(
+                task_id=f"publish_static_tables_{gcp_project}",
+                arguments=[
+                    "script/bqetl",
+                    "static",
+                    "publish",
+                    "--project_id",
+                    gcp_project,
+                ],
+                image=docker_image,
+            )
+
     publish_tables_and_views = GKEPodOperator(
         task_id="publish_tables_and_views",
         cmds=["bash", "-x", "-c"],
@@ -146,8 +161,7 @@ with DAG(
             generate_sql_cmd_template
             + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
             + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people && "
-            "script/bqetl query schema update '*' --use-cloud-function=false --skip-existing --ignore-dryrun-skip --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
-            "script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
+            "script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
@@ -204,10 +218,12 @@ with DAG(
             publish_public_udfs,
             publish_persistent_udfs,
             publish_tables_and_views,
+            publish_static_tables,
         ]
     )
     publish_tables_and_views.set_upstream(publish_public_udfs)
     publish_tables_and_views.set_upstream(publish_persistent_udfs)
+    publish_tables_and_views.set_upstream(publish_static_tables)
     publish_metadata.set_upstream(publish_tables_and_views)
     publish_bigeye_monitors.set_upstream(publish_tables_and_views)
     # trigger dryrun
