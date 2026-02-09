@@ -5,6 +5,7 @@ from kubernetes.client import models as k8s
 from timetable import MultiWeekTimetable
 
 from operators.gcp_container_operator import GKEPodOperator, OnFinishAction
+from utils.glean_v2_backfill import column_removal_backfill_tables
 from utils.tags import Tag
 
 docs = """
@@ -140,6 +141,8 @@ flat_rate = GKEPodOperator(
         # force no dml
         "telemetry_derived.cohort_weekly_active_clients_staging_v1",
         "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
+        # column removal
+        *column_removal_backfill_tables,
     ],
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "3072Mi"},
@@ -194,11 +197,16 @@ desktop_metrics = GKEPodOperator(
     name="shredder-desktop-metrics",
     arguments=[
         *base_command,
-        "--parallelism=1",
+        "--parallelism={{ var.value.get('shredder_desktop_metrics_parallelism', 2) }}",
+        "--sampling-parallelism={{ var.value.get('shredder_desktop_metrics_sampling_parallelism', 2) }}",
+        "--sampling-batch-size={{ var.value.get('shredder_desktop_metrics_sampling_batch_size', 4) }}",
+        "--temp-dataset=moz-fx-data-shredder.shredder_tmp",
         # https://mozilla-hub.atlassian.net/browse/DENG-9181
         "--billing-project=moz-fx-data-shared-prod",
         "--reservation-override=projects/moz-fx-bigquery-reserv-global/locations/US/reservations/shredder-desktop-metrics",
         "--only",
+        "firefox_desktop_stable.metrics_v1",
+        "--sampling-tables",
         "firefox_desktop_stable.metrics_v1",
     ],
     container_resources=k8s.V1ResourceRequirements(
@@ -221,5 +229,21 @@ force_no_dml = GKEPodOperator(
         "telemetry_derived.cohort_weekly_active_clients_staging_v1",
         "glean_telemetry_derived.cohort_weekly_active_clients_staging_v1",
     ],
+    **common_task_args,
+)
+
+column_removal = GKEPodOperator(
+    task_id="column-removal",
+    name="shredder-column-removal",
+    arguments=[
+        *base_command,
+        "--parallelism=3",
+        "--billing-project=moz-fx-data-bq-batch-prod",
+        "--only",
+        *column_removal_backfill_tables,
+    ],
+    container_resources=k8s.V1ResourceRequirements(
+        requests={"memory": "512Mi"},
+    ),
     **common_task_args,
 )
