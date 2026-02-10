@@ -98,7 +98,7 @@ def base_backfill_operator(dry_run):
         ],
         # target_tables will be rendered as a python list
         arguments="{{ params.target_tables }}",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest",
         on_finish_action=OnFinishAction.DELETE_POD.value,
         reattach_on_restart=True,
     )

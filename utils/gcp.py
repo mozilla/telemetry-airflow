@@ -19,7 +19,7 @@ from utils.dataproc import get_dataproc_parameters
 
 GCP_PROJECT_ID = "moz-fx-data-airflow-gke-prod"
 DATAPROC_PROJECT_ID = "airflow-dataproc"
-BIGQUERY_ETL_DOCKER_IMAGE = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
+BIGQUERY_ETL_DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
 
 
 def export_to_parquet(

@@ -114,7 +114,7 @@ with DAG(
     tags=tags,
     params=params,
 ) as dag:
-    docker_image = "gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest"
+    docker_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
 
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",

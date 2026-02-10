@@ -191,7 +191,7 @@ def bqetl_backfill_dag():
         reattach_on_restart=True,
         task_id="bqetl_backfill",
         arguments=generate_backfill_command(),
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )
 

@@ -7,7 +7,7 @@ def generate_and_run_glean_queries(
     destination_project_id,
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest",
     env_vars=None,
     **kwargs,
 ):
@@ -53,7 +53,7 @@ def generate_and_run_glean_task(
     destination_project_id,
     destination_dataset_id="glam_etl",
     source_project_id="moz-fx-data-shared-prod",
-    docker_image="gcr.io/moz-fx-data-airflow-prod-88e0/bigquery-etl:latest",
+    docker_image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest",
     env_vars=None,
     min_sample_id = 0,
     max_sample_id = 99,
