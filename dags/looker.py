@@ -80,6 +80,12 @@ looker_client_secret_prod = Secret(
     secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_secret_prod",
 )
+looker_pubsub_subscription_id = Secret(
+    deploy_type="env",
+    deploy_target="LOOKER_PUBSUB_SUBSCRIPTION_ID",
+    secret="airflow-gke-secrets",
+    key="looker__looker_pubsub_subscription_id",
+)
 dataops_looker_github_secret_access_token = Secret(
     deploy_type="env",
     deploy_target="GITHUB_ACCESS_TOKEN",
@@ -241,6 +247,22 @@ with DAG(
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
         },
         secrets=[looker_client_id_prod, looker_client_secret_prod],
+        **airflow_gke_prod_kwargs,
+    )
+
+    disable_exited_employees = GKEPodOperator(
+        task_id="disable_exited_employees",
+        arguments=[
+            "python",
+            "-m",
+            "looker_utils.main",
+            "disable-exited-employees",
+        ],
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/looker-utils:latest",
+        env_vars={
+            "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
+        },
+        secrets=[looker_client_id_prod, looker_client_secret_prod, looker_pubsub_subscription_id],
         **airflow_gke_prod_kwargs,
     )
 
