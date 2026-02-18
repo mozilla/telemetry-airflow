@@ -20,7 +20,7 @@ DOCS = """\
     The jobs are run via the GKEPodOperator
 """
 
-SUPPORTED_LANGUAGES = ["en", "fr", "de", "it", "pl"]
+SUPPORTED_LANGUAGES = ["en"]
 
 
 def merino_job(
