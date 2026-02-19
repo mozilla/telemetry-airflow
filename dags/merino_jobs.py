@@ -298,10 +298,6 @@ with DAG(
 
 # NOTE: Environment variable based settings for things like Elastic search URLs and credential sets, are NOT
 # included in Airflow declarations. These values need to be explicitly specified.
-sports_args = copy(default_args)
-sports_args["email_on_failure"] = False
-sports_args["email_on_retry"] = False
-sports_args["email"] = ["jconlin+af@mozilla.com"]
 
 # Sports Nightly
 with DAG(
@@ -312,7 +308,7 @@ with DAG(
     # (Offsetting by 2 minutes to prevent potential overlap with `update`.)
     schedule_interval="2 */6 * * *",
     doc_md=DOCS,
-    default_args=sports_args,
+    default_args=default_args,
     tags=tags,
 ) as dag:
     es_secret = elasticsearch_prod_apikey_secret or elasticsearch_stage_apikey_secret
@@ -336,7 +332,7 @@ with DAG(
     # current date ±7 days. Called every 5 minutes.
     schedule_interval="*/5 * * * *",
     doc_md=DOCS,
-    default_args=sports_args,
+    default_args=default_args,
     tags=tags,
 ) as dag:
     es_secret = elasticsearch_prod_apikey_secret or elasticsearch_stage_apikey_secret
