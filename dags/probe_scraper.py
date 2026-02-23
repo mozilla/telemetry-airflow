@@ -309,7 +309,7 @@ with DAG(
         ],
         task_id="mozilla_schema_generator",
         name="schema-generator-1",
-        image="gcr.io/moz-fx-data-airflow-prod-88e0/mozilla-schema-generator:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/mozilla-schema-generator/mozilla-schema-generator:latest",
         env_vars={
             "MPS_REPO_URL": "git@github.com:mozilla-services/mozilla-pipeline-schemas.git",
             "MPS_BRANCH_SOURCE": "main",
