@@ -48,13 +48,12 @@ jobs:
   test-local-environment:
     executor:
       name: docker/machine
-      image: ubuntu-2204:2023.04.2
+      image: ubuntu-2204:2025.09.1
     resource_class: large
     steps:
       - checkout
       - attach_workspace:
           at: artifacts
-      - docker/install-docker-compose
       - run: &prepare-env
           name: Load environment variables
           command: |
@@ -100,7 +99,7 @@ jobs:
   docker-build-artifact:
     executor:
       name: docker/machine
-      image: ubuntu-2204:2023.04.2
+      image: ubuntu-2204:2025.09.1
     resource_class: large
     steps:
       - checkout
