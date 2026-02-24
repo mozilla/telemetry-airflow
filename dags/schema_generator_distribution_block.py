@@ -16,7 +16,9 @@ This DAG will fail if there are any distribution metrics defined in any metrics.
 is sent in events or baseline pings.
 
 Look at the logs to find the apps causing the failure and look at the recently added metrics for
-the app to find the specific metrics and their owners.
+the app to find the specific metrics and their owners.  It's possible that the metrics were
+erroneously added to these pings.  Resolve by either removing the metrics or moving them
+to the metrics ping.
 """
 
 tags = [Tag.ImpactTier.tier_2]
