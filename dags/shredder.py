@@ -241,6 +241,8 @@ column_removal = GKEPodOperator(
         "--billing-project=moz-fx-data-bq-batch-prod",
         "--only",
         *column_removal_backfill_tables,
+        "--column-removal-backfill-tables",
+        *column_removal_backfill_tables,
     ],
     container_resources=k8s.V1ResourceRequirements(
         requests={"memory": "512Mi"},
