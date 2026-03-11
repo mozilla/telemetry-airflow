@@ -70,7 +70,30 @@ with DAG(
         )
 
         # stage 2 - downstream for export
-        scalar_bucket_counts = query(task_name=f"{product}__scalar_bucket_counts_v1", use_slots=False)
+        with TaskGroup(
+            group_id=f"{product}__scalar_bucket_counts_v1", dag=dag, default_args=default_args
+        ) as scalar_bucket_counts:
+            prev_task = None
+            # Windows + Release data is in [0-9] so we're further splitting that range.
+            for sample_range in (
+                [0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6],
+                [7, 7], [8, 8], [9, 9], [10, 19], [20, 29], [30, 39],
+                [40, 49], [50, 59], [60, 69], [70, 79], [80, 89], [90, 99]
+            ):
+                scalar_bucket_counts_sampled = query(
+                    task_name=(
+                        f"{product}__scalar_bucket_counts_v1_sampled_"
+                        f"{sample_range[0]}_{sample_range[1]}"
+                    ),
+                    min_sample_id=sample_range[0],
+                    max_sample_id=sample_range[1],
+                    replace_table=(sample_range[0] == 0),
+                    use_slots=False,
+                )
+                if prev_task:
+                    scalar_bucket_counts_sampled.set_upstream(prev_task)
+                prev_task = scalar_bucket_counts_sampled
+
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
         with TaskGroup(
