@@ -296,6 +296,21 @@ with DAG(
     )
 
 
+with DAG(
+    "merino_engagement_data",
+    schedule_interval="0 * * * *",  # every hour (UTC)
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
+) as dag:
+    engagement_job = merino_job(
+        name="upload_engagement_data",
+        arguments=[
+            "upload-engagement-data",
+            "upload-engagement-data",
+        ],
+    )
+
 # NOTE: Environment variable based settings for things like Elastic search URLs and credential sets, are NOT
 # included in Airflow declarations. These values need to be explicitly specified.
 
