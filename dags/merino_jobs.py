@@ -306,8 +306,8 @@ with DAG(
     engagement_job = merino_job(
         name="upload_engagement_data",
         arguments=[
-            "upload-engagement-data",
-            "upload-engagement-data",
+            "upload_engagement_data",
+            "run",
         ],
     )
 
