@@ -76,9 +76,7 @@ with DAG(
             prev_task = None
             # Windows + Release data is in [0-9] so we're further splitting that range.
             for sample_range in (
-                [0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6],
-                [7, 7], [8, 8], [9, 9], [10, 19], [20, 29], [30, 39],
-                [40, 49], [50, 59], [60, 69], [70, 79], [80, 89], [90, 99]
+                [0, 19], [20, 39], [40, 59], [60, 79], [80, 99],
             ):
                 scalar_bucket_counts_sampled = query(
                     task_name=(
@@ -88,7 +86,7 @@ with DAG(
                     min_sample_id=sample_range[0],
                     max_sample_id=sample_range[1],
                     replace_table=(sample_range[0] == 0),
-                    use_slots=False,
+                    use_slots=True,
                 )
                 if prev_task:
                     scalar_bucket_counts_sampled.set_upstream(prev_task)
