@@ -78,6 +78,9 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         location="us-west1",
         cluster_name="workloads-prod-v1",
         namespace="default",
+        # Add last 2048 bytes or 80 lines (whichever comes first) of container logs to error message
+        # and email alert if the container exits with an error and /dev/termination-log is empty
+        termination_message_policy="FallbackToLogsOnError",
         *args,
         **kwargs,
     ):
@@ -99,6 +102,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             cluster_name=cluster_name,
             namespace=namespace,
             callbacks=GKEPodOperatorCallbacks,
+            termination_message_policy=termination_message_policy,
             **kwargs,
         )
 
