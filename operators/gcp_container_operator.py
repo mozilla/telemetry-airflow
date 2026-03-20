@@ -158,7 +158,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
         tail_logs = (
             self._get_tail_logs(remote_pod, tail_log_lines)
             if pod_phase != PodPhase.SUCCEEDED
-            else None
+            else ""
         )
         try:
             super().cleanup(pod, remote_pod)
@@ -176,10 +176,10 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                 ) from e
             raise
 
-    def _get_tail_logs(self, pod: k8s.V1Pod, tail_lines: int) -> Optional[str]:
+    def _get_tail_logs(self, pod: k8s.V1Pod, tail_lines: int) -> str:
         """Fetch the last tail_lines lines of logs from the pod's container."""
         if pod is None:
-            return None
+            return ""
         try:
             log_consumer = self.pod_manager.read_pod_logs(
                 pod=pod,
@@ -191,7 +191,7 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                 raw_line.decode("utf-8", errors="backslashreplace").rstrip()
                 for raw_line in log_consumer
             ]
-            return "\n".join(lines) if lines else None
+            return "\n".join(lines) if lines else ""
         except Exception:
             logger.info("Failed to fetch tail logs for failure email", exc_info=True)
-            return None
+            return ""
