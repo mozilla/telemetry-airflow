@@ -1,6 +1,8 @@
 import logging
+from typing import Optional
 
 import kubernetes.client as k8s
+from airflow.exceptions import AirflowException
 from airflow.providers.cncf.kubernetes.operators.pod import (
     KubernetesPodOperatorCallback,
     OnFinishAction,
@@ -100,7 +102,9 @@ class GKEPodOperator(UpstreamGKEPodOperator):
             **kwargs,
         )
 
-    def get_or_create_pod(self, pod_request_obj: k8s.V1Pod, context: Context) -> k8s.V1Pod:
+    def get_or_create_pod(
+        self, pod_request_obj: k8s.V1Pod, context: Context
+    ) -> k8s.V1Pod:
         """Set GKE pod link during pod creation.
 
         Workaround for https://github.com/apache/airflow/issues/46658
@@ -141,3 +145,53 @@ class GKEPodOperator(UpstreamGKEPodOperator):
                 raise
             else:
                 logger.exception(e)
+
+    def cleanup(self, pod: k8s.V1Pod, remote_pod: k8s.V1Pod):
+        """Include pod logs in the failure exception for email alerts."""
+        # Fetch tail logs before super().cleanup() which may delete the pod depending on OnFinishAction
+        pod_phase = (
+            remote_pod.status.phase
+            if remote_pod and hasattr(remote_pod, "status")
+            else None
+        )
+        tail_log_lines = 20
+        tail_logs = (
+            self._get_tail_logs(remote_pod, tail_log_lines)
+            if pod_phase != PodPhase.SUCCEEDED
+            else None
+        )
+        try:
+            super().cleanup(pod, remote_pod)
+        except AirflowException as e:
+            if tail_logs:
+                raise AirflowException(
+                    "\n".join(
+                        [
+                            f"Last {tail_log_lines} lines of pod logs:",
+                            tail_logs,
+                            "",
+                            str(e),
+                        ]
+                    )
+                ) from e
+            raise
+
+    def _get_tail_logs(self, pod: k8s.V1Pod, tail_lines: int) -> Optional[str]:
+        """Fetch the last tail_lines lines of logs from the pod's container."""
+        if pod is None:
+            return None
+        try:
+            log_consumer = self.pod_manager.read_pod_logs(
+                pod=pod,
+                container_name=self.base_container_name,
+                tail_lines=tail_lines,
+                follow=False,
+            )
+            lines = [
+                raw_line.decode("utf-8", errors="backslashreplace").rstrip()
+                for raw_line in log_consumer
+            ]
+            return "\n".join(lines) if lines else None
+        except Exception:
+            logger.info("Failed to fetch tail logs for failure email", exc_info=True)
+            return None
