@@ -1,8 +1,6 @@
 import logging
-from typing import Optional
 
 import kubernetes.client as k8s
-from airflow.exceptions import AirflowException
 from airflow.providers.cncf.kubernetes.operators.pod import (
     KubernetesPodOperatorCallback,
     OnFinishAction,
