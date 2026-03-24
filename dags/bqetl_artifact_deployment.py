@@ -114,7 +114,9 @@ with DAG(
     tags=tags,
     params=params,
 ) as dag:
-    docker_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
+    docker_image = (
+        "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
+    )
 
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",
@@ -160,8 +162,7 @@ with DAG(
         arguments=[
             generate_sql_cmd_template
             + "script/bqetl generate derived_view_schemas --use-cloud-function=false && "
-            + "script/bqetl query initialize '*' --skip-existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people && "
-            "script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
+            + "script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people && "
             "script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod && "
             "script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments && "
@@ -202,6 +203,13 @@ with DAG(
         secrets=[bigeye_api_key_secret],
     )
 
+    trigger_initialize = TriggerDagRunOperator(
+        task_id="trigger_initialize",
+        trigger_dag_id="bqetl_artifact_initialize",
+        wait_for_completion=False,
+        conf={"generate_sql": "{{ params.generate_sql }}"},
+    )
+
     trigger_dryrun = TriggerDagRunOperator(
         task_id="trigger_dryrun",
         trigger_dag_id="bqetl_dryrun",
@@ -217,7 +225,6 @@ with DAG(
         [
             publish_public_udfs,
             publish_persistent_udfs,
-            publish_tables_and_views,
             publish_static_tables,
         ]
     )
@@ -230,3 +237,4 @@ with DAG(
     # doesn't block downstream tasks
     trigger_dryrun.set_upstream(publish_tables_and_views)
     trigger_looker.set_upstream(publish_tables_and_views)
+    trigger_initialize.set_upstream(publish_tables_and_views)
