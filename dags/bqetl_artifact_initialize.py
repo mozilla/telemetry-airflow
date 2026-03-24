@@ -70,7 +70,7 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         arguments=[
             generate_sql_cmd_template
-            + "script/bqetl query initialize '*' --skip-nonempty --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people"
+            + "script/bqetl query initialize '*' --skip-nonempty --skip-tables-older-than 1 --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people"
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
