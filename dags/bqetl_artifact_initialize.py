@@ -32,8 +32,8 @@ tags = [Tag.ImpactTier.tier_1]
 
 params = {
     "generate_sql": Param(
-        default="False",
-        type="string",
+        default=False,
+        type="boolean",
         description="Run SQL generation before initialize task",
     ),
 }
@@ -41,13 +41,13 @@ params = {
 # renders generate sql command if params.generate_sql is true, else empty string
 generate_sql_cmd_template = (
     "{{ 'script/bqetl generate all --ignore derived_view_schemas --use-cloud-function=false && ' "
-    "if params.generate_sql == 'True' else '' }}"
+    "if params.generate_sql else '' }}"
 )
 
 generate_sql_container_resources = k8s.V1ResourceRequirements(
     requests={
-        "memory": "{{ '6Gi' if params.generate_sql == 'True' else '2Gi' }}",
-        "cpu": "{{ '4' if params.generate_sql == 'True' else '1' }}",
+        "memory": "{{ '6Gi' if params.generate_sql else '2Gi' }}",
+        "cpu": "{{ '4' if params.generate_sql else '1' }}",
     },
 )
 

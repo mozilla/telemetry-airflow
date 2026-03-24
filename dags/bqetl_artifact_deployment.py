@@ -94,7 +94,7 @@ def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
     """
     queued_runs = DagRun.find(dag_id=dag_id, state=DagRunState.QUEUED)
     print(f"Found {len(queued_runs)} queued dag runs for {dag_id}")
-    return len(queued_runs) == 0 or generate_sql == "True"
+    return len(queued_runs) == 0 or generate_sql
 
 
 bigeye_api_key_secret = Secret(
@@ -113,6 +113,7 @@ with DAG(
     doc_md=__doc__,
     tags=tags,
     params=params,
+    render_template_as_native_obj=True,  # So boolean params get rendered as booleans.
 ) as dag:
     docker_image = (
         "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
