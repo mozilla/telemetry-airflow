@@ -206,7 +206,7 @@ with DAG(
     trigger_initialize = TriggerDagRunOperator(
         task_id="trigger_initialize",
         trigger_dag_id="bqetl_artifact_initialize",
-        wait_for_completion=True,
+        wait_for_completion=False,
         conf={"generate_sql": "{{ params.generate_sql }}"},
     )
 
@@ -226,16 +226,15 @@ with DAG(
             publish_public_udfs,
             publish_persistent_udfs,
             publish_static_tables,
-            trigger_initialize,
         ]
     )
     publish_tables_and_views.set_upstream(publish_public_udfs)
     publish_tables_and_views.set_upstream(publish_persistent_udfs)
     publish_tables_and_views.set_upstream(publish_static_tables)
-    publish_tables_and_views.set_upstream(trigger_initialize)
     publish_metadata.set_upstream(publish_tables_and_views)
     publish_bigeye_monitors.set_upstream(publish_tables_and_views)
     # trigger dryrun
     # doesn't block downstream tasks
     trigger_dryrun.set_upstream(publish_tables_and_views)
     trigger_looker.set_upstream(publish_tables_and_views)
+    trigger_initialize.set_upstream(publish_tables_and_views)
