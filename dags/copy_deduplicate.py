@@ -10,7 +10,7 @@ from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
 )
-from utils.glean_v2_backfill import column_removal_backfill_tables
+from utils.glean_v2_backfill import column_removal_backfill_tables_live
 from utils.tags import Tag
 
 DOCS = """\
@@ -88,7 +88,7 @@ with models.DAG(
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
             "firefox_desktop_live.metrics_v1",
-            *column_removal_backfill_tables,
+            *column_removal_backfill_tables_live,
         ],
         container_resources=resources,
     )
@@ -100,8 +100,8 @@ with models.DAG(
         billing_projects=("moz-fx-data-shared-prod",),
         priority_weight=100,
         parallelism=4,
-        only_tables=column_removal_backfill_tables,
-        column_removal_backfill_tables=column_removal_backfill_tables,
+        only_tables=column_removal_backfill_tables_live,
+        column_removal_backfill_tables=column_removal_backfill_tables_live,
         container_resources=resources,
     )
 
