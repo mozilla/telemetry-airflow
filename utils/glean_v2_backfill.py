@@ -14,3 +14,8 @@ column_removal_backfill_tables = [
     "org_mozilla_fennec_aurora_stable.health_v1",
     "org_mozilla_fennec_aurora_stable.adjust_attribution_v1",
 ]
+
+# live dataset tables to be used with copy_deduplicate
+column_removal_backfill_tables_live = [
+    table.replace("_stable.", "_live.") for table in column_removal_backfill_tables
+]
