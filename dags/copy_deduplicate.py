@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from airflow import models
 from airflow.operators.empty import EmptyOperator
@@ -89,6 +90,7 @@ with models.DAG(
             "telemetry_live.first_shutdown_v5",
             "firefox_desktop_live.metrics_v1",
             *column_removal_backfill_tables_live,
+            *[re.sub(r"_v1$", "_v2", table) for table in column_removal_backfill_tables_live],
         ],
         container_resources=resources,
     )
