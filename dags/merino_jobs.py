@@ -304,11 +304,23 @@ with DAG(
     tags=tags,
 ) as dag:
     engagement_job = merino_job(
-        name="upload_engagement_data",
+        name="upload_engagement_data_prod",
         arguments=[
             "upload_engagement_data",
             "upload-engagement-data",
         ],
+    )
+
+    engagement_job_stage = merino_job(
+        name="upload_engagement_data_stage",
+        arguments=[
+            "upload_engagement_data",
+            "upload-engagement-data",
+        ],
+        env_vars={
+            "MERINO_ENGAGEMENT__GCS_STORAGE_PROJECT": "moz-fx-merino-nonprod-db57",
+            "MERINO_ENGAGEMENT__GCS_STORAGE_BUCKET": "merino-airflow-data-stage",
+        },
     )
 
 # NOTE: Environment variable based settings for things like Elastic search URLs and credential sets, are NOT
