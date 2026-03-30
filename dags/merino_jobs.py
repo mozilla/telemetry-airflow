@@ -296,6 +296,7 @@ with DAG(
     )
 
 
+# Engagement data broker for stage/prod
 with DAG(
     "merino_engagement_data",
     schedule_interval="0 * * * *",  # every hour (UTC)
@@ -322,6 +323,7 @@ with DAG(
             "MERINO_ENGAGEMENT__GCS_STORAGE_BUCKET": "merino-airflow-data-stage",
         },
     )
+
 
 # NOTE: Environment variable based settings for things like Elastic search URLs and credential sets, are NOT
 # included in Airflow declarations. These values need to be explicitly specified.
