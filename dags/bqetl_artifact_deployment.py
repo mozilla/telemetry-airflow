@@ -33,6 +33,7 @@ found at the start of the logs in Airflow, e.g. `INFO - Found matching pod publi
 To find logs for specific datasets/views, add a string to search for to the end of the query.
 """
 
+import textwrap
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -162,23 +163,25 @@ with DAG(
         execution_timeout=timedelta(hours=6),
         arguments=[
             generate_sql_cmd_template
-            + """
-script/bqetl generate derived_view_schemas --use-cloud-function=false &&
-set +e;
-failed=0;
-script/bqetl query initialize '*' --file=materialized_view.sql --skip_existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people || failed=1;
-script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people || failed=1;
-script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only &&
-script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod &&
-script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments &&
-script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod &&
-script/bqetl view clean --skip-authorized --target-project=moz-fx-glam-prod --project-id=moz-fx-glam-prod &&
-script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only &&
-script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people &&
-script/publish_public_data_views --target-project=moz-fx-data-shared-prod &&
-script/publish_public_data_views --target-project=mozdata || failed=1;
-exit $failed
-            """
+            + textwrap.dedent(
+                """
+                script/bqetl generate derived_view_schemas --use-cloud-function=false &&
+                set +e;
+                failed=0;
+                script/bqetl query initialize '*' --file=materialized_view.sql --skip_existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people || failed=1;
+                script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people || failed=1;
+                script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only &&
+                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod &&
+                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments &&
+                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod &&
+                script/bqetl view clean --skip-authorized --target-project=moz-fx-glam-prod --project-id=moz-fx-glam-prod &&
+                script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only &&
+                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people &&
+                script/publish_public_data_views --target-project=moz-fx-data-shared-prod &&
+                script/publish_public_data_views --target-project=mozdata || failed=1;
+                exit $failed
+                """
+            )
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
