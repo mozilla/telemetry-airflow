@@ -5,6 +5,7 @@ Generates correlations data for top crashers.
 
 Uses crash report data imported from Socorro.
 """
+
 import datetime
 
 from airflow import DAG
@@ -47,8 +48,10 @@ with DAG(
     tags=tags,
     doc_md=__doc__,
 ) as dag:
-    # modules_with_missing_symbols sends results as email
-    ses_aws_conn_id = "aws_data_iam_ses"
+    # modules_with_missing_symbols sends results as email via SES
+    # these credentials are shared with probe scraper but should be replaced by
+    # sendgrid credentials eventually
+    ses_aws_conn_id = "aws_prod_probe_scraper"
     ses_access_key, ses_secret_key, _ = AwsBaseHook(
         aws_conn_id=ses_aws_conn_id, client_type="s3"
     ).get_credentials()
