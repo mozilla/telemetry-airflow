@@ -9,7 +9,7 @@
     "schema": "",
     "extra": "{\"known_hosts\": \"myhost.com AAAABBBBB\"}"
   },
-  "aws_data_iam_ses": {
+  "aws_prod_probe_scraper": {
     "conn_type": "s3",
     "description": null,
     "login": null,
