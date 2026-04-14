@@ -1,3 +1,9 @@
+from airflow.models import DagBag
+from airflow.operators.empty import EmptyOperator
+
+from utils.tags import Tag
+
+
 def test_dag_validity(get_dag_bag):
     """
     Test all DAGs can be parsed.
@@ -52,3 +58,32 @@ def test_dag_tags_required(get_dag_bag):
         assert [
             tag for tag in dag.tags if required_tag_type in tag
         ], f"DAG: {dag_name}: Missing required tag type `{required_tag_type}`"
+
+
+def test_telemetry_alerts_email(get_dag_bag: DagBag):
+    """Check that telemetry-alerts@mozilla.com is being emailed unless the DAG has a `no_triage` tag."""
+    for dag_name, dag in get_dag_bag.dags.items():
+        if Tag.Triage.no_triage in dag.tags:
+            continue
+
+        default_email = dag.default_args.get("email", [])
+        if default_email:
+            assert "telemetry-alerts@mozilla.com" in default_email, (
+                f'DAG {dag_name}: either telemetry-alerts@mozilla.com should be included in `default_args["email"]`,'
+                f' or a "{Tag.Triage.no_triage}" tag should be added to the DAG.'
+            )
+
+        for task in dag.tasks:
+            if isinstance(task, EmptyOperator):
+                continue
+
+            if task.email:
+                assert "telemetry-alerts@mozilla.com" in task.email, (
+                    f"DAG {dag_name} task {task.task_id}: either telemetry-alerts@mozilla.com should be included in `email`,"
+                    f' or a "{Tag.Triage.no_triage}" tag should be added to the DAG.'
+                )
+            else:
+                assert default_email != [], (
+                    f'DAG {dag_name} task {task.task_id}: either `email` or `default_args["email"]` should be specified and include telemetry-alerts@mozilla.com,'
+                    f' or a "{Tag.Triage.no_triage}" tag should be added to the DAG.'
+                )
