@@ -16,6 +16,7 @@ default_args = {
     "owner": "ascholtz@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2021, 1, 8),
+    "email": ["telemetry-alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
 }
