@@ -28,6 +28,7 @@ default_args = {
         "ascholtz@mozilla.com",
         "benwu@mozilla.com",
         "wichan@mozilla.com",
+        "telemetry-alerts@mozilla.com",
     ]
 }
 
