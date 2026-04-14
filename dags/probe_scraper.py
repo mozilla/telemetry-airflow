@@ -60,6 +60,7 @@ default_args = {
     "owner": "akomar@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime(2019, 10, 28),
+    "email": ["telemetry-alerts@mozilla.com"],
     "email_on_failure": True,
     "email_on_retry": True,
     "retries": 2,
