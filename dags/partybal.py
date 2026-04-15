@@ -30,6 +30,7 @@ default_args = {
     "email": [
         "ascholtz@mozilla.com",
         "mwilliams@mozilla.com",
+        "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
     "start_date": datetime(2021, 6, 21),
@@ -58,6 +59,7 @@ with DAG(
         email=[
             "ascholtz@mozilla.com",
             "mwilliams@mozilla.com",
+            "telemetry-alerts@mozilla.com",
         ],
         dag=dag,
     )

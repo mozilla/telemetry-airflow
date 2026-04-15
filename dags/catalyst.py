@@ -26,6 +26,7 @@ default_args = {
     "owner": "dpalmeiro@mozilla.com",
     "email": [
         "dpalmeiro@mozilla.com",
+        "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
     "start_date": datetime(2025, 5, 5),

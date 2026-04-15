@@ -50,5 +50,6 @@ with DAG(
         email=[
             "cmorales@mozilla.com",
             "ctroy@mozilla.com",
+            "telemetry-alerts@mozilla.com",
         ],
     )

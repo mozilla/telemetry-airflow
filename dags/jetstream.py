@@ -26,6 +26,7 @@ default_args = {
     "email": [
         "ascholtz@mozilla.com",
         "mwilliams@mozilla.com",
+        "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
     "start_date": datetime(2020, 3, 12),

@@ -109,7 +109,7 @@ def create_jira_ticket(context):
 
 default_args = {
     "owner": "jmoscon@mozilla.com",
-    "emails": ["jmoscon@mozilla.com"],
+    "email": ["jmoscon@mozilla.com", "telemetry-alerts@mozilla.com"],
     "start_date": datetime.datetime(2024, 1, 1),
     "retries": 3,
     # wait 5 min before retry

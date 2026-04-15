@@ -18,7 +18,7 @@ default_args = {
     "owner": "kik@mozilla.com",
     "start_date": datetime.datetime(2025, 4, 13, 0, 0),
     "end_date": None,
-    "email": ["kik@mozilla.com"],
+    "email": ["kik@mozilla.com", "telemetry-alerts@mozilla.com"],
     "depends_on_past": False,
     "retry_delay": datetime.timedelta(seconds=1800),
     "email_on_failure": True,
