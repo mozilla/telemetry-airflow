@@ -18,7 +18,7 @@ default_args = {
     "owner": "lmcfall@mozilla.com",
     "start_date": datetime.datetime(2025, 9, 1, 0, 0),
     "end_date": None,
-    "email": ["lmcfall@mozilla.com"],
+    "email": ["lmcfall@mozilla.com", "telemetry-alerts@mozilla.com"],
     "depends_on_past": False,
     "retry_delay": datetime.timedelta(seconds=1800),
     "email_on_failure": True,

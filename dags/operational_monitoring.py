@@ -49,7 +49,7 @@ with DAG(
         task_id="opmon_run",
         name="opmon_run",
         image=opmon_image,
-        email=["ascholtz@mozilla.com"],
+        email=["ascholtz@mozilla.com", "telemetry-alerts@mozilla.com"],
         arguments=[
             "--log_to_bigquery",
             "run",

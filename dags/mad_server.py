@@ -83,6 +83,7 @@ with DAG(
         email=[
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
+            "telemetry-alerts@mozilla.com",
         ],
         secrets=[amo_cred_issuer_secret, amo_cred_secret_secret],
     )
@@ -110,6 +111,7 @@ with DAG(
         email=[
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
+            "telemetry-alerts@mozilla.com",
         ],
     )
     new_data_eval = GKEPodOperator(
@@ -137,6 +139,7 @@ with DAG(
         email=[
             "dzeber@mozilla.com",
             "gleonard@mozilla.com",
+            "telemetry-alerts@mozilla.com",
         ],
     )
 
