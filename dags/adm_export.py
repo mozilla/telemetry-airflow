@@ -44,7 +44,7 @@ adm_sftp_secret = Secret(
 
 with DAG(
     dag_name,
-    schedule_interval="0 5 * * *",
+    schedule_interval="0 8 * * *",
     doc_md=DOCS,
     default_args=default_args,
     tags=tags,
@@ -81,7 +81,7 @@ with DAG(
         task_id="wait_for_adm_daily_aggregates",
         external_dag_id="bqetl_search_terms_daily",
         external_task_id="search_terms_derived__adm_daily_aggregates__v1",
-        execution_delta=datetime.timedelta(hours=2),
+        execution_delta=datetime.timedelta(hours=0),
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
         failed_states=FAILED_STATES,
