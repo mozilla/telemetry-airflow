@@ -79,7 +79,7 @@ with DAG(
         ],
     )
 
-    wait_for_clients_daily_export = ExternalTaskSensor(
+    wait_for_adm_daily_dma_aggregates = ExternalTaskSensor(
         task_id="wait_for_adm_daily_dma_aggregates",
         external_dag_id="bqetl_search_terms_daily",
         external_task_id="search_terms_derived__adm_daily_dma_aggregates__v1",
@@ -90,4 +90,4 @@ with DAG(
         email_on_retry=False,
     )
 
-    wait_for_clients_daily_export >> adm_daily_dma_aggregates_to_sftp
+    wait_for_adm_daily_dma_aggregates >> adm_daily_dma_aggregates_to_sftp
