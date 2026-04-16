@@ -44,7 +44,7 @@ adm_sftp_secret = Secret(
 
 with DAG(
     dag_name,
-    schedule_interval="0 5 * * *",
+    schedule_interval="0 8 * * *",
     doc_md=DOCS,
     default_args=default_args,
     tags=tags,
@@ -77,11 +77,10 @@ with DAG(
         ],
     )
 
-    wait_for_clients_daily_export = ExternalTaskSensor(
+    wait_for_adm_daily_aggregates = ExternalTaskSensor(
         task_id="wait_for_adm_daily_aggregates",
         external_dag_id="bqetl_search_terms_daily",
         external_task_id="search_terms_derived__adm_daily_aggregates__v1",
-        execution_delta=datetime.timedelta(hours=2),
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
         failed_states=FAILED_STATES,
@@ -89,4 +88,4 @@ with DAG(
         email_on_retry=False,
     )
 
-    wait_for_clients_daily_export >> adm_daily_aggregates_to_sftp
+    wait_for_adm_daily_aggregates >> adm_daily_aggregates_to_sftp
