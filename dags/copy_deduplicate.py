@@ -63,6 +63,8 @@ tags = [Tag.ImpactTier.tier_1]
 with models.DAG(
     dag_name,
     schedule_interval="0 1 * * *",
+    max_active_runs=1,
+    catchup=True,
     doc_md=DOCS,
     default_args=default_args,
     tags=tags,
