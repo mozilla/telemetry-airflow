@@ -137,8 +137,9 @@ with models.DAG(
         downstream_dependencies = {
             ("bhr_collection", "hour=5, minute=0"),
             ("dbt_daily", "hour=4, minute=0"),  # only on Sundays
-            ("glam_fenix", "hour=2, minute=0"),
-            ("glam_fog", "hour=2, minute=0"),
+            # TODO: Restore these GLAM task markers once we're done doing backfills for IIM-153.
+            #("glam_fenix", "hour=2, minute=0"),
+            #("glam_fog", "hour=2, minute=0"),
             ("bqetl_accounts_derived", "hour=2, minute=30"),
             ("bqetl_activity_stream", "hour=2, minute=0"),
             ("bqetl_amo_stats", "hour=3, minute=0"),
