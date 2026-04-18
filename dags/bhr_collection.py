@@ -52,7 +52,7 @@ with DAG(
     tags=tags,
 ) as dag:
     wait_for_bhr_ping = ExternalTaskSensor(
-        task_id="wait_for_copy_deduplicate",
+        task_id="wait_for_copy_deduplicate_all",
         external_dag_id="copy_deduplicate",
         external_task_id="copy_deduplicate_all",
         execution_delta=datetime.timedelta(hours=4),
