@@ -83,6 +83,7 @@ with DAG(
         task_id="wait_for_adm_daily_dma_aggregates",
         external_dag_id="bqetl_search_terms_daily",
         external_task_id="search_terms_derived__adm_daily_dma_aggregates__v1",
+        check_existence=True,
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
         failed_states=FAILED_STATES,
