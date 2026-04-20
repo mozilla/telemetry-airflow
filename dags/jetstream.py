@@ -42,6 +42,7 @@ with DAG(
     "jetstream",
     default_args=default_args,
     schedule_interval="0 4 * * *",
+    catchup=True,
     doc_md=__doc__,
     tags=tags,
 ) as dag:
