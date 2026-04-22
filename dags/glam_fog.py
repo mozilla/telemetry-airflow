@@ -58,6 +58,7 @@ with DAG(
     max_active_runs=1,
     schedule_interval="0 2 * * *",
     tags=tags,
+    catchup=True,
 ) as dag:
     wait_for_copy_deduplicate = ExternalTaskSensor(
         task_id="wait_for_copy_deduplicate_all",
