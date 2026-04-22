@@ -338,7 +338,7 @@ with DAG(
     amp_live_probe_job = merino_job(
         name="probe_amp_live_access",
         arguments=[
-            "probe-amp-live-access",
+            "probe_amp_live_access",
             "probe-amp-live-access",
         ],
     )
