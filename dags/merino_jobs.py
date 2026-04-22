@@ -325,6 +325,25 @@ with DAG(
     )
 
 
+# AMP live dataset access probe — notifications disabled, run once and re-trigger manually as needed.
+probe_args = {**default_args, "email_on_failure": False, "email_on_retry": False}
+
+with DAG(
+    "merino_amp_live_probe",
+    schedule_interval="@once",
+    doc_md=DOCS,
+    default_args=probe_args,
+    tags=tags,
+) as dag:
+    amp_live_probe_job = merino_job(
+        name="probe_amp_live_access",
+        arguments=[
+            "probe-amp-live-access",
+            "probe-amp-live-access",
+        ],
+    )
+
+
 # NOTE: Environment variable based settings for things like Elastic search URLs and credential sets, are NOT
 # included in Airflow declarations. These values need to be explicitly specified.
 
