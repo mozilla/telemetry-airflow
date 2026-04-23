@@ -208,6 +208,14 @@ with models.DAG(
 
         copy_deduplicate_all >> copy_deduplicate_all_external
 
+    copy_deduplicate_all_task_markers = ExternalTaskMarker(
+        task_id="copy_deduplicate_task_markers__wait_for_copy_deduplicate_all",
+        external_dag_id="copy_deduplicate_task_markers",
+        external_task_id="wait_for_copy_deduplicate_all",
+        execution_date="{{ execution_date.isoformat() }}",
+    )
+    copy_deduplicate_all >> copy_deduplicate_all_task_markers
+
     # We split out main ping since it's the highest volume and has a distinct
     # set of downstream dependencies.
     copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
@@ -259,6 +267,14 @@ with models.DAG(
 
         copy_deduplicate_main_ping >> main_ping_external
 
+    copy_deduplicate_main_ping_task_markers = ExternalTaskMarker(
+        task_id="copy_deduplicate_task_markers__wait_for_copy_deduplicate_main_ping",
+        external_dag_id="copy_deduplicate_task_markers",
+        external_task_id="wait_for_copy_deduplicate_main_ping",
+        execution_date="{{ execution_date.isoformat() }}",
+    )
+    copy_deduplicate_main_ping >> copy_deduplicate_main_ping_task_markers
+
     # We also separate out variant pings that share the main ping schema since these
     # ultrawide tables can sometimes have unique performance problems.
     copy_deduplicate_first_shutdown_ping = bigquery_etl_copy_deduplicate(
@@ -290,6 +306,14 @@ with models.DAG(
             )
 
         copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
+
+    copy_deduplicate_first_shutdown_ping_task_markers = ExternalTaskMarker(
+        task_id="copy_deduplicate_task_markers__wait_for_copy_deduplicate_first_shutdown_ping",
+        external_dag_id="copy_deduplicate_task_markers",
+        external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
+        execution_date="{{ execution_date.isoformat() }}",
+    )
+    copy_deduplicate_first_shutdown_ping >> copy_deduplicate_first_shutdown_ping_task_markers
 
     # Events.
 
@@ -339,6 +363,14 @@ with models.DAG(
 
         event_events >> event_events_external
 
+    event_events_task_markers = ExternalTaskMarker(
+        task_id="copy_deduplicate_task_markers__wait_for_event_events",
+        external_dag_id="copy_deduplicate_task_markers",
+        external_task_id="wait_for_event_events",
+        execution_date="{{ execution_date.isoformat() }}",
+    )
+    event_events >> event_events_task_markers
+
     copy_deduplicate_event_ping >> event_events
 
     bq_main_events = bigquery_etl_query(
@@ -377,6 +409,14 @@ with models.DAG(
             )
 
         bq_main_events >> bq_main_events_external
+
+    bq_main_events_task_markers = ExternalTaskMarker(
+        task_id="copy_deduplicate_task_markers__wait_for_bq_main_events",
+        external_dag_id="copy_deduplicate_task_markers",
+        external_task_id="wait_for_bq_main_events",
+        execution_date="{{ execution_date.isoformat() }}",
+    )
+    bq_main_events >> bq_main_events_task_markers
 
     copy_deduplicate_main_ping >> bq_main_events
 
@@ -423,5 +463,13 @@ with models.DAG(
             telemetry_derived__core_clients_first_seen__v1
             >> core_clients_first_seen_external
         )
+
+    core_clients_first_seen_task_markers = ExternalTaskMarker(
+        task_id="copy_deduplicate_task_markers__wait_for_telemetry_derived__core_clients_first_seen__v1",
+        external_dag_id="copy_deduplicate_task_markers",
+        external_task_id="wait_for_telemetry_derived__core_clients_first_seen__v1",
+        execution_date="{{ execution_date.isoformat() }}",
+    )
+    telemetry_derived__core_clients_first_seen__v1 >> core_clients_first_seen_task_markers
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
