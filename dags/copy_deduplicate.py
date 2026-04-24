@@ -231,8 +231,8 @@ with models.DAG(
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
                 execution_date="{{ execution_date.replace("
-                               + downstream_dependency[1]
-                               + ").isoformat() }}",
+                + downstream_dependency[1]
+                + ").isoformat() }}",
             )
 
         ExternalTaskMarker(
