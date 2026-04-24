@@ -92,7 +92,10 @@ with models.DAG(
             "telemetry_live.first_shutdown_v5",
             "firefox_desktop_live.metrics_v1",
             *column_removal_backfill_tables_live,
-            *[re.sub(r"_v1$", "_v2", table) for table in column_removal_backfill_tables_live],
+            *[
+                re.sub(r"_v1$", "_v2", table)
+                for table in column_removal_backfill_tables_live
+            ],
         ],
         container_resources=resources,
     )
@@ -133,67 +136,11 @@ with models.DAG(
     ) >> copy_deduplicate_all
 
     with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:
-        # list of downstream dependencies consisting of external DAG name and execution delta
         downstream_dependencies = {
             ("bhr_collection", "hour=5, minute=0"),
             ("dbt_daily", "hour=4, minute=0"),  # only on Sundays
-            # TODO: Restore these GLAM task markers once we're done doing backfills for IIM-153.
-            #("glam_fenix", "hour=2, minute=0"),
-            #("glam_fog", "hour=2, minute=0"),
-            ("bqetl_accounts_derived", "hour=2, minute=30"),
-            ("bqetl_activity_stream", "hour=2, minute=0"),
-            ("bqetl_amo_stats", "hour=3, minute=0"),
-            ("bqetl_analytics_aggregations", "hour=4, minute=15"),
-            ("bqetl_analytics_tables", "hour=2, minute=0"),
-            ("bqetl_broken_reports_agg", "hour=6, minute=0"),
-            ("bqetl_client_attributes", "hour=19, minute=40"),
-            ("bqetl_core", "hour=2, minute=0"),
-            ("bqetl_crashes", "hour=4, minute=0"),
-            ("bqetl_ctxsvc_derived", "hour=3, minute=0"),
-            ("bqetl_default_browser_aggregates", "hour=22, minute=0"),
-            ("bqetl_desktop_engagement_model", "hour=5, minute=0"),
-            ("bqetl_desktop_funnel", "hour=4, minute=0"),
-            ("bqetl_desktop_installs_v1", "hour=23, minute=55"),
-            ("bqetl_ech_adoption_rate", "hour=0, minute=0"),
-            ("bqetl_event_rollup", "hour=3, minute=0"),
-            ("bqetl_experiments_daily", "hour=3, minute=0"),
-            ("bqetl_feature_usage", "hour=5, minute=0"),
-            ("bqetl_firefox_enterprise", "hour=6, minute=0"),
-            ("bqetl_firefox_installer_aggregates", "hour=15, minute=0"),
-            ("bqetl_firefox_ios", "hour=4, minute=0"),
-            ("bqetl_fog_decision_support", "hour=4, minute=0"),
-            ("bqetl_fx_health_ind_dashboard", "hour=16, minute=0"),
-            ("bqetl_generated_funnels", "hour=5, minute=0"),
-            ("bqetl_glean_usage", "hour=2, minute=0"),
-            ("bqetl_internal_tooling", "hour=4, minute=0"),
-            ("bqetl_internet_outages", "hour=7, minute=0"),
-            ("bqetl_ltv", "hour=0, minute=0"),
-            ("bqetl_main_summary", "hour=2, minute=0"),
-            ("bqetl_marketing_analysis", "hour=12, minute=0"),
-            ("bqetl_messaging_system", "hour=2, minute=0"),
-            ("bqetl_mobile_activation", "hour=0, minute=0"),
-            ("bqetl_mobile_feature_usage", "hour=12, minute=0"),
-            ("bqetl_mobile_kpi_metrics", "hour=12, minute=0"),
-            ("bqetl_mobile_search", "hour=2, minute=0"),
-            ("bqetl_monitoring", "hour=2, minute=0"),
-            ("bqetl_newtab", "hour=0, minute=0"),
-            ("bqetl_nimbus_feature_monitoring", "hour=3, minute=0"),
-            ("bqetl_org_mozilla_fenix_derived", "hour=2, minute=0"),
-            ("bqetl_org_mozilla_firefox_derived", "hour=2, minute=0"),
-            ("bqetl_org_mozilla_focus_derived", "hour=2, minute=0"),
-            ("bqetl_pageload_v1", "hour=0, minute=0"),
-            ("bqetl_pocket", "hour=12, minute=0"),
-            ("bqetl_public_data_json", "hour=5, minute=0"),
-            ("bqetl_review_checker", "hour=0, minute=0"),
-            ("bqetl_rust_component_metrics", "hour=3, minute=0"),
-            ("bqetl_search_dashboard", "hour=5, minute=30"),
-            ("bqetl_search_terms_daily", "hour=8, minute=0"),
-            ("bqetl_serp", "hour=0, minute=0"),
-            ("bqetl_terms_of_use", "hour=6, minute=0"),
-            ("bqetl_urlbar", "hour=3, minute=0"),
-            ("bqetl_usage_reporting", "hour=4, minute=0"),
-            ("bqetl_use_counter_analysis", "hour=8, minute=0"),
-            ("private_bqetl_ads", "hour=4, minute=0"),
+            ("glam_fenix", "hour=2, minute=0"),
+            ("glam_fog", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -206,15 +153,13 @@ with models.DAG(
                 + ").isoformat() }}",
             )
 
-        copy_deduplicate_all >> copy_deduplicate_all_external
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__copy_deduplicate_all",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="copy_deduplicate_all_marker",
+        )
 
-    copy_deduplicate_all_task_markers = ExternalTaskMarker(
-        task_id="copy_deduplicate_task_markers__wait_for_copy_deduplicate_all",
-        external_dag_id="copy_deduplicate_task_markers",
-        external_task_id="wait_for_copy_deduplicate_all",
-        execution_date="{{ execution_date.isoformat() }}",
-    )
-    copy_deduplicate_all >> copy_deduplicate_all_task_markers
+        copy_deduplicate_all >> copy_deduplicate_all_external
 
     # We split out main ping since it's the highest volume and has a distinct
     # set of downstream dependencies.
@@ -240,19 +185,6 @@ with models.DAG(
         downstream_dependencies = {
             ("firefox_public_data_report", "hour=1, minute=0"),  # only on Mondays
             ("graphics_telemetry", "hour=3, minute=0"),
-            ("bqetl_addons", "hour=4, minute=0"),
-            ("bqetl_amo_stats", "hour=3, minute=0"),
-            ("bqetl_desktop_platform", "hour=3, minute=0"),
-            ("bqetl_devtools", "hour=3, minute=0"),
-            ("bqetl_experiments_daily", "hour=3, minute=0"),
-            ("bqetl_fog_decision_support", "hour=4, minute=0"),
-            ("bqetl_fx_health_ind_dashboard", "hour=16, minute=0"),
-            ("bqetl_internet_outages", "hour=7, minute=0"),
-            ("bqetl_main_summary", "hour=2, minute=0"),
-            ("bqetl_monitoring", "hour=2, minute=0"),
-            ("bqetl_public_data_json", "hour=5, minute=0"),
-            ("bqetl_search", "hour=3, minute=0"),
-            ("bqetl_ssl_ratios", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -265,15 +197,13 @@ with models.DAG(
                 + ").isoformat() }}",
             )
 
-        copy_deduplicate_main_ping >> main_ping_external
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__copy_deduplicate_main_ping",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="copy_deduplicate_main_ping_marker",
+        )
 
-    copy_deduplicate_main_ping_task_markers = ExternalTaskMarker(
-        task_id="copy_deduplicate_task_markers__wait_for_copy_deduplicate_main_ping",
-        external_dag_id="copy_deduplicate_task_markers",
-        external_task_id="wait_for_copy_deduplicate_main_ping",
-        execution_date="{{ execution_date.isoformat() }}",
-    )
-    copy_deduplicate_main_ping >> copy_deduplicate_main_ping_task_markers
+        copy_deduplicate_main_ping >> main_ping_external
 
     # We also separate out variant pings that share the main ping schema since these
     # ultrawide tables can sometimes have unique performance problems.
@@ -292,7 +222,7 @@ with models.DAG(
 
     with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
         downstream_dependencies = {
-            ("bqetl_analytics_tables", "hour=2, minute=0"),
+            # existing tasks are covered by copy_deduplicate_task_markers
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -301,19 +231,17 @@ with models.DAG(
                 external_dag_id=downstream_dependency[0],
                 external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
                 execution_date="{{ execution_date.replace("
-                + downstream_dependency[1]
-                + ").isoformat() }}",
+                               + downstream_dependency[1]
+                               + ").isoformat() }}",
             )
 
-        copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__copy_deduplicate_first_shutdown_ping",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="copy_deduplicate_first_shutdown_ping_marker",
+        )
 
-    copy_deduplicate_first_shutdown_ping_task_markers = ExternalTaskMarker(
-        task_id="copy_deduplicate_task_markers__wait_for_copy_deduplicate_first_shutdown_ping",
-        external_dag_id="copy_deduplicate_task_markers",
-        external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
-        execution_date="{{ execution_date.isoformat() }}",
-    )
-    copy_deduplicate_first_shutdown_ping >> copy_deduplicate_first_shutdown_ping_task_markers
+        copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
 
     # Events.
 
@@ -342,13 +270,6 @@ with models.DAG(
         downstream_dependencies = {
             ("catalyst", "hour=4, minute=0"),
             ("jetstream", "hour=4, minute=0"),
-            ("bqetl_amo_stats", "hour=3, minute=0"),
-            ("bqetl_analytics_aggregations", "hour=4, minute=15"),
-            ("bqetl_experiments_daily", "hour=3, minute=0"),
-            ("bqetl_feature_usage", "hour=5, minute=0"),
-            ("bqetl_fx_cert_error_privacy_dashboard", "hour=16, minute=40"),
-            ("bqetl_fx_health_ind_dashboard", "hour=16, minute=0"),
-            ("bqetl_main_summary", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -361,15 +282,13 @@ with models.DAG(
                 + ").isoformat() }}",
             )
 
-        event_events >> event_events_external
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__event_events",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="event_events_marker",
+        )
 
-    event_events_task_markers = ExternalTaskMarker(
-        task_id="copy_deduplicate_task_markers__wait_for_event_events",
-        external_dag_id="copy_deduplicate_task_markers",
-        external_task_id="wait_for_event_events",
-        execution_date="{{ execution_date.isoformat() }}",
-    )
-    event_events >> event_events_task_markers
+        event_events >> event_events_external
 
     copy_deduplicate_event_ping >> event_events
 
@@ -389,13 +308,6 @@ with models.DAG(
         downstream_dependencies = {
             ("catalyst", "hour=4, minute=0"),
             ("jetstream", "hour=4, minute=0"),
-            ("bqetl_amo_stats", "hour=3, minute=0"),
-            ("bqetl_analytics_aggregations", "hour=4, minute=15"),
-            ("bqetl_experiments_daily", "hour=3, minute=0"),
-            ("bqetl_feature_usage", "hour=5, minute=0"),
-            ("bqetl_fx_cert_error_privacy_dashboard", "hour=16, minute=40"),
-            ("bqetl_fx_health_ind_dashboard", "hour=16, minute=0"),
-            ("bqetl_main_summary", "hour=2, minute=0"),
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -408,15 +320,13 @@ with models.DAG(
                 + ").isoformat() }}",
             )
 
-        bq_main_events >> bq_main_events_external
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__bq_main_events",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="bq_main_events_marker",
+        )
 
-    bq_main_events_task_markers = ExternalTaskMarker(
-        task_id="copy_deduplicate_task_markers__wait_for_bq_main_events",
-        external_dag_id="copy_deduplicate_task_markers",
-        external_task_id="wait_for_bq_main_events",
-        execution_date="{{ execution_date.isoformat() }}",
-    )
-    bq_main_events >> bq_main_events_task_markers
+        bq_main_events >> bq_main_events_external
 
     copy_deduplicate_main_ping >> bq_main_events
 
@@ -445,8 +355,7 @@ with models.DAG(
         "core_clients_first_seen_external"
     ) as core_clients_first_seen_external:
         downstream_dependencies = {
-            ("bqetl_core", "hour=2, minute=0"),
-            ("bqetl_glean_usage", "hour=2, minute=0"),
+            # existing tasks are covered by copy_deduplicate_task_markers
         }
 
         for downstream_dependency in downstream_dependencies:
@@ -459,17 +368,15 @@ with models.DAG(
                 + ").isoformat() }}",
             )
 
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__telemetry_derived__core_clients_first_seen__v1",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="telemetry_derived__core_clients_first_seen__v1_marker",
+        )
+
         (
             telemetry_derived__core_clients_first_seen__v1
             >> core_clients_first_seen_external
         )
-
-    core_clients_first_seen_task_markers = ExternalTaskMarker(
-        task_id="copy_deduplicate_task_markers__wait_for_telemetry_derived__core_clients_first_seen__v1",
-        external_dag_id="copy_deduplicate_task_markers",
-        external_task_id="wait_for_telemetry_derived__core_clients_first_seen__v1",
-        execution_date="{{ execution_date.isoformat() }}",
-    )
-    telemetry_derived__core_clients_first_seen__v1 >> core_clients_first_seen_task_markers
 
     copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1
