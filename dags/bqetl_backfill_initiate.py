@@ -96,7 +96,7 @@ with DAG(
 
         @task
         def prepare_pod_parameters(entry):
-            return [f"script/bqetl backfill initiate { entry['qualified_table_name'] }"]
+            return [f"script/bqetl backfill initiate { entry['qualified_table_name'] } --copy-table-permissions"]
 
         process_backfill = GKEPodOperator(
             task_id="process_backfill",
