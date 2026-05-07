@@ -84,7 +84,7 @@ with DAG(
             "spark:spark.executor.memory": "21g",
         },
         "idle_delete_ttl": 14400,
-        # supported machine types depends on dataproc image version:
+        # supported machine types depend on dataproc image version:
         # https://cloud.google.com/dataproc/docs/concepts/compute/supported-machine-types
         "master_machine_type": "n2-highmem-8",
         "worker_machine_type": "n2-highmem-4",
@@ -112,6 +112,8 @@ with DAG(
                 "Gecko",
                 "--output-tag",
                 "main",
+                "--billing-project",
+                "airflow-dataproc",
             ],
         ),
     )
@@ -135,6 +137,8 @@ with DAG(
                 "Gecko_Child",
                 "--output-tag",
                 "child",
+                "--billing-project",
+                "airflow-dataproc",
             ],
         ),
     )
