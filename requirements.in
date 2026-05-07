@@ -14,7 +14,7 @@ apache-airflow-providers-postgres
 apache-airflow-providers-redis
 apache-airflow-providers-sftp
 apache-airflow-providers-slack
-airflow-provider-fivetran-async==2.0.2
+airflow-provider-fivetran-async==2.4.0
 
 # dbt integration
 apache-airflow-providers-dbt-cloud
