@@ -367,6 +367,7 @@ with DAG(
         env_vars={
             "MERINO_PROVIDERS__SPORTS__ES__DSN": es_prod_connection.host
             or es_staging_connection.host,
+            "MERINO_PROVIDERS__SPORTS__SPORTS": "['NFL', 'NBA', 'NHL', 'MLB', 'UCL']",
         },
         arguments=["fetch_sports", "nightly"],
         # NOTE: ALL secrets must be passed in explicitly
