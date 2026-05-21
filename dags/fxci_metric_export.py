@@ -77,7 +77,7 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[
-            "ahalberstadt@mozilla.com",
+            "release+fxci-etl@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
     )
