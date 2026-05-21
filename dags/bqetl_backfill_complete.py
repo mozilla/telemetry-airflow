@@ -39,6 +39,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     default_args=default_args,
+    max_active_runs=1,
 ) as dag:
     detect_backfills = GKEPodOperator(
         task_id="detect_backfills",
