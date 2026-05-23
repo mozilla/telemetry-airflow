@@ -1,4 +1,4 @@
-.PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local stop test up
+.PHONY: build clean fixes help pip-compile pip-install-local stop test up
 
 
 help:
@@ -11,8 +11,6 @@ help:
 	@echo "  pip-install-local  Install pip project requirements to your local environment"
 	@echo "  test               Runs pytest"
 	@echo "  up                 Runs the whole stack, served under http://localhost:8080/"
-	@echo "  gke                Create a sandbox gke cluster for testing"
-	@echo "  clean-gke          Delete the sandbox gke cluster"
 	@echo "  stop               Stops the docker containers"
 
 build:
@@ -48,12 +46,6 @@ up:
 	docker-compose up --wait
 	docker-compose exec airflow-webserver airflow variables import dev_variables.json
 	docker-compose exec airflow-webserver airflow connections import dev_connections.json
-
-gke:
-	bin/start_gke
-
-clean-gke:
-	bin/stop_gke
 
 test:
 	python -m pytest tests/
