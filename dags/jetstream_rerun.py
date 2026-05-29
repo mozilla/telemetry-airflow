@@ -7,6 +7,10 @@ from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
 
 docs = """
+## Triage Notes
+Tasks are triggered manually as needed - do not clear or rerun failed tasks without consulting the person who triggered the run.
+Tags: `no_triage`
+
 ### jetstream_rerun
 Build from telemetry-airflow repo, [dags/jetstream_rerun.py]
 Triggers rerun for Jetstream experiments.
@@ -44,8 +48,13 @@ The `experiment_slug` must match the slug of the experiment you want to rerun.
 
 tags = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
 
+default_args = {
+    "owner": "mwilliams@mozilla.com",
+}
+
 @dag(
     dag_id="jetstream_rerun",
+    default_args=default_args,
     start_date=datetime.datetime(2025, 1, 1, 0, 0),
     schedule_interval=None,
     catchup=False,
