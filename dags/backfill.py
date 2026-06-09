@@ -56,6 +56,14 @@ def generate_bash_command(params: dict) -> str:
 doc_md = """
 # Backfill DAG
 
+Trigger this DAG to re-run, or clear the state of, the tasks of an existing
+Airflow DAG over a date range. It targets a `dag_name` (and optional
+`task_regex`), not a BigQuery table.
+
+To backfill a bigquery-etl table, this is usually not the DAG you want. Use
+[`bqetl_backfill_initiate`](/dags/bqetl_backfill_initiate/grid) instead.
+This DAG should only be used for non-bqetl DAGs and tasks.
+
 #### Use with caution
 
 #### Some tips/notes:
