@@ -12,14 +12,28 @@ doc_md = """
 
 #### Use with caution: This will overwrite the dates and tables you choose!
 
+This DAG triggers the `bqetl query backfill` command in bigquery-etl. This is not the managed
+backfill feature. It overwrites the chosen dates in production directly with no staging or
+review step.
+
+For most backfills, prefer [`bqetl_backfill_initiate`](/dags/bqetl_backfill_initiate/grid),
+which stages results for validation before they reach production. There are very few cases where
+this dag should be used. Ask in slack in #data-platform-infra-wg if you're unsure which to use.
+
 #### Some tips/notes:
 * Date formats are 2020-03-01
 * Try with dryrun=True first
-* Read the associated CLI command in bqetl: https://github.com/mozilla/bigquery-etl/blob/7a36416554193c853bb562b34dda6270462acd66/bigquery_etl/cli/query.py#L679
+* Read the associated CLI command in bqetl: https://github.com/mozilla/bigquery-etl/blob/06ffa03088a4f76efdd4bccf2e346b0b2869aee2/bigquery_etl/cli/query.py#L729
 
 #### Owner
-frank@mozilla.com
+bewu@mozilla.com
 """
+
+default_args = {
+    "email": ["benwu@mozilla.com", "telemetry-alerts@mozilla.com"],
+    "email_on_failure": True,
+    "email_on_retry": False,
+}
 
 
 @dag(
@@ -30,6 +44,7 @@ frank@mozilla.com
     start_date=datetime.datetime(2023, 10, 18),
     dagrun_timeout=datetime.timedelta(days=4),
     tags=[Tag.ImpactTier.tier_3, Tag.Triage.no_triage],
+    default_args=default_args,
     render_template_as_native_obj=True,
     params={
         "table_name": Param(
