@@ -1,4 +1,23 @@
-"""DAG for initiating registered bigquery-etl backfills."""
+"""
+DAG for initiating registered bigquery-etl backfills.
+
+This is the recommended way to backfill a bigquery-etl table. Results are staged for validation in
+the `moz-fx-data-shared-prod.backfills_staging_derived` dataset before they replace production data.
+
+Runs hourly and shouldn't be triggered manually. Register the backfill in
+[bigquery-etl](https://github.com/mozilla/bigquery-etl) by adding a
+`backfill.yaml` entry next to the query and getting it merged. After that:
+
+1. This DAG picks up entries with status `Initiate` and runs the
+   backfill into a staging table in `moz-fx-data-shared-prod.backfills_staging_derived`,
+   then notifies the watchers in Slack.
+2. Validate the staging data and set the entry's status to `Complete`.
+3. [`bqetl_backfill_complete`](/dags/bqetl_backfill_complete/grid) (hourly)
+   swaps the validated data into production, keeping a 30-day backup.
+
+See the bigquery-etl backfill documentation for details:
+https://mozilla.github.io/bigquery-etl/cookbooks/backfilling_a_table/
+"""
 
 from datetime import datetime
 from typing import Tuple

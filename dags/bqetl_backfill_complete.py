@@ -1,4 +1,13 @@
-"""DAG for completing registered bigquery-etl backfills."""
+"""
+DAG for completing registered bigquery-etl backfills.
+
+This is the last step of the bigquery-etl backfill flow, following
+[`bqetl_backfill_initiate`](/dags/bqetl_backfill_initiate/grid).
+
+Runs hourly and shouldn't be triggered manually. Once you've validated the staged data from
+`bqetl_backfill_initiate` and set the backfill entry's status to `Complete`,
+this DAG swaps the staged data into production, keeping a 30-day backup.
+"""
 
 from datetime import datetime
 
