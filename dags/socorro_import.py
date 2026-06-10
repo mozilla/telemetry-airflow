@@ -120,7 +120,7 @@ with DAG(
         task_id="remove_socorro_crash_bq_table_partition",
         gcp_conn_id=bq_gcp_conn_id,
         name="remove_socorro_crash_bq_table_partition",
-        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest",
         arguments=["bq", "rm", "-f", "--table", table_name],
     )
 
