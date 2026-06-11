@@ -117,7 +117,7 @@ with DAG(
     render_template_as_native_obj=True,  # So boolean params get rendered as booleans.
 ) as dag:
     docker_image = (
-        "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
+        "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
     )
 
     skip_if_queued_runs_exist = ShortCircuitOperator(

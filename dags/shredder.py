@@ -65,7 +65,7 @@ dag = DAG(
     doc_md=docs,
     tags=tags,
 )
-docker_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/bigquery-etl/bigquery-etl:latest"
+docker_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 base_command = [
     "script/shredder_delete",
     "--state-table=moz-fx-data-shredder.shredder_state.shredder_state",
