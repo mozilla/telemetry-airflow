@@ -26,6 +26,7 @@ from airflow import DAG
 from airflow.decorators import task, task_group
 from airflow.providers.slack.notifications.slack import send_slack_notification
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -58,9 +59,7 @@ def parse_table_name_from_backfill(backfill_entry: dict) -> Tuple[str, str]:
     backfill_table_id = (
         f"{dataset}__{table}_{backfill_entry['entry_date'].replace('-', '_')}"
     )
-    staging_location = (
-        f"{project}.backfills_staging_derived.{backfill_table_id}"
-    )
+    staging_location = f"{project}.backfills_staging_derived.{backfill_table_id}"
     return project, staging_location
 
 
@@ -116,7 +115,9 @@ with DAG(
 
         @task
         def prepare_pod_parameters(entry):
-            return [f"script/bqetl backfill initiate { entry['qualified_table_name'] } --copy-table-permissions"]
+            return [
+                f"script/bqetl backfill initiate { entry['qualified_table_name'] } --copy-table-permissions --parallelism=6"
+            ]
 
         process_backfill = GKEPodOperator(
             task_id="process_backfill",
@@ -125,6 +126,9 @@ with DAG(
             arguments=prepare_pod_parameters(backfill),
             image=DOCKER_IMAGE,
             reattach_on_restart=True,
+            container_resources=k8s.V1ResourceRequirements(
+                requests={"memory": "1024Mi"},
+            ),
             on_failure_callback=send_slack_notification(
                 text=prepare_slack_failure_message(backfill),
                 **SLACK_COMMON_ARGS,
