@@ -56,6 +56,20 @@ github_token = Secret(
     key="webcompat_kb_secret__gh_token",
 )
 
+hackbot_url = Secret(
+    deploy_type="env",
+    deploy_target="HACKBOT_URL",
+    secret="airflow-gke-secrets",
+    key="webcompat_kb_secret__hackbot_url",
+)
+
+hackbot_api_key = Secret(
+    deploy_type="env",
+    deploy_target="HACKBOT_API_KEY",
+    secret="airflow-gke-secrets",
+    key="webcompat_kb_secret__hackbot_api_key",
+)
+
 with DAG(
     "webcompat_kb",
     default_args=default_args,
@@ -89,5 +103,7 @@ with DAG(
         secrets=[
             bugzilla_token,
             github_token,
+            hackbot_url,
+            hackbot_api_key,
         ],
     )
