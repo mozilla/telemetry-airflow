@@ -205,7 +205,7 @@ with DAG(
             ("phabricator", "https://github.com/mozilla-conduit/review"),
             (
                 "releases-comm-central",
-                "https://github.com/mozilla/releases-comm-central",
+                "https://github.com/thunderbird/thunderbird-desktop",
             ),
         )
     ]
