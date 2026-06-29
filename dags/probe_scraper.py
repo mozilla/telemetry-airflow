@@ -322,6 +322,42 @@ with DAG(
 
     schema_generator.set_upstream(probe_scraper)
 
+    # Publish the generated schemas to Google Artifact Registry (GAR), both as a
+    # generic tarball and as a FROM-scratch OCI image.
+    #
+    # The publishing logic lives in jobs/publish_schemas_to_gar.sh.
+    publish_schemas_to_gar_script = (
+        "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/publish_schemas_to_gar.sh"
+    )
+
+    publish_schemas_to_gar = GKEPodOperator(
+        task_id="publish_schemas_to_gar",
+        name="publish-schemas-to-gar",
+        image="google/cloud-sdk:552.0.0-slim",
+        cmds=["bash", "-c"],
+        arguments=[
+            f"set -o pipefail; gcloud storage cat {publish_schemas_to_gar_script} | bash"
+        ],
+        env_vars={
+            "MPS_REPO_URL": "https://github.com/mozilla-services/mozilla-pipeline-schemas.git",
+            "MPS_BRANCH": "generated-schemas",
+            "GCP_PROJECT": "moz-fx-data-artifacts-prod",
+            "GAR_LOCATION": "us",
+            "GAR_REPOSITORY": "mozilla-pipeline-schemas-oci-artifacts",
+            "GENERIC_REPOSITORY": "mozilla-pipeline-schemas-generic-artifacts",
+            "GAR_IMAGE": "schemas",
+            "CRANE_VERSION": "v0.20.2",
+        },
+        email=[
+            "akomar@mozilla.com",
+            "dataops+alerts@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
+        dag=dag,
+    )
+
+    publish_schemas_to_gar.set_upstream(schema_generator)
+
     probe_expiry_alerts = GKEPodOperator(
         task_id="probe-expiry-alerts",
         name="probe-expiry-alerts",
