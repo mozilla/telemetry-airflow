@@ -47,13 +47,18 @@ if ! gcloud artifacts generic upload \
   fi
 fi
 
-# Authenticate crane to GAR using the pod's workload-identity service account
-crane auth login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" \
-  "${GAR_LOCATION}-docker.pkg.dev"
-
-# Build a FROM-scratch image containing /schemas.tar.gz and push it (tag + latest)
-cd "${workdir}/image-context"
-tar -cf layer.tar schemas.tar.gz
+# Build and push the OCI image only if this ref hasn't been published yet
 image="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPOSITORY}/${GAR_IMAGE}"
-crane append -f layer.tar -t "${image}:${short_ref}"
-crane tag "${image}:${short_ref}" latest
+if gcloud artifacts docker images describe "${image}:${short_ref}" >/dev/null 2>&1; then
+  echo "Image ${image}:${short_ref} already exists, skipping build/push."
+else
+  # Authenticate crane to GAR using the pod's workload-identity service account
+  crane auth login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" \
+    "${GAR_LOCATION}-docker.pkg.dev"
+
+  # Build a FROM-scratch image containing /schemas.tar.gz and push it (tag + latest)
+  cd "${workdir}/image-context"
+  tar -cf layer.tar schemas.tar.gz
+  crane append -f layer.tar -t "${image}:${short_ref}"
+  crane tag "${image}:${short_ref}" latest
+fi
