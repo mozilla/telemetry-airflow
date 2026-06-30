@@ -104,7 +104,7 @@ with DAG(
     }
 
     # Built from repo https://github.com/mozilla/probe-scraper
-    probe_scraper_image = "gcr.io/moz-fx-data-airflow-prod-88e0/probe-scraper:latest"
+    probe_scraper_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/probe-scraper/probe-scraper:latest"
 
     # probe scraper used to be a single task, but it has beeen split up, and individual
     # failures do not block downstream tasks
