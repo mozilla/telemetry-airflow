@@ -42,55 +42,55 @@ tags = [Tag.ImpactTier.tier_1]
 looker_repos_secret_git_ssh_key_b64 = Secret(
     deploy_type="env",
     deploy_target="GIT_SSH_KEY_BASE64",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_repos_secret_git_ssh_key_b64",
 )
 looker_api_client_id_prod = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_ID",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_id_prod",
 )
 looker_api_client_secret_prod = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_SECRET",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_secret_prod",
 )
 looker_api_client_id_staging = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_ID",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_id_staging",
 )
 looker_api_client_secret_staging = Secret(
     deploy_type="env",
     deploy_target="LOOKER_API_CLIENT_SECRET",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_secret_staging",
 )
 looker_client_id_prod = Secret(
     deploy_type="env",
     deploy_target="LOOKER_CLIENT_ID",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_id_prod",
 )
 looker_client_secret_prod = Secret(
     deploy_type="env",
     deploy_target="LOOKER_CLIENT_SECRET",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__looker_api_client_secret_prod",
 )
 looker_pubsub_subscription_id = Secret(
     deploy_type="env",
     deploy_target="LOOKER_PUBSUB_SUBSCRIPTION_ID",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="looker__looker_pubsub_subscription_id",
 )
 dataops_looker_github_secret_access_token = Secret(
     deploy_type="env",
     deploy_target="GITHUB_ACCESS_TOKEN",
-    secret="airflow-gke-restricted-secrets",
+    secret="airflow-gke-secrets",
     key="probe_scraper_secret__dataops_looker_github_secret_access_token",
 )
 
