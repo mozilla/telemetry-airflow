@@ -25,13 +25,13 @@ QUERIES_IMAGE = (
 WORKDAY_USERNAME = Secret(
     deploy_type="env",
     deploy_target="HR_DASHBOARD_WORKDAY_USERNAME",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="HR_DASHBOARD_WORKDAY_USERNAME",
 )
 WORKDAY_PASSWORD = Secret(
     deploy_type="env",
     deploy_target="HR_DASHBOARD_WORKDAY_PASSWORD",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="HR_DASHBOARD_WORKDAY_PASSWORD",
 )
 

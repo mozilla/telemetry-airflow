@@ -469,7 +469,7 @@ def bigquery_bigeye_check(
     bigeye_api_key = Secret(
         deploy_type="env",
         deploy_target="BIGEYE_API_KEY",
-        secret="airflow-gke-secrets",
+        secret="airflow-gke-restricted-secrets",
         key="bqetl_artifact_deployment__bigeye_api_key",
     )
 

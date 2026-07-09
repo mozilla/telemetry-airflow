@@ -122,14 +122,14 @@ tags = [Tag.ImpactTier.tier_3]
 SLACK_CHANNEL_TOKEN = Secret(
     deploy_type="env",
     deploy_target="SLACK_CHANNEL_TOKEN",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="SLACK_CHANNEL_TOKEN",
 )
 
 slack_service_account = Secret(
     deploy_type="env",
     deploy_target="slack_service_account",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="slack_service_account",
 )
 

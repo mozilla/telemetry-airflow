@@ -39,7 +39,7 @@ tags = [Tag.ImpactTier.tier_3]
 adm_sftp_secret = Secret(
     deploy_type="env",
     deploy_target="SFTP_PASSWORD",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="adm_export_secret__sftp_password",
 )
 

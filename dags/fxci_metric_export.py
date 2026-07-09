@@ -35,13 +35,13 @@ secrets = [
     Secret(
         deploy_type="env",
         deploy_target="FXCI_ETL_STORAGE_CREDENTIALS",
-        secret="airflow-gke-secrets",
+        secret="airflow-gke-restricted-secrets",
         key="fxci_etl_secret__gcp-credentials",
     ),
     Secret(
         deploy_type="env",
         deploy_target="FXCI_ETL_MONITORING_CREDENTIALS",
-        secret="airflow-gke-secrets",
+        secret="airflow-gke-restricted-secrets",
         key="fxci_etl_secret__gcp-credentials",
     ),
 ]
