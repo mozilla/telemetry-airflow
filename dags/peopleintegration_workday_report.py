@@ -17,19 +17,19 @@ PROJECT = "moz-fx-data-bq-people"
 WORKDAY_USERNAME = Secret(
     deploy_type="env",
     deploy_target="WORKDAY_USERNAME",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="EVERFI_INTEG_WORKDAY_USERNAME",
 )
 WORKDAY_PASSWORD = Secret(
     deploy_type="env",
     deploy_target="WORKDAY_PASSWORD",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="EVERFI_INTEG_WORKDAY_PASSWORD",
 )
 WORKDAY_QUERY_URI = Secret(
     deploy_type="env",
     deploy_target="WORKDAY_QUERY_URI",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="WORKDAY_QUERY_URI",
 )
 WORKDAY_BASE_URL = "https://services1.myworkday.com"

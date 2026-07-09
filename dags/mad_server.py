@@ -44,13 +44,13 @@ gcs_report_bucket = "mad-reports"
 amo_cred_issuer_secret = Secret(
     deploy_type="env",
     deploy_target="AMO_CRED_ISSUER",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="mad_server_secret__amo_cred_issuer",
 )
 amo_cred_secret_secret = Secret(
     deploy_type="env",
     deploy_target="AMO_CRED_SECRET",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="mad_server_secret__amo_cred_secret",
 )
 

@@ -101,7 +101,7 @@ def should_run_deployment(dag_id: str, generate_sql: bool) -> bool:
 bigeye_api_key_secret = Secret(
     deploy_type="env",
     deploy_target="BIGEYE_API_KEY",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="bqetl_artifact_deployment__bigeye_api_key",
 )
 

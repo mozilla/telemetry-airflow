@@ -51,14 +51,14 @@ tags = [
 hpke_private_key = Secret(
     deploy_type="env",
     deploy_target="HPKE_PRIVATE_KEY",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="DAP_PPA_PROD_HPKE_PRIVATE_KEY",
 )
 
 auth_token = Secret(
     deploy_type="env",
     deploy_target="AUTH_TOKEN",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="DAP_PPA_PROD_AUTH_TOKEN",
 )
 

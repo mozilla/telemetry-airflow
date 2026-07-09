@@ -122,7 +122,7 @@ def create_secret(deploy_target):
     return Secret(
         deploy_type="env",
         deploy_target=deploy_target,
-        secret="airflow-gke-secrets",
+        secret="airflow-gke-restricted-secrets",
         key=deploy_target,
     )
 
