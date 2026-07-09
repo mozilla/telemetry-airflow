@@ -45,28 +45,28 @@ every_fifteen_minutes = "*/15 * * * *"
 bugzilla_token = Secret(
     deploy_type="env",
     deploy_target="BUGZILLA_API_KEY",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="webcompat_kb_secret__bugzilla_api_key",
 )
 
 github_token = Secret(
     deploy_type="env",
     deploy_target="GH_TOKEN",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="webcompat_kb_secret__gh_token",
 )
 
 hackbot_url = Secret(
     deploy_type="env",
     deploy_target="HACKBOT_URL",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="webcompat_kb_secret__hackbot_url",
 )
 
 hackbot_api_key = Secret(
     deploy_type="env",
     deploy_target="HACKBOT_API_KEY",
-    secret="airflow-gke-secrets",
+    secret="airflow-gke-restricted-secrets",
     key="webcompat_kb_secret__hackbot_api_key",
 )
 
