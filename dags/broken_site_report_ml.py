@@ -39,6 +39,7 @@ default_args = {
 
 tags = [
     Tag.ImpactTier.tier_2,
+    Tag.Triage.no_triage,
 ]
 
 every_fifteen_minutes = "*/15 * * * *"
