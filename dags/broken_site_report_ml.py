@@ -30,7 +30,7 @@ kberezina@mozilla.com
 
 default_args = {
     "owner": "kberezina@mozilla.com",
-    "email": ["kberezina@mozilla.com", "webcompat-internal@mozilla.org", "telemetry-alerts@mozilla.com"],
+    "email": ["kberezina@mozilla.com", "webcompat-internal@mozilla.org"],
     "depends_on_past": False,
     "start_date": datetime(2023, 12, 21),
     "email_on_failure": True,
@@ -39,6 +39,7 @@ default_args = {
 
 tags = [
     Tag.ImpactTier.tier_2,
+    Tag.Triage.no_triage,
 ]
 
 every_fifteen_minutes = "*/15 * * * *"
