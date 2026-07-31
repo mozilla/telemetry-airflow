@@ -213,6 +213,29 @@ with DAG(
         secrets=[bigeye_api_key_secret],
     )
 
+    # Set up BigQuery Sharing (exchanges, listings, subscriber grants) for
+    # `_shared` datasets that declare `external_sharing`. Sharing is created on
+    # the user-facing project (mozdata), so this must run after the `_shared`
+    # views have been published there by `publish_tables_and_views`.
+    publish_sharing = GKEPodOperator(
+        task_id="publish_sharing",
+        cmds=["bash", "-x", "-c"],
+        arguments=[
+            "script/bqetl sharing deploy '*' --project-id=moz-fx-data-shared-prod"
+        ],
+        image=docker_image,
+    )
+
+    # Remove BigQuery Sharing exchanges/listings that are no longer backed by an
+    # `external_sharing` config. Only bqetl-managed resources are deleted;
+    # manually-created exchanges/listings are left untouched.
+    clean_sharing = GKEPodOperator(
+        task_id="clean_sharing",
+        cmds=["bash", "-x", "-c"],
+        arguments=["script/bqetl sharing clean --location=US"],
+        image=docker_image,
+    )
+
     trigger_initialize = TriggerDagRunOperator(
         task_id="trigger_initialize",
         trigger_dag_id="bqetl_artifact_initialize",
@@ -243,6 +266,10 @@ with DAG(
     publish_tables_and_views.set_upstream(publish_static_tables)
     publish_metadata.set_upstream(publish_tables_and_views)
     publish_bigeye_monitors.set_upstream(publish_tables_and_views)
+    # Sharing runs after the `_shared` views are published to mozdata; cleanup
+    # of orphaned sharing resources runs after the deploy.
+    publish_sharing.set_upstream(publish_tables_and_views)
+    clean_sharing.set_upstream(publish_sharing)
     # trigger dryrun
     # doesn't block downstream tasks
     trigger_dryrun.set_upstream(publish_tables_and_views)
