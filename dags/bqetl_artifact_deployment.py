@@ -232,7 +232,7 @@ with DAG(
     clean_sharing = GKEPodOperator(
         task_id="clean_sharing",
         cmds=["bash", "-x", "-c"],
-        arguments=["script/bqetl sharing clean --location=US"],
+        arguments=["script/bqetl sharing clean"],
         image=docker_image,
     )
 
