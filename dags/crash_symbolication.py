@@ -58,10 +58,10 @@ with DAG(
 
     wait_for_socorro_import = ExternalTaskSensor(
         task_id="wait_for_socorro_import",
-        external_dag_id="socorro_import",
-        external_task_id="bigquery_load",
+        external_dag_id="bqetl_socorro_import",
+        external_task_id="telemetry_derived__socorro_crash__v2",
         check_existence=True,
-        execution_delta=datetime.timedelta(hours=5),
+        execution_delta=datetime.timedelta(hours=1),
         mode="reschedule",
         allowed_states=ALLOWED_STATES,
         failed_states=FAILED_STATES,
