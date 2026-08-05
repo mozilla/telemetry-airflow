@@ -1,9 +1,41 @@
 """
-Generates "Weekly report of modules with missing symbols in crash reports" and sends it to the Stability list.
+## crash_symbolication
 
-Generates correlations data for top crashers.
+Two crash report analysis jobs that run on crash data imported from Socorro.
 
-Uses crash report data imported from Socorro.
+Both run as PySpark jobs on ephemeral Dataproc clusters, with the driver code pulled from
+the `mozetl/symbolication/` in https://github.com/mozilla/python_mozetl and read from
+`moz-fx-data-shared-prod.telemetry_derived.socorro_crash_v2`, which is populated by
+the `bqetl_socorro_import` DAG
+
+The DAG is scheduled daily, but each task only does work on certain weekdays. The
+`--run-on-days` argument does the real scheduling: the script exits early when the run
+date doesn't match. This works around Airflow not supporting per-task schedules.
+
+### modules_with_missing_symbols (runs Mondays)
+
+Emails a weekly list of modules seen in crash reports that have no debug symbols on the
+Mozilla Symbols Server. Missing symbols mean worse stack traces and signatures; the report
+tells us which ones to chase down.
+
+Output: Email via AWS SES to mcastelluccio@mozilla.com, release-mgmt@mozilla.com, and
+stability@mozilla.org. Nothing else consumes it.
+
+Impact of failure: A missed run means one missed weekly email.
+
+### top_signatures_correlations (runs Mondays, Wednesdays, Fridays)
+
+Finds attributes over-represented in a crash signature compared to all crashes on the
+channel, such as a graphics driver version, add-on, or loaded module. Engineers triaging a
+top crasher use it to guess at a cause.
+
+Output: gzipped JSON in the moz-fx-data-static-websit-8565-analysis-output GCS bucket,
+served at https://analysis-output.telemetry.mozilla.org/top-signatures-correlations/data/.
+Crash Stats reads it from the browser to fill the Correlations tabs on the signature report
+and crash report pages (Desktop only).
+
+Impact of failure: user-visible on Crash Stats, but silent. The tabs render an empty panel
+rather than an error. Data also goes stale rather than disappearing.
 """
 
 import datetime
