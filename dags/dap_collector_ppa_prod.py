@@ -91,4 +91,15 @@ with DAG(
             hpke_private_key,
             auth_token,
         ],
+        doc_md="""
+        ### DAP Collector PPA Prod
+        
+        #### Description
+        
+        Collects PPA Prod Environment data from a DAP (Distributed Aggregation Protocol) leader and stores it in BigQuery.
+        
+        #### Owner
+        
+        bbirdsong@mozilla.com
+        """
     )
