@@ -91,8 +91,7 @@ with DAG(
             hpke_private_key,
             auth_token,
         ],
-        doc_md="""
-        ### DAP Collector PPA Prod
+        doc_md="""### DAP Collector PPA Prod
         
         #### Description
         
