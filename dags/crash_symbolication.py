@@ -1,12 +1,23 @@
+import datetime
+
+from airflow import DAG
+from airflow.operators.subdag import SubDagOperator
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
+
+from utils.constants import ALLOWED_STATES, FAILED_STATES
+from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
+from utils.tags import Tag
+
 """
-## crash_symbolication
+### crash symbolication
 
 Two crash report analysis jobs that run on crash data imported from Socorro.
 
 Both run as PySpark jobs on ephemeral Dataproc clusters, with the driver code pulled from
 the `mozetl/symbolication/` in https://github.com/mozilla/python_mozetl and read from
 `moz-fx-data-shared-prod.telemetry_derived.socorro_crash_v2`, which is populated by
-the `bqetl_socorro_import` DAG
+the `bqetl_socorro_import` DAG.
 
 The DAG is scheduled daily, but each task only does work on certain weekdays. The
 `--run-on-days` argument does the real scheduling: the script exits early when the run
@@ -37,17 +48,6 @@ and crash report pages (Desktop only).
 Impact of failure: user-visible on Crash Stats, but silent. The tabs render an empty panel
 rather than an error. Data also goes stale rather than disappearing.
 """
-
-import datetime
-
-from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from airflow.sensors.external_task import ExternalTaskSensor
-
-from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
-from utils.tags import Tag
 
 default_args = {
     "owner": "srose@mozilla.com",
