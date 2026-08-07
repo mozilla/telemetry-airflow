@@ -45,7 +45,7 @@ adm_sftp_secret = Secret(
 
 with DAG(
     dag_name,
-    schedule_interval="0 8 * * *",
+    schedule_interval="0 10 * * *",
     doc_md=DOCS,
     default_args=default_args,
     tags=tags,
