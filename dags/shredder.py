@@ -232,20 +232,24 @@ force_no_dml = GKEPodOperator(
     **common_task_args,
 )
 
-column_removal = GKEPodOperator(
-    task_id="column-removal",
-    name="shredder-column-removal",
-    arguments=[
-        *base_command,
-        "--parallelism=3",
-        "--billing-project=moz-fx-data-bq-batch-prod",
-        "--only",
-        *column_removal_backfill_tables,
-        "--column-removal-backfill-tables",
-        *column_removal_backfill_tables,
-    ],
-    container_resources=k8s.V1ResourceRequirements(
-        requests={"memory": "512Mi"},
-    ),
-    **common_task_args,
-)
+# Only created when there are tables left to backfill: --only and
+# --column-removal-backfill-tables both require at least one value, so an empty
+# list would make the pod exit on an argument parsing error.
+if column_removal_backfill_tables:
+    column_removal = GKEPodOperator(
+        task_id="column-removal",
+        name="shredder-column-removal",
+        arguments=[
+            *base_command,
+            "--parallelism=3",
+            "--billing-project=moz-fx-data-bq-batch-prod",
+            "--only",
+            *column_removal_backfill_tables,
+            "--column-removal-backfill-tables",
+            *column_removal_backfill_tables,
+        ],
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "512Mi"},
+        ),
+        **common_task_args,
+    )

@@ -315,6 +315,12 @@ def bigquery_etl_copy_deduplicate(
     :return: GKEPodOperator
     """
     kwargs["name"] = kwargs.get("name", task_id.replace("_", "-"))
+    # An empty only_tables list emits no --only args, which makes bqetl process every live table
+    # instead of none. Probably not intended, so fail.
+    if only_tables is not None and len(only_tables) == 0:
+        raise ValueError(
+            f"{task_id}: only_tables is empty; pass None to process all tables"
+        )
     table_qualifiers = []
     if only_tables:
         # bqetl expects multiple args as --only ... --only ...
