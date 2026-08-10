@@ -100,17 +100,19 @@ with models.DAG(
         container_resources=resources,
     )
 
-    # temporary test task with no downstream dependencies
-    copy_deduplicate_glean_v2_backfill = bigquery_etl_copy_deduplicate(
-        task_id="copy_deduplicate_glean_v2_backfill",
-        target_project_id="moz-fx-data-shared-prod",
-        billing_projects=("moz-fx-data-shared-prod",),
-        priority_weight=100,
-        parallelism=4,
-        only_tables=column_removal_backfill_tables_live,
-        column_removal_backfill_tables=column_removal_backfill_tables_live,
-        container_resources=resources,
-    )
+    # temporary test task with no downstream dependencies.
+    # Only created when there are tables left to backfill
+    if column_removal_backfill_tables_live:
+        copy_deduplicate_glean_v2_backfill = bigquery_etl_copy_deduplicate(
+            task_id="copy_deduplicate_glean_v2_backfill",
+            target_project_id="moz-fx-data-shared-prod",
+            billing_projects=("moz-fx-data-shared-prod",),
+            priority_weight=100,
+            parallelism=4,
+            only_tables=column_removal_backfill_tables_live,
+            column_removal_backfill_tables=column_removal_backfill_tables_live,
+            container_resources=resources,
+        )
 
     copy_deduplicate_sliced = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_sliced",
