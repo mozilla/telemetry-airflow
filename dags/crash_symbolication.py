@@ -47,6 +47,12 @@ and crash report pages (Desktop only).
 
 Impact of failure: user-visible on Crash Stats, but silent. The tabs render an empty panel
 rather than an error. Data also goes stale rather than disappearing.
+
+This task runs on Dataproc image 2.2 while `modules_with_missing_symbols` is still on 1.5,
+so the two don't share pip packages or a BigQuery connector jar. It also imports
+`crashcorrelations`, a vendored copy of https://github.com/marco-c/crashcorrelations that
+lives in python_mozetl and is pip installed from there rather than cloned at runtime. The
+job is scheduled to be retired in H1 2027, before image 2.2 goes end of life.
 """
 
 default_args = {
@@ -69,6 +75,44 @@ PIP_PACKAGES = [
     "scipy==1.5.4",
     "google-cloud-storage==2.7.0",
 ]
+
+# TESTING: pointing at a branch rather than main so the port can be run before it merges,
+# and at a scratch bucket so a dev run doesn't overwrite what Crash Stats reads. Both of
+# these go back to main and the default bucket before merging.
+CORRELATIONS_REF = "benwu/crashcorrelations-update"
+CORRELATIONS_RESULTS_BUCKET = "benwu-correlations-output"
+
+CORRELATIONS_DRIVER_CODE = (
+    f"https://raw.githubusercontent.com/mozilla/python_mozetl/{CORRELATIONS_REF}"
+    "/mozetl/symbolication/top_signatures_correlations_v2_2.py"
+)
+
+# top_signatures_correlations runs on image 2.2, which ships Python 3.11. The pins in
+# PIP_PACKAGES above are for the Python 3.7 on image 1.5 and don't all work there: scipy
+# 1.5.4 has no 3.11 wheels and fails trying to build from source. The chi2_contingency and
+# fisher_exact return shapes crashcorrelations unpacks are unchanged in scipy 1.11.
+#
+# crashcorrelations is the vendored copy of https://github.com/marco-c/crashcorrelations in
+# python_mozetl, patched for Spark 3. Installing it from the repo keeps it in lockstep with
+# the driver, which is fetched from the same ref. scipy comes in as one of its dependencies
+# but is pinned here so the version is explicit.
+#
+# No egg= fragment on that URL on purpose. pip doesn't need it and it would put an & in the
+# string, which breaks: the pip-install init action expands PIP_PACKAGES unquoted, so the
+# shell would background the command and drop the subdirectory fragment.
+CORRELATIONS_PIP_PACKAGES = [
+    "boto3==1.35.36",
+    "scipy==1.11.4",
+    "google-cloud-storage==2.18.2",
+    (
+        f"git+https://github.com/mozilla/python_mozetl.git@{CORRELATIONS_REF}"
+        "#subdirectory=mozetl/symbolication/crashcorrelations"
+    ),
+]
+
+# Spark 3.5 build of the BigQuery connector. The spark-bigquery-latest_2.12.jar used by the
+# image 1.5 tasks is the Spark 2.4 line and won't load on 3.5.
+CORRELATIONS_BQ_CONNECTOR_JAR = "gs://spark-lib/bigquery/spark-3.5-bigquery-0.44.2.jar"
 
 tags = [Tag.ImpactTier.tier_3]
 
@@ -103,60 +147,69 @@ with DAG(
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-    modules_with_missing_symbols = SubDagOperator(
-        task_id="modules_with_missing_symbols",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="modules_with_missing_symbols",
-            default_args=default_args,
-            cluster_name="modules-with-missing-symbols-{{ ds }}",
-            job_name="modules-with-missing-symbols",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/modules_with_missing_symbols.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-                "spark-env:AWS_ACCESS_KEY_ID": ses_access_key,
-                "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
-            },
-            py_args=["--run-on-days", "0", "--date", "{{ ds }}"],  # run monday
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-4",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
-    )
+    # TESTING: disabled while testing the correlations image 2.2 port, so a dev run doesn't
+    # email the Stability list. Restore before merging.
+    # modules_with_missing_symbols = SubDagOperator(
+    #     task_id="modules_with_missing_symbols",
+    #     subdag=moz_dataproc_pyspark_runner(
+    #         parent_dag_name=dag.dag_id,
+    #         image_version="1.5-debian10",
+    #         dag_name="modules_with_missing_symbols",
+    #         default_args=default_args,
+    #         cluster_name="modules-with-missing-symbols-{{ ds }}",
+    #         job_name="modules-with-missing-symbols",
+    #         python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/modules_with_missing_symbols.py",
+    #         init_actions_uris=[
+    #             "gs://dataproc-initialization-actions/python/pip-install.sh"
+    #         ],
+    #         additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+    #         additional_properties={
+    #             "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+    #             "spark-env:AWS_ACCESS_KEY_ID": ses_access_key,
+    #             "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
+    #         },
+    #         py_args=["--run-on-days", "0", "--date", "{{ ds }}"],  # run monday
+    #         idle_delete_ttl=14400,
+    #         num_workers=2,
+    #         worker_machine_type="n1-standard-4",
+    #         gcp_conn_id=params.conn_id,
+    #         service_account=params.client_email,
+    #         storage_bucket=params.storage_bucket,
+    #     ),
+    # )
 
     top_signatures_correlations = SubDagOperator(
         task_id="top_signatures_correlations",
         subdag=moz_dataproc_pyspark_runner(
             parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
+            image_version="2.2-debian12",
             dag_name="top_signatures_correlations",
             default_args=default_args,
             cluster_name="top-signatures-correlations-{{ ds }}",
             job_name="top-signatures-correlations",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
+            python_driver_code=CORRELATIONS_DRIVER_CODE,
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+            additional_metadata={"PIP_PACKAGES": " ".join(CORRELATIONS_PIP_PACKAGES)},
             additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+                "spark:spark.jars": CORRELATIONS_BQ_CONNECTOR_JAR,
             },
             py_args=[
                 # run monday, wednesday, and friday
                 "--run-on-days",
                 "0",
+                "1",
                 "2",
+                "3",
                 "4",
+                "5",
+                "6",
                 "--date",
                 "{{ ds }}",
+                # TESTING: scratch bucket instead of the one Crash Stats reads
+                "--results-bucket",
+                CORRELATIONS_RESULTS_BUCKET,
             ],
             idle_delete_ttl=14400,
             num_workers=2,
@@ -167,5 +220,6 @@ with DAG(
         ),
     )
 
-    wait_for_socorro_import >> modules_with_missing_symbols
+    # TESTING: modules_with_missing_symbols is commented out above
+    # wait_for_socorro_import >> modules_with_missing_symbols
     wait_for_socorro_import >> top_signatures_correlations
