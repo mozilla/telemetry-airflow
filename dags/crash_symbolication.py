@@ -60,9 +60,7 @@ default_args = {
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
-        "mcastelluccio@mozilla.com",
-        "srose@mozilla.com",
-        "telemetry-alerts@mozilla.com",
+        "benwu@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -214,9 +212,10 @@ with DAG(
             idle_delete_ttl=14400,
             num_workers=2,
             worker_machine_type="n1-standard-8",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
+            gcp_conn_id="google_cloud_airflow_dataproc",
+            service_account="dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com",
+            storage_bucket="moz-fx-data-prod-dataproc-scratch",
+            project_id="airflow-dataproc",
         ),
     )
 
