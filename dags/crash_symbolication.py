@@ -2,9 +2,10 @@ import datetime
 
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
+from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.sensors.external_task import ExternalTaskSensor
 
+from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
@@ -12,25 +13,31 @@ from utils.tags import Tag
 """
 ### crash symbolication
 
-Two crash report analysis jobs that run on crash data imported from Socorro.
-
-Both run as PySpark jobs on ephemeral Dataproc clusters, with the driver code pulled from
-the `mozetl/symbolication/` in https://github.com/mozilla/python_mozetl and read from
-`moz-fx-data-shared-prod.telemetry_derived.socorro_crash_v2`, which is populated by
-the `bqetl_socorro_import` DAG.
+Two crash report analysis jobs that run on crash data imported from Socorro. Both read
+`moz-fx-data-shared-prod.telemetry_derived.socorro_crash_v2`, which is populated by the
+`bqetl_socorro_import` DAG.
 
 The DAG is scheduled daily, but each task only does work on certain weekdays. The
-`--run-on-days` argument does the real scheduling: the script exits early when the run
-date doesn't match. This works around Airflow not supporting per-task schedules.
+`--run-on-days` argument does the real scheduling, which works around Airflow not
+supporting per-task schedules.
 
-### modules_with_missing_symbols (runs Mondays)
+### crash_missing_symbols (runs daily, emails Mondays)
 
 Emails a weekly list of modules seen in crash reports that have no debug symbols on the
 Mozilla Symbols Server. Missing symbols mean worse stack traces and signatures; the report
 tells us which ones to chase down.
 
-Output: Email via AWS SES to mcastelluccio@mozilla.com, release-mgmt@mozilla.com, and
-stability@mozilla.org. Nothing else consumes it.
+Runs as a docker-etl container, see
+https://github.com/mozilla/docker-etl/tree/main/jobs/crash-missing-symbols. It replaced a
+PySpark job that ran on Dataproc, and by default still reproduces two known bugs in that
+job so the output can be diffed against it; the `--dedupe-key` and
+`--fix-availability-args` flags turn those fixes on.
+
+The report is built in full every day and only sent on Mondays, so breakage surfaces the
+day it happens rather than a week later.
+
+Output: Email via AWS SES to mcastelluccio@mozilla.com, release-mgmt@mozilla.com,
+stability@mozilla.org, and benwu@mozilla.com. Nothing else consumes it.
 
 Impact of failure: A missed run means one missed weekly email.
 
@@ -45,8 +52,7 @@ served at https://analysis-output.telemetry.mozilla.org/top-signatures-correlati
 Crash Stats reads it from the browser to fill the Correlations tabs on the signature report
 and crash report pages (Desktop only).
 
-Impact of failure: user-visible on Crash Stats, but silent. The tabs render an empty panel
-rather than an error. Data also goes stale rather than disappearing.
+Impact of failure: user-visible on Crash Stats, but silent. Data also goes stale rather than disappearing.
 """
 
 default_args = {
@@ -72,6 +78,20 @@ PIP_PACKAGES = [
 
 tags = [Tag.ImpactTier.tier_3]
 
+# SES credentials for crash_missing_symbols, mounted as pod env vars
+ses_aws_access_key_secret = Secret(
+    deploy_type="env",
+    deploy_target="AWS_ACCESS_KEY_ID",
+    secret="airflow-gke-restricted-secrets",
+    key="probe_scraper_secret__aws_access_key",
+)
+ses_aws_secret_key_secret = Secret(
+    deploy_type="env",
+    deploy_target="AWS_SECRET_ACCESS_KEY",
+    secret="airflow-gke-restricted-secrets",
+    key="probe_scraper_secret__aws_secret_key",
+)
+
 with DAG(
     "crash_symbolication",
     default_args=default_args,
@@ -80,14 +100,6 @@ with DAG(
     tags=tags,
     doc_md=__doc__,
 ) as dag:
-    # modules_with_missing_symbols sends results as email via SES
-    # these credentials are shared with probe scraper but should be replaced by
-    # sendgrid credentials eventually
-    ses_aws_conn_id = "aws_prod_probe_scraper"
-    ses_access_key, ses_secret_key, _ = AwsBaseHook(
-        aws_conn_id=ses_aws_conn_id, client_type="s3"
-    ).get_credentials()
-
     wait_for_socorro_import = ExternalTaskSensor(
         task_id="wait_for_socorro_import",
         external_dag_id="bqetl_socorro_import",
@@ -103,33 +115,32 @@ with DAG(
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-    modules_with_missing_symbols = SubDagOperator(
-        task_id="modules_with_missing_symbols",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="modules_with_missing_symbols",
-            default_args=default_args,
-            cluster_name="modules-with-missing-symbols-{{ ds }}",
-            job_name="modules-with-missing-symbols",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/modules_with_missing_symbols.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-                "spark-env:AWS_ACCESS_KEY_ID": ses_access_key,
-                "spark-env:AWS_SECRET_ACCESS_KEY": ses_secret_key,
-            },
-            py_args=["--run-on-days", "0", "--date", "{{ ds }}"],  # run monday
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-4",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
+    modules_with_missing_symbols = GKEPodOperator(
+        task_id="crash_missing_symbols",
+        name="crash-missing-symbols",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
+        arguments=[
+            "-m",
+            "crash_missing_symbols.main",
+            "--date",
+            "{{ ds }}",
+            # Send Mondays only. The report is still built the other six days.
+            "--run-on-days",
+            "0",
+            "--recipient",
+            "mcastelluccio@mozilla.com",
+            "--recipient",
+            "release-mgmt@mozilla.com",
+            "--recipient",
+            "stability@mozilla.org",
+            "--recipient",
+            "benwu@mozilla.com",
+        ],
+        secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
+        # Failure alerts, unrelated to who the report goes to
+        # TODO: set these as task defaults after migrating other job
+        email=["benwu@mozilla.com", "stability@mozilla.org", "telemetry-alerts@mozilla.com"],
+        dag=dag,
     )
 
     top_signatures_correlations = SubDagOperator(
