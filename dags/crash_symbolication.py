@@ -116,8 +116,7 @@ with DAG(
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
     modules_with_missing_symbols = GKEPodOperator(
-        task_id="crash_missing_symbols",
-        name="crash-missing-symbols",
+        task_id="modules_with_missing_symbols",
         image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
         arguments=[
             "-m",
