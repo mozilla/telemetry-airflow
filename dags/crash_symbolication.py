@@ -126,56 +126,68 @@ with DAG(
             # Send Mondays only. The report is still built the other six days.
             "--run-on-days",
             "0",
-            "--recipient",
-            "mcastelluccio@mozilla.com",
-            "--recipient",
-            "release-mgmt@mozilla.com",
-            "--recipient",
-            "stability@mozilla.org",
+            "--run-on-days",
+            "1",
+            "--run-on-days",
+            "2",
+            "--run-on-days",
+            "3",
+            "--run-on-days",
+            "4",
+            "--run-on-days",
+            "5",
+            "--run-on-days",
+            "6",
+            #"--recipient",
+            #"mcastelluccio@mozilla.com",
+            #"--recipient",
+            #"release-mgmt@mozilla.com",
+            #"--recipient",
+            #"stability@mozilla.org",
             "--recipient",
             "benwu@mozilla.com",
         ],
         secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
         # Failure alerts, unrelated to who the report goes to
         # TODO: set these as task defaults after migrating other job
-        email=["benwu@mozilla.com", "stability@mozilla.org", "telemetry-alerts@mozilla.com"],
+        email=["benwu@mozilla.com"],
         dag=dag,
     )
 
-    top_signatures_correlations = SubDagOperator(
-        task_id="top_signatures_correlations",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="top_signatures_correlations",
-            default_args=default_args,
-            cluster_name="top-signatures-correlations-{{ ds }}",
-            job_name="top-signatures-correlations",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            },
-            py_args=[
-                # run monday, wednesday, and friday
-                "--run-on-days",
-                "0",
-                "2",
-                "4",
-                "--date",
-                "{{ ds }}",
-            ],
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-8",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
-        ),
-    )
+    #top_signatures_correlations = SubDagOperator(
+    #    task_id="top_signatures_correlations",
+    #    subdag=moz_dataproc_pyspark_runner(
+    #        parent_dag_name=dag.dag_id,
+    #        image_version="1.5-debian10",
+    #        dag_name="top_signatures_correlations",
+    #        default_args=default_args,
+    #        cluster_name="top-signatures-correlations-{{ ds }}",
+    #        job_name="top-signatures-correlations",
+    #        python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
+    #        init_actions_uris=[
+    #            "gs://dataproc-initialization-actions/python/pip-install.sh"
+    #        ],
+    #        additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
+    #        additional_properties={
+    #            "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
+    #        },
+    #        py_args=[
+    #            # run monday, wednesday, and friday
+    #            "--run-on-days",
+    #            "0",
+    #            "2",
+    #            "4",
+    #            "--date",
+    #            "{{ ds }}",
+    #        ],
+    #        idle_delete_ttl=14400,
+    #        num_workers=2,
+    #        worker_machine_type="n1-standard-8",
+    #        gcp_conn_id=params.conn_id,
+    #        service_account=params.client_email,
+    #        storage_bucket=params.storage_bucket,
+    #    ),
+    #)
 
     wait_for_socorro_import >> modules_with_missing_symbols
-    wait_for_socorro_import >> top_signatures_correlations
+    #wait_for_socorro_import >> top_signatures_correlations
