@@ -189,6 +189,11 @@ with DAG(
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
+            # Image 2.2 defaults this to true where 1.5 defaulted it to false. With no
+            # external IP the nodes still reach GCS and PyPI through Private Google Access,
+            # but not github.com, so the pip install of crashcorrelations from git hangs and
+            # the init action fails with a timeout.
+            internal_ip_only=False,
             additional_metadata={"PIP_PACKAGES": " ".join(CORRELATIONS_PIP_PACKAGES)},
             additional_properties={
                 "spark:spark.jars": CORRELATIONS_BQ_CONNECTOR_JAR,
