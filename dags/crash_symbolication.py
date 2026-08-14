@@ -108,10 +108,6 @@ CORRELATIONS_PIP_PACKAGES = [
     ),
 ]
 
-# Spark 3.5 build of the BigQuery connector. The spark-bigquery-latest_2.12.jar used by the
-# image 1.5 tasks is the Spark 2.4 line and won't load on 3.5.
-CORRELATIONS_BQ_CONNECTOR_JAR = "gs://spark-lib/bigquery/spark-3.5-bigquery-0.44.2.jar"
-
 tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
@@ -195,9 +191,10 @@ with DAG(
             # the init action fails with a timeout.
             internal_ip_only=False,
             additional_metadata={"PIP_PACKAGES": " ".join(CORRELATIONS_PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": CORRELATIONS_BQ_CONNECTOR_JAR,
-            },
+            # No spark.jars here, unlike the image 1.5 tasks. Image 2.2 ships a BigQuery
+            # connector in /usr/lib/spark/jars, so adding one from gs://spark-lib puts two
+            # jars on the classpath that both register the "bigquery" short name and the read
+            # fails with "Multiple sources found for bigquery".
             py_args=[
                 # run monday, wednesday, and friday
                 "--run-on-days",
