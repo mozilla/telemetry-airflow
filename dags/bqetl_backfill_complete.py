@@ -98,9 +98,7 @@ with DAG(
             backup_table_id = (
                 f"{dataset}__{table}_backup_{entry['entry_date'].replace('-', '_')}"
             )
-            backup_location = (
-                f"{project}.backfills_staging_derived.{backup_table_id}"
-            )
+            backup_location = f"{project}.backfills_staging_derived.{backup_table_id}"
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
@@ -120,6 +118,7 @@ with DAG(
                 "script/bqetl backfill complete",
                 entry["qualified_table_name"],
                 f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)}",
+                "--copy-table-permissions",
             ]
 
         process_backfill = GKEPodOperator(

@@ -138,6 +138,7 @@ with DAG(
                 entry["qualified_table_name"],
                 f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)}",
                 f"--parallelism={conf.get('parallelism', 6)}",
+                "--copy-table-permissions",
             ]
 
         process_backfill = GKEPodOperator(
