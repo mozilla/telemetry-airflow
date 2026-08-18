@@ -115,10 +115,8 @@ with DAG(
             dag_run = context.get("dag_run")
             conf = (dag_run.conf if dag_run else {}) or {}
             return [
-                "script/bqetl backfill complete",
-                entry["qualified_table_name"],
-                f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)}",
-                "--copy-table-permissions",
+                f"script/bqetl backfill complete {entry['qualified_table_name']} --copy-table-permissions "
+                f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)}"
             ]
 
         process_backfill = GKEPodOperator(
