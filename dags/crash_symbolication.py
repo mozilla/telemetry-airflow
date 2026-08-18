@@ -60,9 +60,7 @@ default_args = {
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
-        "mcastelluccio@mozilla.com",
-        "srose@mozilla.com",
-        "telemetry-alerts@mozilla.com",
+        "benwu@mozilla.org"
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -115,32 +113,32 @@ with DAG(
 
     params = get_dataproc_parameters("google_cloud_airflow_dataproc")
 
-    modules_with_missing_symbols = GKEPodOperator(
-        task_id="modules_with_missing_symbols",
-        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
-        arguments=[
-            "-m",
-            "crash_missing_symbols.main",
-            "--date",
-            "{{ ds }}",
-            # Send Mondays only. The report is still built the other six days.
-            "--run-on-days",
-            "0",
-            "--recipient",
-            "mcastelluccio@mozilla.com",
-            "--recipient",
-            "release-mgmt@mozilla.com",
-            "--recipient",
-            "stability@mozilla.org",
-            "--recipient",
-            "benwu@mozilla.com",
-        ],
-        secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
-        # Failure alerts, unrelated to who the report goes to
-        # TODO: set these as task defaults after migrating other job
-        email=["benwu@mozilla.com", "stability@mozilla.org", "telemetry-alerts@mozilla.com"],
-        dag=dag,
-    )
+    #modules_with_missing_symbols = GKEPodOperator(
+    #    task_id="modules_with_missing_symbols",
+    #    image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
+    #    arguments=[
+    #        "-m",
+    #        "crash_missing_symbols.main",
+    #        "--date",
+    #        "{{ ds }}",
+    #        # Send Mondays only. The report is still built the other six days.
+    #        "--run-on-days",
+    #        "0",
+    #        "--recipient",
+    #        "mcastelluccio@mozilla.com",
+    #        "--recipient",
+    #        "release-mgmt@mozilla.com",
+    #        "--recipient",
+    #        "stability@mozilla.org",
+    #        "--recipient",
+    #        "benwu@mozilla.com",
+    #    ],
+    #    secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
+    #    # Failure alerts, unrelated to who the report goes to
+    #    # TODO: set these as task defaults after migrating other job
+    #    email=["benwu@mozilla.com", "stability@mozilla.org", "telemetry-alerts@mozilla.com"],
+    #    dag=dag,
+    #)
 
     top_signatures_correlations = SubDagOperator(
         task_id="top_signatures_correlations",
@@ -149,9 +147,9 @@ with DAG(
             image_version="1.5-debian10",
             dag_name="top_signatures_correlations",
             default_args=default_args,
-            cluster_name="top-signatures-correlations-{{ ds }}",
+            cluster_name="top-signatures-correlations-{{ ds }}-test",
             job_name="top-signatures-correlations",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
+            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/benwu/crashcorrelations-update/mozetl/symbolication/top_signatures_correlations.py",
             init_actions_uris=[
                 "gs://dataproc-initialization-actions/python/pip-install.sh"
             ],
@@ -167,15 +165,25 @@ with DAG(
                 "4",
                 "--date",
                 "{{ ds }}",
+                # TEMPORARY, diagnosing the published NULL undercount. Counts nulls four
+                # ways on the release dataframe and writes them to a separate prefix, so
+                # the job's own output is untouched. --trace-ref must match the ref
+                # python_driver_code is fetched from, since the tracer is fetched
+                # separately. Remove all three once the cause is known.
+                "--trace-counts",
+                "--trace-ref",
+                "benwu/crashcorrelations-update",
+                "--trace-bucket",
+                "benwu-correlations-output",
             ],
             idle_delete_ttl=14400,
             num_workers=2,
             worker_machine_type="n1-standard-8",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
+            gcp_conn_id="google_cloud_airflow_dataproc",
+            service_account="dataproc-runner-prod@airflow-dataproc.iam.gserviceaccount.com",
+            storage_bucket="moz-fx-data-prod-dataproc-scratch",
         ),
     )
 
-    wait_for_socorro_import >> modules_with_missing_symbols
+    #wait_for_socorro_import >> modules_with_missing_symbols
     wait_for_socorro_import >> top_signatures_correlations
