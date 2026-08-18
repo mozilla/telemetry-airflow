@@ -13,6 +13,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.decorators import task, task_group
+from airflow.models.param import Param
 from airflow.providers.slack.notifications.slack import send_slack_notification
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 
@@ -28,6 +29,8 @@ SLACK_COMMON_ARGS = {
     "channel": AUTOMATION_SLACK_CHANNEL,
 }
 DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
+
+DEFAULT_PROJECT_ID = "moz-fx-data-shared-prod"
 
 tags = [Tag.ImpactTier.tier_3]
 
@@ -49,13 +52,22 @@ with DAG(
     catchup=False,
     default_args=default_args,
     max_active_runs=1,
+    params={
+        "project_id": Param(
+            DEFAULT_PROJECT_ID,
+            type="string",
+            description="GCP project to scan for and run backfills "
+            "(default moz-fx-data-shared-prod).",
+        ),
+    },
 ) as dag:
     detect_backfills = GKEPodOperator(
         task_id="detect_backfills",
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries",
+            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries "
+            f"--project-id={{{{ (dag_run.conf or {{}}).get('project_id', '{DEFAULT_PROJECT_ID}') }}}}",
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -101,8 +113,14 @@ with DAG(
             )
 
         @task
-        def prepare_pod_parameters(entry):
-            return [f"script/bqetl backfill complete { entry['qualified_table_name'] } --copy-table-permissions"]
+        def prepare_pod_parameters(entry, **context):
+            dag_run = context.get("dag_run")
+            conf = (dag_run.conf if dag_run else {}) or {}
+            return [
+                "script/bqetl backfill complete",
+                entry["qualified_table_name"],
+                f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)}",
+            ]
 
         process_backfill = GKEPodOperator(
             task_id="process_backfill",
