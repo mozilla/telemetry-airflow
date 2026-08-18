@@ -60,7 +60,7 @@ default_args = {
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
-        "benwu@mozilla.org"
+        "benwu@mozilla.com"
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -165,15 +165,29 @@ with DAG(
                 "4",
                 "--date",
                 "{{ ds }}",
-                # TEMPORARY, diagnosing the published NULL undercount. Counts nulls four
-                # ways on the release dataframe and writes them to a separate prefix, so
-                # the job's own output is untouched. --trace-ref must match the ref
-                # python_driver_code is fetched from, since the tracer is fetched
-                # separately. Remove all three once the cause is known.
+                # TEMPORARY, diagnosing the published NULL undercount. Remove this whole
+                # block, and count_trace_prod.py, once the cause is known.
+                #
+                # Counts nulls four ways on the release dataframe and writes them to a
+                # separate prefix. --trace-ref must match the ref python_driver_code is
+                # fetched from, since the tracer is fetched separately at runtime.
                 "--trace-counts",
                 "--trace-ref",
                 "benwu/crashcorrelations-update",
                 "--trace-bucket",
+                "benwu-correlations-output",
+                # get_versions() fetches the current version from product-details live and
+                # ignores --date, so now that 154.0 has shipped the release channel resolves
+                # to ['154.0'], which has ~20 crashes against 153.0.4's ~67,000. Pin the
+                # versions the Aug 17 run actually read, otherwise there's no data to
+                # measure. The driver requires --results-bucket alongside this, since the
+                # output no longer matches what the schedule would publish.
+                "--override-versions",
+                "153.0",
+                "153.0.1",
+                "153.0.3",
+                "153.0.4",
+                "--results-bucket",
                 "benwu-correlations-output",
             ],
             idle_delete_ttl=14400,
