@@ -1,13 +1,12 @@
 import datetime
 
 from airflow import DAG
-from airflow.operators.subdag import SubDagOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.sensors.external_task import ExternalTaskSensor
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
-from utils.dataproc import get_dataproc_parameters, moz_dataproc_pyspark_runner
 from utils.tags import Tag
 
 """
@@ -16,10 +15,6 @@ from utils.tags import Tag
 Two crash report analysis jobs that run on crash data imported from Socorro. Both read
 `moz-fx-data-shared-prod.telemetry_derived.socorro_crash_v2`, which is populated by the
 `bqetl_socorro_import` DAG.
-
-The DAG is scheduled daily, but each task only does work on certain weekdays. The
-`--run-on-days` argument does the real scheduling, which works around Airflow not
-supporting per-task schedules.
 
 ### crash_missing_symbols (runs daily, emails Mondays)
 
@@ -37,11 +32,11 @@ The report is built in full every day and only sent on Mondays, so breakage surf
 day it happens rather than a week later.
 
 Output: Email via AWS SES to mcastelluccio@mozilla.com, release-mgmt@mozilla.com,
-stability@mozilla.org, and benwu@mozilla.com. Nothing else consumes it.
+and stability@mozilla.org. Nothing else consumes it.
 
 Impact of failure: A missed run means one missed weekly email.
 
-### top_signatures_correlations (runs Mondays, Wednesdays, Fridays)
+### top_signatures_correlations
 
 Finds attributes over-represented in a crash signature compared to all crashes on the
 channel, such as a graphics driver version, add-on, or loaded module. Engineers triaging a
@@ -56,12 +51,11 @@ Impact of failure: user-visible on Crash Stats, but silent. Data also goes stale
 """
 
 default_args = {
-    "owner": "srose@mozilla.com",
+    "owner": "bewu@mozilla.com",
     "depends_on_past": False,
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
-        "mcastelluccio@mozilla.com",
-        "srose@mozilla.com",
+        "benwu@mozilla.com",
         "telemetry-alerts@mozilla.com",
     ],
     "email_on_failure": True,
@@ -70,13 +64,10 @@ default_args = {
     "retry_delay": datetime.timedelta(minutes=30),
 }
 
-PIP_PACKAGES = [
-    "boto3==1.16.20",
-    "scipy==1.5.4",
-    "google-cloud-storage==2.7.0",
-]
-
 tags = [Tag.ImpactTier.tier_3]
+
+# The bucket Crash Stats reads. Each run replaces the whole prefix under it.
+CORRELATIONS_RESULTS_BUCKET = "moz-fx-data-static-websit-8565-analysis-output"
 
 # SES credentials for crash_missing_symbols, mounted as pod env vars
 ses_aws_access_key_secret = Secret(
@@ -113,8 +104,6 @@ with DAG(
         email_on_retry=False,
     )
 
-    params = get_dataproc_parameters("google_cloud_airflow_dataproc")
-
     modules_with_missing_symbols = GKEPodOperator(
         task_id="modules_with_missing_symbols",
         image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
@@ -132,49 +121,28 @@ with DAG(
             "release-mgmt@mozilla.com",
             "--recipient",
             "stability@mozilla.org",
-            "--recipient",
-            "benwu@mozilla.com",
         ],
         secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
-        # Failure alerts, unrelated to who the report goes to
-        # TODO: set these as task defaults after migrating other job
-        email=["benwu@mozilla.com", "stability@mozilla.org", "telemetry-alerts@mozilla.com"],
         dag=dag,
     )
 
-    top_signatures_correlations = SubDagOperator(
+    top_signatures_correlations = GKEPodOperator(
         task_id="top_signatures_correlations",
-        subdag=moz_dataproc_pyspark_runner(
-            parent_dag_name=dag.dag_id,
-            image_version="1.5-debian10",
-            dag_name="top_signatures_correlations",
-            default_args=default_args,
-            cluster_name="top-signatures-correlations-{{ ds }}",
-            job_name="top-signatures-correlations",
-            python_driver_code="https://raw.githubusercontent.com/mozilla/python_mozetl/main/mozetl/symbolication/top_signatures_correlations.py",
-            init_actions_uris=[
-                "gs://dataproc-initialization-actions/python/pip-install.sh"
-            ],
-            additional_metadata={"PIP_PACKAGES": " ".join(PIP_PACKAGES)},
-            additional_properties={
-                "spark:spark.jars": "gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar",
-            },
-            py_args=[
-                # run monday, wednesday, and friday
-                "--run-on-days",
-                "0",
-                "2",
-                "4",
-                "--date",
-                "{{ ds }}",
-            ],
-            idle_delete_ttl=14400,
-            num_workers=2,
-            worker_machine_type="n1-standard-8",
-            gcp_conn_id=params.conn_id,
-            service_account=params.client_email,
-            storage_bucket=params.storage_bucket,
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-correlations:latest",
+        arguments=[
+            "-m",
+            "crash_correlations.main",
+            "--date",
+            "{{ ds }}",
+            "--results-bucket",
+            CORRELATIONS_RESULTS_BUCKET,
+            "--no-local",
+        ],
+        # Measured peak is 2.19Gi on the worst channel
+        container_resources=k8s.V1ResourceRequirements(
+            requests={"memory": "3Gi"},
         ),
+        dag=dag,
     )
 
     wait_for_socorro_import >> modules_with_missing_symbols
