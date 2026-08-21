@@ -3,6 +3,8 @@ DAG for initiating registered bigquery-etl backfills.
 
 This is the recommended way to backfill a bigquery-etl table. Results are staged for validation in
 the `moz-fx-data-shared-prod.backfills_staging_derived` dataset before they replace production data.
+Tables in any project are picked up, and staging always goes to
+`moz-fx-data-shared-prod.backfills_staging_derived` regardless of the table's project.
 
 Runs hourly and shouldn't be triggered manually. Register the backfill in
 [bigquery-etl](https://github.com/mozilla/bigquery-etl) by adding a
@@ -42,7 +44,8 @@ SLACK_COMMON_ARGS = {
 }
 DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 
-DEFAULT_PROJECT_ID = "moz-fx-data-shared-prod"
+STAGING_PROJECT_ID = "moz-fx-data-shared-prod"
+STAGING_DATASET = "backfills_staging_derived"
 
 tags = [Tag.ImpactTier.tier_3]
 
@@ -62,7 +65,7 @@ def parse_table_name_from_backfill(backfill_entry: dict) -> Tuple[str, str]:
     backfill_table_id = (
         f"{dataset}__{table}_{backfill_entry['entry_date'].replace('-', '_')}"
     )
-    staging_location = f"{project}.backfills_staging_derived.{backfill_table_id}"
+    staging_location = f"{STAGING_PROJECT_ID}.{STAGING_DATASET}.{backfill_table_id}"
     return project, staging_location
 
 
@@ -77,9 +80,9 @@ with DAG(
     max_active_runs=1,
     params={
         "project_id": Param(
-            DEFAULT_PROJECT_ID,
-            type="string",
-            description="GCP project to scan for and run backfills (defaults to moz-fx-data-shared-prod).",
+            None,
+            type=["null", "string"],
+            description="Restrict the scan to a single GCP project. Defaults to scanning all projects.",
         ),
         "parallelism": Param(
             6,
@@ -93,8 +96,9 @@ with DAG(
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl backfill scheduled --status=Initiate --json_path=/airflow/xcom/return.json --ignore-old-entries "
-            f"--project-id={{{{ (dag_run.conf or {{}}).get('project_id', '{DEFAULT_PROJECT_ID}') }}}}"
+            "script/bqetl backfill scheduled --status=Initiate --json_path=/airflow/xcom/return.json --ignore-old-entries"
+            "{% set p = (dag_run.conf or {}).get('project_id') %}"
+            "{{ ' --project-id=' ~ p if p else '' }}"
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -133,9 +137,12 @@ with DAG(
         def prepare_pod_parameters(entry, **context):
             dag_run = context.get("dag_run")
             conf = (dag_run.conf if dag_run else {}) or {}
+            # Take the project from the entry itself: a single run can cover
+            # entries from several projects.
+            project, _ = parse_table_name_from_backfill(entry)
             return [
                 f"script/bqetl backfill initiate {entry['qualified_table_name']} --copy-table-permissions "
-                f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)} "
+                f"--project-id={project} "
                 f"--parallelism={conf.get('parallelism', 6)}"
             ]
 
