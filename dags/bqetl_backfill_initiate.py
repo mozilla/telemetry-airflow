@@ -44,9 +44,6 @@ SLACK_COMMON_ARGS = {
 }
 DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 
-STAGING_PROJECT_ID = "moz-fx-data-shared-prod"
-STAGING_DATASET = "backfills_staging_derived"
-
 tags = [Tag.ImpactTier.tier_3]
 
 default_args = {
@@ -61,12 +58,8 @@ default_args = {
 
 def parse_table_name_from_backfill(backfill_entry: dict) -> Tuple[str, str]:
     """Return (project_id, staging_table_id) for backfill entry."""
-    project, dataset, table = backfill_entry["qualified_table_name"].split(".")
-    backfill_table_id = (
-        f"{dataset}__{table}_{backfill_entry['entry_date'].replace('-', '_')}"
-    )
-    staging_location = f"{STAGING_PROJECT_ID}.{STAGING_DATASET}.{backfill_table_id}"
-    return project, staging_location
+    project, _, _ = backfill_entry["qualified_table_name"].split(".")
+    return project, backfill_entry["staging_table"]
 
 
 with DAG(

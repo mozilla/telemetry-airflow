@@ -30,9 +30,6 @@ SLACK_COMMON_ARGS = {
 }
 DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 
-STAGING_PROJECT_ID = "moz-fx-data-shared-prod"
-STAGING_DATASET = "backfills_staging_derived"
-
 tags = [Tag.ImpactTier.tier_3]
 
 default_args = {
@@ -96,11 +93,7 @@ with DAG(
 
         @task
         def prepare_slack_failure_message(entry):
-            project, dataset, table = entry["qualified_table_name"].split(".")
-            backup_table_id = (
-                f"{dataset}__{table}_backup_{entry['entry_date'].replace('-', '_')}"
-            )
-            backup_location = f"{STAGING_PROJECT_ID}.{STAGING_DATASET}.{backup_table_id}"
+            backup_location = entry["backup_table"]
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
