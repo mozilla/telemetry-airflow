@@ -30,8 +30,6 @@ SLACK_COMMON_ARGS = {
 }
 DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 
-DEFAULT_PROJECT_ID = "moz-fx-data-shared-prod"
-
 tags = [Tag.ImpactTier.tier_3]
 
 default_args = {
@@ -54,10 +52,10 @@ with DAG(
     max_active_runs=1,
     params={
         "project_id": Param(
-            DEFAULT_PROJECT_ID,
-            type="string",
-            description="GCP project to scan for and run backfills "
-            "(default moz-fx-data-shared-prod).",
+            None,
+            type=["null", "string"],
+            description="Restrict the scan to a single GCP project. "
+            "Defaults to scanning all projects.",
         ),
     },
 ) as dag:
@@ -66,8 +64,9 @@ with DAG(
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries "
-            f"--project-id={{{{ (dag_run.conf or {{}}).get('project_id', '{DEFAULT_PROJECT_ID}') }}}}",
+            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries"
+            "{% set p = (dag_run.conf or {}).get('project_id') %}"
+            "{{ ' --project-id=' ~ p if p else '' }}",
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -94,11 +93,7 @@ with DAG(
 
         @task
         def prepare_slack_failure_message(entry):
-            project, dataset, table = entry["qualified_table_name"].split(".")
-            backup_table_id = (
-                f"{dataset}__{table}_backup_{entry['entry_date'].replace('-', '_')}"
-            )
-            backup_location = f"{project}.backfills_staging_derived.{backup_table_id}"
+            backup_location = entry["backup_table"]
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
@@ -111,12 +106,13 @@ with DAG(
             )
 
         @task
-        def prepare_pod_parameters(entry, **context):
-            dag_run = context.get("dag_run")
-            conf = (dag_run.conf if dag_run else {}) or {}
+        def prepare_pod_parameters(entry):
+            # Take the project from the entry itself: a single run can cover
+            # entries from several projects.
+            project, _, _ = entry["qualified_table_name"].split(".")
             return [
                 f"script/bqetl backfill complete {entry['qualified_table_name']} --copy-table-permissions "
-                f"--project-id={conf.get('project_id', DEFAULT_PROJECT_ID)}"
+                f"--project-id={project}"
             ]
 
         process_backfill = GKEPodOperator(
