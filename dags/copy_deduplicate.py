@@ -12,6 +12,7 @@ from utils.gcp import (
     bigquery_etl_query,
 )
 from utils.glean_v2_backfill import column_removal_backfill_tables_live
+from utils.slack import TaskFailureSlackNotifier, TaskRetrySlackNotifier
 from utils.tags import Tag
 
 DOCS = """\
@@ -59,6 +60,7 @@ default_args = {
 
 dag_name = "copy_deduplicate"
 tags = [Tag.ImpactTier.tier_1]
+alerts_slack_channel = "#data-platform-alerts"
 
 with models.DAG(
     dag_name,
@@ -98,6 +100,8 @@ with models.DAG(
             ],
         ],
         container_resources=resources,
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     # temporary test task with no downstream dependencies.
@@ -125,6 +129,8 @@ with models.DAG(
             "firefox_desktop_live.metrics_v1",
         ],
         container_resources=resources,
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     # EmptyOperator is used instead of a task group to maintain compatibility with downstream sensors
@@ -181,6 +187,8 @@ with models.DAG(
             "telemetry-alerts@mozilla.com",
             "akomarzewski@mozilla.com",
         ],
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     with TaskGroup("main_ping_external") as main_ping_external:
@@ -220,6 +228,8 @@ with models.DAG(
         priority_weight=50,
         parallelism=1,
         owner="akomarzewski@mozilla.com",
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
@@ -255,6 +265,8 @@ with models.DAG(
         priority_weight=100,
         parallelism=1,
         owner="akomarzewski@mozilla.com",
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     event_events = bigquery_etl_query(
@@ -266,6 +278,8 @@ with models.DAG(
         priority_weight=90,
         owner="akomarzewski@mozilla.com",
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     with TaskGroup("event_events_external") as event_events_external:
@@ -304,6 +318,8 @@ with models.DAG(
         owner="akomarzewski@mozilla.com",
         dag=dag,
         arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     with TaskGroup("bq_main_events_external") as bq_main_events_external:
@@ -351,6 +367,8 @@ with models.DAG(
         date_partition_parameter="submission_date",
         depends_on_past=True,
         dag=dag,
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
 
     with TaskGroup(
