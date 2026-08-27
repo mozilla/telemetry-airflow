@@ -202,6 +202,7 @@ with DAG(
         )
         for name, url in (
             ("firefox", "https://github.com/mozilla-firefox/firefox"),
+            ("firefox-enterprise", "https://github.com/mozilla/enterprise-firefox"),
             ("phabricator", "https://github.com/mozilla-conduit/review"),
             (
                 "releases-comm-central",
