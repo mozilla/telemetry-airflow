@@ -140,7 +140,7 @@ with DAG(
         ],
         # Measured peak is 2.19Gi on the worst channel
         container_resources=k8s.V1ResourceRequirements(
-            requests={"memory": "3Gi"},
+            requests={"memory": "2500Mi", "cpu": "1"},
         ),
         dag=dag,
     )
