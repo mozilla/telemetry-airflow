@@ -56,7 +56,7 @@ default_args = {
     "start_date": datetime.datetime(2020, 11, 26),
     "email": [
         "benwu@mozilla.com",
-        "telemetry-alerts@mozilla.com",
+        #"telemetry-alerts@mozilla.com",
     ],
     "email_on_failure": True,
     "email_on_retry": True,
@@ -104,27 +104,27 @@ with DAG(
         email_on_retry=False,
     )
 
-    modules_with_missing_symbols = GKEPodOperator(
-        task_id="modules_with_missing_symbols",
-        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
-        arguments=[
-            "-m",
-            "crash_missing_symbols.main",
-            "--date",
-            "{{ ds }}",
-            # Send Mondays only. The report is still built the other six days.
-            "--run-on-days",
-            "0",
-            "--recipient",
-            "mcastelluccio@mozilla.com",
-            "--recipient",
-            "release-mgmt@mozilla.com",
-            "--recipient",
-            "stability@mozilla.org",
-        ],
-        secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
-        dag=dag,
-    )
+    #modules_with_missing_symbols = GKEPodOperator(
+    #    task_id="modules_with_missing_symbols",
+    #    image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/crash-missing-symbols:latest",
+    #    arguments=[
+    #        "-m",
+    #        "crash_missing_symbols.main",
+    #        "--date",
+    #        "{{ ds }}",
+    #        # Send Mondays only. The report is still built the other six days.
+    #        "--run-on-days",
+    #        "0",
+    #        "--recipient",
+    #        "mcastelluccio@mozilla.com",
+    #        "--recipient",
+    #        "release-mgmt@mozilla.com",
+    #        "--recipient",
+    #        "stability@mozilla.org",
+    #    ],
+    #    secrets=[ses_aws_access_key_secret, ses_aws_secret_key_secret],
+    #    dag=dag,
+    #)
 
     top_signatures_correlations = GKEPodOperator(
         task_id="top_signatures_correlations",
@@ -145,5 +145,5 @@ with DAG(
         dag=dag,
     )
 
-    wait_for_socorro_import >> modules_with_missing_symbols
+    #wait_for_socorro_import >> modules_with_missing_symbols
     wait_for_socorro_import >> top_signatures_correlations
