@@ -1,0 +1,147 @@
+"""
+DAG for completing registered bigquery-etl backfills.
+
+This is the last step of the bigquery-etl backfill flow, following
+[`bqetl_backfill_initiate`](/dags/bqetl_backfill_initiate/grid).
+
+Runs hourly and shouldn't be triggered manually. Once you've validated the staged data from
+`bqetl_backfill_initiate` and set the backfill entry's status to `Complete`,
+this DAG swaps the staged data into production, keeping a 30-day backup.
+"""
+
+from datetime import datetime
+
+from airflow import DAG
+from airflow.decorators import task, task_group
+from airflow.models.param import Param
+from airflow.providers.slack.notifications.slack import send_slack_notification
+from airflow.providers.slack.operators.slack import SlackAPIPostOperator
+
+from operators.gcp_container_operator import GKEPodOperator
+from utils.tags import Tag
+
+AUTOMATION_SLACK_CHANNEL = "#dataops-alerts"
+SLACK_CONNECTION_ID = "slack_airflow_bot"
+DATA_PLATFORM_WG_CHANNEL_ID = "C01E8GDG80N"
+SLACK_COMMON_ARGS = {
+    "username": "airflow-bot",
+    "slack_conn_id": SLACK_CONNECTION_ID,
+    "channel": AUTOMATION_SLACK_CHANNEL,
+}
+DOCKER_IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
+
+tags = [Tag.ImpactTier.tier_3]
+
+default_args = {
+    "email": [
+        "ascholtz@mozilla.com",
+        "benwu@mozilla.com",
+        "wichan@mozilla.com",
+        "telemetry-alerts@mozilla.com",
+    ]
+}
+
+with DAG(
+    "bqetl_backfill_complete",
+    doc_md=__doc__,
+    tags=tags,
+    schedule_interval="@hourly",
+    start_date=datetime(2024, 1, 1),
+    catchup=False,
+    default_args=default_args,
+    max_active_runs=1,
+    params={
+        "project_id": Param(
+            None,
+            type=["null", "string"],
+            description="Restrict the scan to a single GCP project. "
+            "Defaults to scanning all projects.",
+        ),
+    },
+) as dag:
+    detect_backfills = GKEPodOperator(
+        task_id="detect_backfills",
+        name="detect_backfills",
+        cmds=["sh", "-cx"],
+        arguments=[
+            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries"
+            "{% set p = (dag_run.conf or {}).get('project_id') %}"
+            "{{ ' --project-id=' ~ p if p else '' }}",
+        ],
+        image=DOCKER_IMAGE,
+        do_xcom_push=True,
+    )
+
+    @task_group
+    def complete_backfill(backfill):
+        @task
+        def prepare_slack_complete_message(entry):
+            watcher_text = " ".join(
+                f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
+            )
+            return (
+                f"{watcher_text} :hourglass_flowing_sand: Completing backfill of `{entry['qualified_table_name']}` has started - currently swapping backfill data into production. "
+                f"A snapshot of the current production data will be kept as a backup for 30 days. "
+                f"You will receive another notification once the completing step is done."
+            )
+
+        notify_initiate = SlackAPIPostOperator(
+            task_id="slack_notify_initate",
+            text=prepare_slack_complete_message(backfill),
+            **SLACK_COMMON_ARGS,
+        )
+
+        @task
+        def prepare_slack_failure_message(entry):
+            backup_location = entry["backup_table"]
+            watcher_text = " ".join(
+                f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
+            )
+
+            return (
+                f"{watcher_text} :x: Backfill completion for `{entry['qualified_table_name']}` failed. "
+                "Check recent <https://workflow.telemetry.mozilla.org/dags/bqetl_backfill_complete/grid|`process_backfill` task run> for logs. "
+                f"To retry the backfill, delete the backup table at `{backup_location}`. "
+                f"Ask in <#{DATA_PLATFORM_WG_CHANNEL_ID}> if you need help."
+            )
+
+        @task
+        def prepare_pod_parameters(entry):
+            # Take the project from the entry itself: a single run can cover
+            # entries from several projects.
+            project, _, _ = entry["qualified_table_name"].split(".")
+            return [
+                f"script/bqetl backfill complete {entry['qualified_table_name']} --copy-table-permissions "
+                f"--project-id={project}"
+            ]
+
+        process_backfill = GKEPodOperator(
+            task_id="process_backfill",
+            name="process_backfill",
+            cmds=["sh", "-cx"],
+            arguments=prepare_pod_parameters(backfill),
+            image=DOCKER_IMAGE,
+            reattach_on_restart=True,
+            on_failure_callback=send_slack_notification(
+                text=prepare_slack_failure_message(backfill),
+                **SLACK_COMMON_ARGS,
+            ),
+        )
+
+        @task
+        def prepare_slack_processing_complete_parameters(entry):
+            watcher_text = " ".join(
+                f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
+            )
+
+            return f"{watcher_text} :white_check_mark: Backfill is complete for `{entry['qualified_table_name']}`. Production data has been updated."
+
+        notify_processing_complete = SlackAPIPostOperator(
+            task_id="slack_notify_processing_complete",
+            text=prepare_slack_processing_complete_parameters(backfill),
+            **SLACK_COMMON_ARGS,
+        )
+
+        notify_initiate >> process_backfill >> notify_processing_complete
+
+    backfill_groups = complete_backfill.expand(backfill=detect_backfills.output)

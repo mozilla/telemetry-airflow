@@ -1,0 +1,402 @@
+import datetime
+import re
+
+from airflow import models
+from airflow.operators.empty import EmptyOperator
+from airflow.sensors.external_task import ExternalTaskMarker
+from airflow.utils.task_group import TaskGroup
+from kubernetes.client import models as k8s
+
+from utils.gcp import (
+    bigquery_etl_copy_deduplicate,
+    bigquery_etl_query,
+)
+from utils.glean_v2_backfill import column_removal_backfill_tables_live
+from utils.slack import TaskFailureSlackNotifier, TaskRetrySlackNotifier
+from utils.tags import Tag
+
+DOCS = """\
+# Copy-Deduplicate
+
+This DAG is the root of most derived tables. For each live ping table that the
+data pipeline populates, we run a "copy_deduplicate" query once per day to
+populate the corresponding stable table.
+
+A few immediate downstream tables are also included in this DAG.
+
+## Workflows
+
+In early 2021, manual reruns of `copy_deduplicate` were leading to empty
+partitions, but the root cause has been fixed. See
+[bug 1690363](https://bugzilla.mozilla.org/show_bug.cgi?id=1690363).
+
+## Changelog
+
+In April 2021, `copy_deduplicate_main_ping` was moved from a 100-slice
+configuration to a single-query configuration, which will change the
+performance profile and is intended to be more efficient and slightly
+faster. We also increased the number of parallel queries in
+`copy_deduplicate_all` to help it finish more quickly and split out
+`copy_deduplicate_event_ping` to its own task.
+See [telemetry-airflow#1279](
+https://github.com/mozilla/telemetry-airflow/pull/1279/files)
+"""
+
+default_args = {
+    "owner": "akomarzewski@mozilla.com",
+    "start_date": datetime.datetime(2019, 7, 25),
+    "email": [
+        "telemetry-alerts@mozilla.com",
+        "dataops+alerts@mozilla.com",
+        "akomarzewski@mozilla.com",
+    ],
+    "email_on_failure": True,
+    "email_on_retry": True,
+    "depends_on_past": False,
+    # If a task fails, retry it twice after waiting at least 5 minutes
+    "retries": 2,
+    "retry_delay": datetime.timedelta(minutes=5),
+}
+
+dag_name = "copy_deduplicate"
+tags = [Tag.ImpactTier.tier_1]
+alerts_slack_channel = "#data-platform-alerts"
+
+with models.DAG(
+    dag_name,
+    schedule_interval="0 1 * * *",
+    max_active_runs=1,
+    catchup=True,
+    doc_md=DOCS,
+    default_args=default_args,
+    tags=tags,
+) as dag:
+    # This single task is responsible for sequentially running copy queries
+    # over all the tables in _live datasets into _stable datasets except those
+    # that are specifically used in another DAG.
+    resources = k8s.V1ResourceRequirements(
+        requests={"memory": "400Mi"},
+    )
+
+    copy_deduplicate_all_base = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_all_base",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        priority_weight=100,
+        parallelism=10,
+        # Any table listed here under except_tables _must_ have a corresponding
+        # copy_deduplicate job elsewhere.
+        except_tables=[
+            "telemetry_live.main_use_counter_v4",
+            "telemetry_live.main_v5",
+            "telemetry_live.event_v4",
+            "telemetry_live.first_shutdown_use_counter_v4",
+            "telemetry_live.first_shutdown_v5",
+            "firefox_desktop_live.metrics_v1",
+            *column_removal_backfill_tables_live,
+            *[
+                re.sub(r"_v1$", "_v2", table)
+                for table in column_removal_backfill_tables_live
+            ],
+        ],
+        container_resources=resources,
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    # temporary test task with no downstream dependencies.
+    # Only created when there are tables left to backfill
+    if column_removal_backfill_tables_live:
+        copy_deduplicate_glean_v2_backfill = bigquery_etl_copy_deduplicate(
+            task_id="copy_deduplicate_glean_v2_backfill",
+            target_project_id="moz-fx-data-shared-prod",
+            billing_projects=("moz-fx-data-shared-prod",),
+            priority_weight=100,
+            parallelism=4,
+            only_tables=column_removal_backfill_tables_live,
+            column_removal_backfill_tables=column_removal_backfill_tables_live,
+            container_resources=resources,
+        )
+
+    copy_deduplicate_sliced = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_sliced",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        priority_weight=100,
+        parallelism=5,
+        hourly=True,
+        only_tables=[
+            "firefox_desktop_live.metrics_v1",
+        ],
+        container_resources=resources,
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    # EmptyOperator is used instead of a task group to maintain compatibility with downstream sensors
+    copy_deduplicate_all = EmptyOperator(
+        task_id="copy_deduplicate_all",
+    )
+
+    (
+        copy_deduplicate_sliced,
+        copy_deduplicate_all_base,
+    ) >> copy_deduplicate_all
+
+    with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:
+        downstream_dependencies = {
+            ("bhr_collection", "hour=5, minute=0"),
+            ("dbt_daily", "hour=4, minute=0"),  # only on Sundays
+            ("glam_fenix", "hour=2, minute=0"),
+            ("glam_fog", "hour=2, minute=0"),
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_all",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_all",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__copy_deduplicate_all",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="copy_deduplicate_all_marker",
+        )
+
+        copy_deduplicate_all >> copy_deduplicate_all_external
+
+    # We split out main ping since it's the highest volume and has a distinct
+    # set of downstream dependencies.
+    copy_deduplicate_main_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_main_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=[
+            "telemetry_live.main_use_counter_v4",
+            "telemetry_live.main_v5",
+        ],
+        priority_weight=100,
+        parallelism=5,
+        slices=20,
+        owner="akomarzewski@mozilla.com",
+        email=[
+            "telemetry-alerts@mozilla.com",
+            "akomarzewski@mozilla.com",
+        ],
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    with TaskGroup("main_ping_external") as main_ping_external:
+        downstream_dependencies = {
+            ("firefox_public_data_report", "hour=1, minute=0"),  # only on Mondays
+            ("graphics_telemetry", "hour=3, minute=0"),
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_main_ping",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_main_ping",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__copy_deduplicate_main_ping",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="copy_deduplicate_main_ping_marker",
+        )
+
+        copy_deduplicate_main_ping >> main_ping_external
+
+    # We also separate out variant pings that share the main ping schema since these
+    # ultrawide tables can sometimes have unique performance problems.
+    copy_deduplicate_first_shutdown_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_first_shutdown_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=[
+            "telemetry_live.first_shutdown_use_counter_v4",
+            "telemetry_live.first_shutdown_v5",
+        ],
+        priority_weight=50,
+        parallelism=1,
+        owner="akomarzewski@mozilla.com",
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
+        downstream_dependencies = {
+            # existing tasks are covered by copy_deduplicate_task_markers
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_copy_deduplicate_first_shutdown_ping",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_copy_deduplicate_first_shutdown_ping",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__copy_deduplicate_first_shutdown_ping",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="copy_deduplicate_first_shutdown_ping_marker",
+        )
+
+        copy_deduplicate_first_shutdown_ping >> first_shutdown_ping_external
+
+    # Events.
+
+    copy_deduplicate_event_ping = bigquery_etl_copy_deduplicate(
+        task_id="copy_deduplicate_event_ping",
+        target_project_id="moz-fx-data-shared-prod",
+        billing_projects=("moz-fx-data-shared-prod",),
+        only_tables=["telemetry_live.event_v4"],
+        priority_weight=100,
+        parallelism=1,
+        owner="akomarzewski@mozilla.com",
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    event_events = bigquery_etl_query(
+        reattach_on_restart=True,
+        task_id="event_events",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="event_events_v1",
+        dataset_id="telemetry_derived",
+        priority_weight=90,
+        owner="akomarzewski@mozilla.com",
+        arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    with TaskGroup("event_events_external") as event_events_external:
+        downstream_dependencies = {
+            ("catalyst", "hour=4, minute=0"),
+            ("jetstream", "hour=4, minute=0"),
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_event_events",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_event_events",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__event_events",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="event_events_marker",
+        )
+
+        event_events >> event_events_external
+
+    copy_deduplicate_event_ping >> event_events
+
+    bq_main_events = bigquery_etl_query(
+        reattach_on_restart=True,
+        task_id="bq_main_events",
+        project_id="moz-fx-data-shared-prod",
+        destination_table="main_events_v1",
+        dataset_id="telemetry_derived",
+        priority_weight=90,
+        owner="akomarzewski@mozilla.com",
+        dag=dag,
+        arguments=("--schema_update_option=ALLOW_FIELD_ADDITION",),
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    with TaskGroup("bq_main_events_external") as bq_main_events_external:
+        downstream_dependencies = {
+            ("catalyst", "hour=4, minute=0"),
+            ("jetstream", "hour=4, minute=0"),
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_bq_main_events",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_bq_main_events",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__bq_main_events",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="bq_main_events_marker",
+        )
+
+        bq_main_events >> bq_main_events_external
+
+    copy_deduplicate_main_ping >> bq_main_events
+
+    # Daily and last seen views on top of every Glean application.
+
+    # The core clients first seen dataset is a dependency to glean usage
+    # queries. Ideally, it would belong inside of a generated bigquery-etl DAG
+    # (e.g. bqetl_core), but this would require splitting this DAG into three
+    # separate parts threaded by sensors. Since the first_seen_table will end up
+    # being part of the clients daily table in this DAG, it will be easier to
+    # reason about dependencies in this single DAG while it is being developed.
+    telemetry_derived__core_clients_first_seen__v1 = bigquery_etl_query(
+        reattach_on_restart=True,
+        task_id="telemetry_derived__core_clients_first_seen__v1",
+        destination_table="core_clients_first_seen_v1",
+        dataset_id="telemetry_derived",
+        project_id="moz-fx-data-shared-prod",
+        owner="ascholtz@mozilla.com",
+        email=["ascholtz@mozilla.com", "telemetry-alerts@mozilla.com"],
+        date_partition_parameter="submission_date",
+        depends_on_past=True,
+        dag=dag,
+        on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
+        on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+    )
+
+    with TaskGroup(
+        "core_clients_first_seen_external"
+    ) as core_clients_first_seen_external:
+        downstream_dependencies = {
+            # existing tasks are covered by copy_deduplicate_task_markers
+        }
+
+        for downstream_dependency in downstream_dependencies:
+            ExternalTaskMarker(
+                task_id=f"{downstream_dependency[0]}__wait_for_core_clients_first_seen",
+                external_dag_id=downstream_dependency[0],
+                external_task_id="wait_for_telemetry_derived__core_clients_first_seen__v1",
+                execution_date="{{ execution_date.replace("
+                + downstream_dependency[1]
+                + ").isoformat() }}",
+            )
+
+        ExternalTaskMarker(
+            task_id="copy_deduplicate_task_markers__telemetry_derived__core_clients_first_seen__v1",
+            external_dag_id="copy_deduplicate_task_markers",
+            external_task_id="telemetry_derived__core_clients_first_seen__v1_marker",
+        )
+
+        (
+            telemetry_derived__core_clients_first_seen__v1
+            >> core_clients_first_seen_external
+        )
+
+    copy_deduplicate_all >> telemetry_derived__core_clients_first_seen__v1

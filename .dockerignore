@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# CI
+.circleci/
+
+# Docker
+docker-compose.yml
+
+# cache
+__pycache__/
+.pytest_cache/
+
+# Airflow stuff
+logs/
+
+# Virtual environment
+.env/
+.venv/
+venv/
+
+# Airflow dev resources
+resources/
+
+# IDE
+.idea
+.vscode/
