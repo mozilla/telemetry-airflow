@@ -38,6 +38,7 @@ class Tag(Enum):
     class ImpactTier(Enum):
         """Valid options for Impact tier tag."""
 
+        tier_0: str = "impact/tier_0"
         tier_1: str = "impact/tier_1"
         tier_2: str = "impact/tier_2"
         tier_3: str = "impact/tier_3"

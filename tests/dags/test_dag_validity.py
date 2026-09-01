@@ -27,6 +27,7 @@ def test_dag_tags(get_dag_bag):
     """Check tags in all DAGs are valid."""
 
     valid_tags = {
+        "impact/tier_0",
         "impact/tier_1",
         "impact/tier_2",
         "impact/tier_3",
