@@ -23,7 +23,11 @@ from utils.tags import Tag
 
 default_args = {
     "owner": "jkerim@mozilla.com",
-    "email": ["jkerim@mozilla.com", "telemetry-alerts@mozilla.com"],
+    "email": [
+        "jkerim@mozilla.com",
+        "ykhurana@mozilla.com",
+        "telemetry-alerts@mozilla.com",
+    ],
     "depends_on_past": False,
     "start_date": datetime(2026, 9, 3),
     "email_on_failure": True,
@@ -34,7 +38,7 @@ default_args = {
     "retries": 0,
 }
 
-TAGS = [Tag.ImpactTier.tier_3]
+TAGS = [Tag.ImpactTier.tier_3, Tag.Triage.no_triage]
 IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/highwind:latest"
 
 Upstream = namedtuple("Upstream", ["name", "dag_id", "task_id", "execution_delta"])
