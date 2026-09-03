@@ -82,6 +82,7 @@ with models.DAG(
         task_id="copy_deduplicate_all_base",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
+        service_account_name="stable-write",
         priority_weight=100,
         parallelism=10,
         # Any table listed here under except_tables _must_ have a corresponding
@@ -111,6 +112,7 @@ with models.DAG(
             task_id="copy_deduplicate_glean_v2_backfill",
             target_project_id="moz-fx-data-shared-prod",
             billing_projects=("moz-fx-data-shared-prod",),
+            service_account_name="stable-write",
             priority_weight=100,
             parallelism=4,
             only_tables=column_removal_backfill_tables_live,
@@ -122,6 +124,7 @@ with models.DAG(
         task_id="copy_deduplicate_sliced",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
+        service_account_name="stable-write",
         priority_weight=100,
         parallelism=5,
         hourly=True,
@@ -175,6 +178,7 @@ with models.DAG(
         task_id="copy_deduplicate_main_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
+        service_account_name="stable-write",
         only_tables=[
             "telemetry_live.main_use_counter_v4",
             "telemetry_live.main_v5",
@@ -221,6 +225,7 @@ with models.DAG(
         task_id="copy_deduplicate_first_shutdown_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
+        service_account_name="stable-write",
         only_tables=[
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
@@ -261,6 +266,7 @@ with models.DAG(
         task_id="copy_deduplicate_event_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
+        service_account_name="stable-write",
         only_tables=["telemetry_live.event_v4"],
         priority_weight=100,
         parallelism=1,

@@ -95,6 +95,7 @@ common_task_args = {
 telemetry_main = GKEPodOperator(
     task_id="telemetry_main",
     name="shredder-telemetry-main",
+    service_account_name="stable-write",
     arguments=[
         *base_command,
         "--parallelism=2",
@@ -110,6 +111,7 @@ telemetry_main = GKEPodOperator(
 telemetry_main_use_counter = GKEPodOperator(
     task_id="telemetry_main_use_counter",
     name="shredder-telemetry-main-use-counter",
+    service_account_name="stable-write",
     arguments=[
         *base_command,
         "--parallelism=2",
@@ -126,6 +128,7 @@ telemetry_main_use_counter = GKEPodOperator(
 flat_rate = GKEPodOperator(
     task_id="all",
     name="shredder-all",
+    service_account_name="stable-write",
     arguments=[
         *base_command,
         "--parallelism={{ var.value.get('shredder_all_parallelism', 3) }}",
@@ -195,6 +198,7 @@ with_sampling = GKEPodOperator(
 desktop_metrics = GKEPodOperator(
     task_id="desktop-metrics",
     name="shredder-desktop-metrics",
+    service_account_name="stable-write",
     arguments=[
         *base_command,
         "--parallelism={{ var.value.get('shredder_desktop_metrics_parallelism', 2) }}",
@@ -239,6 +243,7 @@ if column_removal_backfill_tables:
     column_removal = GKEPodOperator(
         task_id="column-removal",
         name="shredder-column-removal",
+        service_account_name="stable-write",
         arguments=[
             *base_command,
             "--parallelism=3",
