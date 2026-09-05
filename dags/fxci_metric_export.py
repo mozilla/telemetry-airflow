@@ -1,7 +1,7 @@
 """
 Exports Firefox-CI worker data from the Google Cloud Monitoring to BigQuery.
 
-The container is defined in [fxci-etl](https://github.com/mozilla-releng/fxci-etl).
+The container is defined in [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/fxci-taskcluster-export).
 """
 
 from datetime import datetime, timedelta
