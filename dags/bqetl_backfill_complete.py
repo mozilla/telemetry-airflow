@@ -13,6 +13,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.decorators import task, task_group
+from airflow.models.param import Param
 from airflow.providers.slack.notifications.slack import send_slack_notification
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 
@@ -49,13 +50,23 @@ with DAG(
     catchup=False,
     default_args=default_args,
     max_active_runs=1,
+    params={
+        "project_id": Param(
+            None,
+            type=["null", "string"],
+            description="Restrict the scan to a single GCP project. "
+            "Defaults to scanning all projects.",
+        ),
+    },
 ) as dag:
     detect_backfills = GKEPodOperator(
         task_id="detect_backfills",
         name="detect_backfills",
         cmds=["sh", "-cx"],
         arguments=[
-            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries",
+            "script/bqetl backfill scheduled --status=Complete --json_path=/airflow/xcom/return.json --ignore-old-entries"
+            "{% set p = (dag_run.conf or {}).get('project_id') %}"
+            "{{ ' --project-id=' ~ p if p else '' }}",
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -82,13 +93,7 @@ with DAG(
 
         @task
         def prepare_slack_failure_message(entry):
-            project, dataset, table = entry["qualified_table_name"].split(".")
-            backup_table_id = (
-                f"{dataset}__{table}_backup_{entry['entry_date'].replace('-', '_')}"
-            )
-            backup_location = (
-                f"{project}.backfills_staging_derived.{backup_table_id}"
-            )
+            backup_location = entry["backup_table"]
             watcher_text = " ".join(
                 f"<@{watcher.split('@')[0]}>" for watcher in entry["watchers"]
             )
@@ -102,7 +107,13 @@ with DAG(
 
         @task
         def prepare_pod_parameters(entry):
-            return [f"script/bqetl backfill complete { entry['qualified_table_name'] } --copy-table-permissions"]
+            # Take the project from the entry itself: a single run can cover
+            # entries from several projects.
+            project, _, _ = entry["qualified_table_name"].split(".")
+            return [
+                f"script/bqetl backfill complete {entry['qualified_table_name']} --copy-table-permissions "
+                f"--project-id={project}"
+            ]
 
         process_backfill = GKEPodOperator(
             task_id="process_backfill",

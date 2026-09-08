@@ -3,6 +3,8 @@ DAG for initiating registered bigquery-etl backfills.
 
 This is the recommended way to backfill a bigquery-etl table. Results are staged for validation in
 the `moz-fx-data-shared-prod.backfills_staging_derived` dataset before they replace production data.
+Tables in any project are picked up, and staging always goes to
+`moz-fx-data-shared-prod.backfills_staging_derived` regardless of the table's project.
 
 Runs hourly and shouldn't be triggered manually. Register the backfill in
 [bigquery-etl](https://github.com/mozilla/bigquery-etl) by adding a
@@ -24,6 +26,7 @@ from typing import Tuple
 
 from airflow import DAG
 from airflow.decorators import task, task_group
+from airflow.models.param import Param
 from airflow.providers.slack.notifications.slack import send_slack_notification
 from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from kubernetes.client import models as k8s
@@ -55,12 +58,8 @@ default_args = {
 
 def parse_table_name_from_backfill(backfill_entry: dict) -> Tuple[str, str]:
     """Return (project_id, staging_table_id) for backfill entry."""
-    project, dataset, table = backfill_entry["qualified_table_name"].split(".")
-    backfill_table_id = (
-        f"{dataset}__{table}_{backfill_entry['entry_date'].replace('-', '_')}"
-    )
-    staging_location = f"{project}.backfills_staging_derived.{backfill_table_id}"
-    return project, staging_location
+    project, _, _ = backfill_entry["qualified_table_name"].split(".")
+    return project, backfill_entry["staging_table"]
 
 
 with DAG(
@@ -72,6 +71,18 @@ with DAG(
     catchup=False,
     default_args=default_args,
     max_active_runs=1,
+    params={
+        "project_id": Param(
+            None,
+            type=["null", "string"],
+            description="Restrict the scan to a single GCP project. Defaults to scanning all projects.",
+        ),
+        "parallelism": Param(
+            6,
+            type="integer",
+            description="Maximum number of queries to execute concurrently during backfill.",
+        ),
+    },
 ) as dag:
     detect_backfills = GKEPodOperator(
         task_id="detect_backfills",
@@ -79,6 +90,8 @@ with DAG(
         cmds=["sh", "-cx"],
         arguments=[
             "script/bqetl backfill scheduled --status=Initiate --json_path=/airflow/xcom/return.json --ignore-old-entries"
+            "{% set p = (dag_run.conf or {}).get('project_id') %}"
+            "{{ ' --project-id=' ~ p if p else '' }}"
         ],
         image=DOCKER_IMAGE,
         do_xcom_push=True,
@@ -114,9 +127,16 @@ with DAG(
             )
 
         @task
-        def prepare_pod_parameters(entry):
+        def prepare_pod_parameters(entry, **context):
+            dag_run = context.get("dag_run")
+            conf = (dag_run.conf if dag_run else {}) or {}
+            # Take the project from the entry itself: a single run can cover
+            # entries from several projects.
+            project, _ = parse_table_name_from_backfill(entry)
             return [
-                f"script/bqetl backfill initiate { entry['qualified_table_name'] } --copy-table-permissions --parallelism=6"
+                f"script/bqetl backfill initiate {entry['qualified_table_name']} --copy-table-permissions "
+                f"--project-id={project} "
+                f"--parallelism={conf.get('parallelism', 6)}"
             ]
 
         process_backfill = GKEPodOperator(
