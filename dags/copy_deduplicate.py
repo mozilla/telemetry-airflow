@@ -221,6 +221,7 @@ with models.DAG(
         task_id="copy_deduplicate_first_shutdown_ping",
         target_project_id="moz-fx-data-shared-prod",
         billing_projects=("moz-fx-data-shared-prod",),
+        service_account_name="stable-table-editor",
         only_tables=[
             "telemetry_live.first_shutdown_use_counter_v4",
             "telemetry_live.first_shutdown_v5",
