@@ -25,7 +25,7 @@ default_args = {
     "retries": 1,
 }
 
-tags = ["impact/tier_3", "repo/telemetry-airflow"]
+tags = ["impact/tier_2", "repo/telemetry-airflow"]
 
 with DAG(
     "web_scraping",

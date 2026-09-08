@@ -36,7 +36,7 @@ default_args = {
     "retries": 0,
 }
 
-tags = [Tag.ImpactTier.tier_2]
+tags = [Tag.ImpactTier.tier_3]
 
 
 def should_dryrun(dag_id: str) -> bool:

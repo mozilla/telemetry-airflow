@@ -30,7 +30,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-TAGS = [Tag.ImpactTier.tier_1]
+TAGS = [Tag.ImpactTier.tier_2]
 IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/kpi-forecasting:latest"
 
 FORECAST_METRICS_LIST = [
