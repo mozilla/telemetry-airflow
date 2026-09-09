@@ -95,7 +95,7 @@ common_task_args = {
 # everything else combined
 telemetry_main = GKEPodOperator(
     task_id="telemetry_main",
-    name="shredder-telemetry-main"
+    name="shredder-telemetry-main",
     arguments=[
         *base_command,
         "--parallelism=2",
@@ -110,7 +110,7 @@ telemetry_main = GKEPodOperator(
 
 telemetry_main_use_counter = GKEPodOperator(
     task_id="telemetry_main_use_counter",
-    name="shredder-telemetry-main-use-counter"
+    name="shredder-telemetry-main-use-counter",
     arguments=[
         *base_command,
         "--parallelism=2",
@@ -126,7 +126,7 @@ telemetry_main_use_counter = GKEPodOperator(
 # everything else
 flat_rate = GKEPodOperator(
     task_id="all",
-    name="shredder-all"
+    name="shredder-all",
     arguments=[
         *base_command,
         "--parallelism={{ var.value.get('shredder_all_parallelism', 3) }}",
@@ -195,7 +195,7 @@ with_sampling = GKEPodOperator(
 
 desktop_metrics = GKEPodOperator(
     task_id="desktop-metrics",
-    name="shredder-desktop-metrics"
+    name="shredder-desktop-metrics",
     arguments=[
         *base_command,
         "--parallelism={{ var.value.get('shredder_desktop_metrics_parallelism', 2) }}",
