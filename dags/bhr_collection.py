@@ -42,7 +42,7 @@ default_args = {
     "retry_delay": datetime.timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
     "bhr_collection",

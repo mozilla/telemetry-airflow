@@ -67,7 +67,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 aws_access_key_secret = Secret(
     deploy_type="env",

@@ -63,7 +63,7 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 params = {
     "generate_sql": Param(

@@ -25,7 +25,7 @@ default_args = {
 project_id = "moz-fx-data-shared-prod"
 table_id = "search_terms_derived.remotesettings_suggestions_v1"
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "contextual_services_import",

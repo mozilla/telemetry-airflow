@@ -37,7 +37,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 looker_repos_secret_git_ssh_key_b64 = Secret(
     deploy_type="env",
