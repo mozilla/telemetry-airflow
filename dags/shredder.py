@@ -86,7 +86,6 @@ common_task_args = {
     "on_finish_action": OnFinishAction.DELETE_POD.value,
     "reattach_on_restart": True,
     "dag": dag,
-    "service_account_name": "stable-table-editor",
 }
 
 # handle telemetry main and main use counter separately to ensure they run continuously
