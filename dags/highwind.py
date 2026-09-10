@@ -51,28 +51,30 @@ UPSTREAM = [
         "clients_daily",
         "bqetl_main_summary",
         "telemetry_derived__clients_daily__v6",
-        timedelta(hours=9),
+        timedelta(hours=21),
     ),
     Upstream(
         "clients_last_seen",
         "bqetl_main_summary",
         "telemetry_derived__clients_last_seen__v2",
-        timedelta(hours=9),
+        timedelta(hours=21),
     ),
     Upstream(
         "search_clients_daily",
         "bqetl_search",
         "search_derived__search_clients_daily__v8",
-        timedelta(hours=8),
+        timedelta(hours=20),
     ),
 ]
 
 with DAG(
     "highwind",
     default_args=default_args,
-    # After bqetl_main_summary (02:00) and bqetl_search (03:00), far enough back that the sensors
-    # below are short in the ordinary case.
-    schedule_interval="0 11 * * *",
+    # Late enough that the upstreams below are done even on their slowest days, since
+    # search_clients_daily has finished as late as 19:00, and inside the quietest window on the
+    # shared analysis-and-etl reservation. A run's cost is fixed but its wall time is set by how
+    # many slots it can get, and 06:00 to 12:00 is where the neighbouring Jetstream load peaks.
+    schedule_interval="0 23 * * *",
     doc_md=__doc__,
     tags=TAGS,
     # A run writes the whole partition, so two overlapping runs would each scan everything and race
@@ -85,8 +87,9 @@ with DAG(
         # The image's ENTRYPOINT is python, so the arguments start at -m rather than repeating it.
         arguments=["-m", "highwind.main", "--date", "{{ ds }}"],
         image=IMAGE,
-        # Headroom rather than a real bound: a full run finishes well inside an hour. It is here so
-        # a pathological run cannot hold slots all the way to BigQuery's own six hour query limit.
+        # Headroom rather than a real bound: a full run takes well under two hours when it is not
+        # contending for slots. It is here so a pathological run cannot hold slots all the way to
+        # BigQuery's own six hour query limit.
         execution_timeout=timedelta(hours=4),
         dag=dag,
     )
