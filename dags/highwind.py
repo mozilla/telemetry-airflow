@@ -85,9 +85,10 @@ with DAG(
         # The image's ENTRYPOINT is python, so the arguments start at -m rather than repeating it.
         arguments=["-m", "highwind.main", "--date", "{{ ds }}"],
         image=IMAGE,
-        # Headroom rather than a real bound: a full run finishes well inside an hour. It is here so
-        # a pathological run cannot hold slots all the way to BigQuery's own six hour query limit.
-        execution_timeout=timedelta(hours=4),
+        # No execution_timeout. A run's cost is fixed but its wall time is set by how many slots it
+        # can get on the shared reservation, so the only timeout that would not kill a healthy run
+        # on a contended day is one long enough to be no bound at all. BigQuery's own six hour limit
+        # per query is what stops a run hanging indefinitely.
         dag=dag,
     )
 
