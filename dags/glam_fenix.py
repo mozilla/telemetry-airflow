@@ -69,7 +69,7 @@ LOGICAL_MAPPING = {
     "org_mozilla_fenix_glam_release": ["org_mozilla_firefox"],
 }
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "glam_fenix",

@@ -37,7 +37,7 @@ default_args = {
 
 
 tags = [
-    Tag.ImpactTier.tier_2,
+    Tag.ImpactTier.tier_3,
 ]
 
 every_fifteen_minutes = "*/15 * * * *"

@@ -59,7 +59,7 @@ default_args = {
 }
 
 dag_name = "copy_deduplicate"
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_0]
 alerts_slack_channel = "#data-platform-alerts"
 
 with models.DAG(
