@@ -38,7 +38,7 @@ default_args = {
 
 
 tags = [
-    Tag.ImpactTier.tier_2,
+    Tag.ImpactTier.tier_3,
     Tag.Triage.no_triage,
 ]
 

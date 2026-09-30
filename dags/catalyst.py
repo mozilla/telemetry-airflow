@@ -36,7 +36,7 @@ default_args = {
     "retry_delay": timedelta(minutes=30),
 }
 
-tags = [Tag.ImpactTier.tier_2]
+tags = [Tag.ImpactTier.tier_3]
 
 with DAG(
     "catalyst",

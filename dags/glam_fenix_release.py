@@ -29,7 +29,7 @@ default_args = {
 
 PROJECT = "moz-fx-glam-prod"
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "glam_fenix_release",

@@ -40,7 +40,7 @@ default_args = {
 GCS_BUCKET = "moz-fx-data-static-websit-8565-analysis-output"
 GCS_PREFIX = "gfx/telemetry-data/"
 
-tags = [Tag.ImpactTier.tier_1]
+tags = [Tag.ImpactTier.tier_2]
 
 with DAG(
     "graphics_telemetry",
