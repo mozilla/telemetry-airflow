@@ -431,7 +431,6 @@ def bigquery_dq_check(
 def bigquery_bigeye_check(
     task_id,
     table_id,
-    warehouse_id,
     project_id="moz-fx-data-shared-prod",
     gcp_conn_id="google_cloud_airflow_gke",
     gke_project_id=GCP_PROJECT_ID,
@@ -444,9 +443,8 @@ def bigquery_bigeye_check(
     """
     Run `bqetl monitoring run` to run Bigeye checks against BigQuery table.
 
-    :param str table_id:                           [Required] BigQuery table the Bigeye checks are run against
-    :param str warehouse_id:                       [Required] Bigeye warehouse ID where checks located
     :param str task_id:                            [Required] ID for the task
+    :param str table_id:                           [Required] BigQuery table the Bigeye checks are run against
     :param Optional[str] project_id:               BigQuery default project id
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_project_id:                     GKE cluster project id
@@ -466,8 +464,6 @@ def bigquery_bigeye_check(
         "monitoring",
         "run",
         table_id,
-        "--warehouse_id",
-        warehouse_id,
         "--project_id",
         project_id,
     ]
