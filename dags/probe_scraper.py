@@ -323,6 +323,26 @@ with DAG(
 
     schema_generator.set_upstream(probe_scraper)
 
+    # Flag Glean pings that declare the `ohttp` uploader capability but still
+    # include info sections, unless they are allowlisted. Nothing depends on
+    # this task, so a failure here doesn't block schema publishing.
+    check_ohttp_info_sections = GKEPodOperator(
+        email=[
+            "akomar@mozilla.com",
+            "ascholtz@mozilla.com",
+            "dataops+alerts@mozilla.com",
+            "telemetry-alerts@mozilla.com",
+        ],
+        task_id="check_ohttp_info_sections",
+        name="check-ohttp-info-sections",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/mozilla-schema-generator/mozilla-schema-generator:latest",
+        cmds=["mozilla-schema-generator"],
+        arguments=["check-ohttp-info-sections"],
+        dag=dag,
+    )
+
+    check_ohttp_info_sections.set_upstream(schema_generator)
+
     # Publish the generated schemas to Google Artifact Registry (GAR), both as a
     # generic tarball and as a FROM-scratch OCI image.
     #
