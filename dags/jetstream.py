@@ -87,6 +87,26 @@ with DAG(
         dag=dag,
     )
 
+    jetstream_rerun_holdback = GKEPodOperator(
+        task_id="jetstream_rerun_holdback",
+        name="jetstream_rerun_holdback",
+        image=jetstream_image,
+        email=default_args["email"],
+        arguments=[
+            "--log_to_bigquery",
+            "rerun-holdback",
+            "--argo",
+            # need to recreate enrollments because holdbacks are continuously enrolling
+            "--recreate-enrollments",
+            # the Airflow cluster doesn't have Compute Engine API access so pass in IP
+            # and certificate in order for the pod to connect to the Kubernetes cluster
+            # running Jetstream
+            "--cluster-ip={{ var.value.jetstream_cluster_ip }}",
+            "--cluster-cert={{ var.value.jetstream_cluster_cert }}",
+        ],
+        dag=dag,
+    )
+
     wait_for_clients_daily_export = ExternalTaskSensor(
         task_id="wait_for_clients_daily",
         external_dag_id="bqetl_main_summary",
@@ -148,3 +168,4 @@ with DAG(
         ]
     )
     jetstream_config_changed.set_upstream(jetstream_run)
+    jetstream_rerun_holdback.set_upstream(jetstream_run)
