@@ -11,6 +11,10 @@ The DAG always re-deploys all bqetl views. So as long as the most recent DAG run
 is successful the job can be considered healthy. This means previous failed DAG runs
 can be ignored.
 
+`publish_tables_and_views` runs many steps and produces a lot of output. When a step fails,
+the command and the tail of its output are printed under `FAILURE SUMMARY` at the end of
+the log and included in the task's exception message and alert email.
+
 `publish_views` doesn't show any logs due to spitting out invalid unicode.
 
 Logs can be viewed in the [GCP logs explorer](https://console.cloud.google.com/logs?project=moz-fx-data-airflow-gke-prod)
@@ -73,10 +77,46 @@ params = {
     ),
 }
 
+generate_sql_cmd = (
+    "script/bqetl generate all --ignore derived_view_schemas --use-cloud-function=false"
+)
 # renders generate sql command if params.generate_sql is true, else empty string
 generate_sql_cmd_template = (
-    "{{ 'script/bqetl generate all --ignore derived_view_schemas --use-cloud-function=false && ' "
-    "if params.generate_sql else '' }}"
+    "{{ '" + generate_sql_cmd + " && ' if params.generate_sql else '' }}"
+)
+
+# `run` tees each step's output to a temp file and, if the step fails, appends the
+# command and the tail of its output to a summary. `report_failures` prints the summary at the
+# end of the log and writes it to /dev/termination-log, which replaces the default log tail in the
+# Airflow exception and alert email. Note that the termination log is limited to 4KB.
+run_step_helpers = textwrap.dedent(
+    """
+    failed=0
+    summary=$(mktemp)
+    run() {
+      echo "+ $*"
+      out=$(mktemp)
+      "$@" 2>&1 | tee "$out"
+      rc=${PIPESTATUS[0]}
+      if [ "$rc" -ne 0 ]; then
+        failed=1
+        {
+          echo "FAILED (exit $rc): $*"
+          tail -n 12 "$out" | cut -c1-500
+          echo
+        } >> "$summary"
+      fi
+      rm -f "$out"
+      return "$rc"
+    }
+    report_failures() {
+      if [ "$failed" -ne 0 ]; then
+        echo "==================== FAILURE SUMMARY ===================="
+        cat "$summary"
+        head -c 4000 "$summary" > /dev/termination-log
+      fi
+    }
+    """
 )
 # SQL generation currently requires ~4 GB of memory.
 generate_sql_container_resources = k8s.V1ResourceRequirements(
@@ -159,26 +199,27 @@ with DAG(
 
     publish_tables_and_views = GKEPodOperator(
         task_id="publish_tables_and_views",
-        cmds=["bash", "-x", "-c"],
+        # No -x since `run` echoes each command and tracing its internals is noisy.
+        cmds=["bash", "-c"],
         execution_timeout=timedelta(hours=6),
         arguments=[
-            generate_sql_cmd_template
+            run_step_helpers
+            + "{{ 'run " + generate_sql_cmd + " && ' if params.generate_sql else '' }}"
             + textwrap.dedent(
                 """
-                script/bqetl generate derived_view_schemas --use-cloud-function=false &&
-                set +e;
-                failed=0;
-                script/bqetl query initialize '*' --file=materialized_view.sql --skip_existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people || failed=1;
-                script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people || failed=1;
-                script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only &&
-                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod &&
-                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments &&
-                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod &&
-                script/bqetl view clean --skip-authorized --target-project=moz-fx-glam-prod --project-id=moz-fx-glam-prod &&
-                script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only &&
-                script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people &&
-                script/publish_public_data_views --target-project=moz-fx-data-shared-prod &&
-                script/publish_public_data_views --target-project=mozdata || failed=1;
+                run script/bqetl generate derived_view_schemas --use-cloud-function=false
+                run script/bqetl query initialize '*' --file=materialized_view.sql --skip_existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people
+                run script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people
+                run script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only &&
+                run script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod &&
+                run script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments &&
+                run script/bqetl view clean --skip-authorized --target-project=moz-fx-data-marketing-prod --project-id=moz-fx-data-marketing-prod &&
+                run script/bqetl view clean --skip-authorized --target-project=moz-fx-glam-prod --project-id=moz-fx-glam-prod &&
+                run script/bqetl view clean --skip-authorized --target-project=mozdata --user-facing-only &&
+                run script/bqetl view clean --skip-authorized --target-project=moz-fx-data-bq-people --project-id=moz-fx-data-bq-people &&
+                run script/publish_public_data_views --target-project=moz-fx-data-shared-prod &&
+                run script/publish_public_data_views --target-project=mozdata
+                report_failures
                 exit $failed
                 """
             )
