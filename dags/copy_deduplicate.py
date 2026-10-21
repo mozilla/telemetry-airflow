@@ -114,11 +114,11 @@ with models.DAG(
         family,
         pipeline_pubsub_subscriptions,
     ) in ingestion_family_pipeline_pubsub_subscriptions.items():
-        with TaskGroup(f"wait_for_{family}_ingestion") as ingestion_sensor_group:
-            wait_for_ingestion_family[family] = ingestion_sensor_group
+        with TaskGroup(f"wait_for_{family}_ingestion", prefix_group_id=False) as group:
+            wait_for_ingestion_family[family] = group
             for pipeline, pubsub_subscriptions in pipeline_pubsub_subscriptions.items():
                 IngestionLatencySensor(
-                    task_id=pipeline,  # This will get prefixed with the task group ID.
+                    task_id=f"wait_for_{family}_{pipeline}_ingestion",
                     pubsub_subscriptions=pubsub_subscriptions,
                     gcp_conn_id="google_cloud_shared_prod",
                     mode="reschedule",
