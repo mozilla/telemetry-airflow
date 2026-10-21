@@ -4,6 +4,8 @@ import pendulum
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
 from airflow.sensors.base import BaseSensorOperator
 from airflow.utils.context import Context
+from google.api_core.exceptions import ResourceExhausted, RetryError, ServerError
+from google.auth.exceptions import RefreshError, TransportError
 from google.cloud import monitoring_v3
 
 # Project whose Cloud Monitoring metrics scope includes all the ingestion projects.
@@ -33,45 +35,64 @@ class IngestionLatencySensor(BaseSensorOperator):
         self.gcp_conn_id = gcp_conn_id
 
     def poke(self, context: Context) -> bool:
-        metrics_client = monitoring_v3.MetricServiceClient(
-            credentials=GoogleBaseHook(gcp_conn_id=self.gcp_conn_id).get_credentials()
-        )
-        now = int(time.time())
-        metrics_lookback_minutes = 30
-        metrics_lookback_interval = monitoring_v3.TimeInterval(
-            start_time={"seconds": now - (metrics_lookback_minutes * 60)},
-            end_time={"seconds": now},
-        )
+        try:
+            metrics_client = monitoring_v3.MetricServiceClient(
+                credentials=GoogleBaseHook(
+                    gcp_conn_id=self.gcp_conn_id
+                ).get_credentials()
+            )
+            now = int(time.time())
+            metrics_lookback_minutes = 30
+            metrics_lookback_interval = monitoring_v3.TimeInterval(
+                start_time={"seconds": now - (metrics_lookback_minutes * 60)},
+                end_time={"seconds": now},
+            )
 
-        total_latency = 0
-        for pubsub_subscription in self.pubsub_subscriptions:
-            project_id, subscription_id = pubsub_subscription.split("/", 1)
-            age_series = list(
-                metrics_client.list_time_series(
-                    name=f"projects/{METRICS_SCOPE_PROJECT}",
-                    filter=(
-                        'metric.type="pubsub.googleapis.com/subscription/oldest_unacked_message_age"'
-                        f' AND resource.labels.project_id="{project_id}"'
-                        f' AND resource.labels.subscription_id="{subscription_id}"'
-                    ),
-                    interval=metrics_lookback_interval,
-                    view=monitoring_v3.ListTimeSeriesRequest.TimeSeriesView.FULL,
+            total_latency = 0
+            for pubsub_subscription in self.pubsub_subscriptions:
+                project_id, subscription_id = pubsub_subscription.split("/", 1)
+                age_series = list(
+                    metrics_client.list_time_series(
+                        name=f"projects/{METRICS_SCOPE_PROJECT}",
+                        filter=(
+                            'metric.type="pubsub.googleapis.com/subscription/oldest_unacked_message_age"'
+                            f' AND resource.labels.project_id="{project_id}"'
+                            f' AND resource.labels.subscription_id="{subscription_id}"'
+                        ),
+                        interval=metrics_lookback_interval,
+                        view=monitoring_v3.ListTimeSeriesRequest.TimeSeriesView.FULL,
+                    )
                 )
-            )
-            if not age_series or not age_series[0].points:
-                self.log.warning(
-                    f"{pubsub_subscription}: no `oldest_unacked_message_age` data in the last {metrics_lookback_minutes} minutes."
+                if not age_series or not age_series[0].points:
+                    self.log.warning(
+                        f"{pubsub_subscription}: no `oldest_unacked_message_age` data in the last {metrics_lookback_minutes} minutes."
+                    )
+                    return False
+                # Points are returned newest first.
+                age_point = age_series[0].points[0]
+                age = age_point.value.int64_value
+                age_time = age_point.interval.end_time
+                age_staleness = max(0, now - int(age_time.timestamp()))
+                self.log.info(
+                    f"{pubsub_subscription}: `oldest_unacked_message_age` was {age}s at {age_time} ({age_staleness}s stale)."
                 )
-                return False
-            # Points are returned newest first.
-            age_point = age_series[0].points[0]
-            age = age_point.value.int64_value
-            age_time = age_point.interval.end_time
-            age_staleness = max(0, now - int(age_time.timestamp()))
-            self.log.info(
-                f"{pubsub_subscription}: `oldest_unacked_message_age` was {age}s at {age_time} ({age_staleness}s stale)."
+                total_latency += age + age_staleness
+        except (
+            # Google auth errors
+            RefreshError,
+            TransportError,
+            # Google API errors
+            ResourceExhausted,
+            RetryError,
+            ServerError,
+        ) as e:
+            if isinstance(e, RefreshError) and not e.retryable:
+                raise
+            self.log.error(
+                "Transient error getting `oldest_unacked_message_age` metrics.",
+                exc_info=True,
             )
-            total_latency += age + age_staleness
+            return False
 
         oldest_data = pendulum.from_timestamp(now - total_latency)
         # Wait an extra 10 minutes in case there's a bit of additional lag or imprecision in the calculated latency.

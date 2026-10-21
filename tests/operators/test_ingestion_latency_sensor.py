@@ -2,6 +2,8 @@ from unittest import mock
 
 import pendulum
 import pytest
+from google.api_core.exceptions import PermissionDenied, ServiceUnavailable
+from google.auth.exceptions import RefreshError, TransportError
 from google.cloud import monitoring_v3
 
 from operators.ingestion_latency_sensor import IngestionLatencySensor
@@ -56,7 +58,20 @@ def poke(age_series_per_subscription):
         ([[age_series(1800, seconds_ago=1200)], [age_series(1200)]], False),
         # Missing metric data fails safe.
         ([[age_series(0)], []], False),
+        # Transient Google Cloud errors are retried on the next poke.
+        ([[age_series(0)], ServiceUnavailable("unavailable")], False),
+        ([RefreshError("refresh failed", retryable=True)], False),
+        ([TransportError("connection reset")], False),
     ],
 )
 def test_poke(age_series_per_subscription, expected):
     assert poke(age_series_per_subscription) is expected
+
+
+@pytest.mark.parametrize(
+    "error",
+    [PermissionDenied("denied"), RefreshError("invalid grant", retryable=False)],
+)
+def test_poke_raises_permanent_errors(error):
+    with pytest.raises(type(error)):
+        poke([error])
