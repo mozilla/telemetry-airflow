@@ -124,7 +124,7 @@ with models.DAG(
                     mode="reschedule",
                     poke_interval=datetime.timedelta(minutes=5),
                     timeout=datetime.timedelta(hours=8),
-                    # on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+                    on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
                 )
 
     copy_deduplicate_all_base = bigquery_etl_copy_deduplicate(
@@ -153,7 +153,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
-    # list(wait_for_ingestion_family.values()) >> copy_deduplicate_all_base
+    list(wait_for_ingestion_family.values()) >> copy_deduplicate_all_base
 
     # temporary test task with no downstream dependencies.
     # Only created when there are tables left to backfill
@@ -169,7 +169,7 @@ with models.DAG(
             column_removal_backfill_tables=column_removal_backfill_tables_live,
             container_resources=resources,
         )
-        # wait_for_ingestion_family["structured"] >> copy_deduplicate_glean_v2_backfill
+        wait_for_ingestion_family["structured"] >> copy_deduplicate_glean_v2_backfill
 
     copy_deduplicate_sliced = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_sliced",
@@ -186,7 +186,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
-    # wait_for_ingestion_family["structured"] >> copy_deduplicate_sliced
+    wait_for_ingestion_family["structured"] >> copy_deduplicate_sliced
 
     # EmptyOperator is used instead of a task group to maintain compatibility with downstream sensors
     copy_deduplicate_all = EmptyOperator(
@@ -246,7 +246,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
-    # wait_for_ingestion_family["legacy"] >> copy_deduplicate_main_ping
+    wait_for_ingestion_family["legacy"] >> copy_deduplicate_main_ping
 
     with TaskGroup("main_ping_external") as main_ping_external:
         downstream_dependencies = {
@@ -289,7 +289,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
-    # wait_for_ingestion_family["legacy"] >> copy_deduplicate_first_shutdown_ping
+    wait_for_ingestion_family["legacy"] >> copy_deduplicate_first_shutdown_ping
 
     with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
         downstream_dependencies = {
@@ -328,7 +328,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
-    # wait_for_ingestion_family["legacy"] >> copy_deduplicate_event_ping
+    wait_for_ingestion_family["legacy"] >> copy_deduplicate_event_ping
 
     event_events = bigquery_etl_query(
         reattach_on_restart=True,
