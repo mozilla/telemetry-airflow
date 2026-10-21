@@ -75,11 +75,14 @@ class IngestionLatencySensor(BaseSensorOperator):
             )
             total_latency += age + age_staleness
 
-        oldest_data_at = pendulum.from_timestamp(now - total_latency)
-        start_of_today = context["data_interval_end"].in_tz("UTC").start_of("day")
-        yesterday_is_complete = oldest_data_at >= start_of_today
+        oldest_data = pendulum.from_timestamp(now - total_latency)
+        # Wait an extra 10 minutes in case there's a bit of additional lag or imprecision in the calculated latency.
+        oldest_data_threshold = (
+            context["data_interval_end"].in_tz("UTC").start_of("day").add(minutes=10)
+        )
+        yesterday_is_complete = oldest_data >= oldest_data_threshold
         self.log.info(
-            f"Total latency is {total_latency}s, so the oldest data is from {oldest_data_at},"
-            f" which {'is' if yesterday_is_complete else 'is not'} on/after {start_of_today}."
+            f"Total latency is {total_latency}s, so the oldest data is from {oldest_data},"
+            f" which {'is' if yesterday_is_complete else 'is not'} on/after {oldest_data_threshold}."
         )
         return yesterday_is_complete

@@ -46,10 +46,10 @@ def poke(age_series_per_subscription):
 @pytest.mark.parametrize(
     ("age_series_per_subscription", "expected"),
     [
-        # 30m + 20m latency = oldest data from 00:10
+        # 30m + 20m latency = oldest data from 00:10 (exactly the threshold)
         ([[age_series(1800)], [age_series(1200)]], True),
-        # 30m + 30m latency = oldest data from 00:00
-        ([[age_series(1800)], [age_series(1800)]], True),
+        # 30m + 30m latency = oldest data from 00:00 (before the threshold)
+        ([[age_series(1800)], [age_series(1800)]], False),
         # 40m + 30m latency = oldest data from 23:50 yesterday
         ([[age_series(2400)], [age_series(1800)]], False),
         # A 20m-old point with 30m age adjusts to 50m, + 20m = oldest data from 23:50 yesterday
