@@ -18,7 +18,6 @@ class IngestionLatencySensor(BaseSensorOperator):
     oldest data still in the ingestion pipeline.
 
     :param list[str] pubsub_subscriptions: PubSub subscriptions, specified as "project/subscription_id".
-    :param int metrics_lookback_seconds: How far back to look for the latest metric point (default is 1,800; i.e. 30 minutes).
     :param str gcp_conn_id: The connection ID used to connect to Google Cloud (default is "google_cloud_default").
     """
 
@@ -26,13 +25,11 @@ class IngestionLatencySensor(BaseSensorOperator):
         self,
         *,
         pubsub_subscriptions: list[str],
-        metrics_lookback_seconds: int = 30 * 60,
         gcp_conn_id: str = "google_cloud_default",
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self.pubsub_subscriptions = pubsub_subscriptions
-        self.metrics_lookback_seconds = metrics_lookback_seconds
         self.gcp_conn_id = gcp_conn_id
 
     def poke(self, context: Context) -> bool:
@@ -40,8 +37,9 @@ class IngestionLatencySensor(BaseSensorOperator):
             credentials=GoogleBaseHook(gcp_conn_id=self.gcp_conn_id).get_credentials()
         )
         now = int(time.time())
+        metrics_lookback_minutes = 30
         metrics_lookback_interval = monitoring_v3.TimeInterval(
-            start_time={"seconds": now - self.metrics_lookback_seconds},
+            start_time={"seconds": now - (metrics_lookback_minutes * 60)},
             end_time={"seconds": now},
         )
 
@@ -62,7 +60,7 @@ class IngestionLatencySensor(BaseSensorOperator):
             )
             if not age_series or not age_series[0].points:
                 self.log.warning(
-                    f"{pubsub_subscription}: no `oldest_unacked_message_age` data in the last {self.metrics_lookback_seconds}s."
+                    f"{pubsub_subscription}: no `oldest_unacked_message_age` data in the last {metrics_lookback_minutes} minutes."
                 )
                 return False
             # Points are returned newest first.
