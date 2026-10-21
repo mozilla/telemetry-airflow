@@ -7,6 +7,7 @@ from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 from kubernetes.client import models as k8s
 
+from operators.ingestion_latency_sensor import IngestionLatencySensor
 from utils.gcp import (
     bigquery_etl_copy_deduplicate,
     bigquery_etl_query,
@@ -62,6 +63,36 @@ dag_name = "copy_deduplicate"
 tags = [Tag.ImpactTier.tier_0]
 alerts_slack_channel = "#data-platform-alerts"
 
+# PubSub subscriptions for each ingestion pipeline, grouped by pipeline family.
+ingestion_family_pipeline_pubsub_subscriptions = {
+    "legacy": {
+        "edge": [
+            "moz-fx-data-beam-prod-11f7/telemetry-raw.decoder",
+            "moz-fx-ingestion-sink-prod/telemetry-decoded.bq-sink-payload",
+            "moz-fx-ingestion-sink-prod/telemetry-decoded-pending.bq-sink-loader",
+        ],
+    },
+    "structured": {
+        pipeline: [
+            decoder_pubsub_subscription,
+            "moz-fx-ingestion-sink-prod/structured-decoded.bq-sink-payload",
+            "moz-fx-ingestion-sink-prod/structured-decoded-pending.bq-sink-loader",
+        ]
+        for pipeline, decoder_pubsub_subscription in {
+            "edge": "moz-fx-data-beam-prod-11f7/structured-raw.decoder",
+            "logging": "moz-fx-data-beam-prod-11f7/structured-logging.decoder",
+            "direct": "moz-fx-data-beam-prod-11f7/structured-direct.decoder",
+        }.items()
+    },
+    "stub_installer": {
+        "edge": [
+            "moz-fx-data-beam-prod-11f7/stub_installer-raw.decoder",
+            "moz-fx-ingestion-sink-prod/stub_installer-decoded.bq-sink-payload",
+            "moz-fx-ingestion-sink-prod/stub_installer-decoded-pending.bq-sink-loader",
+        ],
+    },
+}
+
 with models.DAG(
     dag_name,
     schedule_interval="0 1 * * *",
@@ -77,6 +108,24 @@ with models.DAG(
     resources = k8s.V1ResourceRequirements(
         requests={"memory": "400Mi"},
     )
+
+    wait_for_ingestion_family = {}
+    for (
+        family,
+        pipeline_pubsub_subscriptions,
+    ) in ingestion_family_pipeline_pubsub_subscriptions.items():
+        with TaskGroup(f"wait_for_{family}_ingestion") as ingestion_sensor_group:
+            wait_for_ingestion_family[family] = ingestion_sensor_group
+            for pipeline, pubsub_subscriptions in pipeline_pubsub_subscriptions.items():
+                IngestionLatencySensor(
+                    task_id=pipeline,  # This will get prefixed with the task group ID.
+                    pubsub_subscriptions=pubsub_subscriptions,
+                    gcp_conn_id="google_cloud_shared_prod",
+                    mode="reschedule",
+                    poke_interval=datetime.timedelta(minutes=5),
+                    timeout=datetime.timedelta(hours=8),
+                    # on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
+                )
 
     copy_deduplicate_all_base = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_all_base",
@@ -104,6 +153,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
+    # list(wait_for_ingestion_family.values()) >> copy_deduplicate_all_base
 
     # temporary test task with no downstream dependencies.
     # Only created when there are tables left to backfill
@@ -119,6 +169,7 @@ with models.DAG(
             column_removal_backfill_tables=column_removal_backfill_tables_live,
             container_resources=resources,
         )
+        # wait_for_ingestion_family["structured"] >> copy_deduplicate_glean_v2_backfill
 
     copy_deduplicate_sliced = bigquery_etl_copy_deduplicate(
         task_id="copy_deduplicate_sliced",
@@ -135,6 +186,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
+    # wait_for_ingestion_family["structured"] >> copy_deduplicate_sliced
 
     # EmptyOperator is used instead of a task group to maintain compatibility with downstream sensors
     copy_deduplicate_all = EmptyOperator(
@@ -194,6 +246,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
+    # wait_for_ingestion_family["legacy"] >> copy_deduplicate_main_ping
 
     with TaskGroup("main_ping_external") as main_ping_external:
         downstream_dependencies = {
@@ -236,6 +289,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
+    # wait_for_ingestion_family["legacy"] >> copy_deduplicate_first_shutdown_ping
 
     with TaskGroup("first_shutdown_ping_external") as first_shutdown_ping_external:
         downstream_dependencies = {
@@ -274,6 +328,7 @@ with models.DAG(
         on_retry_callback=TaskRetrySlackNotifier(alerts_slack_channel),
         on_failure_callback=TaskFailureSlackNotifier(alerts_slack_channel),
     )
+    # wait_for_ingestion_family["legacy"] >> copy_deduplicate_event_ping
 
     event_events = bigquery_etl_query(
         reattach_on_restart=True,
