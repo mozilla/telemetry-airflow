@@ -73,21 +73,16 @@ ingestion_family_pipeline_pubsub_subscriptions = {
         ],
     },
     "structured": {
-        "edge": [
-            "moz-fx-data-beam-prod-11f7/structured-raw.decoder",
+        pipeline: [
+            decoder_pubsub_subscription,
             "moz-fx-ingestion-sink-prod/structured-decoded.bq-sink-payload",
             "moz-fx-ingestion-sink-prod/structured-decoded-pending.bq-sink-loader",
-        ],
-        "logging": [
-            "moz-fx-data-beam-prod-11f7/structured-logging.decoder",
-            "moz-fx-ingestion-sink-prod/structured-decoded.bq-sink-payload",
-            "moz-fx-ingestion-sink-prod/structured-decoded-pending.bq-sink-loader",
-        ],
-        "direct": [
-            "moz-fx-data-beam-prod-11f7/structured-direct.decoder",
-            "moz-fx-ingestion-sink-prod/structured-decoded.bq-sink-payload",
-            "moz-fx-ingestion-sink-prod/structured-decoded-pending.bq-sink-loader",
-        ],
+        ]
+        for pipeline, decoder_pubsub_subscription in {
+            "edge": "moz-fx-data-beam-prod-11f7/structured-raw.decoder",
+            "logging": "moz-fx-data-beam-prod-11f7/structured-logging.decoder",
+            "direct": "moz-fx-data-beam-prod-11f7/structured-direct.decoder",
+        }.items()
     },
     "stub_installer": {
         "edge": [
