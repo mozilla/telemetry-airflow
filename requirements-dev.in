@@ -3,7 +3,7 @@
 
 
 # Package management
-pip-tools==7.4.1
+pip-tools==7.6.2
 
 # Code quality
 pytest==8.3.4
