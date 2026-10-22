@@ -7,3 +7,6 @@ apache-airflow-providers-google==14.0.0
 # Also install the minimum version of newer dependencies required by apache-airflow-providers-google 14.0.0.
 apache-airflow-providers-common-compat==1.4.0
 google-cloud-build==3.31.0
+
+# Upgrade `certifi` to remove the emSign root CA due to the eMudhra intermediate certificate incident.
+certifi==2026.10.19

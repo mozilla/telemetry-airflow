@@ -26,6 +26,9 @@ RUN apt-get autoremove -yqq --purge && \
 
 USER airflow
 
+# Upgrade `pip` to remove the emSign root CA due to the eMudhra intermediate certificate incident.
+RUN pip install --no-cache-dir pip==26.2.2
+
 COPY requirements.txt /
 RUN pip install --no-cache-dir --no-deps -r /requirements.txt
 COPY requirements-override.txt /
