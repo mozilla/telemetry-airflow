@@ -8,10 +8,11 @@ from airflow.providers.cncf.kubernetes.operators.pod import (
 )
 from airflow.providers.google.cloud.operators.kubernetes_engine import (
     GKEStartPodOperator as UpstreamGKEPodOperator,
+)
+from airflow.providers.google.cloud.operators.kubernetes_engine import (
     KubernetesEnginePodLink,
 )
 from airflow.utils.context import Context
-
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,8 @@ class GKEPodOperator(UpstreamGKEPodOperator):
     def get_or_create_pod(
         self, pod_request_obj: k8s.V1Pod, context: Context
     ) -> k8s.V1Pod:
-        """Set GKE pod link during pod creation.
+        """
+        Set GKE pod link during pod creation.
 
         Workaround for https://github.com/apache/airflow/issues/46658
         This is meant for apache-airflow-providers-google==14.0.0

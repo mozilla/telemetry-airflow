@@ -19,7 +19,6 @@ import datetime
 
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES

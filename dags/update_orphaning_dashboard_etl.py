@@ -41,17 +41,17 @@ dag = DAG(
 )
 
 update_orphaning_dashboard_etl = GKEPodOperator(
-        task_id="update_orphaning_dashboard_etl",
-        arguments=[
-            "--run-date",
-            DS_WEEKLY,
-            "--output-bucket",
-            "moz-fx-data-static-websit-8565-analysis-output",
-            "--output-prefix",
-            "app-update/data/out-of-date/",
-            "--billing-project",
-            "mozdata",
-        ],
-        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/update-orphaning-dashboard:latest",
-        dag=dag,
-    )
+    task_id="update_orphaning_dashboard_etl",
+    arguments=[
+        "--run-date",
+        DS_WEEKLY,
+        "--output-bucket",
+        "moz-fx-data-static-websit-8565-analysis-output",
+        "--output-prefix",
+        "app-update/data/out-of-date/",
+        "--billing-project",
+        "mozdata",
+    ],
+    image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/update-orphaning-dashboard:latest",
+    dag=dag,
+)

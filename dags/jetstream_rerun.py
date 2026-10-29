@@ -52,6 +52,7 @@ default_args = {
     "owner": "mwilliams@mozilla.com",
 }
 
+
 @dag(
     dag_id="jetstream_rerun",
     default_args=default_args,
@@ -63,12 +64,42 @@ default_args = {
     tags=tags,
     render_template_as_native_obj=True,
     params={
-        "experiment_slug": Param("slug", title="Experiment Slug", type="string", description="Experiment slug to rerun"),
-        "recreate_enrollments": Param(False, title="Recreate Enrollments", type="boolean", description="Recreate enrollments option"),
-        "statistics_only": Param(False, title="Statistics Only", type="boolean", description="Statistics only option"),
-        "analysis_overall": Param(False, title="Analysis Overall", type="boolean", description="Include overall analysis period"),
-        "analysis_week": Param(False, title="Analysis Week", type="boolean", description="Include week analysis period"),
-        "analysis_day": Param(False, title="Analysis Day", type="boolean", description="Include day analysis period"),
+        "experiment_slug": Param(
+            "slug",
+            title="Experiment Slug",
+            type="string",
+            description="Experiment slug to rerun",
+        ),
+        "recreate_enrollments": Param(
+            False,
+            title="Recreate Enrollments",
+            type="boolean",
+            description="Recreate enrollments option",
+        ),
+        "statistics_only": Param(
+            False,
+            title="Statistics Only",
+            type="boolean",
+            description="Statistics only option",
+        ),
+        "analysis_overall": Param(
+            False,
+            title="Analysis Overall",
+            type="boolean",
+            description="Include overall analysis period",
+        ),
+        "analysis_week": Param(
+            False,
+            title="Analysis Week",
+            type="boolean",
+            description="Include week analysis period",
+        ),
+        "analysis_day": Param(
+            False,
+            title="Analysis Day",
+            type="boolean",
+            description="Include day analysis period",
+        ),
     },
 )
 def jetstream_rerun_dag():
@@ -76,7 +107,8 @@ def jetstream_rerun_dag():
     def generate_rerun_arguments(**context):
         cmd = [
             "rerun",
-            "--experiment-slug", context["params"]["experiment_slug"],
+            "--experiment-slug",
+            context["params"]["experiment_slug"],
             "--argo",
         ]
         if context["params"].get("recreate_enrollments", False):
@@ -100,5 +132,6 @@ def jetstream_rerun_dag():
         image=jetstream_image,
         arguments=generate_rerun_arguments(),
     )
+
 
 dag = jetstream_rerun_dag()

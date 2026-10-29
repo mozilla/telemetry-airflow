@@ -79,7 +79,7 @@ with DAG(
             "--end-date",
             "{{ ds }}",
             "--start-date",
-            "{{ macros.ds_add(ds, -28) }}"
+            "{{ macros.ds_add(ds, -28) }}",
         ],
         dag=dag,
     )

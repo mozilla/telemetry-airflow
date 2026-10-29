@@ -8,7 +8,8 @@ TASK_INSTANCE_LINK_TEMPLATE = (
 
 
 class AirflowBotSlackNotifier(SlackNotifier):
-    """Slack notifier that will post as @Airflow-bot.
+    """
+    Slack notifier that will post as @Airflow-bot.
 
     * @Airflow-bot should be added to the channel being posted to.
     """
@@ -24,7 +25,8 @@ class AirflowBotSlackNotifier(SlackNotifier):
 
 
 class TaskRetrySlackNotifier(AirflowBotSlackNotifier):
-    """@Airflow-bot Slack notifier about task retries, intended to be used as a task retry callback.
+    """
+    @Airflow-bot Slack notifier about task retries, intended to be used as a task retry callback.
 
     * This notifier uses templates, so it shouldn't be shared between tasks.
     * @Airflow-bot should be added to the channel being posted to.
@@ -41,7 +43,8 @@ class TaskRetrySlackNotifier(AirflowBotSlackNotifier):
 
 
 class TaskFailureSlackNotifier(AirflowBotSlackNotifier):
-    """@Airflow-bot Slack notifier about task failures, intended to be used as a task failure callback.
+    """
+    @Airflow-bot Slack notifier about task failures, intended to be used as a task failure callback.
 
     * This notifier uses templates, so it shouldn't be shared between tasks.
     * @Airflow-bot should be added to the channel being posted to.

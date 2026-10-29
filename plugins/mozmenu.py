@@ -4,6 +4,7 @@ Plugin that adds a "Mozilla" entry to the top bar with some useful links.
 Based on an example at
 https://github.com/airflow-plugins/Getting-Started/blob/master/Tutorial/creating-ui-modification.md
 """
+
 from airflow.plugins_manager import AirflowPlugin
 
 telemetry_airflow = {

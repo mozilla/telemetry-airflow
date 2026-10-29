@@ -156,9 +156,7 @@ with DAG(
     params=params,
     render_template_as_native_obj=True,  # So boolean params get rendered as booleans.
 ) as dag:
-    docker_image = (
-        "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
-    )
+    docker_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 
     skip_if_queued_runs_exist = ShortCircuitOperator(
         task_id="skip_if_queued_runs_exist",
@@ -204,7 +202,9 @@ with DAG(
         execution_timeout=timedelta(hours=6),
         arguments=[
             run_step_helpers
-            + "{{ 'run " + generate_sql_cmd + " && ' if params.generate_sql else '' }}"
+            + "{{ 'run "
+            + generate_sql_cmd
+            + " && ' if params.generate_sql else '' }}"
             + textwrap.dedent(
                 """
                 run script/bqetl generate derived_view_schemas --use-cloud-function=false

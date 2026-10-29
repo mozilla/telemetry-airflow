@@ -55,10 +55,10 @@ def generate_and_run_glean_task(
     source_project_id="moz-fx-data-shared-prod",
     docker_image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest",
     env_vars=None,
-    min_sample_id = 0,
-    max_sample_id = 99,
-    replace_table = True,
-    use_slots = True,
+    min_sample_id=0,
+    max_sample_id=99,
+    replace_table=True,
+    use_slots=True,
     **kwargs,
 ):
     """
