@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - benwu/ci-to-gha  # TODO: remove before merge
 
 # Never cancel an in-flight publish: ArgoCD and the DAGs repo both consume its output.
 concurrency:
