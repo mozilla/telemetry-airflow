@@ -41,12 +41,9 @@ jobs:
           {
             echo "short_sha=${short_sha}"
             echo "tags<<EOF"
-            # TODO: revert after trial. CircleCI still owns the sha-, main- and latest
-            # tags while both systems run, so only push a GHA-specific tag for now.
-            echo "${IMAGE}:gha-test-${short_sha}"
-            # echo "${IMAGE}:sha-${short_sha}"
-            # echo "${IMAGE}:main-${short_sha}"
-            # echo "${IMAGE}:latest"
+            echo "${IMAGE}:sha-${short_sha}"
+            echo "${IMAGE}:main-${short_sha}"
+            echo "${IMAGE}:latest"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -62,10 +59,11 @@ jobs:
       - name: Build the Docker image
         env:
           SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
-        # TODO: revert after trial. Restore the sha-, main- and latest tags.
         run: |
           docker build . \
-            -t "${IMAGE}:gha-test-${SHORT_SHA}"
+            -t "${IMAGE}:sha-${SHORT_SHA}" \
+            -t "${IMAGE}:main-${SHORT_SHA}" \
+            -t "${IMAGE}:latest"
 
       - name: Push Docker image to GAR
         uses: mozilla-it/deploy-actions/docker-push@ef0f037316873ff408a598f1cd98876dd7851e53  # v6.7.0
@@ -107,10 +105,8 @@ jobs:
             echo "Skipping commit since there were no changes"
           else
             git commit -m "Automatic commit - DAGs from commit ${GITHUB_SHA::7} build ${GITHUB_RUN_NUMBER}"
+            git push
           fi
-          # TODO: revert after trial. Use a plain `git push` inside the else branch above.
-          # A dry run still authenticates, so it fails if the token cannot write to the branch.
-          git push --dry-run
 
   sync-dags-repo:
     name: Synchronize telemetry-airflow-dags repository
@@ -142,5 +138,4 @@ jobs:
           git add telemetry-airflow
           git commit --allow-empty \
             -m "Automatic commit from telemetry-airflow commit ${GITHUB_SHA::7} build ${GITHUB_RUN_NUMBER}"
-          # TODO: revert after trial. Remove --dry-run once CircleCI no longer pushes here.
-          git push --dry-run origin main
+          git push origin main

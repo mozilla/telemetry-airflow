@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
 
-# Superseded PR runs are cancelled; CircleCI had no equivalent.
+# Cancel superseded runs for the same PR.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
