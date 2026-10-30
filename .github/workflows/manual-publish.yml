@@ -1,0 +1,71 @@
+name: Manual publish
+
+# Publishes an image for manually created `dev-*` tags. The image is tagged with
+# both `sha-<short sha>` and the git tag name.
+on:
+  push:
+    tags:
+      - 'dev-*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  IMAGE: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod/telemetry-airflow
+
+jobs:
+  publish-image:
+    name: Publish tagged image to GAR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Generate image tags
+        id: meta
+        env:
+          GIT_TAG: ${{ github.ref_name }}
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          {
+            echo "short_sha=${short_sha}"
+            echo "tags<<EOF"
+            echo "${IMAGE}:sha-${short_sha}"
+            echo "${IMAGE}:${GIT_TAG}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate build version.json
+        env:
+          BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GIT_TAG: ${{ github.ref_name }}
+        run: |
+          printf '{"commit":"%s","version":"%s","source":"%s/%s","build":"%s"}\n' \
+            "$GITHUB_SHA" "$GIT_TAG" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$BUILD_URL" \
+            > version.json
+          cat version.json
+
+      - name: Build the Docker image
+        env:
+          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
+          GIT_TAG: ${{ github.ref_name }}
+        run: |
+          docker build . \
+            -t "${IMAGE}:sha-${SHORT_SHA}" \
+            -t "${IMAGE}:${GIT_TAG}"
+
+      - name: Push Docker image to GAR
+        uses: mozilla-it/deploy-actions/docker-push@ef0f037316873ff408a598f1cd98876dd7851e53  # v6.7.0
+        with:
+          project_id: moz-fx-telemetry-airflow-prod
+          image_tags: ${{ steps.meta.outputs.tags }}
+          workload_identity_pool_project_number: ${{ vars.GCPV2_WORKLOAD_IDENTITY_POOL_PROJECT_NUMBER }}
+          service_account_name: telemetry-airflow

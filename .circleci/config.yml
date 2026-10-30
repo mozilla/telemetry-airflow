@@ -300,25 +300,3 @@ workflows:
               only: main
           requires:
             - 🔃 Update DAGs branch
-
-  manual-publish:
-    jobs:
-      - docker-build-artifact:
-          name: 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /^dev-.*/
-            branches:
-              ignore: /.*/
-      - publish-registry:
-          name: Publish image with manually created tag to GAR
-          registry: us-docker.pkg.dev/moz-fx-telemetry-airflow-prod/telemetry-airflow-prod
-          additional_tags: $CIRCLE_TAG
-          registry_authentication: *gar-auth
-          requires:
-            - 🛠️ Docker build and persist image
-          filters:
-            tags:
-              only: /^dev-.*/
-            branches:
-              ignore: /.*/
