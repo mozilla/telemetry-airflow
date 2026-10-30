@@ -3,7 +3,7 @@
 .gitignore
 
 # CI
-.circleci/
+.github/
 
 # Docker
 docker-compose.yml

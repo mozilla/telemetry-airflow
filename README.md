@@ -1,6 +1,6 @@
 # Telemetry-Airflow
 
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/mozilla/telemetry-airflow/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/mozilla/telemetry-airflow/tree/main)
+[![Publish](https://github.com/mozilla/telemetry-airflow/actions/workflows/publish.yml/badge.svg?branch=main)](https://github.com/mozilla/telemetry-airflow/actions/workflows/publish.yml)
 [![Python 3.11.8](https://img.shields.io/badge/python-3.11.8-blue)](https://www.python.org/)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v0.json)](https://github.com/charliermarsh/ruff)
@@ -257,6 +257,6 @@ Dev deployments are automatically triggered for every new Git tag that starts wi
 
 Implementation details:
 
-- [CI configuration](https://github.com/mozilla/telemetry-airflow/blob/main/.circleci/config.yml)
+- [CI configuration](https://github.com/mozilla/telemetry-airflow/tree/main/.github/workflows)
 - [Helm chart configuration](https://github.com/mozilla/dataservices-infra/tree/main/telemetry-airflow/k8s/telemetry-airflow)
 - [MozCloud tenant configuration](https://github.com/mozilla/global-platform-admin/blob/main/tenants/telemetry-airflow.yaml)
