@@ -1,5 +1,6 @@
 .PHONY: build clean clean-gke fixes gke help pip-compile pip-install-local stop test up
 
+DOCKER_COMPOSE ?= docker compose
 
 help:
 	@echo "Welcome to the Telemetry Airflow\n"
@@ -16,7 +17,7 @@ help:
 	@echo "  stop               Stops the docker containers"
 
 build:
-	docker-compose build
+	$(DOCKER_COMPOSE) build
 
 pip-compile:
 	pip-compile --strip-extras --no-annotate requirements.in
@@ -27,8 +28,8 @@ fixes:
 	ruff format .
 
 clean: stop
-	docker-compose down --volumes
-	docker-compose rm -f
+	$(DOCKER_COMPOSE) down --volumes
+	$(DOCKER_COMPOSE) rm -f
 	rm -rf logs/*
 	if [ -f airflow-worker.pid ]; then rm airflow-worker.pid; fi
 
@@ -38,16 +39,16 @@ pip-install-local:
 	pip install --no-deps -r requirements-override.txt
 
 stop:
-	docker-compose down
-	docker-compose stop
+	$(DOCKER_COMPOSE) down
+	$(DOCKER_COMPOSE) stop
 
 up:
 	grep -qF 'AIRFLOW_UID=' .env || echo "AIRFLOW_UID=$$(id -u)" >> .env
 	grep -qF 'FERNET_KEY=' .env || echo "FERNET_KEY=$$(python3 -c "from cryptography.fernet import Fernet; fernet_key = Fernet.generate_key(); print(fernet_key.decode())")" >> .env
 	mkdir -p logs
-	docker-compose up --wait
-	docker-compose exec airflow-webserver airflow variables import dev_variables.json
-	docker-compose exec airflow-webserver airflow connections import dev_connections.json
+	$(DOCKER_COMPOSE) up --wait
+	$(DOCKER_COMPOSE) exec airflow-webserver airflow variables import dev_variables.json
+	$(DOCKER_COMPOSE) exec airflow-webserver airflow connections import dev_connections.json
 
 gke:
 	bin/start_gke
