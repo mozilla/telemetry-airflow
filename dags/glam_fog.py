@@ -4,7 +4,7 @@ from functools import partial, reduce
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -73,6 +73,13 @@ with DAG(
 
     daily_release_done = EmptyOperator(
         task_id="daily_release_done",
+    )
+    # glam_fog_release (Saturdays 10:00) waits for the following Friday's run
+    daily_release_done >> ExternalTaskMarker(
+        task_id="glam_fog_release__wait_for_daily_glam_fog_release",
+        external_dag_id="glam_fog_release",
+        external_task_id="wait_for_daily_glam_fog_release",
+        execution_date="{{ (logical_date - macros.timedelta(days=5, hours=16)).isoformat() }}",
     )
 
     mapping = {}

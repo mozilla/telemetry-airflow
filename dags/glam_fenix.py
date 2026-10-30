@@ -14,7 +14,7 @@ from functools import partial, reduce
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
 from utils.constants import ALLOWED_STATES, FAILED_STATES
@@ -237,6 +237,13 @@ with DAG(
             clients_histogram_aggregates_snapshot_init >> clients_histogram_aggregates
             clients_histogram_aggregates >> done
             clients_scalar_aggregates >> done
+            # glam_fenix_release (Saturdays 10:00) waits for the following Friday's run
+            done >> ExternalTaskMarker(
+                task_id="glam_fenix_release__wait_for_daily_fenix_release",
+                external_dag_id="glam_fenix_release",
+                external_task_id="wait_for_daily_fenix_release",
+                execution_date="{{ (logical_date - macros.timedelta(days=5, hours=16)).isoformat() }}",
+            )
         else:
             clients_histogram_aggregates_init >> clients_histogram_aggregates
             # stage 2 - downstream for export
