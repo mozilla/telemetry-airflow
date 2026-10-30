@@ -76,7 +76,7 @@ bearer_token = Secret(
     key="dap_ads_attr_auth_token_" + deploy_env,
 )
 
-bq_project="moz-fx-data-shar-nonprod-efed"
+bq_project = "moz-fx-data-shar-nonprod-efed"
 if deploy_env == "prod":
     bq_project = "moz-fx-data-shared-prod"
 
@@ -92,8 +92,7 @@ with DAG(
         task_id="ads_newtab_attribution",
         arguments=[
             "python",
-            "-m"
-            "ads_attribution_dap_collector.main",
+            "-m" "ads_attribution_dap_collector.main",
             "--bq_project",
             bq_project,
             "--job_config_gcp_project={{ var.value.ads_attr_job_project_id }}",

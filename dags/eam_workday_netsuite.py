@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag

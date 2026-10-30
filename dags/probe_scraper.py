@@ -347,9 +347,7 @@ with DAG(
     # generic tarball and as a FROM-scratch OCI image.
     #
     # The publishing logic lives in jobs/publish_schemas_to_gar.sh.
-    publish_schemas_to_gar_script = (
-        "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/publish_schemas_to_gar.sh"
-    )
+    publish_schemas_to_gar_script = "gs://moz-fx-data-prod-airflow-dataproc-artifacts/jobs/publish_schemas_to_gar.sh"
 
     publish_schemas_to_gar = GKEPodOperator(
         task_id="publish_schemas_to_gar",

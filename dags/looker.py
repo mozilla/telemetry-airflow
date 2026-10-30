@@ -263,7 +263,11 @@ with DAG(
         env_vars={
             "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
         },
-        secrets=[looker_client_id_prod, looker_client_secret_prod, looker_pubsub_subscription_id],
+        secrets=[
+            looker_client_id_prod,
+            looker_client_secret_prod,
+            looker_pubsub_subscription_id,
+        ],
         **airflow_gke_prod_kwargs,
     )
 

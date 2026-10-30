@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from functools import partial, reduce
+from functools import partial
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
@@ -69,7 +69,9 @@ with DAG(
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
         with TaskGroup(
-            group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+            group_id=f"{product}__histogram_bucket_counts_v1",
+            dag=dag,
+            default_args=default_args,
         ) as histogram_bucket_counts:
             prev_task = None
             for sample_range in ([0, 19], [20, 39], [40, 59], [60, 79], [80, 99]):
@@ -77,7 +79,7 @@ with DAG(
                     task_name=f"{product}__histogram_bucket_counts_v1_sampled_{sample_range[0]}_{sample_range[1]}",
                     min_sample_id=sample_range[0],
                     max_sample_id=sample_range[1],
-                    replace_table=(sample_range[0] == 0)
+                    replace_table=(sample_range[0] == 0),
                 )
                 if prev_task:
                     histogram_bucket_counts_sampled.set_upstream(prev_task)

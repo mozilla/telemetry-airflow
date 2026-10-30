@@ -1,13 +1,11 @@
-import operator
 from datetime import datetime, timedelta
-from functools import partial, reduce
+from functools import partial
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.sensors.external_task import ExternalTaskMarker, ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.task_group import TaskGroup
 
-from operators.gcp_container_operator import GKEPodOperator
 from utils.constants import ALLOWED_STATES, FAILED_STATES
 from utils.glam_subdags.generate_query import (
     generate_and_run_glean_task,
@@ -71,12 +69,18 @@ with DAG(
 
         # stage 2 - downstream for export
         with TaskGroup(
-            group_id=f"{product}__scalar_bucket_counts_v1", dag=dag, default_args=default_args
+            group_id=f"{product}__scalar_bucket_counts_v1",
+            dag=dag,
+            default_args=default_args,
         ) as scalar_bucket_counts:
             prev_task = None
             # Windows + Release data is in [0-9] so we're further splitting that range.
             for sample_range in (
-                [0, 19], [20, 39], [40, 59], [60, 79], [80, 99],
+                [0, 19],
+                [20, 39],
+                [40, 59],
+                [60, 79],
+                [80, 99],
             ):
                 scalar_bucket_counts_sampled = query(
                     task_name=(
@@ -95,14 +99,32 @@ with DAG(
         scalar_probe_counts = query(task_name=f"{product}__scalar_probe_counts_v1")
 
         with TaskGroup(
-            group_id=f"{product}__histogram_bucket_counts_v1", dag=dag, default_args=default_args
+            group_id=f"{product}__histogram_bucket_counts_v1",
+            dag=dag,
+            default_args=default_args,
         ) as histogram_bucket_counts:
             prev_task = None
             # Windows + Release data is in [0-9] so we're further splitting that range.
             for sample_range in (
-                [0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6],
-                [7, 7], [8, 8], [9, 9], [10, 19], [20, 29], [30, 39],
-                [40, 49], [50, 59], [60, 69], [70, 79], [80, 89], [90, 99]
+                [0, 0],
+                [1, 1],
+                [2, 2],
+                [3, 3],
+                [4, 4],
+                [5, 5],
+                [6, 6],
+                [7, 7],
+                [8, 8],
+                [9, 9],
+                [10, 19],
+                [20, 29],
+                [30, 39],
+                [40, 49],
+                [50, 59],
+                [60, 69],
+                [70, 79],
+                [80, 89],
+                [90, 99],
             ):
                 histogram_bucket_counts_sampled = query(
                     task_name=(
@@ -143,10 +165,5 @@ with DAG(
             >> probe_counts
         )
         probe_counts >> sample_counts >> extract_probe_counts >> fog_release_done
-        (
-            wait_for_glam_fog
-            >> user_counts
-            >> extract_user_counts
-            >> fog_release_done
-        )
+        (wait_for_glam_fog >> user_counts >> extract_user_counts >> fog_release_done)
         wait_for_glam_fog >> fog_release_done

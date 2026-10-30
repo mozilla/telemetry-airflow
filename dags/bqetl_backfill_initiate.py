@@ -22,7 +22,6 @@ https://mozilla.github.io/bigquery-etl/cookbooks/backfilling_a_table/
 """
 
 from datetime import datetime
-from typing import Tuple
 
 from airflow import DAG
 from airflow.decorators import task, task_group
@@ -56,7 +55,7 @@ default_args = {
 }
 
 
-def parse_table_name_from_backfill(backfill_entry: dict) -> Tuple[str, str]:
+def parse_table_name_from_backfill(backfill_entry: dict) -> tuple[str, str]:
     """Return (project_id, staging_table_id) for backfill entry."""
     project, _, _ = backfill_entry["qualified_table_name"].split(".")
     return project, backfill_entry["staging_table"]

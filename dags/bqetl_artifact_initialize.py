@@ -61,9 +61,7 @@ with DAG(
     tags=tags,
     params=params,
 ) as dag:
-    docker_image = (
-        "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
-    )
+    docker_image = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/private-bigquery-etl/private-bigquery-etl:latest"
 
     GKEPodOperator(
         task_id="query_initialize",
