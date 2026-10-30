@@ -1,14 +1,12 @@
 import datetime
-from copy import copy
 from typing import Any
 
 from airflow import DAG
 from airflow.hooks.base import BaseHook
 from airflow.operators.email import EmailOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
-from kubernetes.client import models as k8s
 from airflow.utils.task_group import TaskGroup
-
+from kubernetes.client import models as k8s
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
@@ -138,7 +136,6 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
-
     for lang in SUPPORTED_LANGUAGES:
         with TaskGroup(group_id=f"wikipedia_indexer_{lang}"):
             copy_export_task = merino_job(

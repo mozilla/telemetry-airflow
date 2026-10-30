@@ -29,7 +29,11 @@ kberezina@mozilla.com
 
 default_args = {
     "owner": "kberezina@mozilla.com",
-    "email": ["kberezina@mozilla.com", "webcompat-internal@mozilla.org", "telemetry-alerts@mozilla.com"],
+    "email": [
+        "kberezina@mozilla.com",
+        "webcompat-internal@mozilla.org",
+        "telemetry-alerts@mozilla.com",
+    ],
     "depends_on_past": False,
     "start_date": datetime(2023, 9, 26),
     "email_on_failure": True,

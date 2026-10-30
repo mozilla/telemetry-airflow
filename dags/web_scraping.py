@@ -42,6 +42,6 @@ with DAG(
             "--date",
             "{{ ds }}",
         ],
-        image=f"us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/release_scraping:latest",
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/release_scraping:latest",
         gcp_conn_id="google_cloud_airflow_gke",
     )

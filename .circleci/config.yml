@@ -75,10 +75,10 @@ jobs:
       - python/install-packages: *pip-install-requirements-dev
       - run:
           name: 🚓 ruff linting
-          command: ruff check . --fix
+          command: ruff check .
       - run:
           name: 🧹 ruff formatting
-          command: ruff format .
+          command: ruff format --check --diff .
 
   validate-requirements:
     executor: *python-executor
