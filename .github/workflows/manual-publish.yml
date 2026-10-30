@@ -20,6 +20,10 @@ jobs:
   publish-image:
     name: Publish tagged image to GAR
     runs-on: ubuntu-latest
+    # The artifact-writer service account only trusts jobs in the `build` environment,
+    # see modules/tenant_bootstrap in dataservices-infra. Which branches can use the
+    # environment is set in the repository settings.
+    environment: build
     permissions:
       contents: read
       id-token: write
@@ -68,4 +72,4 @@ jobs:
           project_id: moz-fx-telemetry-airflow-prod
           image_tags: ${{ steps.meta.outputs.tags }}
           workload_identity_pool_project_number: ${{ vars.GCPV2_WORKLOAD_IDENTITY_POOL_PROJECT_NUMBER }}
-          service_account_name: telemetry-airflow
+          service_account_name: artifact-writer
