@@ -74,7 +74,8 @@ with DAG(
     daily_release_done = EmptyOperator(
         task_id="daily_release_done",
     )
-    # glam_fog_release (Saturdays 10:00) waits for the following Friday's run
+    # glam_fog_release (Saturdays 10:00) waits for this DAG's run from the same Saturday,
+    # but the logical date for that glam_fog_release DAG run is the previous Saturday.
     daily_release_done >> ExternalTaskMarker(
         task_id="glam_fog_release__wait_for_daily_glam_fog_release",
         external_dag_id="glam_fog_release",
