@@ -112,8 +112,12 @@ def test_external_task_sensors_have_markers(get_dag_bag: DagBag):
             if not isinstance(sensor, ExternalTaskSensor):
                 continue
 
+            if sensor.external_dag_id == dag_id:
+                continue
             upstream_dag = dags.get(sensor.external_dag_id)
-            if sensor.external_dag_id == dag_id or upstream_dag is None:
+            if upstream_dag is None:
+                if not sensor.external_dag_id.startswith(("bqetl_", "private_bqetl_")):
+                    errors.append(f"DAG {dag_id} task {sensor.task_id}: external DAG {sensor.external_dag_id} not found.")
                 continue
 
             if sensor.external_task_group_id:
