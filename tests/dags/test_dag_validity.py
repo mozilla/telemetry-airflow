@@ -108,10 +108,9 @@ def test_external_task_sensors_have_markers(get_dag_bag: DagBag):
     errors = []
 
     for dag_id, dag in dags.items():
-        for sensor in dag.tasks:
-            if not isinstance(sensor, ExternalTaskSensor):
-                continue
-
+        for sensor in (
+            task for task in dag.tasks if isinstance(task, ExternalTaskSensor)
+        ):
             if sensor.external_dag_id == dag_id:
                 continue
             upstream_dag = dags.get(sensor.external_dag_id)
