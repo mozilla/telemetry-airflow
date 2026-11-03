@@ -116,7 +116,9 @@ def test_external_task_sensors_have_markers(get_dag_bag: DagBag):
             upstream_dag = dags.get(sensor.external_dag_id)
             if upstream_dag is None:
                 if not sensor.external_dag_id.startswith(("bqetl_", "private_bqetl_")):
-                    errors.append(f"DAG {dag_id} task {sensor.task_id}: external DAG {sensor.external_dag_id} not found.")
+                    errors.append(
+                        f"DAG {dag_id} task {sensor.task_id}: external DAG {sensor.external_dag_id} not found."
+                    )
                 continue
 
             if sensor.external_task_group_id:
@@ -179,7 +181,9 @@ def test_external_task_markers_have_sensors(get_dag_bag: DagBag):
                     marker.external_dag_id.startswith(("bqetl_", "private_bqetl_"))
                     or marker.external_dag_id == "copy_deduplicate_task_markers"
                 ):
-                    errors.append(f"DAG {dag_id} task {marker.task_id}: external DAG {marker.external_dag_id} not found.")
+                    errors.append(
+                        f"DAG {dag_id} task {marker.task_id}: external DAG {marker.external_dag_id} not found."
+                    )
                 continue
 
             sensor = downstream_dag.task_dict.get(marker.external_task_id)

@@ -201,7 +201,6 @@ with models.DAG(
     with TaskGroup("copy_deduplicate_all_external") as copy_deduplicate_all_external:
         downstream_dependencies = {
             ("bhr_collection", "hour=5, minute=0"),
-            ("dbt_daily", "hour=4, minute=0"),  # only on Sundays
             ("glam_fenix", "hour=2, minute=0"),
             ("glam_fog", "hour=2, minute=0"),
         }
