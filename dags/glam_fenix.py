@@ -237,7 +237,8 @@ with DAG(
             clients_histogram_aggregates_snapshot_init >> clients_histogram_aggregates
             clients_histogram_aggregates >> done
             clients_scalar_aggregates >> done
-            # glam_fenix_release (Saturdays 10:00) waits for the following Friday's run
+            # glam_fenix_release (Saturdays 10:00) waits for this DAG's run from the same Saturday,
+            # but the logical date for that glam_fenix_release DAG run is the previous Saturday.
             done >> ExternalTaskMarker(
                 task_id="glam_fenix_release__wait_for_daily_fenix_release",
                 external_dag_id="glam_fenix_release",
