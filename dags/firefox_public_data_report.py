@@ -59,6 +59,22 @@ wait_for_main_ping = ExternalTaskSensor(
     dag=dag,
 )
 
+# both queries read the week's Glean metrics pings, so wait for Sunday's copy_deduplicate_all,
+# which includes the firefox_desktop metrics copy
+wait_for_copy_deduplicate_all = ExternalTaskSensor(
+    task_id="wait_for_copy_deduplicate_all",
+    external_dag_id="copy_deduplicate",
+    external_task_id="copy_deduplicate_all",
+    execution_delta=timedelta(days=-6),
+    check_existence=True,
+    mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
+    dag=dag,
+)
+
 hardware_report_query = bigquery_etl_query(
     task_id="hardware_report_query",
     destination_table="public_data_report_hardware_aggregates_v1",
@@ -175,3 +191,4 @@ ensemble_transposer = GKEPodOperator(
     >> ensemble_transposer
 )
 annotations_export >> ensemble_transposer
+wait_for_copy_deduplicate_all >> [hardware_report_query, user_activity]
