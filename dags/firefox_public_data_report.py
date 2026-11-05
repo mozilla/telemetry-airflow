@@ -38,6 +38,7 @@ dag = DAG(
     "firefox_public_data_report",
     default_args=default_args,
     schedule_interval="0 1 * * MON",
+    max_active_runs=1,
     doc_md=__doc__,
     tags=tags,
 )
@@ -48,6 +49,22 @@ wait_for_main_ping = ExternalTaskSensor(
     task_id="wait_for_copy_deduplicate_main_ping",
     external_dag_id="copy_deduplicate",
     external_task_id="copy_deduplicate_main_ping",
+    execution_delta=timedelta(days=-6),
+    check_existence=True,
+    mode="reschedule",
+    allowed_states=ALLOWED_STATES,
+    failed_states=FAILED_STATES,
+    pool="DATA_ENG_EXTERNALTASKSENSOR",
+    email_on_retry=False,
+    dag=dag,
+)
+
+# both queries read the week's Glean metrics pings, so wait for Sunday's copy_deduplicate_all,
+# which includes the firefox_desktop metrics copy
+wait_for_copy_deduplicate_all = ExternalTaskSensor(
+    task_id="wait_for_copy_deduplicate_all",
+    external_dag_id="copy_deduplicate",
+    external_task_id="copy_deduplicate_all",
     execution_delta=timedelta(days=-6),
     check_existence=True,
     mode="reschedule",
@@ -174,3 +191,4 @@ ensemble_transposer = GKEPodOperator(
     >> ensemble_transposer
 )
 annotations_export >> ensemble_transposer
+wait_for_copy_deduplicate_all >> [hardware_report_query, user_activity]
