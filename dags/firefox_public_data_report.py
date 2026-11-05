@@ -38,6 +38,7 @@ dag = DAG(
     "firefox_public_data_report",
     default_args=default_args,
     schedule_interval="0 1 * * MON",
+    max_active_runs=1,
     doc_md=__doc__,
     tags=tags,
 )
