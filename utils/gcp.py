@@ -205,35 +205,36 @@ def bigquery_etl_query(
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
-    date_partition_parameter="submission_date",
+    partition_parameter="submission_date:DATE:{{ds}}",
     multipart=False,
-    table_partition_template="${{ds_nodash}}",
+    destination_partition="{{ds_nodash}}",
     **kwargs,
 ):
     """
-    Generate.
+    Run a BigQuery ETL.
 
     :param str destination_table:                  [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
-    :param Tuple[str] parameters:                  Parameters passed to bq query
-    :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Tuple[str] parameters:                  Query parameters
+    :param Tuple[str] arguments:                   Additional bqetl command arguments
     :param Optional[str] project_id:               BigQuery default project id
     :param Optional[str] sql_file_path:            Optional override for path to the
                                                    SQL query file to run
+    :param bool reattach_on_restart:               Whether to reattach to an existing running pod in the next try
+                                                   if the worker dies while the pod is running (defaults to true)
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_project_id:                     GKE cluster project id
     :param str gke_location:                       GKE cluster location
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
     :param str docker_image:                       docker image to use
-    :param Optional[str] date_partition_parameter: Parameter for indicating destination
-                                                   partition to generate, if None
-                                                   destination should be whole table
-                                                   rather than partition
+    :param Optional[str] partition_parameter:      Query parameter targeting the destination partition, if any
+                                                   (defaults to "submission_date:DATE:{{ds}}")
+    :param bool multipart:                         Whether it's a multipart query (defaults to false)
+    :param Optional[str] destination_partition:    Destination partition ID, or `None` if the destination should
+                                                   be the whole table (defaults to "{{ds_nodash}}")
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
-    :param str table_partition_template:           Template for the datestring that's used for
-                                                   the partition table id. Defaults to "{{ds_nodash}}".
     :return: GKEPodOperator
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
@@ -247,9 +248,22 @@ def bigquery_etl_query(
         sql_file_path
         or f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}/query.sql"
     )
-    if destination_table is not None and date_partition_parameter is not None:
-        destination_table = destination_table + table_partition_template
-        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    # TODO srose to remove this fallback logic after bigquery-etl DAG generation is updated to the new approach
+    if "date_partition_parameter" in kwargs or "table_partition_template" in kwargs:
+        date_partition_parameter = kwargs.pop(
+            "date_partition_parameter", "submission_date"
+        )
+        table_partition_template = kwargs.pop(
+            "table_partition_template", "${{ds_nodash}}"
+        )
+        if destination_table is not None and date_partition_parameter is not None:
+            destination_table = destination_table + table_partition_template
+            parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    elif destination_table:
+        if destination_partition and "$" not in destination_table:
+            destination_table += "$" + destination_partition
+        if partition_parameter:
+            parameters = (*parameters, partition_parameter)
     args = ["script/bqetl", "query", "run-multipart"] if multipart else ["query"]
     return GKEPodOperator(
         reattach_on_restart=reattach_on_restart,
