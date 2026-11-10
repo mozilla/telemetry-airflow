@@ -196,6 +196,28 @@ with DAG(
 
             copy_export_task >> [wiki_index_staging_task, wiki_index_prod_task]
 
+            # The article blocklist is only generated from the English export.
+            if lang == "en":
+                article_blocklist_task = merino_job(
+                    name=f"wikipedia_article_blocklist_generate_{lang}",
+                    arguments=[
+                        "wikipedia-article-blocklist",
+                        "generate",
+                        "--gcs-path",
+                        "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
+                        "--gcp-project",
+                        "moz-fx-data-shared-prod",
+                        "--gcs-storage-bucket",
+                        "moz-fx-data-prod-external-data",
+                        "--gcs-storage-project",
+                        "moz-fx-data-shared-prod",
+                        "--destination-prefix",
+                        "contextual-services/merino-jobs/wikipedia-article-blocklist",
+                    ],
+                )
+
+                copy_export_task >> article_blocklist_task
+
     # Navigational suggestions task.
     prepare_domain_metadata_stage = merino_job(
         "nav_suggestions_prepare_domain_metadata_stage",
