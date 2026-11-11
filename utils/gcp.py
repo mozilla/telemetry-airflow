@@ -515,8 +515,8 @@ def bigquery_xcom_query(
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
-    date_partition_parameter="submission_date",
-    table_partition_template="${{ds_nodash}}",
+    partition_parameter="submission_date:DATE:{{ds}}",
+    destination_partition="{{ds_nodash}}",
     **kwargs,
 ):
     """
@@ -525,8 +525,8 @@ def bigquery_xcom_query(
     :param str destination_table:                  [Required] BigQuery destination table
     :param str dataset_id:                         [Required] BigQuery default dataset id
     :param str xcom_task_id:                       [Required] task_id which generated the xcom to pull
-    :param Tuple[str] parameters:                  Parameters passed to bq query
-    :param Tuple[str] arguments:                   Additional bq query arguments
+    :param Tuple[str] parameters:                  Query parameters
+    :param Tuple[str] arguments:                   Additional bqetl command arguments
     :param Optional[str] project_id:               BigQuery default project id
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_project_id:                     GKE cluster project id
@@ -534,12 +534,10 @@ def bigquery_xcom_query(
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
     :param str docker_image:                       docker image to use
-    :param Optional[str] date_partition_parameter: Parameter for indicating destination
-                                                   partition to generate, if None
-                                                   destination should be whole table
-                                                   rather than partition
-    :param str table_partition_template:           Template for the datestring that's used for
-                                                   the partition table id. Defaults to "{{ds_nodash}}".
+    :param Optional[str] partition_parameter:      Query parameter targeting the destination partition, if any
+                                                   (defaults to "submission_date:DATE:{{ds}}")
+    :param Optional[str] destination_partition:    Destination partition ID, or `None` if the destination should
+                                                   be the whole table (defaults to "{{ds_nodash}}")
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
 
@@ -547,9 +545,11 @@ def bigquery_xcom_query(
     """
     kwargs["task_id"] = kwargs.get("task_id", destination_table)
     kwargs["name"] = kwargs.get("name", kwargs["task_id"].replace("_", "-"))
-    if destination_table is not None and date_partition_parameter is not None:
-        destination_table = destination_table + table_partition_template
-        parameters += (date_partition_parameter + ":DATE:{{ds}}",)
+    if destination_table:
+        if destination_partition and "$" not in destination_table:
+            destination_table += "$" + destination_partition
+        if partition_parameter:
+            parameters = (*parameters, partition_parameter)
     query = "{{ " + f"task_instance.xcom_pull({xcom_task_id!r})" + " }}"
 
     return GKEPodOperator(
