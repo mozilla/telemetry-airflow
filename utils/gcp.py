@@ -384,20 +384,18 @@ def bigquery_dq_check(
     gke_cluster_name="workloads-prod-v1",
     gke_namespace="default",
     docker_image=BIGQUERY_ETL_DOCKER_IMAGE,
-    date_partition_parameter="submission_date",
+    partition_parameter=None,
     is_dq_check_fail=True,
     **kwargs,
 ):
     """
     Run `bqetl check run` to run data quality checks against BigQuery table.
 
-    :param str destination_table:                  [Required] BigQuery destination table the DQ checks are run on
+    :param str source_table:                       [Required] BigQuery source table the DQ checks are run on
     :param str dataset_id:                         [Required] BigQuery default dataset id
-
-    :param str task_id:              [             [Required] ID for the task
-    :param Optional[str] sql_file_path:            Optional override for path to the
-                                                   SQL query file to run
-    :param Tuple[str] parameters:                  Parameters passed to bq query
+    :param str task_id:                            [Required] ID for the task
+    :param Tuple[str] parameters:                  Query parameters
+    :param Tuple[str] arguments:                   Additional bqetl command arguments
     :param Optional[str] project_id:               BigQuery default project id
     :param str gcp_conn_id:                        Airflow connection id for GCP access
     :param str gke_project_id:                     GKE cluster project id
@@ -405,10 +403,9 @@ def bigquery_dq_check(
     :param str gke_cluster_name:                   GKE cluster name
     :param str gke_namespace:                      GKE cluster namespace
     :param str docker_image:                       docker image to use
-    :param Optional[str] date_partition_parameter: Parameter for indicating destination
-                                                   partition to generate, if None
-                                                   destination should be whole table
-                                                   rather than partition
+    :param Optional[str] partition_parameter:      Query parameter targeting a source partition, if any
+    :param bool is_dq_check_fail:                  Whether it's a "fail" check, as opposed to a "warn" check
+                                                   (defaults to true)
     :param Dict[str, Any] kwargs:                  Additional keyword arguments for
                                                    GKEPodOperator
     :return: GKEPodOperator
@@ -426,6 +423,9 @@ def bigquery_dq_check(
         marker += ["fail"]
     else:
         marker += ["warn"]
+
+    if partition_parameter:
+        parameters = (*parameters, partition_parameter)
 
     args = ["script/bqetl", "check", "run", *marker, sql_file_path]
     return GKEPodOperator(
