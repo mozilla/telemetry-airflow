@@ -208,11 +208,11 @@ with DAG(
                         "--gcp-project",
                         "moz-fx-data-shared-prod",
                         "--gcs-storage-bucket",
-                        "moz-fx-data-prod-external-data",
+                        "merino-airflow-data-prod",
                         "--gcs-storage-project",
-                        "moz-fx-data-shared-prod",
+                        "moz-fx-merino-prod-5de4",
                         "--destination-prefix",
-                        "contextual-services/merino-jobs/wikipedia-article-blocklist",
+                        "suggest-merino-exports/wikipedia-article-blocklist",
                     ],
                 )
 
