@@ -130,7 +130,7 @@ default_args = {
             {},
             title="Scheduling Overrides",
             type=["null", "object"],
-            description="Pass overrides for scheduling sections: parameters and/or date_partition_parameter as needed.",
+            description="Pass overrides for scheduling sections: parameters and/or partition_parameter as needed.",
         ),
         "override_retention_range_limit": Param(
             False,
