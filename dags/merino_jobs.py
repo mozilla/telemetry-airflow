@@ -20,6 +20,12 @@ DOCS = """\
 
 SUPPORTED_LANGUAGES = ["en"]
 
+# Where the article blocklist job writes the blocklist and the Wikipedia indexer reads it.
+# Same project/bucket as the prod engagement data.
+ARTICLE_BLOCKLIST_BUCKET = "merino-airflow-data-prod"
+ARTICLE_BLOCKLIST_PROJECT = "moz-fx-merino-prod-5de4"
+ARTICLE_BLOCKLIST_PREFIX = "suggest-merino-exports/wikipedia-article-blocklist"
+
 
 def merino_job(
     name: str, arguments: list[str], env_vars: dict[str, Any] | None = None, **kwargs
@@ -138,6 +144,11 @@ with DAG(
 ) as dag:
     for lang in SUPPORTED_LANGUAGES:
         with TaskGroup(group_id=f"wikipedia_indexer_{lang}"):
+            # Every language reads the English article blocklist. English builds the index
+            # and uploads the titles it blocked. Other languages only upload the blocked
+            # titles and don't build an index.
+            run_mode = "both" if lang == "en" else "blocklist-only"
+
             copy_export_task = merino_job(
                 name=f"wikipedia_indexer_copy_export_{lang}",
                 arguments=[
@@ -169,6 +180,14 @@ with DAG(
                     "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
                     "--gcp-project",
                     "moz-fx-data-shared-prod",
+                    "--article-blocklist-bucket",
+                    ARTICLE_BLOCKLIST_BUCKET,
+                    "--article-blocklist-prefix",
+                    ARTICLE_BLOCKLIST_PREFIX,
+                    "--article-blocklist-project",
+                    ARTICLE_BLOCKLIST_PROJECT,
+                    "--mode",
+                    "index-only",
                 ],
                 secrets=[elasticsearch_stage_apikey_secret],
             )
@@ -190,13 +209,21 @@ with DAG(
                     "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
                     "--gcp-project",
                     "moz-fx-data-shared-prod",
+                    "--article-blocklist-bucket",
+                    ARTICLE_BLOCKLIST_BUCKET,
+                    "--article-blocklist-prefix",
+                    ARTICLE_BLOCKLIST_PREFIX,
+                    "--article-blocklist-project",
+                    ARTICLE_BLOCKLIST_PROJECT,
+                    "--mode",
+                    run_mode,
                 ],
                 secrets=[elasticsearch_prod_apikey_secret],
             )
 
-            copy_export_task >> [wiki_index_staging_task, wiki_index_prod_task]
-
-            # The article blocklist is only generated from the English export.
+            # The article blocklist is only generated from the English export. Generate it
+            # before indexing so the indexer uses the latest one. If it fails, the index
+            # tasks don't run.
             if lang == "en":
                 article_blocklist_task = merino_job(
                     name=f"wikipedia_article_blocklist_generate_{lang}",
@@ -208,15 +235,21 @@ with DAG(
                         "--gcp-project",
                         "moz-fx-data-shared-prod",
                         "--gcs-storage-bucket",
-                        "merino-airflow-data-prod",
+                        ARTICLE_BLOCKLIST_BUCKET,
                         "--gcs-storage-project",
-                        "moz-fx-merino-prod-5de4",
+                        ARTICLE_BLOCKLIST_PROJECT,
                         "--destination-prefix",
-                        "suggest-merino-exports/wikipedia-article-blocklist",
+                        ARTICLE_BLOCKLIST_PREFIX,
                     ],
                 )
 
-                copy_export_task >> article_blocklist_task
+                (
+                    copy_export_task
+                    >> article_blocklist_task
+                    >> [wiki_index_staging_task, wiki_index_prod_task]
+                )
+            else:
+                copy_export_task >> [wiki_index_staging_task, wiki_index_prod_task]
 
     # Navigational suggestions task.
     prepare_domain_metadata_stage = merino_job(
