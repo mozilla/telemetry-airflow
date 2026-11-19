@@ -209,7 +209,7 @@ with DAG(
                 """
                 run script/bqetl generate derived_view_schemas --use-cloud-function=false
                 run script/bqetl query initialize '*' --file=materialized_view.sql --skip_existing --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-data-bq-people
-                run script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people
+                run script/bqetl deploy '*' --tables --views --use-cloud-function=false --table-skip-existing-schemas --table-force --ignore-dryrun-skip --table-add-managed-label --view-add-managed-label --view-skip-authorized --project-id=moz-fx-data-shared-prod --project-id=moz-fx-data-experiments --project-id=moz-fx-data-marketing-prod --project-id=moz-fx-glam-prod --project-id=moz-fx-data-bq-people
                 run script/bqetl view publish --add-managed-label --skip-authorized --project-id=moz-fx-data-shared-prod --target-project=mozdata --user-facing-only &&
                 run script/bqetl view clean --skip-authorized --target-project=moz-fx-data-shared-prod &&
                 run script/bqetl view clean --skip-authorized --target-project=moz-fx-data-experiments --project-id=moz-fx-data-experiments &&
@@ -234,11 +234,11 @@ with DAG(
         cmds=["bash", "-x", "-c"],
         arguments=[
             generate_sql_cmd_template
-            + "script/bqetl metadata publish '*' --project_id=moz-fx-data-shared-prod && "
-            "script/bqetl metadata publish '*' --project_id=mozdata && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-marketing-prod && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-experiments && "
-            "script/bqetl metadata publish '*' --project_id=moz-fx-data-bq-people"
+            + "script/bqetl metadata publish '*' --add-managed-label --project_id=moz-fx-data-shared-prod && "
+            "script/bqetl metadata publish '*' --add-managed-label --project_id=mozdata && "
+            "script/bqetl metadata publish '*' --add-managed-label --project_id=moz-fx-data-marketing-prod && "
+            "script/bqetl metadata publish '*' --add-managed-label --project_id=moz-fx-data-experiments && "
+            "script/bqetl metadata publish '*' --add-managed-label --project_id=moz-fx-data-bq-people"
         ],
         image=docker_image,
         container_resources=generate_sql_container_resources,
