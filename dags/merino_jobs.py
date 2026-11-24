@@ -84,7 +84,8 @@ def wikipedia_copy_export_job(lang: str):
 
 
 def wikipedia_index_job(lang: str, env: str, es_connection, es_secret, mode: str):
-    """Run the Wikipedia indexer.
+    """
+    Run the Wikipedia indexer.
 
     mode is one of "index-only", "blocklist-only", or "both".
     """
