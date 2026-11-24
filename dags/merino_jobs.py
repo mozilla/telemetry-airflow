@@ -18,13 +18,19 @@ DOCS = """\
     The jobs are run via the GKEPodOperator
 """
 
-SUPPORTED_LANGUAGES = ["en"]
+SUPPORTED_LANGUAGES = ["en", "de"]
 
 # Where the article blocklist job writes the blocklist and the Wikipedia indexer reads it.
 # Same project/bucket as the prod engagement data.
 ARTICLE_BLOCKLIST_BUCKET = "merino-airflow-data-prod"
 ARTICLE_BLOCKLIST_PROJECT = "moz-fx-merino-prod-5de4"
 ARTICLE_BLOCKLIST_PREFIX = "suggest-merino-exports/wikipedia-article-blocklist"
+
+# Where copy-export writes the Wikipedia dumps, and where the blocklist and indexer read them.
+WIKIPEDIA_EXPORTS_GCS_PATH = (
+    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports"
+)
+WIKIPEDIA_EXPORTS_GCP_PROJECT = "moz-fx-data-shared-prod"
 
 
 def merino_job(
@@ -58,6 +64,62 @@ def merino_job(
             "disco-team@mozilla.com",
         ],
         **kwargs,
+    )
+
+
+def copy_wiki_dumps_task(lang: str):
+    return merino_job(
+        name=f"wikipedia_indexer_copy_export_{lang}",
+        task_display_name=f"copy_wiki_dumps_{lang}",
+        arguments=[
+            "wikipedia-indexer",
+            "copy-export",
+            "--gcs-path",
+            WIKIPEDIA_EXPORTS_GCS_PATH,
+            "--gcp-project",
+            WIKIPEDIA_EXPORTS_GCP_PROJECT,
+            "--language",
+            lang,
+        ],
+    )
+
+
+def ingest_wiki_dumps_task(lang: str, env: str, es_connection, es_secret, mode: str):
+    """
+    Ingest a language's Wikipedia dump with the wikipedia-indexer job.
+
+    Depending on mode, this builds the Elasticsearch index ("index-only"), uploads
+    the language-specific list of blocked titles ("blocklist-only"), or does both
+    ("both").
+    """
+    return merino_job(
+        name=f"wikipedia_indexer_build_index_{env}_{lang}",
+        task_display_name=f"ingest_wiki_dumps_{env}_{lang}",
+        arguments=[
+            "wikipedia-indexer",
+            "index",
+            "--language",
+            lang,
+            "--version",
+            "v1",
+            "--total-docs",
+            "6600000",  # Estimate of the total number of documents in wikipedia index
+            "--elasticsearch-url",
+            str(es_connection.host),
+            "--gcs-path",
+            WIKIPEDIA_EXPORTS_GCS_PATH,
+            "--gcp-project",
+            WIKIPEDIA_EXPORTS_GCP_PROJECT,
+            "--article-blocklist-bucket",
+            ARTICLE_BLOCKLIST_BUCKET,
+            "--article-blocklist-prefix",
+            ARTICLE_BLOCKLIST_PREFIX,
+            "--article-blocklist-project",
+            ARTICLE_BLOCKLIST_PROJECT,
+            "--mode",
+            mode,
+        ],
+        secrets=[es_secret],
     )
 
 
@@ -142,114 +204,67 @@ with DAG(
     default_args=default_args,
     tags=tags,
 ) as dag:
+    # The article blocklist is generated once from the English export. So, EN runs
+    # first: copy export >> generate blocklist >> build the staging (index-only) and
+    # prod (index + upload blocked titles) indexes. Every other language waits for the
+    # blocklist to succeed, copies its own export, then runs the prod indexer in
+    # blocklist-only mode (uploads blocked titles, no index build).
+    with TaskGroup(group_id="wikipedia_indexer_en"):
+        en_article_blocklist_task = merino_job(
+            name="wikipedia_article_blocklist_generate_en",
+            task_display_name="en_article_blocklist",
+            arguments=[
+                "wikipedia-article-blocklist",
+                "generate",
+                "--gcs-path",
+                WIKIPEDIA_EXPORTS_GCS_PATH,
+                "--gcp-project",
+                WIKIPEDIA_EXPORTS_GCP_PROJECT,
+                "--gcs-storage-bucket",
+                ARTICLE_BLOCKLIST_BUCKET,
+                "--gcs-storage-project",
+                ARTICLE_BLOCKLIST_PROJECT,
+                "--destination-prefix",
+                ARTICLE_BLOCKLIST_PREFIX,
+            ],
+        )
+
+        (
+            copy_wiki_dumps_task("en")
+            >> en_article_blocklist_task
+            >> [
+                ingest_wiki_dumps_task(
+                    "en",
+                    "staging",
+                    es_staging_connection,
+                    elasticsearch_stage_apikey_secret,
+                    mode="index-only",
+                ),
+                ingest_wiki_dumps_task(
+                    "en",
+                    "prod",
+                    es_prod_connection,
+                    elasticsearch_prod_apikey_secret,
+                    mode="both",
+                ),
+            ]
+        )
+
     for lang in SUPPORTED_LANGUAGES:
+        if lang == "en":
+            continue
         with TaskGroup(group_id=f"wikipedia_indexer_{lang}"):
-            # Every language reads the English article blocklist. English builds the index
-            # and uploads the titles it blocked. Other languages only upload the blocked
-            # titles and don't build an index.
-            run_mode = "both" if lang == "en" else "blocklist-only"
-
-            copy_export_task = merino_job(
-                name=f"wikipedia_indexer_copy_export_{lang}",
-                arguments=[
-                    "wikipedia-indexer",
-                    "copy-export",
-                    "--gcs-path",
-                    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-                    "--gcp-project",
-                    "moz-fx-data-shared-prod",
-                    "--language",
+            (
+                en_article_blocklist_task
+                >> copy_wiki_dumps_task(lang)
+                >> ingest_wiki_dumps_task(
                     lang,
-                ],
-            )
-
-            wiki_index_staging_task = merino_job(
-                name=f"wikipedia_indexer_build_index_staging_{lang}",
-                arguments=[
-                    "wikipedia-indexer",
-                    "index",
-                    "--language",
-                    lang,
-                    "--version",
-                    "v1",
-                    "--total-docs",
-                    "6600000",  # Estimate of the total number of documents in wikipedia index
-                    "--elasticsearch-url",
-                    str(es_staging_connection.host),
-                    "--gcs-path",
-                    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-                    "--gcp-project",
-                    "moz-fx-data-shared-prod",
-                    "--article-blocklist-bucket",
-                    ARTICLE_BLOCKLIST_BUCKET,
-                    "--article-blocklist-prefix",
-                    ARTICLE_BLOCKLIST_PREFIX,
-                    "--article-blocklist-project",
-                    ARTICLE_BLOCKLIST_PROJECT,
-                    "--mode",
-                    "index-only",
-                ],
-                secrets=[elasticsearch_stage_apikey_secret],
-            )
-
-            wiki_index_prod_task = merino_job(
-                name=f"wikipedia_indexer_build_index_prod_{lang}",
-                arguments=[
-                    "wikipedia-indexer",
-                    "index",
-                    "--language",
-                    lang,
-                    "--version",
-                    "v1",
-                    "--total-docs",
-                    "6600000",  # Estimate of the total number of documents in wikipedia index
-                    "--elasticsearch-url",
-                    str(es_prod_connection.host),
-                    "--gcs-path",
-                    "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-                    "--gcp-project",
-                    "moz-fx-data-shared-prod",
-                    "--article-blocklist-bucket",
-                    ARTICLE_BLOCKLIST_BUCKET,
-                    "--article-blocklist-prefix",
-                    ARTICLE_BLOCKLIST_PREFIX,
-                    "--article-blocklist-project",
-                    ARTICLE_BLOCKLIST_PROJECT,
-                    "--mode",
-                    run_mode,
-                ],
-                secrets=[elasticsearch_prod_apikey_secret],
-            )
-
-            # The article blocklist is only generated from the English export. Generate it
-            # before indexing so the indexer uses the latest one. If it fails, the index
-            # tasks don't run.
-            if lang == "en":
-                article_blocklist_task = merino_job(
-                    name=f"wikipedia_article_blocklist_generate_{lang}",
-                    arguments=[
-                        "wikipedia-article-blocklist",
-                        "generate",
-                        "--gcs-path",
-                        "moz-fx-data-prod-external-data/contextual-services/merino-jobs/wikipedia-exports",
-                        "--gcp-project",
-                        "moz-fx-data-shared-prod",
-                        "--gcs-storage-bucket",
-                        ARTICLE_BLOCKLIST_BUCKET,
-                        "--gcs-storage-project",
-                        ARTICLE_BLOCKLIST_PROJECT,
-                        "--destination-prefix",
-                        ARTICLE_BLOCKLIST_PREFIX,
-                    ],
+                    "prod",
+                    es_prod_connection,
+                    elasticsearch_prod_apikey_secret,
+                    mode="blocklist-only",
                 )
-
-                (
-                    copy_export_task
-                    >> article_blocklist_task
-                    >> [wiki_index_staging_task, wiki_index_prod_task]
-                )
-            else:
-                copy_export_task >> [wiki_index_staging_task, wiki_index_prod_task]
+            )
 
     # Navigational suggestions task.
     prepare_domain_metadata_stage = merino_job(
