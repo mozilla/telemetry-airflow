@@ -147,19 +147,26 @@ user_activity_usage_behavior_export = GKEPodOperator(
     dag=dag,
 )
 
-# the Glean user activity query reads top languages on the week's Sunday, written by
-# bqetl_glean_usage's run an hour after this DAG's; the timeout stops a late upstream from
-# holding the run, and every other branch's next week, open
-wait_for_glean_baseline_clients_last_seen = ExternalTaskSensor(
-    task_id="wait_for_glean_baseline_clients_last_seen",
-    external_dag_id="bqetl_glean_usage",
-    external_task_id="firefox_desktop.firefox_desktop_derived__baseline_clients_last_seen__v1",
-    execution_delta=timedelta(days=-6, hours=-1),
+# The Glean user activity query reads MAU for the week's Monday, written by bqetl_analytics_aggregations:
+# Desktop in its run for that Monday, and mobile, with partition_offset -1d, in the next day's run. It reads
+# top languages for the week's Sunday, from bqetl_glean_usage's baseline_active_users, which also waits on
+# baseline_clients_last_seen. The timeouts stop a late upstream from holding the run, and every other
+# branch's next week, open.
+# No ExternalTaskMarker in the upstream DAGs, on purpose: clearing or backfilling an upstream task would then
+# rerun this task and rewrite published weeks.
+wait_for_analytics_aggregations = ExternalTaskSensor(
+    task_id="wait_for_analytics_aggregations",
+    external_dag_id="bqetl_analytics_aggregations",
+    external_task_id=None,
+    execution_date_fn=lambda logical_date, **_: [
+        logical_date + timedelta(hours=3, minutes=15),
+        logical_date + timedelta(days=1, hours=3, minutes=15),
+    ],
     check_existence=True,
     mode="reschedule",
     timeout=timedelta(hours=24).total_seconds(),
     allowed_states=ALLOWED_STATES,
-    failed_states=FAILED_STATES,
+    failed_states=["failed"],
     pool="DATA_ENG_EXTERNALTASKSENSOR",
     email_on_retry=False,
     dag=dag,
@@ -234,6 +241,6 @@ ensemble_transposer = GKEPodOperator(
 annotations_export >> ensemble_transposer
 wait_for_copy_deduplicate_all >> [hardware_report_query, user_activity]
 [
-    wait_for_glean_baseline_clients_last_seen,
+    wait_for_analytics_aggregations,
     wait_for_glean_baseline_active_users,
 ] >> user_activity_glean
