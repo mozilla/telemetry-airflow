@@ -67,9 +67,10 @@ def merino_job(
     )
 
 
-def wikipedia_copy_export_job(lang: str):
+def copy_wiki_dumps_task(lang: str):
     return merino_job(
         name=f"wikipedia_indexer_copy_export_{lang}",
+        task_display_name=f"copy_wiki_dumps_{lang}",
         arguments=[
             "wikipedia-indexer",
             "copy-export",
@@ -83,14 +84,17 @@ def wikipedia_copy_export_job(lang: str):
     )
 
 
-def wikipedia_index_job(lang: str, env: str, es_connection, es_secret, mode: str):
+def ingest_wiki_dumps_task(lang: str, env: str, es_connection, es_secret, mode: str):
     """
-    Run the Wikipedia indexer.
+    Ingest a language's Wikipedia dump with the wikipedia-indexer job.
 
-    mode is one of "index-only", "blocklist-only", or "both".
+    Depending on mode, this builds the Elasticsearch index ("index-only"), uploads
+    the language-specific list of blocked titles ("blocklist-only"), or does both
+    ("both").
     """
     return merino_job(
         name=f"wikipedia_indexer_build_index_{env}_{lang}",
+        task_display_name=f"ingest_wiki_dumps_{env}_{lang}",
         arguments=[
             "wikipedia-indexer",
             "index",
@@ -206,8 +210,9 @@ with DAG(
     # blocklist to succeed, copies its own export, then runs the prod indexer in
     # blocklist-only mode (uploads blocked titles, no index build).
     with TaskGroup(group_id="wikipedia_indexer_en"):
-        article_blocklist_task = merino_job(
+        en_article_blocklist_task = merino_job(
             name="wikipedia_article_blocklist_generate_en",
+            task_display_name="en_article_blocklist",
             arguments=[
                 "wikipedia-article-blocklist",
                 "generate",
@@ -225,17 +230,17 @@ with DAG(
         )
 
         (
-            wikipedia_copy_export_job("en")
-            >> article_blocklist_task
+            copy_wiki_dumps_task("en")
+            >> en_article_blocklist_task
             >> [
-                wikipedia_index_job(
+                ingest_wiki_dumps_task(
                     "en",
                     "staging",
                     es_staging_connection,
                     elasticsearch_stage_apikey_secret,
                     mode="index-only",
                 ),
-                wikipedia_index_job(
+                ingest_wiki_dumps_task(
                     "en",
                     "prod",
                     es_prod_connection,
@@ -250,9 +255,9 @@ with DAG(
             continue
         with TaskGroup(group_id=f"wikipedia_indexer_{lang}"):
             (
-                article_blocklist_task
-                >> wikipedia_copy_export_job(lang)
-                >> wikipedia_index_job(
+                en_article_blocklist_task
+                >> copy_wiki_dumps_task(lang)
+                >> ingest_wiki_dumps_task(
                     lang,
                     "prod",
                     es_prod_connection,
