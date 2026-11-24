@@ -248,18 +248,7 @@ def bigquery_etl_query(
         sql_file_path
         or f"sql/{project_id}/{dataset_id}/{destination_table_no_partition}/query.sql"
     )
-    # TODO srose to remove this fallback logic after bigquery-etl DAG generation is updated to the new approach
-    if "date_partition_parameter" in kwargs or "table_partition_template" in kwargs:
-        date_partition_parameter = kwargs.pop(
-            "date_partition_parameter", "submission_date"
-        )
-        table_partition_template = kwargs.pop(
-            "table_partition_template", "${{ds_nodash}}"
-        )
-        if destination_table is not None and date_partition_parameter is not None:
-            destination_table = destination_table + table_partition_template
-            parameters += (date_partition_parameter + ":DATE:{{ds}}",)
-    elif destination_table:
+    if destination_table:
         if destination_partition and "$" not in destination_table:
             destination_table += "$" + destination_partition
         if partition_parameter:
