@@ -287,6 +287,22 @@ with DAG(
         **airflow_gke_prod_kwargs,
     )
 
+    sync_standard_users = GKEPodOperator(
+        task_id="sync_standard_users",
+        arguments=[
+            "python",
+            "-m",
+            "looker_utils.main",
+            "sync-standard-users",
+        ],
+        image="us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/looker-utils:latest",
+        env_vars={
+            "LOOKER_INSTANCE_URI": "https://mozilla.cloud.looker.com",
+        },
+        secrets=[looker_client_id_prod, looker_client_secret_prod],
+        **airflow_gke_prod_kwargs,
+    )
+
     lookml_generator_staging >> lookml_generator_prod
     lookml_generator_prod >> validate_content_spectacles >> delete_outdated_branches
     (
