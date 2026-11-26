@@ -56,12 +56,16 @@ IMAGE = "us-docker.pkg.dev/moz-fx-data-artifacts-prod/docker-etl/metric-usage:la
 FETCH_GENERATED_SQL = "script/fetch_generated_sql.sh"
 FETCH_METRIC_HUB = "script/fetch_metric_hub.sh"
 
-# The parsing steps use a worker process per CPU, counted from the pod's CPU
-# limit, so the limit is set to match the request.
-parse_resources = k8s.V1ResourceRequirements(
-    requests={"cpu": "3", "memory": "3Gi"},
-    limits={"cpu": "3", "memory": "3Gi"},
-)
+
+def resources(cpu, memory):
+    # redash, looker and adhoc start a worker process per CPU, counted from the
+    # pod's CPU limit (or the node's cores without one), so the limit matches
+    # the request.
+    return k8s.V1ResourceRequirements(
+        requests={"cpu": cpu, "memory": memory},
+        limits={"cpu": cpu, "memory": memory},
+    )
+
 
 looker_client_id = Secret(
     deploy_type="env",
@@ -100,37 +104,42 @@ with DAG(
 ) as dag:
     inventory = step("inventory")
 
+    # single process, about 1.4 GiB at peak
     lineage = step(
         "lineage",
         fetch=[FETCH_GENERATED_SQL],
-        container_resources=parse_resources,
+        container_resources=resources("1", "3Gi"),
     )
 
     metric_hub = step(
         "metric_hub",
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
-        container_resources=parse_resources,
     )
 
+    # uses every core it gets, about 2 GiB at peak with 3 workers
     redash = step(
         "redash",
         fetch=[FETCH_GENERATED_SQL],
-        container_resources=parse_resources,
+        container_resources=resources("3", "4Gi"),
     )
 
+    # mostly waiting on the Looker API
     looker = step(
         "looker",
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
-        container_resources=parse_resources,
+        container_resources=resources("2", "3Gi"),
         secrets=[looker_client_id, looker_client_secret],
     )
 
     glam = step("glam")
 
+    # Resolved queries stay in memory for the whole run. With 3 workers it ran
+    # out of 3 GiB about a third of the way through a full resolve of 261k
+    # queries, so this is sized for a full resolve.
     adhoc = step(
         "adhoc",
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
-        container_resources=parse_resources,
+        container_resources=resources("3", "12Gi"),
     )
 
     summary = step("summary")
