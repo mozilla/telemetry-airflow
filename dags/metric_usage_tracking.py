@@ -12,7 +12,7 @@ DOCS = """\
 
 Finds where each Glean metric and legacy telemetry probe is used (bigquery-etl,
 Redash, Looker, GLAM, metric-hub and ad hoc BigQuery jobs) and writes the tables
-behind the metric usage page to `mozdata.analysis.benwu_metrics_usage_*`.
+behind the metric usage page to `moz-fx-data-shared-prod.metric_usage_tracking_derived`.
 
 The container is defined in
 [docker-etl](https://github.com/mozilla/docker-etl/tree/main/jobs/metric-usage).
@@ -36,7 +36,7 @@ default_args = {
     "owner": "bewu@mozilla.com",
     "email": [
         "benwu@mozilla.com",
-        # "telemetry-alerts@mozilla.com",
+        "telemetry-alerts@mozilla.com",
     ],
     "depends_on_past": False,
     "start_date": datetime(2026, 11, 25),
@@ -58,9 +58,6 @@ FETCH_METRIC_HUB = "script/fetch_metric_hub.sh"
 
 
 def resources(cpu, memory):
-    # redash, looker and adhoc start a worker process per CPU, counted from the
-    # pod's CPU limit (or the node's cores without one), so the limit matches
-    # the request.
     return k8s.V1ResourceRequirements(
         requests={"cpu": cpu, "memory": memory},
         limits={"cpu": cpu, "memory": memory},
@@ -104,11 +101,10 @@ with DAG(
 ) as dag:
     inventory = step("inventory")
 
-    # single process, about 1.4 GiB at peak
     lineage = step(
         "lineage",
         fetch=[FETCH_GENERATED_SQL],
-        container_resources=resources("1", "3Gi"),
+        container_resources=resources("1", "2.5Gi"),
     )
 
     metric_hub = step(
@@ -116,37 +112,28 @@ with DAG(
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
     )
 
-    # uses every core it gets, about 2 GiB at peak with 3 workers
     redash = step(
         "redash",
         fetch=[FETCH_GENERATED_SQL],
-        container_resources=resources("3", "4Gi"),
+        container_resources=resources("3", "3Gi"),
     )
 
-    # Mostly waiting on the Looker API. The image keeps its cache in memory,
-    # where every API response stays until the step exits (about 2.8 GiB
-    # before resolving starts), so the cache is on disk here instead.
     looker = step(
         "looker",
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
-        container_resources=resources("2", "6Gi"),
-        env_vars={"METRIC_USAGE_CACHE": "1"},
+        # Mostly waiting on the Looker API but stores artifacts in memory
+        container_resources=resources("1", "12Gi"),
         secrets=[looker_client_id, looker_client_secret],
-        # The pod's disk holds Looker-generated SQL in that cache, so a failed
-        # pod is deleted too rather than kept with it. Its logs are in Cloud
-        # Logging.
-        on_finish_action=OnFinishAction.DELETE_POD.value,
+        # Writing to disk reduces memory usage
+        env_vars={"METRIC_USAGE_CACHE": "1"},
     )
 
     glam = step("glam")
 
-    # Resolved queries stay in memory for the whole run. With 3 workers it ran
-    # out of 3 GiB about a third of the way through a full resolve of 261k
-    # queries, so this is sized for a full resolve.
     adhoc = step(
         "adhoc",
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
-        container_resources=resources("3", "12Gi"),
+        container_resources=resources("3", "6Gi"),
     )
 
     summary = step("summary")
