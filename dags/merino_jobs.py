@@ -18,7 +18,29 @@ DOCS = """\
     The jobs are run via the GKEPodOperator
 """
 
-SUPPORTED_LANGUAGES = ["en", "de"]
+SUPPORTED_LANGUAGES = [
+    "ca",
+    "de",
+    "en",
+    "es",
+    "eu",
+    "fr",
+    "ga",
+    "gl",
+    "it",
+    "nl",
+    "pl",
+    "pt",
+    "rm",
+    "sv",
+    "cs",
+    "da",
+    "fi",
+    "hu",
+    "nn",
+    "no",
+    "sk",
+]
 
 # Where the article blocklist job writes the blocklist and the Wikipedia indexer reads it.
 # Same project/bucket as the prod engagement data.
