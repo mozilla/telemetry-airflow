@@ -4,11 +4,11 @@ from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
 from kubernetes.client import models as k8s
 
-from operators.gcp_container_operator import GKEPodOperator
+from operators.gcp_container_operator import GKEPodOperator, OnFinishAction
 from utils.tags import Tag
 
 DOCS = """\
-# Metric usage
+# Metric usage tracking
 
 Finds where each Glean metric and legacy telemetry probe is used (bigquery-etl,
 Redash, Looker, GLAM, metric-hub and ad hoc BigQuery jobs) and writes the tables
@@ -94,7 +94,7 @@ def step(name, fetch=(), **kwargs):
 
 
 with DAG(
-    "metric_usage",
+    "metric_usage_tracking",
     doc_md=DOCS,
     default_args=default_args,
     max_active_runs=1,
@@ -123,12 +123,19 @@ with DAG(
         container_resources=resources("3", "4Gi"),
     )
 
-    # mostly waiting on the Looker API
+    # Mostly waiting on the Looker API. The image keeps its cache in memory,
+    # where every API response stays until the step exits (about 2.8 GiB
+    # before resolving starts), so the cache is on disk here instead.
     looker = step(
         "looker",
         fetch=[FETCH_GENERATED_SQL, FETCH_METRIC_HUB],
-        container_resources=resources("2", "3Gi"),
+        container_resources=resources("2", "6Gi"),
+        env_vars={"METRIC_USAGE_CACHE": "1"},
         secrets=[looker_client_id, looker_client_secret],
+        # The pod's disk holds Looker-generated SQL in that cache, so a failed
+        # pod is deleted too rather than kept with it. Its logs are in Cloud
+        # Logging.
+        on_finish_action=OnFinishAction.DELETE_POD.value,
     )
 
     glam = step("glam")
