@@ -289,7 +289,9 @@ with DAG(
             weekday = context["execution_date"].isoweekday()
             if weekday == WeekDay.MONDAY:
                 return ["probe_scraper_check_expiry"]
-            elif weekday == WeekDay.WEDNESDAY:
+            # Firefox's version gets increased on Thursday UTC every two weeks.
+            # probe_scraper runs late on Thursday PT (early Friday UTC).
+            elif weekday == WeekDay.THURSDAY:
                 return ["probe_scraper_check_fog_expiry"]
             else:
                 return ["dummy_branch"]
