@@ -8,9 +8,17 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.secret import Secret
+from airflow.providers.slack.notifications.slack import send_slack_notification
 
 from operators.gcp_container_operator import GKEPodOperator
 from utils.tags import Tag
+
+SLACK_FAILURE_NOTIFICATION = send_slack_notification(
+    text="DAG {{ dag.dag_id }} failed: <{{ task_instance.log_url }}|view log>",
+    username="airflow-bot",
+    slack_conn_id="slack_airflow_bot",
+    channel="#fxci-etl",
+)
 
 default_args = {
     "owner": "ahalberstadt@mozilla.com",
@@ -20,6 +28,7 @@ default_args = {
     "email_on_retry": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=30),
+    "on_failure_callback": SLACK_FAILURE_NOTIFICATION,
 }
 
 tags = [Tag.ImpactTier.tier_3]
@@ -68,7 +77,7 @@ with DAG(
         gcp_conn_id="google_cloud_airflow_gke",
         dag=dag,
         email=[
-            "ahalberstadt@mozilla.com",
+            "release+fxci-etl@mozilla.com",
             "telemetry-alerts@mozilla.com",
         ],
     )
